@@ -1,0 +1,697 @@
+/*!
+ *  Bayrell Common Languages Transcompiler
+ *
+ *  (c) Copyright 2016-2017 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+ 
+namespace bayrell_lang;
+use bayrell_rtl import rtl, BayrellError, BayrellObject;
+use .BayrellCode import BayrellCode;
+
+
+export class BayrellInterpreter extends BayrellObject {
+	
+	json class_map = {};
+	json data = {};
+	array registers = [];
+	
+	
+	string getClassName(){
+		return "bayrell_lang.BayrellInterpreter";
+	}
+	
+	
+	void constructor (){
+	}
+	
+	void setData(json &data){
+		this.data = &data;
+	}
+	
+	void setClassMap(json &map){
+		this.class_map = &map;
+	}
+	
+	void addData(json data){
+		foreach (string key, var val in data){
+			this.data[key] = val;
+		}
+	}
+	
+	var getData(var name){
+		return this.data[name];
+	}
+	
+	var getRegister(int pos){
+		return this.registers[pos];
+	}
+	
+	var pushRegister(var value){
+		rtl::array_push(this.registers, value);
+	}
+	
+	var popRegister(){
+		return rtl::array_pop(this.registers);
+	}
+	
+	
+	/* Операторы */
+	void op_nope(json code_tree){
+		int i = 0;
+		int sz = rtl::count(code_tree['childs']);
+		while (i < sz){
+			var code = code_tree['childs'][i];
+			if (code != null)
+				this.run(code);
+			i = i + 1;
+		}
+	}
+	
+	void op_use(json code_tree){
+	}
+	
+	void op_comment(json code_tree){
+	}
+	
+	void op_assign(json code_tree){
+		
+		json var_name = code_tree['name'];
+		
+		this.run(code_tree['value'], 0);
+		var value = this.popRegister();
+		
+		if (var_name['op'] == BayrellCode::OP_LOAD){
+			str_name = var_name['str_name'];
+			this.data[ str_name ] = value;
+		}
+		
+		else if (rtl::in_array(var_name['op'], [BayrellCode::OP_LOAD_NAMES, BayrellCode::OP_LOAD_NAMES_CALC])){
+		
+			array arr = &var_name['arr'];
+			int sz = rtl::count(arr);
+			var val = null;
+			json code = null;
+			string str_name = "";
+			
+			for (int i = 0; i < sz; i++){
+				
+				bool is_last = (i == sz - 1);
+				
+				code = &arr[i];
+				if (rtl::key_exists(code, 'str_name')){
+					str_name = code['str_name'];
+				}
+				
+				
+				if (code['op'] == BayrellCode::OP_LOAD){
+					
+					if (is_last){
+						this.data[ str_name ] = value;
+					}
+					else{
+						
+						if (!rtl::key_exists(this.data, str_name)){
+							this.data[str_name] = {};
+						}
+					
+						val = &this.data[ str_name ];
+					}
+				}
+				
+				else if (code['op'] == BayrellCode::OP_LOAD_ARR){
+					this.run(code['pos']);
+					int pos = this.popRegister();
+					
+					if (is_last){
+						val[ pos ] = value;
+					}
+					else{
+						if (!rtl::key_exists(val, pos))
+							val[pos] = {};
+						val = &val[ pos ];						
+					}
+				}
+				
+				else if (code['op'] == BayrellCode::OP_LOAD_STATIC){
+				}
+				
+				else if (code['op'] == BayrellCode::OP_LOAD_DYNAMIC){
+					if (is_last){
+						val[ str_name ] = value;
+					}
+					else{
+						if (!rtl::key_exists(val, str_name))
+							val[str_name] = {};
+						val = &val[ str_name ];						
+					}
+				}
+				
+				else if (code['op'] == BayrellCode::OP_CALL){
+					
+				}
+				
+				if (!rtl::exists(val)){
+					val = null;
+					break;
+				}
+			}
+			
+		}
+		
+		
+	}
+	
+	void op_assign_inc(json code_tree){
+	}
+	
+	void op_assign_dec(json code_tree){
+	}
+	
+	void op_declare_var(json code_tree){
+		this.run(code_tree['value'], 0);
+	}
+	
+	void op_declare_func(json code_tree){
+	}
+	
+	void op_declare_class(json code_tree){
+	}
+	
+	void op_ret(json code_tree){
+	}
+	
+	void op_if(json code_tree){
+	}
+	
+	void op_while(json code_tree){
+	}
+	
+	void op_for(json code_tree){
+	}
+	
+	void op_foreach(json code_tree){
+	}
+	
+	void op_throw(json code_tree){
+	}
+	
+	void op_break(json code_tree){
+	}
+	
+	void op_continue(json code_tree){
+	}
+	
+	/* Операции */
+	void op_calc(json code_tree){
+		int i = 0;
+		int sz = rtl::count(code_tree['childs']);
+		while (i < sz){
+			var code = code_tree['childs'][i];
+			if (code != null)
+				this.run(code, 0);
+			i = i + 1;
+		}
+	}
+	
+	void op_calc_nope(json code_tree){
+		int i = 0;
+		int sz = rtl::count(code_tree['childs']);
+		while (i < sz){
+			var code = code_tree['childs'][i];
+			if (code != null)
+				this.run(code, 0);
+			i = i + 1;
+		}
+	}
+	
+	void op_fixed(json code_tree){
+		this.pushRegister(code_tree['str']);
+	}
+	
+	void op_string(json code_tree){
+		this.pushRegister(code_tree['str']);
+	}
+	
+	void op_json(json code_tree){
+		json res = {};
+		
+		json obj = code_tree['obj'];
+		foreach (string key, var val in obj){
+			this.run(val);
+			res[key] = this.popRegister();
+		}
+		
+		this.pushRegister(res);
+	}
+	
+	void op_array(json code_tree){
+		array arr = [];
+		
+		array values = code_tree['values'];
+		int sz = rtl::count(values);
+		for (int i=0;i<sz;i++){
+			this.run(values[i]);
+			rtl::array_push(arr, this.popRegister());
+		}
+		
+		this.pushRegister(arr);
+	}
+	
+	void op_load(json code_tree){
+		string str_name = code_tree['str_name'];
+		if (rtl::key_exists(this.data, str_name))
+			this.pushRegister(this.data[ str_name ]);
+		else
+			this.pushRegister(null);
+	}
+	
+	void op_load_arr(json code_tree){
+	}
+	
+	void op_load_static(json code_tree){
+	}
+	
+	void op_load_dynamic(json code_tree){
+	}
+	
+	void op_load_names(json code_tree){
+	
+		array arr = &code_tree['arr'];
+		int sz = rtl::count(arr);
+		json code = null;
+		var val = null;
+		string str_name = "";
+		
+		for (int i = 0; i < sz; i++){
+			
+			code = &arr[i];
+			if (rtl::key_exists(code, 'str_name')){
+				str_name = code['str_name'];
+			}
+			
+			
+			if (code['op'] == BayrellCode::OP_LOAD){
+				
+				if (rtl::key_exists(this.class_map, str_name)){
+					val = this.class_map[str_name];
+				}
+				else if (!rtl::key_exists(this.data, str_name)){
+					this.pushRegister( null );
+					return;
+				}
+				else
+					val = this.data[ str_name ];
+			}
+			
+			else if (code['op'] == BayrellCode::OP_LOAD_ARR){
+				this.run(code['pos']);
+				var pos = this.popRegister();
+				
+				if (!rtl::key_exists(val, pos)){
+					val = null;
+					break;
+				}
+				val = val[ pos ];
+			}
+			
+			else if (code['op'] == BayrellCode::OP_LOAD_STATIC){
+				if (rtl::exists(val) and rtl::is_string(val)){
+					val = [val, str_name];
+				}
+				else{
+					val = null;
+					break;
+				}
+			}
+			
+			else if (code['op'] == BayrellCode::OP_LOAD_DYNAMIC){
+				val = rtl::attr(val, str_name);
+			}
+			
+			else if (code['op'] == BayrellCode::OP_CALL){
+				if (rtl::is_exists(val) and rtl::is_array(val)){
+					this.pushRegister(val);
+					this.op_call(code);
+					val = this.popRegister();
+				}
+				else{
+					val = null;
+					break;
+				}
+			}
+			
+			if (!rtl::exists(val)){
+				val = null;
+				break;
+			}
+		}
+		
+		this.pushRegister( val );
+	}
+	
+	void op_clone(json code_tree){
+	}
+	
+	void op_link(json code_tree){
+	}
+	
+	void op_new(json code_tree){
+	}
+	
+	void op_neg(json code_tree){
+	}
+	
+	void op_add(json code_tree){
+		this.run(code_tree['value']);
+		var value1 = this.popRegister();
+		var value2 = this.popRegister();
+		this.pushRegister(rtl::toInt(value1) + rtl::toInt(value2));
+	}
+	
+	void op_concat(json code_tree){
+		this.run(code_tree['value']);
+		var value2 = this.popRegister();
+		var value1 = this.popRegister();
+		this.pushRegister(rtl::toString(value1) ~ rtl::toString(value2));
+	}
+	
+	void op_sub(json code_tree){
+		this.run(code_tree['value']);
+		var value2 = this.popRegister();
+		var value1 = this.popRegister();
+		this.pushRegister(value1 - value2);
+	}
+	
+	void op_mult(json code_tree){
+		this.run(code_tree['value']);
+		var value2 = this.popRegister();
+		var value1 = this.popRegister();
+		this.pushRegister(value1 * value2);
+	}
+	
+	void op_div(json code_tree){
+		this.run(code_tree['value']);
+		var value2 = this.popRegister();
+		var value1 = this.popRegister();
+		this.pushRegister(value1 / value2);
+	}
+	
+	void op_mod(json code_tree){
+	}
+	
+	void op_not(json code_tree){
+		this.run(code_tree['value']);
+		var value1 = this.popRegister();
+		this.pushRegister(!value1);
+	}
+	
+	void op_or(json code_tree){
+		this.run(code_tree['value']);
+		var value2 = this.popRegister();
+		var value1 = this.popRegister();
+		this.pushRegister(value1 or value2);
+	}
+	
+	void op_and(json code_tree){
+		this.run(code_tree['value']);
+		var value2 = this.popRegister();
+		var value1 = this.popRegister();
+		this.pushRegister(value1 and value2);
+	}
+	
+	void op_pow(json code_tree){
+	}
+	
+	void op_pre_inc(json code_tree){
+	}
+	
+	void op_pre_dec(json code_tree){
+	}
+	
+	void op_post_inc(json code_tree){
+	}
+	
+	void op_post_dec(json code_tree){
+	}
+	
+	void op_inc(json code_tree){
+	}
+	
+	void op_dec(json code_tree){
+	}
+	
+	void op_call(json code_tree){
+		var func_name = this.popRegister();
+		
+		if (!rtl::is_exists(func_name)){
+			this.pushRegister(null);
+			return;
+		}
+		
+		if (!rtl::is_array(func_name)){
+			this.pushRegister(null);
+			return;
+		}
+		
+		array arr = [];
+		
+		array args = &code_tree['args'];
+		int sz = rtl::count(args);
+		for (int i=0;i<sz;i++){
+			this.run(args[i]);
+			rtl::array_push(arr, this.popRegister());
+		}
+		
+		var res = rtl::call_user_func_array(func_name, arr);
+		this.pushRegister(res);
+	}
+	
+	void op_cmp(json code_tree){
+		this.run(code_tree['left']);
+		var left = this.popRegister();
+		
+		this.run(code_tree['right']);
+		var right = this.popRegister();
+		
+		var res = false;
+		
+		if (code_tree['cond'] == "==") res = left == right;
+		if (code_tree['cond'] == ">=") res = left >= right;
+		if (code_tree['cond'] == "<=") res = left <= right;
+		if (code_tree['cond'] == "!=") res = left != right;
+		if (code_tree['cond'] == ">") res = left > right;
+		if (code_tree['cond'] == "<") res = left < right;
+		
+		this.pushRegister(res);
+	}
+	
+	void op_ternary(json code_tree){
+		this.run(code_tree['expr']);
+		var res = this.popRegister();
+		
+		if (rtl::iszero(res)){
+			this.run(code_tree['expr_false']);
+		}
+		else{
+			this.run(code_tree['expr_true']);
+		}
+	}
+	
+	
+	/* Поехали */
+	void run(json code_tree){
+		
+		if (!rtl::exists(code_tree))
+			return "";
+		
+		bool is_json = rtl::is_json(code_tree);
+		bool is_array = rtl::is_array(code_tree);
+		
+		if (!is_json and !is_array)
+			return "";
+		
+		string op = rtl::attr(code_tree, 'op');
+		
+		if (is_json and op == BayrellCode::OP_NOPE){
+			this.op_nope(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_USE){
+			this.op_use(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_COMMENT){
+			this.op_comment(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_CALC){
+			this.op_calc(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_CALC_NOPE){
+			this.op_calc_nope(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_FIXED){
+			this.op_fixed(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_STRING){
+			this.op_string(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_JSON){
+			this.op_json(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_ARRAY){
+			this.op_array(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LOAD){
+			this.op_load(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LOAD_ARR){
+			this.op_load_arr(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LOAD_STATIC){
+			this.op_load_static(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LOAD_DYNAMIC){
+			this.op_load_dynamic(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LOAD_NAMES){
+			this.op_load_names(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LOAD_NAMES_CALC){
+			this.op_load_names(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_CLONE){
+			this.op_clone(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_LINK){
+			this.op_link(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_NEW){
+			this.op_new(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_NEG){
+			this.op_neg(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_ADD){
+			this.op_add(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_SUB){
+			this.op_sub(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_MULT){
+			this.op_mult(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_DIV){
+			this.op_div(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_MOD){
+			this.op_mod(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_NOT){
+			this.op_not(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_AND){
+			this.op_and(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_OR){
+			this.op_or(code_tree);
+		}		
+		else if (is_json and op == BayrellCode::OP_CONCAT){
+			this.op_concat(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_POW){
+			this.op_pow(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_PRE_INC){
+			this.op_pre_inc(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_PRE_DEC){
+			this.op_pre_dec(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_POST_INC){
+			this.op_post_inc(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_POST_DEC){
+			this.op_post_dec(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_INC){
+			this.op_inc(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_DEC){
+			this.op_dec(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_CALL){
+			this.op_call(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_RET){
+			this.op_ret(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_DECLARE_VAR){
+			this.op_declare_var(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_DECLARE_FUNC){
+			this.op_declare_func(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_DECLARE_CLASS){
+			this.op_declare_class(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_ASSIGN){
+			this.op_assign(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_TERNARY){
+			this.op_ternary(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_ASSIGN_INC){
+			this.op_assign_inc(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_ASSIGN_DEC){
+			this.op_assign_dec(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_IF){
+			this.op_if(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_WHILE){
+			this.op_while(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_FOR){
+			this.op_for(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_FOREACH){
+			this.op_foreach(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_THROW){
+			this.op_throw(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_BREAK){
+			this.op_break(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_CONTINUE){
+			this.op_continue(code_tree);
+		}
+		else if (is_json and op == BayrellCode::OP_CMP){
+			this.op_cmp(code_tree);
+		}
+		
+		else if (rtl::is_array(code_tree)){
+			int i = 0;
+			int sz = rtl::count(code_tree);
+			while (i < sz){
+				var code = code_tree[i];
+				if (code != null)
+					this.run(code);
+				i = i + 1;
+			}
+		}
+		
+	}
+	
+}

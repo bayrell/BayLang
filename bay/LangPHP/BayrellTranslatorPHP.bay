@@ -1,0 +1,731 @@
+/*!
+ *  Bayrell Common Languages Transcompiler
+ *
+ *  (c) Copyright 2016-2017 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace bayrell_lang;
+use bayrell_rtl import rtl, re;
+use .BayrellTranslator import BayrellTranslator;
+use .BayrellCode import BayrellCode;
+
+
+export class BayrellTranslatorPHP extends BayrellTranslator {
+	
+	string getClassName(){
+		return "bayrell_lang.BayrellTranslatorPHP";
+	}
+	
+	
+	void constructor (){
+		this._declare_class_level = false;
+		this._calc_level = 0;
+		this._is_func_args = 0;
+		this._is_func_args_count = 0;
+		this._class_name = "";
+		this._class_extend_name = "";
+		this._func_name = "";
+		this._namespace = "";
+		this._semicolon = ";";
+		this._skip_escape_for_big_words = false;
+	}
+	
+	BayrellInterpreter createInterpreter(){
+		BayrellInterpreter runtime = parent();
+		
+		runtime.addData({
+			'PHP': true,
+		});
+		
+		return runtime;
+	}
+	
+	
+	string translate(json code_tree){
+		var _res = this.run(code_tree, 0);
+		_res = "<?php\n" ~ _res;
+		return _res;
+	}
+	
+	/* Операторы */
+	string op_comment(json code_tree, int level){
+		string value = re::replace("\t", this._indent, code_tree['str']);
+		return this.out("/*" ~ value ~ "*/", level);
+	}
+	
+	string op_namespace(json code_tree, int level){
+		var name = code_tree['str_name'];
+		this._namespace = name;
+		name = re::replace("\\.", "\\", name );
+		return this.out("namespace " ~ name ~ this._semicolon, level);
+	}
+	
+	string op_use(json code_tree, int level){
+		
+		/* Инициируем переменные */
+		string _res = "";
+		string name = code_tree['str_name'];
+		string lib_name = name;
+		string lib_path = lib_name;
+		
+		/* Получаем название модуля */
+		array arr = rtl::explode(".", this._namespace);
+		string module_name = rtl::attr(arr, 0, "");
+		
+		/* Если используемый модуль находится в том же модуле, что и namespace */
+		if (lib_name[0] == "."){
+			array arr2 = rtl::explode(".", lib_name);
+			rtl::array_pop(arr2);
+			if (rtl::count(arr2) > 0) arr2[0] = module_name;
+			else rtl::array_push(arr2, module_name);
+			lib_path = rtl::implode("\\", arr2);
+		}
+		else{
+			array arr2 = rtl::explode(".", lib_name);
+			lib_path = rtl::implode("\\", arr2);
+		}
+		
+		int sz = rtl::count(code_tree['arr']);
+		if (sz > 0){
+			for (int i = 0; i < sz; i++){
+				var obj = code_tree['arr'][i];
+				_res = _res ~ this.out("use \\" ~ lib_path ~ "\\" ~ obj ~ this._semicolon, level);
+			}
+		}
+		
+		return _res;
+	}
+	
+	string op_assign(json code_tree, int level){
+		string s = this.run(code_tree['name'], level);
+		string res = this.out(s ~ " = " ~ this.run(code_tree['value'], level) ~ this._semicolon, level);
+		return res;
+	}
+	
+	string op_assign_dec(json code_tree, int level){
+		string s = this.run(code_tree['name'], level);
+		string res = this.out(s ~ " -= " ~ this.run(code_tree['value'], level) ~ this._semicolon, level);
+		return res;
+	}
+	
+	string op_assign_inc(json code_tree, int level){
+		string s = this.run(code_tree['name'], level);
+		string res = this.out(s ~ " += " ~ this.run(code_tree['value'], level) ~ this._semicolon, level);
+		return res;
+	}
+	
+	string op_assign_concat(json code_tree, int level){
+		string s = this.run(code_tree['name'], level);
+		string res = this.out(s ~ " .= " ~ this.run(code_tree['value'], level) ~ this._semicolon, level);
+		return res;
+	}
+	
+	string op_declare_var(json code_tree, int level){
+		string s;
+		
+		if (this._is_func_args){
+			string name = "$" ~ code_tree['str_name'];
+			
+			if (code_tree['flags']['pointer']){
+				name = "&" ~ name;
+			}
+			if (this._is_func_args_count == 0){
+				s = name;
+			}
+			else{
+				s = ", " ~ name;
+			}
+			
+			if (code_tree['value'] != null){
+				s = s ~ " = " ~ this.run(code_tree['value'], level);
+			}
+			
+			this._is_func_args_count = this._is_func_args_count + 1;
+			
+		}
+		/*
+		else if (this._declare_class_level){
+			
+		}
+		*/
+		else{
+			string name = "$" ~ code_tree['str_name'];
+			
+			/*
+			if (code_tree['flags']['const']){
+				name = 'const ' ~  name;
+			}*/
+			if (code_tree['flags']['public']){
+				name = 'public ' ~  name;
+			}
+			else if (code_tree['flags']['private']){
+				name = 'private ' ~  name;
+			}
+			else if (code_tree['flags']['protected']){
+				name = 'protected ' ~  name;
+			}
+			else{
+				if (this._declare_class_level)
+					name = 'public ' ~  name;
+			}
+			
+			if (code_tree['flags']['static']){
+				name = 'static ' ~  name;
+			}
+			
+			if (code_tree['value'] != null){
+				s = name ~ " = " ~ this.run(code_tree['value'], level) ~ this._semicolon;
+			}
+			else{
+				s = name ~ " = null" ~ this._semicolon;
+			}
+			
+			s = this.out(s, level);
+		}
+		
+		return s;
+	}
+	
+	string op_declare_func(json code_tree, int level){
+		var s = '';
+		var args = code_tree['args'];
+		var childs = code_tree['childs'];
+		var func_name = code_tree['str_name'];
+		
+		if (func_name == 'constructor'){
+			func_name = '__construct';
+		}
+		else if (func_name == 'destructor'){
+			func_name = '__destruct';
+		}
+		
+		if (code_tree['flags']['declare']){
+			return '';
+		}
+		
+		var old_declare_class_level = this._declare_class_level;
+		var old_func_args_count = this._is_func_args_count;
+		var old_func_args = this._is_func_args;
+		var old_func_name = this._func_name;
+		
+		this._declare_class_level = false;
+		this._is_func_args = 1;
+		this._is_func_args_count = 0;
+		this._func_name = func_name;
+		/*s = s ~ this.out("", level);*/
+		
+		string name = '';
+		string flag_pointer = "";
+		
+		if (code_tree['flags']['pointer']){
+			flag_pointer = "&";
+		}
+		
+		if (code_tree['flags']['static']){
+			name = 'static function ' ~ flag_pointer ~  func_name;
+		}
+		else {
+			name = 'function ' ~ flag_pointer ~ func_name;
+		}
+		
+		s = s ~ this.out(name ~ "(" ~ this.run(args, level) ~ "){", level);
+		
+		if (func_name == '__construct'){
+			if (this._class_extend_name != "" and rtl::exists(this._class_extend_name)){
+				s = s ~ this.out("parent::__construct();", level+1);
+			}
+		}
+		
+		this._is_func_args = old_func_args;
+		this._is_func_args_count = old_func_args_count;
+		
+		s = s ~ this.run(childs, level+1);
+		s = s ~ this.out("}", level);
+		
+		this._declare_class_level = old_declare_class_level;
+		this._func_name = old_func_name;
+		
+		return s;
+	}
+	
+	string op_declare_class(json code_tree, int level){
+		var s = '';
+		var name = code_tree['str_name'];
+		var childs = code_tree['childs'];
+		var is_export = code_tree['flags']['export'];
+		
+		var old_declare_class_level = this._declare_class_level;
+		var old_class_name = this._class_name;
+		var old_class_extend_name = this._class_extend_name;
+		this._declare_class_level = true;
+		this._class_name = name;
+		this._class_extend_name = code_tree['extend_name'];
+		
+		var extend_name = code_tree['extend_name'];
+		if (!rtl::exists(extend_name)){
+			s = s ~ this.out("class " ~ name ~ "{", level);
+		}
+		else{
+			s = s ~ this.out("class " ~ name ~ " extends "~ extend_name ~" {", level);
+		}
+		
+		s = s ~ this.run(childs, level+1);		
+		s = s ~ this.out("}", level);
+		
+		this._declare_class_level = old_declare_class_level;
+		this._class_extend_name = old_class_extend_name;
+		this._class_name = old_class_name;
+		
+		return s;
+	}
+	
+	string op_ret(json code_tree, int level){
+		var s = "return " ~ this.run(code_tree['value'], level) ~ this._semicolon;
+		return this.out(s, level);
+	}
+	
+	string op_if(json code_tree, int level){
+		var s = '';
+		json expr = code_tree['expr'];
+		array childs_false = code_tree['childs_false'];
+		array childs_true = code_tree['childs_true'];
+		array else_if = code_tree['else_if'];
+		
+		s = s ~ this.out("if (" ~ this.run(expr, level) ~ "){", level);
+		s = s ~ this.run(childs_true, level+1);		
+		s = s ~ this.out("}", level);
+		
+		if (rtl::count(else_if) > 0 and else_if != null){
+			var i = 0;
+			while (i < rtl::count(else_if)){
+				s = s ~ rtl::str_repeat(this._indent, level)  ~ "else ";
+				s = s ~ rtl::trim(this.run(else_if[i], level)) ~ this._clr;
+				i = i + 1;
+			}
+		}
+		
+		if (childs_false != null and rtl::count(childs_false) > 0){
+			s = s ~ this.out("else{", level);
+			s = s ~ this.run(childs_false, level+1);
+			s = s ~ this.out("}", level);
+		}
+		
+		return s;
+	}
+	
+	string op_while(json code_tree, int level){
+		var s = '';
+		var expr = code_tree['expr'];
+		var childs = code_tree['childs'];
+		
+		s = s ~ this.out("while (" ~ this.run(expr, level) ~ ") {", level);
+		s = s ~ this.run(childs, level+1);		
+		s = s ~ this.out("}", level);
+		
+		return s;
+	}
+	
+	string op_for(json code_tree, int level){
+		var s = '';
+		var expr = code_tree['expr'];
+		var loop_init = code_tree['init'];
+		var loop_expression = code_tree['expr'];
+		var loop_inc = code_tree['inc'];
+		var childs = code_tree['childs'];
+		
+		this._semicolon = "";
+		s = s ~ this.out("for (" ~ 
+					rtl::trim(this.run(loop_init, level)) ~ "; " ~ 
+					rtl::trim(this.run(loop_expression, level)) ~ "; " ~ 
+					rtl::trim(this.run(loop_inc, level)) ~ ") {", level);
+		this._semicolon = ";";
+		
+		s = s ~ this.run(childs, level+1);
+		s = s ~ this.out("}", level);
+		
+		return s;
+	}
+	
+	string op_foreach(json code_tree, int level){
+		var s = '';
+		
+		var key_name = code_tree['key_name'];
+		var value_name = code_tree['value_name'];
+		var arr_name = this.run(code_tree['name'], level);
+		var childs = code_tree['childs'];
+		
+		s = s ~ this.out("foreach ("~arr_name~" as $"~key_name~" => $"~value_name~"){", level);
+		s = s ~ this.run(childs, level+1);
+		s = s ~ this.out("}", level);
+		
+		return s;
+	}
+	
+	string op_throw(json code_tree, int level){
+		return this.out("throw " ~ this.run(code_tree['value'], level) ~ this._semicolon, level);
+	}
+	
+	string op_break(json code_tree, int level){
+		return this.out("break" ~ this._semicolon, level);
+	}
+	
+	string op_continue(json code_tree, int level){
+		return this.out("continue" ~ this._semicolon, level);
+	}
+	
+	
+	/* Операции */
+	string op_calc(json code_tree, int level){
+		var _res = '';
+		
+		this._calc_level = this._calc_level + 1;
+		var i = 0;
+		while (i < rtl::count(code_tree['childs'])){
+			var code = code_tree['childs'][i];
+			if (code != null)
+				_res = _res ~ this.run(code, level);
+			i = i + 1;
+		}
+		this._calc_level = this._calc_level - 1;
+		
+		if (this._calc_level > 0)
+			return "(" ~ _res ~ ")";
+		
+		return _res;
+	}
+	
+	string op_ternary(json code_tree, int level){
+		string s = "(" ~ this.run(code_tree['expr'], level) ~ ") ? " ~ 
+			this.run(code_tree['expr_true'], level) ~ " : " ~ this.run(code_tree['expr_false'], level);
+		
+		if (this._calc_level > 0)
+			return "(" ~ s ~ ")";
+			
+		return s;
+	}
+	
+	string op_fixed(json code_tree, int level){
+		return code_tree['str'];
+	}
+	
+	static string string_encode(string s){
+		string _res = "";
+		int sz = rtl::strlen(s);
+		for (int i = 0; i < sz; i++){
+			if (s[i] == '$') _res ~= "\\$";
+			else if (s[i] == '"') _res ~= '\\"';
+			else if (s[i] == '\n') _res ~= '\\n';
+			else if (s[i] == '\t') _res ~= '\\t';
+			else if (s[i] == '\r') _res ~= '\\r';
+			else if (s[i] == '\\') _res ~= '\\\\';
+			else _res ~= s[i];
+		}
+		
+		return '"' ~ _res ~ '"';
+	}
+	
+	string op_string(json code_tree, int level){
+		string s = code_tree['str'];
+		return self::string_encode(s);
+	}
+	
+	
+	
+	string op_json(json code_tree, int level){
+		string _res = "";
+		var obj = code_tree['obj'];
+		int ci = 0;
+		
+		_res ~= "[" ~ this._clr;
+		foreach (string key, var value in obj){
+			_res ~= this.out(this.string_encode(key) ~ " => " ~ this.run(value, level + 1) ~ ",", level + 1);
+			ci++;
+		}
+		_res ~= rtl::str_repeat(this._indent, level) ~ "]";
+		
+		if (ci == 0) 
+			_res = "[]";
+		
+		return _res;
+	}
+	
+	
+	string op_array(json code_tree, int level){
+		array values = &code_tree['values'];
+		bool is_childs = self::isJsonChilds(values);
+		
+		int sz = rtl::count(values);
+		if (sz == 0) 
+			return "[]";
+		
+		string _res = "";
+		if (is_childs){
+			_res = "[" ~ this._clr;
+			for (int i=0;i<sz;i++){
+				var code = &values[i];
+				if (i == sz - 1)
+					_res ~= this.out( this.run(code, level + 1), level + 1);
+				else
+					_res ~= this.out( this.run(code, level + 1) ~ ",", level + 1);
+			}
+			_res ~= rtl::str_repeat(this._indent, level) ~ "]";
+		}
+		else{
+			_res = "[";
+			string ch = "";
+			for (int i=0;i<sz;i++){
+				var code = &values[i];
+				_res ~= ch ~ this.run(code, level + 1);
+				ch = ", ";
+			}
+			_res ~= "]";
+		}
+		
+		return _res;
+	}
+	
+	
+	string op_call(json code_tree, int level){
+		var old_calc_level = this._calc_level;
+		this._calc_level = 0;
+		
+		array args = &code_tree['args'];
+		bool is_childs = self::isJsonChilds(args);
+		
+		int sz = rtl::count(args);
+		if (sz == 0) {
+			this._calc_level = old_calc_level;
+			return "()";
+		}
+		
+		string _res = "";
+		if (is_childs){
+			_res = "(" ~ this._clr;
+			for (int i=0;i<sz;i++){
+				var arg = &args[i];
+				if (i == sz - 1)
+					_res ~= this.out( this.run(arg, level + 1), level + 1);
+				else
+					_res ~= this.out( this.run(arg, level + 1) ~ ",", level + 1);
+			}
+			_res ~= rtl::str_repeat(this._indent, level) ~ ")";
+		}
+		else{
+			_res = "(";
+			string ch = "";
+			for (int i=0;i<sz;i++){
+				var arg = &args[i];
+				_res ~= ch ~ this.run(arg, level + 1);
+				ch = ", ";
+			}
+			_res ~= ")";
+		}
+		
+		
+		this._calc_level = old_calc_level;
+		return _res;
+	}
+	
+	
+	string getName(string name, bool escape = true){
+		if (rtl::in_array(name, ['null', 'false', 'true'])){
+			return name;
+		}
+		if (name == '__CLASS_NAME__'){
+			return "get_called_class()";
+		}
+		else if (name == '__CLASS_FULL_NAME__'){
+			return "call_user_func(get_called_class(), 'getClassName')";
+		}
+		
+		if (escape and this._skip_escape_for_big_words){
+			if (rtl::strtoupper(name) == name){
+				escape = false;
+			}
+		}
+		
+		if (escape)
+			return "$" ~ name;
+			
+		return name;
+	}
+	
+	string op_load(json code_tree, int level){
+		string name = code_tree['str_name'];
+		return this.getName(name);
+	}
+	
+	string op_load_names(json code_tree, int level){
+		var old_calc_level = clone this._calc_level;
+		this._calc_level = 0;
+		
+		var old_skip_escape_for_big_words = this._skip_escape_for_big_words;
+		this._skip_escape_for_big_words = false;
+		
+		array arr = code_tree['arr'];
+		int sz = rtl::count(arr);
+		
+		json code = null;
+		array _res = [];
+		for (int i = 0; i < sz; i++){
+			
+			bool is_escape = true;
+			if (i + 1 < sz){
+				code = arr[i + 1];
+				if (rtl::in_array(code['op'], [BayrellCode::OP_LOAD_STATIC, BayrellCode::OP_CALL])){
+					is_escape = false;
+				}
+			}
+			
+			code = arr[i];
+			string str_name = rtl::attr(code, 'str_name', '');
+			
+			
+			if (code['op'] == BayrellCode::OP_LOAD){
+				
+				if (str_name == 'parent' and this._func_name != 'constructor'){
+					str_name = "parent::" ~ this._func_name;
+				}
+				
+				rtl::array_push(_res, this.getName(str_name, is_escape) );
+			}
+			else if (code['op'] == BayrellCode::OP_LOAD_ARR){
+				rtl::array_push(_res, "[" ~ this.run(code['pos'], level) ~ "]");
+			}
+			else if (code['op'] == BayrellCode::OP_LOAD_STATIC){
+				if (is_escape)
+					rtl::array_push(_res, "::$" ~ str_name);
+				else
+					rtl::array_push(_res, "::" ~ str_name);
+			}
+			else if (code['op'] == BayrellCode::OP_LOAD_DYNAMIC){
+				rtl::array_push(_res, "->" ~ str_name);
+			}
+			else if (code['op'] == BayrellCode::OP_CALL){
+				rtl::array_push(_res, this.op_call(code, level) );
+			}
+		}
+		
+		this._skip_escape_for_big_words = old_skip_escape_for_big_words;
+		this._calc_level = old_calc_level;
+		if (old_calc_level > 0) return rtl::implode("", _res);
+		
+		return this.out(rtl::implode("", _res) ~ this._semicolon, level);
+	}
+	
+	string op_load_names_calc(json code_tree, int level){
+		this._calc_level = this._calc_level + 1;
+		string _res = this.op_load_names(code_tree, level);
+		this._calc_level = this._calc_level - 1;
+		return _res;
+	}
+	
+	string op_clone(json code_tree, int level){
+		return this.run(code_tree['value'], level);
+	}
+	
+	string op_link(json code_tree, int level){
+		return "&" ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_new(json code_tree, int level){
+		return "new " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_del(json code_tree, int level){
+		return this.out("unset(" ~ this.run(code_tree['value'], level) ~ ");", level);
+	}
+	
+	string op_neg(json code_tree, int level){
+		return "-" ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_add(json code_tree, int level){
+		return " + " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_sub(json code_tree, int level){
+		return " - " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_concat(json code_tree, int level){
+		return " . " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_mult(json code_tree, int level){
+		return " * " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_div(json code_tree, int level){
+		return " / " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_mod(json code_tree, int level){
+		return " % " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_not(json code_tree, int level){
+		return "!" ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_and(json code_tree, int level){
+		return " && " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_or(json code_tree, int level){
+		return " || " ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_pow(json code_tree, int level){
+		return "";
+	}
+	
+	string op_pre_inc(json code_tree, int level){
+		return "++" ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_pre_dec(json code_tree, int level){
+		return "--" ~ this.run(code_tree['value'], level);
+	}
+	
+	string op_post_inc(json code_tree, int level){
+		return this.run(code_tree['value'], level) ~ "++";
+	}
+	
+	string op_post_dec(json code_tree, int level){
+		return this.run(code_tree['value'], level) ~ "--";
+	}
+	
+	string op_inc(json code_tree, int level){
+		return this.out(this.run(code_tree['value'], level) ~ "++" ~ this._semicolon, level);
+	}
+	
+	string op_dec(json code_tree, int level){
+		return this.out(this.run(code_tree['value'], level) ~ "--" ~ this._semicolon, level);
+	}
+	
+	string op_cmp(json code_tree, int level){
+		return this.run(code_tree['left'], level) ~ " " ~ code_tree['cond'] ~ " " ~ this.run(code_tree['right'], level);
+	}
+	
+	string op_instanceof(json code_tree, int level){
+		bool old1 = this._skip_escape_for_big_words;
+		this._skip_escape_for_big_words = true;
+		string s = this.run(code_tree['left'], level) ~ " instanceof " ~ this.run(code_tree['right'], level);
+		this._skip_escape_for_big_words = old1;
+		return s;
+	}
+
+}

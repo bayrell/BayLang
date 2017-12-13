@@ -1,0 +1,11 @@
+# bower and nodejs modules dir
+/bower_components
+/node_modules
+
+/es6
+/nodejs
+/php
+/tests
+
+# cache dir
+.cache
