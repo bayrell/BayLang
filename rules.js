@@ -11,18 +11,10 @@ module.exports = {
 	'type': 1,
 	'base_path': base_path,
 	'files': [
-		'BayrellCode',
-		'BayrellParserBay',
-		'BayrellParserES6',
-		//'BayrellParserPHP',
-		'BayrellTranslator',
-		'BayrellTranslatorES6',
-		'BayrellTranslatorPHP',
-		'BayrellTranslatorBay',
-		'BayrellTranslatorNodeJS',
-		'BayrellInterpreter',
-		'AssetLang',
-		'ModuleInfo',
+		'CommonParser',
+		'CommonTranslator',
+		'LangBay/ParserBay',
+		'LangES6/TranslatorES6',
 	],
 };
 

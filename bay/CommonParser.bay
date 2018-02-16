@@ -16,19 +16,29 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang.Opcodes;
-
-use BayrellLang.Opcodes.BaseOpCode;
+namespace BayrellLang;
 
 
-export class OpString extends BaseOpCode{
+use BayrellParser.Opcodes.BaseOpCode;
+use BayrellParser.CoreParser;
+
+
+export class CommonParser extends CoreParser{
 	
-	public string op = "op_string";
-	public string value = null;
 	
-	
-	void constructor(string value){
-		this.value = value;
+	/**
+	 * Returns abstract syntax tree
+	 */
+	BaseOpCode getAST(){
 	}
+	
+	
+	/**
+	 * Parser function
+	 */
+	void runParser(){
+	}
+	
+	
 	
 }

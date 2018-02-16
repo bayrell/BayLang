@@ -16,19 +16,12 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.LangES6;
 
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.CommonTranslator;
 
 
-export class OpString extends BaseOpCode{
+export class TranslatorES6 extends CommonTranslator {
 	
-	public string op = "op_string";
-	public string value = null;
-	
-	
-	void constructor(string value){
-		this.value = value;
-	}
 	
 }

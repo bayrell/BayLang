@@ -7,5 +7,9 @@
 /php
 /tests
 
+!/es6/load.js
+!/nodejs/index.js
+!/nodejs/package.json
+
 # cache dir
 .cache

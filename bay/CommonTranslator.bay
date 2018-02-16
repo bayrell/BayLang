@@ -16,19 +16,25 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang.Opcodes;
-
-use BayrellLang.Opcodes.BaseOpCode;
+namespace BayrellLang;
 
 
-export class OpString extends BaseOpCode{
+use BayrellRtl.CoreObject;
+use BayrellParser.Opcodes.BaseOpCode;
+
+
+export class CommonTranslator extends CoreObject{
 	
-	public string op = "op_string";
-	public string value = null;
 	
 	
-	void constructor(string value){
-		this.value = value;
+	/**
+	 * Translate to language
+	 * @param BaseOpCode code_tree - Abstract syntax tree
+	 * @returns string - The result
+	 */
+	string translate(BaseOpCode code_tree){
+		return "";
 	}
+	
 	
 }
