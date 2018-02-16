@@ -19,17 +19,22 @@
 namespace BayrellLang;
 
 
-use BayrellParser.Opcodes.BaseOpCode;
+use BayrellParser.OpCodes.BaseOpCode;
 use BayrellParser.CoreParser;
 
 
 export class CommonParser extends CoreParser{
 	
 	
+	protected BaseOpCode _result = null;
+	
+	
+	
 	/**
 	 * Returns abstract syntax tree
 	 */
 	BaseOpCode getAST(){
+		return this._result;
 	}
 	
 	
@@ -37,6 +42,7 @@ export class CommonParser extends CoreParser{
 	 * Parser function
 	 */
 	void runParser(){
+		this._result = null;
 	}
 	
 	

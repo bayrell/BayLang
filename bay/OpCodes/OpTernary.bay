@@ -16,9 +16,9 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
 export class OpTernary extends BaseOpCode{
@@ -31,6 +31,7 @@ export class OpTernary extends BaseOpCode{
 	
 	
 	void constructor(BaseOpCode expr = null, BaseOpCode if_true = null, BaseOpCode if_false = null){
+		parent();
 		this.expr = clone expr;
 		this.if_true = clone if_true;
 		this.if_false = clone if_false;

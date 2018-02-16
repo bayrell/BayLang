@@ -16,19 +16,25 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
-use BayrellRtl.Lib.rtl;
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellRtl.Types.Vector;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpMult extends BaseOpCode{
+export class OpNope extends BaseOpCode{
 	
-	public string op = "op_mult";
-	public BaseOpCode value = null;
+	public string op = "op_nope";
+	public Vector<BaseOpCode> childs = null;
 	
-	void constructor(BaseOpCode value = null){
-		this.value = value;
+	
+	void constructor(){
+		parent();
+		this.childs = new Vector<BaseOpCode>();
+	}
+	
+	void destructor(){
+		delete this.childs;
 	}
 	
 }

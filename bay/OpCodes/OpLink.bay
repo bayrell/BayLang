@@ -16,19 +16,20 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpPreDec extends BaseOpCode{
+export class OpLink extends BaseOpCode{
 	
-	public string op = "op_pre_dec";
+	public string op = "op_link";
 	public BaseOpCode value = null;
 	
-	void constructor(BaseOpCode value = null){
+	
+	void constructor(BaseOpCode value){
+		parent();
 		this.value = value;
 	}
-	
 	
 }

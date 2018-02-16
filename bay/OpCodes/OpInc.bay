@@ -15,25 +15,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayrellLang.Opcodes;
 
-use BayrellRtl.Types.Vector;
-use BayrellLang.Opcodes.BaseOpCode;
+namespace BayrellLang.OpCodes;
+
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpMod extends BaseOpCode{
+export class OpInc extends BaseOpCode{
 	
-	public string op = "op_mod";
-	public Vector<BaseOpCode> childs = null;
+	public string op = "op_inc";
+	public BaseOpCode value = null;
 	
-	
-	void constructor(){
-		this.childs = new Vector<BaseOpCode>();
-	}
-	
-	void destructor(){
-		delete this.childs;
-	}
 	
 }

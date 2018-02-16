@@ -16,23 +16,16 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellRtl.CoreObject;
 
 
-export class OpCmp extends BaseOpCode{
+export class BaseOpCode extends CoreObject{
 	
-	public string op = "op_cmp";
+	public string op = "";
 	
-	public string cond = "";
-	public BaseOpCode left = null;
-	public BaseOpCode right = null;
-	
-	
-	void constructor(BaseOpCode left = null, BaseOpCode right = null){
-		this.left = left;
-		this.right = right;
+	void constructor(){
+		parent(null);
 	}
-	
 }

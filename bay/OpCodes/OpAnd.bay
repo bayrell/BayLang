@@ -16,19 +16,20 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
 use BayrellRtl.Types.Vector;
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpNope extends BaseOpCode{
+export class OpAnd extends BaseOpCode{
 	
-	public string op = "op_nope";
+	public string op = "op_and";
 	public Vector<BaseOpCode> childs = null;
 	
 	
 	void constructor(){
+		parent();
 		this.childs = new Vector<BaseOpCode>();
 	}
 	

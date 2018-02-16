@@ -15,20 +15,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+ 
+namespace BayrellLang.OpCodes;
 
-namespace BayrellLang.Opcodes;
-
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpString extends BaseOpCode{
+export class OpNeg extends BaseOpCode{
 	
-	public string op = "op_string";
-	public string value = null;
+	public string op = "op_neg";
+	public BaseOpCode value = null;
 	
-	
-	void constructor(string value){
-		this.value = value;
-	}
 	
 }

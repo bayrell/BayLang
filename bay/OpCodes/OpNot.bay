@@ -16,18 +16,18 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpFixed extends BaseOpCode{
+export class OpNeg extends BaseOpCode{
 	
-	public string op = "op_fixed";
-	public string value = null;
+	public string op = "op_neg";
+	public BaseOpCode value = null;
 	
-	
-	void constructor(string value){
+	void constructor(BaseOpCode value = null){
+		parent();
 		this.value = value;
 	}
 	

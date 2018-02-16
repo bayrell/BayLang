@@ -15,19 +15,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+ 
+namespace BayrellLang.OpCodes;
 
-namespace BayrellLang.Opcodes;
-
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpSub extends BaseOpCode{
+export class OpArray extends BaseOpCode{
 	
-	public string op = "op_sub";
-	public BaseOpCode value = null;
+	public string op = "op_array";
+	public Vector<BaseOpCode> childs = null;
 	
-	void constructor(BaseOpCode value = null){
-		this.value = value;
+	
+	void constructor(){
+		parent();
+		this.childs = new Vector<BaseOpCode>();
+	}
+	
+	void destructor(){
+		delete this.childs;
 	}
 	
 }

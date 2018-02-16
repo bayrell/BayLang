@@ -19,11 +19,11 @@
 namespace BayrellLang;
 
 
-use BayrellRtl.CoreObject;
+use BayrellRtl.ContextObject;
 use BayrellParser.Opcodes.BaseOpCode;
 
 
-export class CommonTranslator extends CoreObject{
+export class CommonTranslator extends ContextObject{
 	
 	
 	

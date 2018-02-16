@@ -18,7 +18,16 @@
 
 namespace BayrellLang.LangBay;
 
+use BayrellRtl.Types.Vector;
 use BayrellLang.CommonParser;
+use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpFixed;
+use BayrellLang.OpCodes.OpCalc;
+use BayrellLang.OpCodes.OpAdd;
+use BayrellLang.OpCodes.OpSub;
+use BayrellLang.OpCodes.OpMult;
+use BayrellLang.OpCodes.OpDiv;
+use BayrellParser.ParserToken;
 
 
 export class ParserBay extends CommonParser{
@@ -26,9 +35,137 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read double value and
+	 * @return OpFixed
+	 */
+	OpFixed readDouble(){
+		return new OpFixed( this.matchDouble() );
+	}
+	
+	
+	
+	/**
+	 * Read op name
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOpName(){
+		return this.readDouble();
+	}
+	
+	
+	
+	/**
+	 * Read arithmetic multiply
+	 * @return OpMult
+	 */
+	OpMult readArithmeticMultiply (){
+		this.match('*');
+		return new OpMult(this.readOpName());
+	}
+	
+	
+	
+	/**
+	 * Read arithmetic divide
+	 * @return OpDiv
+	 */
+	OpDiv readArithmeticDivide (){
+		this.match('/');
+		return new OpDiv(this.readOpName());
+	}
+	
+	
+	
+	/**
+	 * Read arithmetic multiply and divide
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readArithmeticFactor (){
+		Vector<BaseOpCode> childs = new Vector();
+		
+		/* Read first opcode */
+		childs.push( this.readOpName() );
+		
+		while ((this.findNextToken('*') or this.findNextToken('/')) and !this.isEOF() ){
+			if (this.findNextToken('*')){
+				childs.push( this.readArithmeticMultiply() );
+			}
+			else if (this.readDivide('/')){
+				childs.push( this.readArithmeticDivide() );
+			}
+			else{
+				this.nextTokenExpected('"*" or "/"');
+			}
+		}
+		
+		if (childs.count() == 1){
+			return childs.item(0);
+		}
+		
+		return new OpCalc( childs );
+	}
+	
+	
+	
+	/**
+	 * Read arithmetic add
+	 * @return OpAdd
+	 */
+	OpAdd readArithmeticAdd (){
+		this.match('+');
+		return new OpAdd( this.readArithmeticFactor() );
+	}
+	
+	
+	
+	/**
+	 * Read arithmetic sub
+	 * @return OpSub
+	 */
+	OpSub readArithmeticSub (){
+		this.match('-');
+		return new OpSub( this.readArithmeticFactor() );
+	}
+	
+	
+	
+	/**
+	 * Read arithmetic expression
+	 * @return OpCalc
+	 */
+	OpCalc readArithmetic(){
+		Vector<BaseOpCode> childs = new Vector();
+		
+		/* Read first opcode */
+		childs.push( this.readArithmeticFactor() );
+		
+		while ((this.findNextToken('+') or this.findNextToken('-')) and !this.isEOF() ){
+			if (this.findNextToken('+')){
+				childs.push( this.readArithmeticAdd() );
+			}
+			else if (this.readDivide('-')){
+				childs.push( this.readArithmeticSub() );
+			}
+			else{
+				this.nextTokenExpected('"+" or "-"');
+			}
+		}
+		
+		if (childs.count() == 1){
+			return childs.item(0);
+		}
+		
+		return new OpCalc( childs );
+	}
+	
+	
+	
+	
+	/**
 	 * Parser function
 	 */
 	void runParser(){
+		this._result = this.readArithmetic();
 	}
 	
 	

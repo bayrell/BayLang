@@ -16,14 +16,14 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.Opcodes;
+namespace BayrellLang.OpCodes;
 
-use BayrellLang.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpNeg extends BaseOpCode{
+export class OpDec extends BaseOpCode{
 	
-	public string op = "op_neg";
+	public string op = "op_dec";
 	public BaseOpCode value = null;
 	
 	
