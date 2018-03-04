@@ -21,6 +21,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 	$load([
 		"/assets/bayrell_lang_es6/CommonParser.js",
 		"/assets/bayrell_lang_es6/CommonTranslator.js",
+		"/assets/bayrell_lang_es6/ModuleDescription.js",
 		"/assets/bayrell_lang_es6/OpCodes/BaseOpCode.js",
 	])
 	.load([

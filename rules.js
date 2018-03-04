@@ -13,6 +13,7 @@ module.exports = {
 	'files': [
 		'CommonParser',
 		'CommonTranslator',
+		'ModuleDescription',
 		'OpCodes/BaseOpCode',
 		'OpCodes/OpAdd',
 		'OpCodes/OpAnd',
