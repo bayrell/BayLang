@@ -19,9 +19,9 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellRtl.Interfaces.SerializeInterface;
 
-
-export class OpArray extends BaseOpCode{
+export class OpArray extends BaseOpCode implements SerializeInterface{
 	
 	public string op = "op_array";
 	public Vector<BaseOpCode> childs = null;

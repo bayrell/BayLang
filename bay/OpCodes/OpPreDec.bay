@@ -19,9 +19,9 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellRtl.Interfaces.SerializeInterface;
 
-
-export class OpPreDec extends BaseOpCode{
+export class OpPreDec extends BaseOpCode implements SerializeInterface{
 	
 	public string op = "op_pre_dec";
 	public BaseOpCode value = null;

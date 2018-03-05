@@ -20,9 +20,9 @@ namespace BayrellLang.OpCodes;
 
 use BayrellRtl.Lib.rtl;
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellRtl.Interfaces.SerializeInterface;
 
-
-export class OpMult extends BaseOpCode{
+export class OpMult extends BaseOpCode implements SerializeInterface{
 	
 	public string op = "op_mult";
 	public BaseOpCode value = null;

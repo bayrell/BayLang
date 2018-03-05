@@ -20,9 +20,9 @@ namespace BayrellLang.OpCodes;
 
 use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellRtl.Interfaces.SerializeInterface;
 
-
-export class OpPow extends BaseOpCode{
+export class OpPow extends BaseOpCode implements SerializeInterface{
 	
 	public string op = "op_add";
 	public Vector<BaseOpCode> childs = null;
