@@ -27,9 +27,80 @@ export class OpString extends BaseOpCode{
 	public string value = null;
 	
 	
-	void constructor(string value){
+	
+	/**
+	 * Returns classname of the object
+	 * @return string
+	 */
+	public string getClassName(){
+		return "BayrellLang.OpCodes.OpString";
+	}
+	
+	
+	
+	/**
+	 * Constructor
+	 */ 
+	void constructor(string value = null){
 		parent();
 		this.value = value;
 	}
 	
+	
+	
+	/**
+	 * Destructor
+	 */ 
+	void destructor(){
+		delete this.value;
+		parent();
+	}
+	
+	
+	
+	/**
+	 * Returns name of variables to serialization
+	 * @return Vector<string>
+	 */
+	public void getVariablesNames(Vector<string> names){
+		parent::getVariablesNames(names);
+		names.push("value");
+	}
+	
+	
+	
+	/**
+	 * Returns instance of the value by variable name
+	 * @param string variable_name
+	 * @return var
+	 */
+	public var takeValue(string variable_name, var default_value = null){
+		if (variable_name == 'value') return this.value;
+		return parent::takeValue(variable_name, default_value);
+	}
+	
+	
+	
+	/**
+	 * Set new value instance by variable name
+	 * @param string variable_name
+	 * @param var value
+	 */
+	public void assignValue(string variable_name, var value){
+		if (variable_name == 'value') this.value = value;
+		else parent::assignValue(variable_name, value);
+	}
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpString){
+			this.value = clone obj.value;
+		}
+		parent::assign(obj);
+	}
 }

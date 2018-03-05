@@ -33,39 +33,95 @@ export class OpFlags extends BaseOpCode{
 	public bool p_private = false;
 	public bool p_protected = false;
 	public bool p_declare = false;
-	/*public bool p_pointer = false;*/
 	
 	
 	static const array FLAGS = [
-		'export', 'static', 'const', 'public', 'private', 'declare', 'protected', 
-		'async',
-		/*'pointer'*/
+		'export', 'static', 'const', 'public', 'private', 
+		'declare', 'protected', 'async',
 	];
 	
 	
-	public void setFlag(string name, bool value){
-		if (name == 'export') this.p_export = value;
-		else if (name == 'static') this.p_static = value;
-		else if (name == 'const') this.p_const = value;
-		else if (name == 'public') this.p_public = value;
-		else if (name == 'private') this.p_private = value;
-		else if (name == 'declare') this.p_declare = value;
-		else if (name == 'protected') this.p_protected = value;
-		else if (name == 'async') this.p_async = value;
-		/*else if (name == 'pointer') this.p_pointer = value;*/
+	/**
+	 * Returns classname of the object
+	 * @return string
+	 */
+	public string getClassName(){
+		return "BayrellLang.OpCodes.OpFlags";
 	}
 	
-	public void getFlag(string name){
-		if (name == 'export') return this.p_export;
-		else if (name == 'static') return this.p_static;
-		else if (name == 'const') return this.p_const;
-		else if (name == 'public') return this.p_public;
-		else if (name == 'private') return this.p_private;
-		else if (name == 'declare') return this.p_declare;
-		else if (name == 'protected') return this.p_protected;
-		else if (name == 'async') return this.p_async;
-		/*else if (name == 'pointer') return this.p_pointer;*/
-		return false;
+	
+	
+	/**
+	 * Returns name of variables to serialization
+	 * @return Vector<string>
+	 */
+	public void getVariablesNames(Vector<string> names){
+		parent::getVariablesNames(names);
+		names.push("export");
+		names.push("static");
+		names.push("const");
+		names.push("public");
+		names.push("private");
+		names.push("declare");
+		names.push("protected");
+		names.push("async");
 	}
 	
+	
+	
+	/**
+	 * Returns instance of the value by variable name
+	 * @param string variable_name
+	 * @return var
+	 */
+	public var takeValue(string variable_name, var default_value = null){
+		if (variable_name == 'export') return this.p_export;
+		else if (variable_name == 'static') return this.p_static;
+		else if (variable_name == 'const') return this.p_const;
+		else if (variable_name == 'public') return this.p_public;
+		else if (variable_name == 'private') return this.p_private;
+		else if (variable_name == 'declare') return this.p_declare;
+		else if (variable_name == 'protected') return this.p_protected;
+		else if (variable_name == 'async') return this.p_async;
+		return parent::takeValue(variable_name, default_value);
+	}
+	
+	
+	
+	/**
+	 * Set new value instance by variable name
+	 * @param string variable_name
+	 * @param var value
+	 */
+	public void assignValue(string variable_name, var value){
+		if (variable_name == 'export') this.p_export = value;
+		else if (variable_name == 'static') this.p_static = value;
+		else if (variable_name == 'const') this.p_const = value;
+		else if (variable_name == 'public') this.p_public = value;
+		else if (variable_name == 'private') this.p_private = value;
+		else if (variable_name == 'declare') this.p_declare = value;
+		else if (variable_name == 'protected') this.p_protected = value;
+		else if (variable_name == 'async') this.p_async = value;
+		else parent::assignValue(variable_name, value);
+	}
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpFlags){
+			this.p_async = obj.p_async;
+			this.p_export = obj.p_export;
+			this.p_static = obj.p_static;
+			this.p_const = obj.p_const;
+			this.p_public = obj.p_public;
+			this.p_private = obj.p_private;
+			this.p_protected = obj.p_protected;
+			this.p_declare = obj.p_declare;
+		}
+		parent::assign(obj);
+	}
 }

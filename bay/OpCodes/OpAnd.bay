@@ -28,13 +28,81 @@ export class OpAnd extends BaseOpCode{
 	public Vector<BaseOpCode> childs = null;
 	
 	
+	/**
+	 * Returns classname of the object
+	 * @return string
+	 */
+	public string getClassName(){
+		return "BayrellLang.OpCodes.OpAnd";
+	}
+	
+	
+	
+	/**
+	 * Constructor
+	 */
 	void constructor(){
 		parent();
 		this.childs = new Vector<BaseOpCode>();
 	}
 	
+	
+	
+	/**
+	 * Destructor
+	 */
 	void destructor(){
 		delete this.childs;
+		parent();
 	}
 	
+	
+	
+	/**
+	 * Returns name of variables to serialization
+	 * @return Vector<string>
+	 */
+	public void getVariablesNames(Vector<string> names){
+		parent::getVariablesNames(names);
+		names.push("childs");
+	}
+	
+	
+	
+	/**
+	 * Returns instance of the value by variable name
+	 * @param string variable_name
+	 * @return var
+	 */
+	public var takeValue(string variable_name, var default_value = null){
+		if (variable_name == 'childs')
+			return this.childs;
+		return parent::takeValue(variable_name, default_value);
+	}
+	
+	
+	
+	/**
+	 * Set new value instance by variable name
+	 * @param string variable_name
+	 * @param var value
+	 */
+	public void assignValue(string variable_name, var value){
+		if (variable_name == 'op') this.childs = value;
+		else
+			parent::assignValue(variable_name, value);
+	}
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpAnd){
+			this.childs = clone obj.childs;
+		}
+		parent::assign(obj);
+	}
 }
