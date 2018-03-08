@@ -20,7 +20,7 @@ namespace BayrellLang;
 
 
 use BayrellRtl.ContextObject;
-use BayrellParser.Opcodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
 export class CommonTranslator extends ContextObject{

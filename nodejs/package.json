@@ -1,14 +1,12 @@
 {
-  "description": "Bayrell RTL",
+  "description": "Bayrell Lang",
   "files": [
-	"Exceptions/*.js",
-	"Interfaces/*.js",
-	"Lib/*.js",
-	"Providers/*.js",
-	"Types/*.js",
+	"LangBay/*.js",
+	"LangES6/*.js",
+	"OpCodes/*.js",
     "*.js"
   ],
   "main": "index.js",
-  "name": "BayrellRtl",
+  "name": "BayrellLang",
   "version": "0.2.0"
 }

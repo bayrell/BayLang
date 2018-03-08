@@ -19,7 +19,7 @@
 namespace BayrellLang;
 
 
-use BayrellParser.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.BaseOpCode;
 use BayrellParser.CoreParser;
 
 
