@@ -1,0 +1,14 @@
+{
+  "description": "Bayrell RTL",
+  "files": [
+	"Exceptions/*.js",
+	"Interfaces/*.js",
+	"Lib/*.js",
+	"Providers/*.js",
+	"Types/*.js",
+    "*.js"
+  ],
+  "main": "index.js",
+  "name": "BayrellRtl",
+  "version": "0.2.0"
+}

@@ -19,8 +19,8 @@
 namespace BayrellLang;
 
 use BayrellRtl.Interfaces.ModuleDescriptionInterface;
-use BayrellRtl.ProviderDescription;
-use BayrellRtl.ModuleRequireDescription;
+use BayrellRtl.Descriptions.ProviderDescription;
+use BayrellRtl.Descriptions.ModuleRequireDescription;
 use BayrellRtl.Types.Vector;
 
 
