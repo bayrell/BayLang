@@ -22,7 +22,7 @@ use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpNope extends BaseOpCode implements SerializeInterface{
+export class OpNope extends BaseOpCode{
 	
 	public string op = "op_nope";
 	public Vector<BaseOpCode> childs = null;

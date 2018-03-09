@@ -21,7 +21,7 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpInc extends BaseOpCode implements SerializeInterface{
+export class OpInc extends BaseOpCode{
 	
 	public string op = "op_inc";
 	public BaseOpCode value = null;

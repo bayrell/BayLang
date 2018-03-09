@@ -21,7 +21,7 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpTernary extends BaseOpCode implements SerializeInterface{
+export class OpTernary extends BaseOpCode{
 	
 	public string op = "op_ternary";
 	

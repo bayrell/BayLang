@@ -18,10 +18,11 @@
 
 namespace BayrellLang;
 
+use BayrellRtl.Interfaces.ContextInterface;
 use BayrellRtl.Interfaces.ModuleDescriptionInterface;
 use BayrellRtl.Descriptions.ProviderDescription;
-use BayrellRtl.Descriptions.ModuleRequireDescription;
 use BayrellRtl.Types.Vector;
+use BayrellRtl.Types.Map;
 
 
 class ModuleDescription implements ModuleDescriptionInterface{
@@ -61,9 +62,9 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * @return Vector<string>
 	 */	
 	public static Vector<string> getInterfaces(){
-		Vector<string> res = new Vector();
-		res.push('BayrellRtl.Interfaces.ModuleDescriptionInterface');
-		return res;
+		return (new Vector())
+			.push('BayrellRtl.Interfaces.ModuleDescriptionInterface')
+		;
 	}
 	
 	
@@ -80,15 +81,15 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	
 	/**
 	 * Returns required modules
-	 * @return Vector<ModuleRequireDescription>
+	 * @return Map<string, string>
 	 */	
-	public static Vector<ModuleRequireDescription> getRequiredModules(){
-		Vector<ModuleRequireDescription> res = new Vector();
-		
-		res.push( new ModuleRequireDescription('BayrellRtl', '>=0.2 <1.0') );
-		res.push( new ModuleRequireDescription('BayrellParser', '>=0.1 <1.0') );
-		
-		return res;
+	public static Map<string, string> getRequiredModules(){
+		return (new Map<string, string>())
+			.set('BayrellRtl', '>=0.2 <1.0')
+			.set('BayrellParser', '>=0.1 <1.0')
+		;
 	}
+	
+	
 
 }

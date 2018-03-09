@@ -22,7 +22,7 @@ use BayrellRtl.Lib.rtl;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpMult extends BaseOpCode implements SerializeInterface{
+export class OpMult extends BaseOpCode{
 	
 	public string op = "op_mult";
 	public BaseOpCode value = null;

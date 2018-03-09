@@ -21,7 +21,7 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpFlags extends BaseOpCode implements SerializeInterface{
+export class OpFlags extends BaseOpCode{
 	
 	public string op = "op_flags";
 	
