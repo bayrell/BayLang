@@ -18,11 +18,10 @@
 
 namespace BayrellLang;
 
+use BayrellRtl.Types.Map;
+use BayrellRtl.Types.Vector;
 use BayrellRtl.Interfaces.ContextInterface;
 use BayrellRtl.Interfaces.ModuleDescriptionInterface;
-use BayrellRtl.Descriptions.ProviderDescription;
-use BayrellRtl.Types.Vector;
-use BayrellRtl.Types.Map;
 
 
 class ModuleDescription implements ModuleDescriptionInterface{
@@ -58,6 +57,15 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	
 	
 	/**
+	 * Called then module registed in context
+	 * @param ContextInterface context
+	 */
+	public static void onRegister(ContextInterface context){
+	}
+	
+	
+	
+	/**
 	 * Returns description interfaces of the current module
 	 * @return Vector<string>
 	 */	
@@ -65,16 +73,6 @@ class ModuleDescription implements ModuleDescriptionInterface{
 		return (new Vector())
 			.push('BayrellRtl.Interfaces.ModuleDescriptionInterface')
 		;
-	}
-	
-	
-	
-	/**
-	 * Returns providers
-	 * @return Vector<ProviderDescription>
-	 */	
-	public static Vector<ProviderDescription> getProviders(){
-		return null;
 	}
 	
 	

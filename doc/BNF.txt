@@ -1,0 +1,47 @@
+
+# Простые определения
+Digit = '0' | '1' | '2' | .. | '9';
+HexDigit = <Digit> | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f';
+Symbol = 'A' | .. | 'Z' | 'a' .. 'z';
+Digits = <Digit> { <Digit> };
+HexDigits = <HexDigit> { <HexDigit> };
+Number = ['+' | '-'] <Digits> ['.' <Digits>];
+HexNumber = ['+' | '-'] '0x' <HexDigits>;
+String = '"' {<Char>} '"'
+Fixed = <Number> | <HexNumber> | <String>;
+Identifier = <Symbol> { <Digit> | <Symbol> | '_' };
+DynamicIdentifier = <Identifier> {'.' <Identifier>};
+
+
+
+# Вызов функции
+CallArgs = <Expression> {"," <Expression>};
+CallBody = '(' { <CallArgs> } ')';
+CallMethod = <Identifier> { <CallBody> };
+CallDynamic = <CallMethod> {'.' <CallMethod>};
+CallStatic = <DynamicIdentifier> '::' <CallDynamic>;
+
+NewInstance = 'new' <DynamicIdentifier> <CallBody>;
+CallOperator = ( '(' + <NewInstance> + ')' + {'.' <CallMethod>} ) |  <CallDynamic> | <CallStatic>;
+CallAwait = 'await' <CallOperator>;
+
+
+
+CompareOperators = '==' | '!=' | '<>' | '===' | '<' | '>' | '<=' | '>=' | 
+                   'instanceof' | 'implements';
+
+
+# Выражения
+ExpressionElement = ['!'] <Fixed> | <CallOperator> | '(' <Expression> ')';
+ExpressionDivide = <ExpressionElement> { ('%' | 'div', 'mod', '>>', '<<' ) <ExpressionElement> };
+ExpressionFactor = <ExpressionDivide> { ( '/' |'*' |'&' | 'xor' ) <ExpressionDivide> };
+ExpressionArithmetic = <ExpressionFactor> { ('+' | '-' | '|' ) <ExpressionFactor> };
+ExpressionConcat = <ExpressionArithmetic> { '~' <ExpressionArithmetic> };
+ExpressionCompare = <ExpressionConcat> { <CompareOperators> <ExpressionConcat> };
+
+ExpressionNot = ['not'] <ExpressionCompare>;
+ExpressionAnd = <ExpressionNot> { ( 'and' | '&&' ) <ExpressionNot> };
+ExpressionOr = <ExpressionAnd> { ( 'or' | '||' ) <ExpressionAnd> };
+
+Expression = ['clone'] <ExpressionOr> | <NewInstance>;
+OperatorAssign = [<DynamicIdentifier>] <Identifier> '=' <Expression> | (['clone'] <CallAwait>);
