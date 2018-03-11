@@ -11,6 +11,7 @@ String = '"' {<Char>} '"'
 Fixed = <Number> | <HexNumber> | <String>;
 Identifier = <Symbol> { <Digit> | <Symbol> | '_' };
 DynamicIdentifier = <Identifier> {'.' <Identifier>};
+TypeIdentifier = <DynamicIdentifier> ['<' <DynamicIdentifier>  '>'];
 
 
 
@@ -19,16 +20,15 @@ CallArgs = <Expression> {"," <Expression>};
 CallBody = '(' { <CallArgs> } ')';
 CallMethod = <Identifier> { <CallBody> };
 CallDynamic = <CallMethod> {'.' <CallMethod>};
-CallStatic = <DynamicIdentifier> '::' <CallDynamic>;
+CallStatic = <TypeIdentifier> '::' <CallDynamic>;
 
-NewInstance = 'new' <DynamicIdentifier> <CallBody>;
-CallOperator = ( '(' + <NewInstance> + ')' + {'.' <CallMethod>} ) |  <CallDynamic> | <CallStatic>;
+NewInstance = 'new' <TypeIdentifier> <CallBody>;
+CallOperator = ( '(' <NewInstance> ')' {'.' <CallMethod>} ) |  <CallDynamic> | <CallStatic>;
 CallAwait = 'await' <CallOperator>;
 
 
 
-CompareOperators = '==' | '!=' | '<>' | '===' | '<' | '>' | '<=' | '>=' | 
-                   'instanceof' | 'implements';
+CompareOperators = '==' | '!=' | '<>' | '===' | '<' | '>' | '<=' | '>=' | 'instanceof' | 'implements';
 
 
 # Выражения
@@ -44,4 +44,4 @@ ExpressionAnd = <ExpressionNot> { ( 'and' | '&&' ) <ExpressionNot> };
 ExpressionOr = <ExpressionAnd> { ( 'or' | '||' ) <ExpressionAnd> };
 
 Expression = ['clone'] <ExpressionOr> | <NewInstance>;
-OperatorAssign = [<DynamicIdentifier>] <Identifier> '=' <Expression> | (['clone'] <CallAwait>);
+OperatorAssign = [<TypeIdentifier>] <Identifier> '=' <Expression> | (['clone'] <CallAwait>);

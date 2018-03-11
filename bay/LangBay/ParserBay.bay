@@ -86,7 +86,7 @@ export class ParserBay extends CommonParser{
 		/* Read first opcode */
 		childs.push( this.readOpName() );
 		
-		while ((this.findNextToken('*') or this.findNextToken('/')) and !this.isEOF() ){
+		while ((this.findNextToken('*') or this.findNextToken('/')) and not this.isEOF()){
 			if (this.findNextToken('*')){
 				childs.push( this.readArithmeticMultiply() );
 			}
@@ -139,7 +139,7 @@ export class ParserBay extends CommonParser{
 		/* Read first opcode */
 		childs.push( this.readArithmeticFactor() );
 		
-		while ((this.findNextToken('+') or this.findNextToken('-')) and !this.isEOF() ){
+		while ((this.findNextToken('+') or this.findNextToken('-')) and not this.isEOF() ){
 			if (this.findNextToken('+')){
 				childs.push( this.readArithmeticAdd() );
 			}
