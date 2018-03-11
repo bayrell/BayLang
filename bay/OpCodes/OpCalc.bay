@@ -25,7 +25,7 @@ use BayrellRtl.Interfaces.SerializeInterface;
 export class OpCalc extends BaseOpCode{
 	
 	public string op = "op_calc";
-	public Vector<BaseOpCode> childs = null;
+	public BaseOpCode value = null;
 	
 	
 	/**
@@ -41,9 +41,9 @@ export class OpCalc extends BaseOpCode{
 	/**
 	 * Constructor
 	 */
-	void constructor(Vector<BaseOpCode> childs){
+	void constructor(BaseOpCode value){
 		parent();
-		this.childs = childs;
+		this.value = value;
 	}
 	
 	
@@ -52,7 +52,7 @@ export class OpCalc extends BaseOpCode{
 	 * Destructor
 	 */
 	void destructor(){
-		delete this.childs;
+		delete this.value;
 		parent();
 	}
 	
@@ -64,7 +64,7 @@ export class OpCalc extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("childs");
+		names.push("value");
 	}
 	
 	
@@ -75,8 +75,7 @@ export class OpCalc extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'childs')
-			return this.childs;
+		if (variable_name == 'value') return this.value;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -88,7 +87,7 @@ export class OpCalc extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'op') this.childs = value;
+		if (variable_name == 'value') this.value = value;
 		else
 			parent::assignValue(variable_name, value);
 	}
@@ -101,7 +100,7 @@ export class OpCalc extends BaseOpCode{
 	 */
 	void assign(CoreObject obj){
 		if (obj instanceof OpCalc){
-			this.childs = clone obj.childs;
+			this.value = clone obj.value;
 		}
 		parent::assign(obj);
 	}

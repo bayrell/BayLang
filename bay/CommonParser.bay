@@ -18,8 +18,9 @@
 
 namespace BayrellLang;
 
-
+use BayrellRtl.Lib.rs;
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellParser.ParserToken;
 use BayrellParser.CoreParser;
 
 
@@ -31,11 +32,132 @@ export class CommonParser extends CoreParser{
 	
 	
 	/**
+	 * Return true if char is alfa symbol
+	 * @param char ch
+	 * @return boolean
+	 */
+	bool isSymbolChar (char ch){
+		return rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1;
+	}
+	
+	
+	
+	/**
+	 * Return true if char is number
+	 * @param char ch
+	 * @return boolean
+	 */
+	bool isNumChar (char ch){
+		return rs::strpos('0123456789', ch) !== -1;
+	}
+	
+	
+	
+	/**
+	 * Return true if string is alfa string
+	 * @param string ch
+	 * @return boolean
+	 */
+	bool isSymbolString (string s){
+		int sz = rs::strlen(s);
+		for (var i=0; i<sz; i++){
+			if (not this.isSymbolChar(s[i]))
+				return false;
+		}
+		return true;
+	}
+	
+	
+	
+	/**
+	 * Return true if string is number
+	 * @param string ch
+	 * @return boolean
+	 */
+	bool isNumString (string s){
+		int sz = rs::strlen(s);
+		for (var i=0; i<sz; i++){
+			if (not this.isNumChar(s[i]))
+				return false;
+		}
+		return true;
+	}
+	
+	
+	
+	/**
+	 * Return true if string is alfa string
+	 * @param string ch
+	 * @return boolean
+	 */
+	bool isSymbolOrNumString (string s){
+		int sz = rs::strlen(s);
+		for (var i=0; i<sz; i++){
+			if (not this.isAlphaChar(s[i]) and not this.isNumChar(s[i]))
+				return false;
+		}
+		return true;
+	}
+	
+	
+	
+	
+	/**
+	 * Return if next token is number
+	 * @return boolean
+	 */
+	bool isNextTokenNumber(){
+		return 
+			this.isNumString(this.next_token.token) and 
+			this.next_token.tp == ParserToken::TOKEN_BASE;
+	}
+	
+	
+	
+	/**
+	 * Return if next token is alfa string
+	 * @return boolean
+	 */
+	bool isNextTokenSymbol(){
+		return 
+			this.isSymbolString(this.next_token.token) and 
+			this.next_token.tp == ParserToken::TOKEN_BASE;
+	}
+	
+	
+	
+	/**
+	 * Check next string is number
+	 * @return {string} number
+	 */
+	string matchNumber(){
+		
+		if (not this.isNextTokenNumber()){
+			this.nextTokenExpected("number");
+		}
+		
+		string value = this.readNextToken().token;
+		if (this.findNextToken(".")){
+			this.matchNextToken(".");
+			
+			if (not this.isNextTokenNumber()){
+				this.nextTokenExpected("double");
+			}
+			value ~= "." ~ this.readNextToken().token;
+		}
+		
+		return value;
+	}
+	
+	
+	
+	/**
 	 * Returns abstract syntax tree
 	 */
 	BaseOpCode getAST(){
 		return this._result;
 	}
+	
 	
 	
 	/**

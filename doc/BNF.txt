@@ -32,6 +32,7 @@ CompareOperators = '==' | '!=' | '<>' | '===' | '<' | '>' | '<=' | '>=' | 'insta
 
 
 # Выражения
+# https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
 ExpressionElement = ['!'] <Fixed> | <CallOperator> | '(' <Expression> ')';
 ExpressionDivide = <ExpressionElement> { ('%' | 'div', 'mod', '>>', '<<' ) <ExpressionElement> };
 ExpressionFactor = <ExpressionDivide> { ( '/' |'*' |'&' | 'xor' ) <ExpressionDivide> };

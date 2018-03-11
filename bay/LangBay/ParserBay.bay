@@ -22,7 +22,6 @@ use BayrellRtl.Types.Vector;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpFixed;
-use BayrellLang.OpCodes.OpCalc;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpMult;
@@ -39,7 +38,7 @@ export class ParserBay extends CommonParser{
 	 * @return OpFixed
 	 */
 	OpFixed readDouble(){
-		return new OpFixed( this.matchDouble() );
+		return new OpFixed( this.matchNumber() );
 	}
 	
 	
@@ -48,30 +47,16 @@ export class ParserBay extends CommonParser{
 	 * Read op name
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readOpName(){
+	BaseOpCode readExpressionElement(){
+		
+		if (this.findNextToken('(')){
+			this.matchNextToken('(');
+			BaseOpCode res = this.readExpression();
+			this.matchNextToken(')');
+			return res;
+		}
+		
 		return this.readDouble();
-	}
-	
-	
-	
-	/**
-	 * Read arithmetic multiply
-	 * @return OpMult
-	 */
-	OpMult readArithmeticMultiply (){
-		this.match('*');
-		return new OpMult(this.readOpName());
-	}
-	
-	
-	
-	/**
-	 * Read arithmetic divide
-	 * @return OpDiv
-	 */
-	OpDiv readArithmeticDivide (){
-		this.match('/');
-		return new OpDiv(this.readOpName());
 	}
 	
 	
@@ -80,84 +65,65 @@ export class ParserBay extends CommonParser{
 	 * Read arithmetic multiply and divide
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readArithmeticFactor (){
-		Vector<BaseOpCode> childs = new Vector();
+	BaseOpCode readExpressionFactor (){
 		
 		/* Read first opcode */
-		childs.push( this.readOpName() );
+		BaseOpCode op_code = this.readExpressionElement();
 		
-		while ((this.findNextToken('*') or this.findNextToken('/')) and not this.isEOF()){
+		while (this.findNextToken('*') or this.findNextToken('/')){
 			if (this.findNextToken('*')){
-				childs.push( this.readArithmeticMultiply() );
+				this.matchNextToken('*');
+				op_code = new OpMult(op_code, this.readExpressionElement());
 			}
-			else if (this.readDivide('/')){
-				childs.push( this.readArithmeticDivide() );
+			else if (this.findNextToken('/')){
+				this.matchNextToken('/');
+				op_code = new OpDiv(op_code, this.readExpressionElement());
 			}
 			else{
 				this.nextTokenExpected('"*" or "/"');
 			}
 		}
 		
-		if (childs.count() == 1){
-			return childs.item(0);
-		}
-		
-		return new OpCalc( childs );
-	}
-	
-	
-	
-	/**
-	 * Read arithmetic add
-	 * @return OpAdd
-	 */
-	OpAdd readArithmeticAdd (){
-		this.match('+');
-		return new OpAdd( this.readArithmeticFactor() );
-	}
-	
-	
-	
-	/**
-	 * Read arithmetic sub
-	 * @return OpSub
-	 */
-	OpSub readArithmeticSub (){
-		this.match('-');
-		return new OpSub( this.readArithmeticFactor() );
+		return op_code;
 	}
 	
 	
 	
 	/**
 	 * Read arithmetic expression
-	 * @return OpCalc
+	 * @return BaseOpCode
 	 */
-	OpCalc readArithmetic(){
-		Vector<BaseOpCode> childs = new Vector();
+	BaseOpCode readExpressionArithmetic(){
 		
 		/* Read first opcode */
-		childs.push( this.readArithmeticFactor() );
+		BaseOpCode op_code = this.readExpressionFactor();
 		
-		while ((this.findNextToken('+') or this.findNextToken('-')) and not this.isEOF() ){
+		while (this.findNextToken('+') or this.findNextToken('-')){
 			if (this.findNextToken('+')){
-				childs.push( this.readArithmeticAdd() );
+				this.matchNextToken('+');
+				op_code = new OpAdd(op_code, this.readExpressionFactor());
 			}
-			else if (this.readDivide('-')){
-				childs.push( this.readArithmeticSub() );
+			else if (this.findNextToken('-')){
+				this.matchNextToken('-');
+				op_code = new OpSub(op_code, this.readExpressionFactor());
 			}
 			else{
 				this.nextTokenExpected('"+" or "-"');
 			}
 		}
 		
-		if (childs.count() == 1){
-			return childs.item(0);
-		}
-		
-		return new OpCalc( childs );
+		return op_code;
 	}
 	
+	
+	
+	/**
+	 * Read expression
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpression(){
+		return this.readExpressionArithmetic();
+	}
 	
 	
 	
@@ -165,7 +131,8 @@ export class ParserBay extends CommonParser{
 	 * Parser function
 	 */
 	void runParser(){
-		this._result = this.readArithmetic();
+		this._result = this.readExpression();
+		this.matchNextToken(';');
 	}
 	
 	
