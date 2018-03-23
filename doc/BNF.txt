@@ -11,19 +11,19 @@ String = '"' {<Char>} '"'
 Fixed = <Number> | <HexNumber> | <String>;
 Identifier = <Symbol> { <Digit> | <Symbol> | '_' };
 DynamicIdentifier = <Identifier> {'.' <Identifier>};
-TypeIdentifier = <DynamicIdentifier> ['<' <DynamicIdentifier>  '>'];
+TypeIdentifier = <DynamicIdentifier> ['<' <DynamicIdentifier>  '>' {',' <DynamicIdentifier>}];
+StaticIdentifier = <TypeIdentifier> '::' <Identifier>;
 
 
 
 # Вызов функции
 CallArgs = <Expression> {"," <Expression>};
-CallBody = '(' { <CallArgs> } ')';
-CallMethod = <Identifier> { <CallBody> };
-CallDynamic = <CallMethod> {'.' <CallMethod>};
-CallStatic = <TypeIdentifier> '::' <CallDynamic>;
+CallMethod = (<TypeIdentifier> | <StaticIdentifier>)  '(' { <CallArgs> } ')';
+CallDynamic = <CallMethod> { '.' <CallMethod> }
+
 
 NewInstance = 'new' <TypeIdentifier> <CallBody>;
-CallOperator = ( '(' <NewInstance> ')' {'.' <CallMethod>} ) |  <CallDynamic> | <CallStatic>;
+CallOperator = ( '(' <NewInstance> ')' {'.' <CallMethod>} ) | <CallDynamic> ;
 CallAwait = 'await' <CallOperator>;
 
 

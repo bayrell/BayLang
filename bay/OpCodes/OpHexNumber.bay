@@ -21,9 +21,9 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.OpFixed;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpString extends OpValue{
+export class OpHexNumber extends OpValue{
 	
-	public string op = "op_string";
+	public string op = "op_hexnumber";
 	public string value = null;
 	
 	
@@ -32,7 +32,7 @@ export class OpString extends OpValue{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpString";
+		return "BayrellLang.OpCodes.OpHexNumber";
 	}
 	
 }

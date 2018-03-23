@@ -36,7 +36,7 @@ export class CommonParser extends CoreParser{
 	 * @param char ch
 	 * @return boolean
 	 */
-	bool isSymbolChar (char ch){
+	bool isLetterChar (char ch){
 		return rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1;
 	}
 	
@@ -54,14 +54,25 @@ export class CommonParser extends CoreParser{
 	
 	
 	/**
+	 * Return true if char is number
+	 * @param char ch
+	 * @return boolean
+	 */
+	bool isHexChar (char ch){
+		return rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1;
+	}
+	
+	
+	
+	/**
 	 * Return true if string is alfa string
 	 * @param string ch
 	 * @return boolean
 	 */
-	bool isSymbolString (string s){
+	bool isLetterString (string s){
 		int sz = rs::strlen(s);
 		for (var i=0; i<sz; i++){
-			if (not this.isSymbolChar(s[i]))
+			if (not this.isLetterChar(s[i]))
 				return false;
 		}
 		return true;
@@ -78,6 +89,22 @@ export class CommonParser extends CoreParser{
 		int sz = rs::strlen(s);
 		for (var i=0; i<sz; i++){
 			if (not this.isNumChar(s[i]))
+				return false;
+		}
+		return true;
+	}
+	
+	
+	
+	/**
+	 * Return true if string is number
+	 * @param string ch
+	 * @return boolean
+	 */
+	bool isHexString (string s){
+		int sz = rs::strlen(s);
+		for (var i=0; i<sz; i++){
+			if (not this.isHexChar(s[i]))
 				return false;
 		}
 		return true;
@@ -115,12 +142,24 @@ export class CommonParser extends CoreParser{
 	
 	
 	/**
+	 * Return if next token is number
+	 * @return boolean
+	 */
+	bool isNextTokenHexNumber(){
+		return 
+			this.isHexString(this.next_token.token) and 
+			this.next_token.tp == ParserToken::TOKEN_BASE;
+	}
+	
+	
+	
+	/**
 	 * Return if next token is alfa string
 	 * @return boolean
 	 */
-	bool isNextTokenSymbol(){
+	bool isNextTokenLetters(){
 		return 
-			this.isSymbolString(this.next_token.token) and 
+			this.isLetterString(this.next_token.token) and 
 			this.next_token.tp == ParserToken::TOKEN_BASE;
 	}
 	
@@ -130,7 +169,16 @@ export class CommonParser extends CoreParser{
 	 * Check next string is number
 	 * @return {string} number
 	 */
-	string matchNumber(){
+	string matchDouble(){
+		
+		string sign = "";
+		if (this.findNextToken("+")){
+			this.match("+");
+		}
+		else if (this.findNextToken("-")){
+			this.match("-");
+			sign = "-";
+		}
 		
 		if (not this.isNextTokenNumber()){
 			this.nextTokenExpected("number");
@@ -147,6 +195,33 @@ export class CommonParser extends CoreParser{
 		}
 		
 		return value;
+	}
+	
+	
+	
+	/**
+	 * Check next string is number
+	 * @return {string} number
+	 */
+	string matchHexNumber(){
+	
+		string sign = "";
+		if (this.findNextToken("+")){
+			this.match("+");
+		}
+		else if (this.findNextToken("-")){
+			this.match("-");
+			sign = "-";
+		}
+		
+		this.match("0");
+		this.match("x");
+		
+		if (not this.isNextTokenHexNumber()){
+			this.nextTokenExpected("hex number");
+		}
+		
+		return sign ~ this.readNextToken().token;
 	}
 	
 	

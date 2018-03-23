@@ -21,9 +21,9 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpFixed extends BaseOpCode{
+export class OpValue extends BaseOpCode{
 	
-	public string op = "op_fixed";
+	public string op = "op_value";
 	public string value = null;
 	
 	
@@ -32,7 +32,7 @@ export class OpFixed extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpFixed";
+		return "BayrellLang.OpCodes.OpValue";
 	}
 	
 	
@@ -96,7 +96,7 @@ export class OpFixed extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpFixed){
+		if (obj instanceof OpValue){
 			this.value = clone obj.value;
 		}
 		parent::assign(obj);

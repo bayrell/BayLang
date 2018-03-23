@@ -18,14 +18,18 @@
 
 namespace BayrellLang.LangBay;
 
+use BayrellRtl.Lib.rs;
 use BayrellRtl.Types.Vector;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellLang.OpCodes.OpFixed;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpDiv;
+use BayrellLang.OpCodes.OpNumber;
+use BayrellLang.OpCodes.OpHexNumber;
+use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpIdentifier;
 use BayrellParser.ParserToken;
 
 
@@ -35,10 +39,146 @@ export class ParserBay extends CommonParser{
 	
 	/**
 	 * Read double value and
-	 * @return OpFixed
+	 * @return BaseOpCode
 	 */
-	OpFixed readDouble(){
-		return new OpFixed( this.matchNumber() );
+	BaseOpCode readFixed(){
+		
+		boolean success = false;
+		string res = "";
+		ParserToken current_token = clone this.current_token;
+		ParserToken next_token = clone this.next_token;
+		
+		
+		/* Try to read HEX Number */
+		try{
+			res = this.matchHexNumber();
+			success = true;
+		}
+		catch (Exception ex){
+			success = false;
+		}
+		
+		if (success)
+			return new OpNumber(res);
+		
+		
+		/* Try to read Double */
+		this.current_token = clone current_token;
+		this.next_token = clone next_token;
+		try{
+			res = this.matchDouble();
+			success = true;
+		}
+		catch (Exception ex){
+			success = false;
+		}
+		
+		if (success)
+			return new OpHexNumber(res);
+		
+		
+		/* Try to read string */
+		this.current_token = clone current_token;
+		this.next_token = clone next_token;
+		
+		if (this.findNextToken("'") or this.findNextToken('"')){
+			string ch = this.readNextToken().token;
+			res = this.readNextToken().token;
+			this.matchNextToken(ch);
+			return new OpString(res);
+		}
+		
+		
+		this.nextTokenExpected("String or number");
+	}
+	
+	
+	
+	/**
+	 * Read Identifier
+	 * @return OpIdentifier
+	 */
+	OpIdentifier readIdentifier(){
+		string res = this.readNextToken().token;
+		
+		if (not this.isSymbolChar(rs::charAt(res, 0))){
+			this.parserError("First char of the identifier must be a letter");
+		}
+		
+		return new OpIdentifier(res);
+	}
+	
+	
+	
+	/**
+	 * Read dynamic identifier
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readDynamicIdentifier(){
+		
+		BaseOpCode res = this.readIdentifier();
+		if (not this.findNextToken("."))
+			return res;
+		}
+		
+		Vector<BaseOpCode> v = new Vector();
+		v.push(res);
+		
+		while (this.findNextToken(".")){
+			this.matchNextToken(".");
+			res = this.readIdentifier();
+			v.push(res);
+		}
+		
+		return new OpDynamicIdentifier(v);
+	}
+	
+	
+	
+	/**
+	 * Read type identifier
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readTypeIdentifier(){
+		
+		BaseOpCode res1 = this.readDynamicIdentifier();
+		if (not this.findNextToken("<")){
+			return res1;
+		}
+		
+		Vector<BaseOpCode> v = new Vector();
+		
+		this.matchNextToken("<");
+		BaseOpCode res2 = this.readDynamicIdentifier();
+		v.push(res2);
+		
+		while (this.findNextToken(",")){
+			BaseOpCode res2 = this.readDynamicIdentifier();
+			v.push(res2);		
+		}
+		this.matchNextToken(">");
+		
+		return new OpTypeIdentifier(res1, v);
+	}
+	
+	
+	
+	/**
+	 * Read static identifier
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readStaticIdentifier(){
+	
+		BaseOpCode res1 = this.readTypeIdentifier();
+		if (not this.findNextToken(":")){
+			return res1;
+		}
+		
+		this.matchNextToken(":");
+		this.matchNextToken(":");
+		
+		BaseOpCode res2 = this.readIdentifier();
+		return new OpStaticIdentifier(res1, res2);
 	}
 	
 	
