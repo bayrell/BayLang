@@ -18,14 +18,15 @@
  
 namespace BayrellLang.OpCodes;
 
+use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpTypeIdentifier extends BaseOpCode{
+export class OpCallAwait extends BaseOpCode{
 	
-	public string op = "op_type_identifier";
-	public BaseOpCode t = null;
-	public Vector<BaseOpCode> childs = null;
+	public string op = "op_call_await";
+	public BaseOpCode ident = null;
+	public Vector<BaseOpCode> args = null;
+	
 	
 	
 	/**
@@ -33,26 +34,27 @@ export class OpTypeIdentifier extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpTypeIdentifier";
+		return "BayrellLang.OpCodes.OpCallAwait";
 	}
 	
 	
 	
 	/**
 	 * Constructor
-	 */ 
-	void constructor(BaseOpCode t = null, Vector<BaseOpCode> childs = null){
+	 */
+	void constructor(BaseOpCode ident = null, Vector<BaseOpCode> args = null){
 		parent();
-		this.t = t;
-		this.childs = childs;
+		this.ident = ident;
+		this.args = args;
 	}
 	
 	
 	
 	/**
 	 * Destructor
-	 */ 
+	 */
 	void destructor(){
+		delete this.args;
 		parent();
 	}
 	
@@ -64,8 +66,8 @@ export class OpTypeIdentifier extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("type");
-		names.push("childs");
+		names.push("ident");
+		names.push("args");
 	}
 	
 	
@@ -76,8 +78,8 @@ export class OpTypeIdentifier extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'type') return this.t;
-		else if (variable_name == 'childs') return this.childs;
+		if (variable_name == 'ident') return this.ident;
+		else if (variable_name == 'args') return this.args;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -89,9 +91,10 @@ export class OpTypeIdentifier extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'type') this.t = value;
-		else if (variable_name == 'childs') this.childs = value;
-		else parent::assignValue(variable_name, value);
+		if (variable_name == 'ident') this.ident = value;
+		else if (variable_name == 'args') this.args = value;
+		else
+			parent::assignValue(variable_name, value);
 	}
 	
 	
@@ -101,9 +104,9 @@ export class OpTypeIdentifier extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpTypeIdentifier){
-			this.t = clone obj.t;
-			this.childs = clone obj.childs;
+		if (obj instanceof OpChilds){
+			this.ident = clone obj.ident;
+			this.args = clone obj.args;
 		}
 		parent::assign(obj);
 	}

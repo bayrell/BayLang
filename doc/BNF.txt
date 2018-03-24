@@ -10,21 +10,16 @@ HexNumber = ['+' | '-'] '0x' <HexDigits>;
 String = '"' {<Char>} '"'
 Fixed = <Number> | <HexNumber> | <String>;
 Identifier = <Symbol> { <Digit> | <Symbol> | '_' };
-DynamicIdentifier = <Identifier> {'.' <Identifier>};
-TypeIdentifier = <DynamicIdentifier> ['<' <DynamicIdentifier>  '>' {',' <DynamicIdentifier>}];
-StaticIdentifier = <TypeIdentifier> '::' <Identifier>;
-
+TypeIdentifier = <Identifier> ['<' <DynamicIdentifier> {',' <DynamicIdentifier>} '>'];
 
 
 # Вызов функции
 CallArgs = <Expression> {"," <Expression>};
-CallMethod = (<TypeIdentifier> | <StaticIdentifier>)  '(' { <CallArgs> } ')';
-CallDynamic = <CallMethod> { '.' <CallMethod> }
-
+CallBody = '(' { <CallArgs> } ')';
+CallDynamic = <Identifier> { '.' <Identifier> |  '::' <Identifier> |  <CallBody> }
 
 NewInstance = 'new' <TypeIdentifier> <CallBody>;
-CallOperator = ( '(' <NewInstance> ')' {'.' <CallMethod>} ) | <CallDynamic> ;
-CallAwait = 'await' <CallOperator>;
+CallAwait = 'await' <Identifier> { '.' <Identifier> |  '::' <Identifier> } <CallBody>;
 
 
 

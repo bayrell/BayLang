@@ -30,10 +30,29 @@ use BayrellLang.OpCodes.OpNumber;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpString;
 use BayrellLang.OpCodes.OpIdentifier;
-use BayrellParser.ParserToken;
+use BayrellLang.OpCodes.OpTypeIdentifier;
+use BayrellLang.OpCodes.OpCall;
+use BayrellLang.OpCodes.OpCallAwait;
+use BayrellLang.OpCodes.OpDynamic;
+use BayrellLang.OpCodes.OpStatic;
+use BayrellLang.OpCodes.OpNew;
+use BayrellLang.LangBay.ParserBayToken;
+use BayrellLang.Exceptions.HexNumberExpected;
+use BayrellParser.Exceptions.ParserError;
+
 
 
 export class ParserBay extends CommonParser{
+	
+	
+	
+	/**
+	 * Tokens Fabric
+	 * @return BayrellParserToken
+	 */
+	BayrellParserToken createToken(){
+		return new ParserBayToken(this.context(), this);
+	}
 	
 	
 	
@@ -43,53 +62,63 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readFixed(){
 		
-		boolean success = false;
-		string res = "";
-		ParserToken current_token = clone this.current_token;
-		ParserToken next_token = clone this.next_token;
+		BaseOpCode res = null;
 		
 		
 		/* Try to read HEX Number */
+		this.pushToken();
 		try{
 			res = this.matchHexNumber();
-			success = true;
 		}
 		catch (Exception ex){
-			success = false;
+			if (ex instanceof HexNumberExpected){
+				throw ex;
+			}
+			else if (ex instanceof ParserError){
+				res = null;
+			}
+			else{
+				throw ex;
+			}
+		}
+		if (res != null){
+			this.popToken();
+			return new OpHexNumber(res);
+		}
+		else{
+			this.popAssignToken();
 		}
 		
-		if (success)
-			return new OpNumber(res);
 		
-		
-		/* Try to read Double */
-		this.current_token = clone current_token;
-		this.next_token = clone next_token;
+		/* Try to read number */
+		this.pushToken();
 		try{
 			res = this.matchDouble();
-			success = true;
 		}
 		catch (Exception ex){
-			success = false;
+			if (ex instanceof ParserError){
+				res = null;
+			}
+			else{
+				throw ex;
+			}
 		}
-		
-		if (success)
-			return new OpHexNumber(res);
+		if (res != null){
+			this.popToken();
+			return new OpNumber(res);
+		}
+		else{
+			this.popAssignToken();
+		}
 		
 		
 		/* Try to read string */
-		this.current_token = clone current_token;
-		this.next_token = clone next_token;
-		
-		if (this.findNextToken("'") or this.findNextToken('"')){
-			string ch = this.readNextToken().token;
-			res = this.readNextToken().token;
-			this.matchNextToken(ch);
-			return new OpString(res);
+		if (this.lookType() == ParserBayToken::TOKEN_STRING){
+			return new OpString(this.readAnyNextToken().token);
 		}
 		
 		
-		this.nextTokenExpected("String or number");
+		return null;
 	}
 	
 	
@@ -101,8 +130,8 @@ export class ParserBay extends CommonParser{
 	OpIdentifier readIdentifier(){
 		string res = this.readNextToken().token;
 		
-		if (not this.isSymbolChar(rs::charAt(res, 0))){
-			this.parserError("First char of the identifier must be a letter");
+		if (not this.isLetterChar(rs::charAt(res, 0))){
+			this.parserError(this.translate("ERROR_PARSER_FIRST_CHAR_MUST_BE_LETTER"));
 		}
 		
 		return new OpIdentifier(res);
@@ -111,26 +140,86 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read dynamic identifier
+	 * Read call args
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readDynamicIdentifier(){
-		
-		BaseOpCode res = this.readIdentifier();
-		if (not this.findNextToken("."))
-			return res;
-		}
+	Vector<BaseOpCode> readCallArgs(){
 		
 		Vector<BaseOpCode> v = new Vector();
+		BaseOpCode res = this.readExpression();
 		v.push(res);
 		
-		while (this.findNextToken(".")){
-			this.matchNextToken(".");
-			res = this.readIdentifier();
+		while (this.findNextToken(",")){
+			this.matchNextToken(",");
+			res = this.readExpression();
 			v.push(res);
 		}
 		
-		return new OpDynamicIdentifier(v);
+		return v;
+	}
+	
+	
+	
+	/**
+	 * Read call body
+	 * @return BaseOpCode
+	 */
+	Vector<BaseOpCode> readCallBody(){
+	
+		Vector<BaseOpCode> v = null;
+		this.matchNextToken("(");
+		if (not this.findNextToken(")")){
+			v = this.readCallArgs();
+		}
+		else{
+			v = new Vector<BaseOpCode>();
+		}
+		this.matchNextToken(")");
+		
+		return v;
+	}
+	
+	
+	
+	/**
+	 * Read call dynamic
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readCallDynamic(bool allow_dynamic = true, bool allow_static = true, bool allow_call = true){
+		
+		bool can_static = true;
+		
+		BaseOpCode obj = this.readIdentifier();
+		BaseOpCode ident = null;
+		while ((this.findNextToken(".") and allow_dynamic) or 
+		       (this.findNextToken("::") and allow_static) or 
+			   (this.findNextToken("(") and allow_call)) {
+		
+			if (this.findNextToken(".") and allow_dynamic){
+				this.matchNextToken(".");
+				ident = this.readIdentifier();
+				obj = new OpDynamic(obj, ident);
+			}
+			
+			else if (this.findNextToken("::") and allow_static){
+				if (not can_static){
+					this.parserError(this.translate("ERROR_PARSER_STATIC_METHOD_IS_NOT_ALOWED_HERE"));
+				}
+				this.matchNextToken("::");
+				ident = this.readIdentifier();
+				obj = new OpStatic(obj, ident);
+				can_static = false;
+			}
+			
+			else if (this.findNextToken("(") and allow_call){
+				Vector<BaseOpCode> v = this.readCallBody();
+				obj = new OpCall(obj, v);
+				can_static = false;
+			}
+			
+		}
+		
+		return obj;
 	}
 	
 	
@@ -140,8 +229,7 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readTypeIdentifier(){
-		
-		BaseOpCode res1 = this.readDynamicIdentifier();
+		BaseOpCode res1 = this.readCallDynamic(true, false, false);
 		if (not this.findNextToken("<")){
 			return res1;
 		}
@@ -149,11 +237,11 @@ export class ParserBay extends CommonParser{
 		Vector<BaseOpCode> v = new Vector();
 		
 		this.matchNextToken("<");
-		BaseOpCode res2 = this.readDynamicIdentifier();
+		BaseOpCode res2 = this.readCallDynamic(true, false, false);
 		v.push(res2);
 		
 		while (this.findNextToken(",")){
-			BaseOpCode res2 = this.readDynamicIdentifier();
+			BaseOpCode res2 = this.readCallDynamic(true, false, false);
 			v.push(res2);		
 		}
 		this.matchNextToken(">");
@@ -164,22 +252,29 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read static identifier
+	 * Read new instance
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readStaticIdentifier(){
-	
-		BaseOpCode res1 = this.readTypeIdentifier();
-		if (not this.findNextToken(":")){
-			return res1;
-		}
-		
-		this.matchNextToken(":");
-		this.matchNextToken(":");
-		
-		BaseOpCode res2 = this.readIdentifier();
-		return new OpStaticIdentifier(res1, res2);
+	BaseOpCode readNewInstance(){
+		this.matchNextToken("new");
+		BaseOpCode ident = this.readTypeIdentifier();
+		Vector<BaseOpCode> v = this.readCallBody();
+		return new OpNew(ident, v);
 	}
+	
+	
+	
+	/**
+	 * Read call await
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readCallAwait(){
+		this.matchNextToken("await");
+		BaseOpCode ident = this.readCallDynamic(true, true, false);
+		Vector<BaseOpCode> v = this.readCallBody();
+		return new OpCallAwait(ident, v);
+	}
+	
 	
 	
 	
@@ -195,8 +290,18 @@ export class ParserBay extends CommonParser{
 			this.matchNextToken(')');
 			return res;
 		}
+		else if (this.findNextToken('new')){
+			return this.readNewInstance();
+		}
+		else if (this.findNextToken('await')){
+			return this.readCallAwait();
+		}
 		
-		return this.readDouble();
+		BaseOpCode res = this.readFixed();
+		if (res != null)
+			return res;
+			
+		return this.readCallDynamic();
 	}
 	
 	
@@ -272,7 +377,7 @@ export class ParserBay extends CommonParser{
 	 */
 	void runParser(){
 		this._result = this.readExpression();
-		this.matchNextToken(';');
+		/* this.matchNextToken(';'); */
 	}
 	
 	

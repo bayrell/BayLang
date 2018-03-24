@@ -1,0 +1,130 @@
+/*!
+ *  Bayrell Common Languages Transcompiler
+ *
+ *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayrellLang.LangBay;
+
+
+use BayrellRtl.Lib.rs;
+use BayrellRtl.Types.Vector;
+use BayrellParser.ParserToken;
+use BayrellParser.Exceptions.ParserEOF;
+use BayrellParser.Exceptions.ParserExpected;
+
+
+export class ParserBayToken extends ParserToken{
+	
+	static const string TOKEN_NONE = 'none';
+	static const string TOKEN_BASE = 'token';
+	static const string TOKEN_STRING = 'string';
+	static const string TOKEN_COMMENT = 'comment';
+	
+	
+	protected Vector<string> _special_tokens = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor (ContextInterface context = null, BayrellParserInterface parser = null){
+		parent(context, parser);
+		this._special_tokens = (new Vector<string>())
+			.push("!==")
+			.push("===")
+			.push("!=")
+			.push("==")
+			.push("<=")
+			.push(">=")
+			.push("::")
+			.push("++")
+			.push("--")
+			.push("+=")
+			.push("-=")
+			.push("!=")
+			.push("#ifcode")
+			.push("#switch")
+			.push("#case")
+			.push("#endswitch")
+			.push("#endif")
+		;
+		
+	}
+	
+	
+	
+	/**
+	 * Get next token without move cursor pos. Throws error if EOF.
+	 * @param {BayrellParserToken} token
+	 */
+	public void readNextToken(){
+		
+		this.tp = self::TOKEN_NONE;
+		this.token = "";
+		this.success = false;
+		this.start_line = this.line;
+		this.start_col = this.col;
+		
+		if (this.isEOF()){
+			throw new ParserEOF(this.context());
+		}
+		
+		this.skipSystemChar();		
+		this.start_line = this.line;
+		this.start_col = this.col;
+		
+		
+		/* Try to read special tokens */
+		int pos = this.findVector( this._special_tokens );
+		if (pos >= 0){
+			this.tp = self::TOKEN_BASE;
+			this.token = this._special_tokens.item(pos);
+			this.success = true;
+			this.readString(rs::strlen(this.token));
+			return;
+		}
+		
+		
+		/* Try to read normal token */
+		this.tp = self::TOKEN_BASE;
+		this.success = true;
+		
+		string look = this.lookChar();
+		this.token = this.token ~ look;
+		this.moveChar(look);
+		
+		if (this.isTokenChar(look)){
+			try{
+				look = this.lookChar();			
+				while (this.isTokenChar(look)) {
+					this.token = this.token ~ look;
+					this.moveChar(look);
+					look = this.lookChar();
+				}
+			}
+			catch (var e){
+				if (e instanceof ParserEOF){}
+				else{
+					throw e;
+				}
+			}
+		}
+		
+	}
+	
+	
+}
+

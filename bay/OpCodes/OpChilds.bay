@@ -18,6 +18,7 @@
  
 namespace BayrellLang.OpCodes;
 
+use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpChilds extends BaseOpCode{
@@ -40,9 +41,9 @@ export class OpChilds extends BaseOpCode{
 	/**
 	 * Constructor
 	 */
-	void constructor(){
+	void constructor(Vector<BaseOpCode> childs = null){
 		parent();
-		this.childs = new Vector<BaseOpCode>();
+		this.childs = childs;
 	}
 	
 	

@@ -18,13 +18,14 @@
  
 namespace BayrellLang.OpCodes;
 
+use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
 
 export class OpNew extends BaseOpCode{
 	
 	public string op = "op_new";
-	public BaseOpCode value = null;
+	public BaseOpCode ident = null;
+	public Vector<BaseOpCode> args = null;
 	
 	
 	
@@ -40,19 +41,20 @@ export class OpNew extends BaseOpCode{
 	
 	/**
 	 * Constructor
-	 */ 
-	void constructor(BaseOpCode value = null){
+	 */
+	void constructor(BaseOpCode ident = null, Vector<BaseOpCode> args = null){
 		parent();
-		this.value = value;
+		this.ident = ident;
+		this.args = args;
 	}
 	
 	
 	
 	/**
 	 * Destructor
-	 */ 
+	 */
 	void destructor(){
-		delete this.value;
+		delete this.args;
 		parent();
 	}
 	
@@ -64,7 +66,8 @@ export class OpNew extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("value");
+		names.push("ident");
+		names.push("args");
 	}
 	
 	
@@ -75,7 +78,8 @@ export class OpNew extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value') return this.value;
+		if (variable_name == 'ident') return this.ident;
+		else if (variable_name == 'args') return this.args;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -87,8 +91,10 @@ export class OpNew extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
-		else parent::assignValue(variable_name, value);
+		if (variable_name == 'ident') this.ident = value;
+		else if (variable_name == 'args') this.args = value;
+		else
+			parent::assignValue(variable_name, value);
 	}
 	
 	
@@ -98,8 +104,9 @@ export class OpNew extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpNew){
-			this.value = clone obj.value;
+		if (obj instanceof OpChilds){
+			this.ident = clone obj.ident;
+			this.args = clone obj.args;
 		}
 		parent::assign(obj);
 	}

@@ -24,7 +24,7 @@ use BayrellRtl.Interfaces.SerializeInterface;
 export class OpValue extends BaseOpCode{
 	
 	public string op = "op_value";
-	public string value = null;
+	public string value = "";
 	
 	
 	/**
@@ -40,7 +40,7 @@ export class OpValue extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(string value){
+	void constructor(string value = ""){
 		parent();
 		this.value = value;
 	}

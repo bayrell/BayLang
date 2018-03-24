@@ -18,13 +18,12 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpFixed;
+use BayrellLang.OpCodes.OpValue;
 use BayrellRtl.Interfaces.SerializeInterface;
 
 export class OpNumber extends OpValue{
 	
 	public string op = "op_number";
-	public string value = null;
 	
 	
 	/**

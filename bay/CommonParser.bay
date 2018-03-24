@@ -19,9 +19,10 @@
 namespace BayrellLang;
 
 use BayrellRtl.Lib.rs;
-use BayrellLang.OpCodes.BaseOpCode;
 use BayrellParser.ParserToken;
 use BayrellParser.CoreParser;
+use BayrellLang.Exceptions.HexNumberExpected;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
 export class CommonParser extends CoreParser{
@@ -101,13 +102,37 @@ export class CommonParser extends CoreParser{
 	 * @param string ch
 	 * @return boolean
 	 */
+	bool isHexStringBegin (string s){
+		int sz = rs::strlen(s);
+		if (sz < 2)
+			return false;
+		if (s[0] == '0' and (s[1] == 'x' or s[1] == 'X')){
+			return true;
+		}
+		return false;
+	}
+	
+	
+	
+	/**
+	 * Return true if string is number
+	 * @param string ch
+	 * @return boolean
+	 */
 	bool isHexString (string s){
 		int sz = rs::strlen(s);
-		for (var i=0; i<sz; i++){
-			if (not this.isHexChar(s[i]))
-				return false;
+		if (sz < 2)
+			return false;
+		
+		if (s[0] == '0' and (s[1] == 'x' or s[1] == 'X')){
+			for (var i=2; i<sz; i++){
+				if (not this.isHexChar(s[i]))
+					return false;
+			}
+			return true;
 		}
-		return true;
+		
+		return false;
 	}
 	
 	
@@ -173,10 +198,10 @@ export class CommonParser extends CoreParser{
 		
 		string sign = "";
 		if (this.findNextToken("+")){
-			this.match("+");
+			this.matchNextToken("+");
 		}
 		else if (this.findNextToken("-")){
-			this.match("-");
+			this.matchNextToken("-");
 			sign = "-";
 		}
 		
@@ -207,18 +232,22 @@ export class CommonParser extends CoreParser{
 	
 		string sign = "";
 		if (this.findNextToken("+")){
-			this.match("+");
+			this.matchNextToken("+");
 		}
 		else if (this.findNextToken("-")){
-			this.match("-");
+			this.matchNextToken("-");
 			sign = "-";
 		}
 		
-		this.match("0");
-		this.match("x");
-		
 		if (not this.isNextTokenHexNumber()){
-			this.nextTokenExpected("hex number");
+			if (this.lookType() == ParserToken::TOKEN_BASE and this.isHexStringBegin(this.lookToken())){
+				int start_line = this.next_token.start_line;
+				int start_col = this.next_token.start_col;
+				throw new HexNumberExpected(this.context(), start_line, start_col);					
+			}
+			else{
+				this.nextTokenExpected(this.translate("ERROR_PARSER_HEX_NUMBER_EXPECTED"));
+			}
 		}
 		
 		return sign ~ this.readNextToken().token;

@@ -23,9 +23,15 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/CommonTranslator.js",
 		"/assets/bayrell_lang_es6/ModuleDescription.js",
 		"/assets/bayrell_lang_es6/OpCodes/BaseOpCode.js",
+		"/assets/bayrell_lang_es6/Exceptions/HexNumberExpected.js",
+	])
+	.load([
+		"/assets/bayrell_lang_es6/OpCodes/OpValue.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpChilds.js",
 	])
 	.load([
 		"/assets/bayrell_lang_es6/LangBay/ParserBay.js",
+		"/assets/bayrell_lang_es6/LangBay/ParserBayToken.js",
 		"/assets/bayrell_lang_es6/LangES6/TranslatorES6.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpAdd.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpAnd.js",
@@ -36,7 +42,6 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpConcat.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpDec.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpDiv.js",
-		"/assets/bayrell_lang_es6/OpCodes/OpFixed.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpFlags.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpInc.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpLink.js",
@@ -52,9 +57,19 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpPow.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpPreDec.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpPreInc.js",
-		"/assets/bayrell_lang_es6/OpCodes/OpString.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpSub.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpTernary.js",
+	])
+	.load([
+		"/assets/bayrell_lang_es6/OpCodes/OpHexNumber.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpIdentifier.js",	
+		"/assets/bayrell_lang_es6/OpCodes/OpNumber.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpCall.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpCallAwait.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpDynamic.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpStatic.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpTypeIdentifier.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpString.js",
 	])
 	.success(function(){
 		$load.deliver('bayrell_lang_loaded');

@@ -40,7 +40,7 @@ export class OpLink extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode value){
+	void constructor(BaseOpCode value = null){
 		parent();
 		this.value = value;
 	}
