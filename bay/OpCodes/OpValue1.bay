@@ -15,16 +15,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
+ 
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpInc extends BaseOpCode{
+
+export class OpValue1 extends BaseOpCode{
 	
-	public string op = "op_inc";
-	public BaseOpCode value = null;
+	public string op = "op_value";
+	public string BaseOpCode = null;
 	
 	
 	/**
@@ -32,7 +32,7 @@ export class OpInc extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpInc";
+		return "BayrellLang.OpCodes.OpValue";
 	}
 	
 	
@@ -51,7 +51,6 @@ export class OpInc extends BaseOpCode{
 	 * Destructor
 	 */ 
 	void destructor(){
-		delete this.value;
 		parent();
 	}
 	
@@ -97,7 +96,7 @@ export class OpInc extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpInc){
+		if (obj instanceof OpValue){
 			this.value = clone obj.value;
 		}
 		parent::assign(obj);

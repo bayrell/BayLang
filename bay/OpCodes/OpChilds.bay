@@ -21,6 +21,7 @@ namespace BayrellLang.OpCodes;
 use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
+
 export class OpChilds extends BaseOpCode{
 	
 	public string op = "op_childs";
@@ -88,7 +89,7 @@ export class OpChilds extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'op') this.childs = value;
+		if (variable_name == 'childs') this.childs = value;
 		else
 			parent::assignValue(variable_name, value);
 	}

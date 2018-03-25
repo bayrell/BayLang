@@ -18,13 +18,12 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
+use BayrellLang.OpCodes.OpValue1;
 
-export class OpClone extends BaseOpCode{
+
+export class OpClone extends OpValue1{
 	
 	public string op = "op_clone";
-	public BaseOpCode value = null;
 	
 	
 	/**
@@ -35,73 +34,4 @@ export class OpClone extends BaseOpCode{
 		return "BayrellLang.OpCodes.OpClone";
 	}
 	
-	
-	
-	/**
-	 * Constructor
-	 */
-	void constructor(BaseOpCode value = null){
-		parent();
-		this.value = value;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */
-	void destructor(){
-		delete this.value;
-		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("value");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value')
-			return this.value;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
-		else
-			parent::assignValue(variable_name, value);
-	}
-	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpClone){
-			this.value = clone obj.value;
-		}
-		parent::assign(obj);
-	}
 }

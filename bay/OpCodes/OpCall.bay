@@ -21,10 +21,11 @@ namespace BayrellLang.OpCodes;
 use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
+
 export class OpCall extends BaseOpCode{
 	
 	public string op = "op_call";
-	public BaseOpCode ident = null;
+	public BaseOpCode value = null;
 	public Vector<BaseOpCode> args = null;
 	
 	
@@ -42,9 +43,9 @@ export class OpCall extends BaseOpCode{
 	/**
 	 * Constructor
 	 */
-	void constructor(BaseOpCode ident = null, Vector<BaseOpCode> args = null){
+	void constructor(BaseOpCode value = null, Vector<BaseOpCode> args = null){
 		parent();
-		this.ident = ident;
+		this.value = value;
 		this.args = args;
 	}
 	
@@ -54,7 +55,6 @@ export class OpCall extends BaseOpCode{
 	 * Destructor
 	 */
 	void destructor(){
-		delete this.args;
 		parent();
 	}
 	
@@ -66,7 +66,7 @@ export class OpCall extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("ident");
+		names.push("value");
 		names.push("args");
 	}
 	
@@ -78,7 +78,7 @@ export class OpCall extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'ident') return this.ident;
+		if (variable_name == 'value') return this.value;
 		else if (variable_name == 'args') return this.args;
 		return parent::takeValue(variable_name, default_value);
 	}
@@ -91,7 +91,7 @@ export class OpCall extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'ident') this.ident = value;
+		if (variable_name == 'value') this.value = value;
 		else if (variable_name == 'args') this.args = value;
 		else
 			parent::assignValue(variable_name, value);
@@ -105,7 +105,7 @@ export class OpCall extends BaseOpCode{
 	 */
 	void assign(CoreObject obj){
 		if (obj instanceof OpChilds){
-			this.ident = clone obj.ident;
+			this.value = clone obj.value;
 			this.args = clone obj.args;
 		}
 		parent::assign(obj);

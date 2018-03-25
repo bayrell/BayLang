@@ -21,9 +21,9 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.OpValue2;
 
 
-export class OpDiv extends OpValue2{
+export class OpBitXor extends OpValue2{
 	
-	public string op = "op_div";
+	public string op = "op_bit_xor";
 	
 	
 	/**
@@ -31,7 +31,7 @@ export class OpDiv extends OpValue2{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpDiv";
+		return "BayrellLang.OpCodes.OpBitXor";
 	}
 	
 }

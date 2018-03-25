@@ -15,17 +15,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
+ 
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
+use BayrellLang.OpCodes.OpValue2;
 
-export class OpSub extends BaseOpCode{
+
+export class OpSub extends OpValue2{
 	
 	public string op = "op_sub";
-	public BaseOpCode value1 = null;
-	public BaseOpCode value2 = null;
 	
 	
 	/**
@@ -36,78 +34,4 @@ export class OpSub extends BaseOpCode{
 		return "BayrellLang.OpCodes.OpSub";
 	}
 	
-	
-	
-	/**
-	 * Constructor
-	 */
-	void constructor(BaseOpCode value1 = null, BaseOpCode value2 = null){
-		parent();
-		this.value1 = value1;
-		this.value2 = value2;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */
-	void destructor(){
-		delete this.value1;
-		delete this.value2;
-		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("value1");
-		names.push("value2");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value1') return this.value1;
-		if (variable_name == 'value2') return this.value2;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value1') this.value1 = value1;
-		else if (variable_name == 'value2') this.value2 = value2;
-		else
-			parent::assignValue(variable_name, value);
-	}
-	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpSub){
-			this.value1 = clone obj.value1;
-			this.value2 = clone obj.value2;
-		}
-		parent::assign(obj);
-	}
 }

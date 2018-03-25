@@ -18,10 +18,10 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValue;
-use BayrellRtl.Interfaces.SerializeInterface;
+use BayrellLang.OpCodes.OpValueString;
 
-export class OpHexNumber extends OpValue{
+
+export class OpHexNumber extends OpValueString{
 	
 	public string op = "op_hex_number";
 	

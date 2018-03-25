@@ -23,19 +23,40 @@ use BayrellRtl.Types.Vector;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
-use BayrellLang.OpCodes.OpSub;
-use BayrellLang.OpCodes.OpMult;
-use BayrellLang.OpCodes.OpDiv;
-use BayrellLang.OpCodes.OpNumber;
-use BayrellLang.OpCodes.OpHexNumber;
-use BayrellLang.OpCodes.OpString;
-use BayrellLang.OpCodes.OpIdentifier;
-use BayrellLang.OpCodes.OpTypeIdentifier;
+use BayrellLang.OpCodes.OpAnd;
+use BayrellLang.OpCodes.OpBitAnd;
+use BayrellLang.OpCodes.OpBitNot;
+use BayrellLang.OpCodes.OpBitOr;
+use BayrellLang.OpCodes.OpBitXor;
 use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpCallAwait;
+use BayrellLang.OpCodes.OpChilds;
+use BayrellLang.OpCodes.OpClone;
+use BayrellLang.OpCodes.OpCompare;
+use BayrellLang.OpCodes.OpConcat;
+use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
-use BayrellLang.OpCodes.OpStatic;
+use BayrellLang.OpCodes.OpFlags;
+use BayrellLang.OpCodes.OpHexNumber;
+use BayrellLang.OpCodes.OpIdentifier;
+use BayrellLang.OpCodes.OpMod;
+use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNew;
+use BayrellLang.OpCodes.OpNot;
+use BayrellLang.OpCodes.OpNumber;
+use BayrellLang.OpCodes.OpOr;
+use BayrellLang.OpCodes.OpPostDec;
+use BayrellLang.OpCodes.OpPostInc;
+use BayrellLang.OpCodes.OpPow;
+use BayrellLang.OpCodes.OpPreDec;
+use BayrellLang.OpCodes.OpPreInc;
+use BayrellLang.OpCodes.OpShiftLeft;
+use BayrellLang.OpCodes.OpShiftRight;
+use BayrellLang.OpCodes.OpStatic;
+use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpSub;
+use BayrellLang.OpCodes.OpTernary;
+use BayrellLang.OpCodes.OpTypeIdentifier;
 use BayrellLang.LangBay.ParserBayToken;
 use BayrellLang.Exceptions.HexNumberExpected;
 use BayrellParser.Exceptions.ParserError;
@@ -62,7 +83,7 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readFixed(){
 		
-		BaseOpCode res = null;
+		string res = "";
 		
 		
 		/* Try to read HEX Number */
@@ -146,13 +167,13 @@ export class ParserBay extends CommonParser{
 	Vector<BaseOpCode> readCallArgs(){
 		
 		Vector<BaseOpCode> v = new Vector();
-		BaseOpCode res = this.readExpression();
-		v.push(res);
+		BaseOpCode op_code = this.readExpression();
+		v.push(op_code);
 		
 		while (this.findNextToken(",")){
 			this.matchNextToken(",");
-			res = this.readExpression();
-			v.push(res);
+			op_code = this.readExpression();
+			v.push(op_code);
 		}
 		
 		return v;
@@ -185,13 +206,15 @@ export class ParserBay extends CommonParser{
 	 * Read call dynamic
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readCallDynamic(bool allow_dynamic = true, bool allow_static = true, bool allow_call = true){
+	BaseOpCode readCallDynamic(bool allow_dynamic = true, bool allow_bracket = true, 
+	bool allow_static = true, bool allow_call = true){
 		
 		bool can_static = true;
 		
 		BaseOpCode obj = this.readIdentifier();
 		BaseOpCode ident = null;
 		while ((this.findNextToken(".") and allow_dynamic) or 
+		       (this.findNextToken("[") and allow_bracket) or 
 		       (this.findNextToken("::") and allow_static) or 
 			   (this.findNextToken("(") and allow_call)) {
 		
@@ -199,6 +222,13 @@ export class ParserBay extends CommonParser{
 				this.matchNextToken(".");
 				ident = this.readIdentifier();
 				obj = new OpDynamic(obj, ident);
+			}
+			
+			else if (this.findNextToken("[") and allow_bracket){
+				this.matchNextToken("[");
+				ident = this.readExpression();
+				this.matchNextToken("]");
+				obj = new OpGetArray(obj, ident);
 			}
 			
 			else if (this.findNextToken("::") and allow_static){
@@ -229,24 +259,24 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readTypeIdentifier(){
-		BaseOpCode res1 = this.readCallDynamic(true, false, false);
+		BaseOpCode op_code1 = this.readCallDynamic(true, false, false, false);
 		if (not this.findNextToken("<")){
-			return res1;
+			return op_code1;
 		}
 		
 		Vector<BaseOpCode> v = new Vector();
 		
 		this.matchNextToken("<");
-		BaseOpCode res2 = this.readCallDynamic(true, false, false);
-		v.push(res2);
+		BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false);
+		v.push(op_code2);
 		
 		while (this.findNextToken(",")){
-			BaseOpCode res2 = this.readCallDynamic(true, false, false);
-			v.push(res2);		
+			BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false);
+			v.push(op_code2);		
 		}
 		this.matchNextToken(">");
 		
-		return new OpTypeIdentifier(res1, v);
+		return new OpTypeIdentifier(op_code1, v);
 	}
 	
 	
@@ -270,25 +300,24 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readCallAwait(){
 		this.matchNextToken("await");
-		BaseOpCode ident = this.readCallDynamic(true, true, false);
+		BaseOpCode ident = this.readCallDynamic();
 		Vector<BaseOpCode> v = this.readCallBody();
 		return new OpCallAwait(ident, v);
 	}
 	
 	
 	
-	
 	/**
-	 * Read op name
+	 * Read element
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readExpressionElement(){
 		
 		if (this.findNextToken('(')){
 			this.matchNextToken('(');
-			BaseOpCode res = this.readExpression();
+			BaseOpCode op_code = this.readExpression();
 			this.matchNextToken(')');
-			return res;
+			return op_code;
 		}
 		else if (this.findNextToken('new')){
 			return this.readNewInstance();
@@ -297,11 +326,77 @@ export class ParserBay extends CommonParser{
 			return this.readCallAwait();
 		}
 		
-		BaseOpCode res = this.readFixed();
-		if (res != null)
-			return res;
+		BaseOpCode op_code = this.readFixed();
+		if (op_code != null)
+			return op_code;
 			
 		return this.readCallDynamic();
+	}
+	
+	
+	
+	/**
+	 * Read postfix
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionPostfix(){
+		BaseOpCode op_code = this.readExpressionElement();
+		if (this.findNextToken('++')){
+			this.matchNextToken('++');
+			return new OpPostInc(op_code);
+		}
+		else if (this.findNextToken('--')){
+			this.matchNextToken('--');
+			return new OpPostDec(op_code);
+		}
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read prefix
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionPrefix(){
+		if (this.findNextToken('++')){
+			this.matchNextToken('++');
+			return new OpPreInc( this.readExpressionPostfix() );
+		}
+		else if (this.findNextToken('--')){
+			this.matchNextToken('--');
+			return new OpPreDec( this.readExpressionPostfix() );
+		}
+		return this.readExpressionPostfix();
+	}
+	
+	
+	
+	/**
+	 * Read bit NOT
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionBitNot(){
+		if (this.findNextToken('!')){
+			this.matchNextToken('!');
+			return new OpBitNot( this.readExpressionPrefix() );
+		}
+		return this.readExpressionPrefix();
+	}
+	
+	
+	
+	/**
+	 * Read pow
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionPow(){
+		BaseOpCode op_code = this.readExpressionBitNot();
+		while (this.findNextToken('**')){
+			this.matchNextToken('**');
+			op_code = new OpPow(op_code, this.readExpressionBitNot() );
+		}
+		return op_code;
 	}
 	
 	
@@ -313,19 +408,23 @@ export class ParserBay extends CommonParser{
 	BaseOpCode readExpressionFactor (){
 		
 		/* Read first opcode */
-		BaseOpCode op_code = this.readExpressionElement();
+		BaseOpCode op_code = this.readExpressionPow();
 		
-		while (this.findNextToken('*') or this.findNextToken('/')){
+		while (this.findNextToken('*') or this.findNextToken('/') or this.findNextToken('%')){
 			if (this.findNextToken('*')){
 				this.matchNextToken('*');
-				op_code = new OpMult(op_code, this.readExpressionElement());
+				op_code = new OpMult(op_code, this.readExpressionPow());
 			}
 			else if (this.findNextToken('/')){
 				this.matchNextToken('/');
-				op_code = new OpDiv(op_code, this.readExpressionElement());
+				op_code = new OpDiv(op_code, this.readExpressionPow());
+			}
+			else if (this.findNextToken('%')){
+				this.matchNextToken('%');
+				op_code = new OpMod(op_code, this.readExpressionPow());
 			}
 			else{
-				this.nextTokenExpected('"*" or "/"');
+				this.nextTokenExpected('"*", "/" or "%"');
 			}
 		}
 		
@@ -363,11 +462,230 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read shift
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionShift(){
+	
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionArithmetic();
+		
+		while (this.findNextToken('<<') or this.findNextToken('>>')){
+			if (this.findNextToken('<<')){
+				this.matchNextToken('<<');
+				op_code = new OpShiftLeft(op_code, this.readExpressionArithmetic());
+			}
+			else if (this.findNextToken('>>')){
+				this.matchNextToken('>>');
+				op_code = new OpShiftRight(op_code, this.readExpressionArithmetic());
+			}
+			else{
+				this.nextTokenExpected('"<<" or ">>"');
+			}
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read concat string
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionConcat(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionShift();
+		while (this.findNextToken('~')){
+			this.matchNextToken('~');
+			op_code = new OpConcat(op_code, this.readExpressionShift() );
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read compare
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionCompare1(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionConcat();
+		
+		while (this.findNextToken('<') or this.findNextToken('<=') or
+		       this.findNextToken('>') or this.findNextToken('>=') or
+		       this.findNextToken('in') or this.findNextToken('instanceof') or
+		       this.findNextToken('implements')
+		){
+			string cond = this.readNextToken().token;
+			op_code = new OpCompare(cond, op_code, this.readExpressionConcat());
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read compare
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionCompare2(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionCompare1();
+		
+		while (this.findNextToken('==') or this.findNextToken('===') or
+		       this.findNextToken('!=') or this.findNextToken('!==')
+		){
+			string cond = this.readNextToken().token;
+			op_code = new OpCompare(cond, op_code, this.readExpressionCompare1());
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read bit AND
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionBitAnd(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionCompare2();
+		while (this.findNextToken('&')){
+			this.matchNextToken('&');
+			op_code = new OpBitAnd(op_code, this.readExpressionCompare2() );
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read bit XOR
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionBitXor(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionBitAnd();
+		while (this.findNextToken('^')){
+			this.matchNextToken('^');
+			op_code = new OpBitXor(op_code, this.readExpressionBitAnd() );
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read bit OR
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionBitOr(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionBitXor();
+		while (this.findNextToken('|')){
+			this.matchNextToken('|');
+			op_code = new OpBitOr(op_code, this.readExpressionBitXor() );
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read NOT
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionNot(){
+		
+		if (this.findNextToken('not')){
+			this.matchNextToken('not');
+			return new OpNot(this.readExpressionBitOr() );
+		}
+		
+		return this.readExpressionBitOr();
+	}
+	
+	
+	
+	/**
+	 * Read AND
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionAnd(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionNot();
+		while (this.findNextToken('and')){
+			this.matchNextToken('and');
+			op_code = new OpAnd(op_code, this.readExpressionNot() );
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read OR
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionOr(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionAnd();
+		while (this.findNextToken('or')){
+			this.matchNextToken('or');
+			op_code = new OpOr(op_code, this.readExpressionAnd() );
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
+	 * Read ternary operator
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readExpressionTernary(){
+		
+		/* Read first opcode */
+		BaseOpCode op_code = this.readExpressionOr();
+		if (this.findNextToken('?')){
+			this.matchNextToken('?');
+			BaseOpCode if_true = this.readExpressionOr();
+			
+			this.matchNextToken(':');
+			BaseOpCode if_false = this.readExpressionOr();
+			
+			return OpTernary(op_code, if_true, if_false);
+		}
+		
+		return op_code;
+	}
+	
+	
+	
+	/**
 	 * Read expression
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readExpression(){
-		return this.readExpressionArithmetic();
+		return this.readExpressionTernary();
 	}
 	
 	

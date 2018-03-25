@@ -15,17 +15,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 namespace BayrellLang.OpCodes;
 
-use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpCalc extends BaseOpCode{
+
+export class OpCompare extends BaseOpCode{
 	
-	public string op = "op_calc";
-	public BaseOpCode value = null;
+	public string op = "op_compare";
+	public string cond = null;
+	public BaseOpCode value1 = null;
+	public BaseOpCode value2 = null;
 	
 	
 	/**
@@ -33,7 +34,7 @@ export class OpCalc extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpCalc";
+		return "BayrellLang.OpCodes.OpCompare";
 	}
 	
 	
@@ -41,9 +42,11 @@ export class OpCalc extends BaseOpCode{
 	/**
 	 * Constructor
 	 */
-	void constructor(BaseOpCode value = null){
+	void constructor(string cond = "", BaseOpCode value1 = null, BaseOpCode value2 = null){
 		parent();
-		this.value = value;
+		this.cond = cond;
+		this.value1 = value1;
+		this.value2 = value2;
 	}
 	
 	
@@ -52,7 +55,6 @@ export class OpCalc extends BaseOpCode{
 	 * Destructor
 	 */
 	void destructor(){
-		delete this.value;
 		parent();
 	}
 	
@@ -64,7 +66,9 @@ export class OpCalc extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("value");
+		names.push("cond");
+		names.push("value1");
+		names.push("value2");
 	}
 	
 	
@@ -75,7 +79,9 @@ export class OpCalc extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value') return this.value;
+		if (variable_name == 'cond') return this.cond;
+		if (variable_name == 'value1') return this.value1;
+		if (variable_name == 'value2') return this.value2;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -87,11 +93,13 @@ export class OpCalc extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
+		if (variable_name == 'cond') this.cond = value;
+		else if (variable_name == 'value1') this.value1 = value;
+		else if (variable_name == 'value2') this.value2 = value;
 		else
 			parent::assignValue(variable_name, value);
 	}
-
+	
 	
 	
 	/**
@@ -99,8 +107,10 @@ export class OpCalc extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpCalc){
-			this.value = clone obj.value;
+		if (obj instanceof OpCompare){
+			this.cond = clone obj.cond;
+			this.value1 = clone obj.value1;
+			this.value2 = clone obj.value2;
 		}
 		parent::assign(obj);
 	}

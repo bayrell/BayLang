@@ -18,12 +18,12 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValue2;
+use BayrellLang.OpCodes.OpValue1;
 
 
-export class OpDiv extends OpValue2{
+export class OpBitNot extends OpValue1{
 	
-	public string op = "op_div";
+	public string op = "op_bit_not";
 	
 	
 	/**
@@ -31,7 +31,7 @@ export class OpDiv extends OpValue2{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpDiv";
+		return "BayrellLang.OpCodes.OpBitNot";
 	}
 	
 }

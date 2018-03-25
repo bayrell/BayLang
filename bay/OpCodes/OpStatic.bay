@@ -20,10 +20,11 @@ namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
 
+
 export class OpStatic extends BaseOpCode{
 	
 	public string op = "op_static";
-	public BaseOpCode obj = null;
+	public BaseOpCode value = null;
 	public BaseOpCode ident = null;
 	
 	
@@ -40,9 +41,9 @@ export class OpStatic extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode obj = null, BaseOpCode ident = null){
+	void constructor(BaseOpCode value = null, BaseOpCode ident = null){
 		parent();
-		this.obj = obj;
+		this.value = value;
 		this.ident = ident;
 	}
 	
@@ -63,7 +64,7 @@ export class OpStatic extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("obj");
+		names.push("value");
 		names.push("ident");
 	}
 	
@@ -75,7 +76,7 @@ export class OpStatic extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'obj') return this.obj;
+		if (variable_name == 'value') return this.value;
 		else if (variable_name == 'ident') return this.ident;
 		return parent::takeValue(variable_name, default_value);
 	}
@@ -88,7 +89,7 @@ export class OpStatic extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'obj') this.obj = value;
+		if (variable_name == 'value') this.value = value;
 		else if (variable_name == 'ident') this.ident = value;
 		else parent::assignValue(variable_name, value);
 	}
@@ -100,8 +101,8 @@ export class OpStatic extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpStaticIdentifier){
-			this.obj = clone obj.obj;
+		if (obj instanceof OpStatic){
+			this.value = clone obj.value;
 			this.ident = clone obj.ident;
 		}
 		parent::assign(obj);

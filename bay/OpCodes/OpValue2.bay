@@ -15,17 +15,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpArray extends BaseOpCode{
+
+export class OpValue2 extends BaseOpCode{
 	
-	public string op = "op_array";
-	public Vector<BaseOpCode> childs = null;
-	
+	public string op = "op_value2";
+	public BaseOpCode value1 = null;
+	public BaseOpCode value2 = null;
 	
 	
 	/**
@@ -33,7 +33,7 @@ export class OpArray extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpArray";
+		return "BayrellLang.OpCodes.OpValue2";
 	}
 	
 	
@@ -41,9 +41,10 @@ export class OpArray extends BaseOpCode{
 	/**
 	 * Constructor
 	 */
-	void constructor(){
+	void constructor(BaseOpCode value1 = null, BaseOpCode value2 = null){
 		parent();
-		this.childs = new Vector<BaseOpCode>();
+		this.value1 = value1;
+		this.value2 = value2;
 	}
 	
 	
@@ -52,7 +53,6 @@ export class OpArray extends BaseOpCode{
 	 * Destructor
 	 */
 	void destructor(){
-		delete this.childs;
 		parent();
 	}
 	
@@ -64,7 +64,8 @@ export class OpArray extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("childs");
+		names.push("value1");
+		names.push("value2");
 	}
 	
 	
@@ -75,8 +76,8 @@ export class OpArray extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'childs')
-			return this.childs;
+		if (variable_name == 'value1') return this.value1;
+		if (variable_name == 'value2') return this.value2;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -88,7 +89,8 @@ export class OpArray extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'op') this.childs = value;
+		if (variable_name == 'value1') this.value1 = value;
+		else if (variable_name == 'value2') this.value2 = value;
 		else
 			parent::assignValue(variable_name, value);
 	}
@@ -100,8 +102,9 @@ export class OpArray extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpArray){
-			this.childs = clone obj.childs;
+		if (obj instanceof OpValue2){
+			this.value1 = clone obj.value1;
+			this.value2 = clone obj.value2;
 		}
 		parent::assign(obj);
 	}

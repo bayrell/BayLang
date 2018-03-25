@@ -18,15 +18,13 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
 
-export class OpNope extends BaseOpCode{
+
+export class OpValueString extends BaseOpCode{
 	
-	public string op = "op_nope";
-	public Vector<BaseOpCode> childs = null;
-	
+	public string op = "op_value";
+	public string value = "";
 	
 	
 	/**
@@ -34,7 +32,7 @@ export class OpNope extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpNope";
+		return "BayrellLang.OpCodes.OpValue";
 	}
 	
 	
@@ -42,9 +40,9 @@ export class OpNope extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(){
+	void constructor(string value = ""){
 		parent();
-		this.childs = new Vector<BaseOpCode>();
+		this.value = value;
 	}
 	
 	
@@ -53,7 +51,6 @@ export class OpNope extends BaseOpCode{
 	 * Destructor
 	 */ 
 	void destructor(){
-		delete this.childs;
 		parent();
 	}
 	
@@ -65,7 +62,7 @@ export class OpNope extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("childs");
+		names.push("value");
 	}
 	
 	
@@ -76,7 +73,7 @@ export class OpNope extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'childs') return this.childs;
+		if (variable_name == 'value') return this.value;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -88,7 +85,7 @@ export class OpNope extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'childs') this.childs = value;
+		if (variable_name == 'value') this.value = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -99,7 +96,7 @@ export class OpNope extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpNope){
+		if (obj instanceof OpValue){
 			this.value = clone obj.value;
 		}
 		parent::assign(obj);
