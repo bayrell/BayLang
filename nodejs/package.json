@@ -1,6 +1,7 @@
 {
   "description": "Bayrell Lang",
   "files": [
+	"Exceptions/*.js",
 	"LangBay/*.js",
 	"LangES6/*.js",
 	"OpCodes/*.js",
