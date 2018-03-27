@@ -26,6 +26,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/BaseOpCode.js",
 		"/assets/bayrell_lang_es6/Exceptions/EndOfStringExpected.js",
 		"/assets/bayrell_lang_es6/Exceptions/HexNumberExpected.js",
+		"/assets/bayrell_lang_es6/Exceptions/TwiceDeclareElseError.js",
 	])
 	.load([
 		"/assets/bayrell_lang_es6/OpCodes/OpValue1.js",
@@ -35,6 +36,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 	])
 	.load([
 		"/assets/bayrell_lang_es6/LangBay/ParserBay.js",
+		"/assets/bayrell_lang_es6/LangBay/ParserBayNameToken.js",
 		"/assets/bayrell_lang_es6/LangBay/ParserBayToken.js",
 		"/assets/bayrell_lang_es6/LangES6/TranslatorES6.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpAdd.js",

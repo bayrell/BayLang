@@ -26,5 +26,6 @@ class LangConstant{
 	
 	static const int ERROR_END_OF_THE_STRING_EXPECTED = RuntimeConstant::ERROR_MODULE_PARSER - 501;
 	static const int ERROR_PARSER_HEX_NUMBER_EXPECTED = RuntimeConstant::ERROR_MODULE_PARSER - 502;
+	static const int ERROR_TWICE_DECLARE_ERROR = RuntimeConstant::ERROR_MODULE_PARSER - 503;
 	
 }

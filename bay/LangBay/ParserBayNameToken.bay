@@ -15,23 +15,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+namespace BayrellLang.LangBay;
 
 
-export class OpUse extends OpValueString{
+use BayrellRtl.Lib.rs;
+use BayrellRtl.Types.Vector;
+use BayrellParser.ParserToken;
+use BayrellParser.Exceptions.ParserEOF;
+use BayrellParser.Exceptions.ParserExpected;
+use BayrellLang.Exceptions.EndOfStringExpected;
+
+
+export class ParserBayNameToken extends ParserToken{
 	
-	public string op = "op_use";
+	static const string TOKEN_NONE = 'none';
+	static const string TOKEN_BASE = 'token';
 	
 	
 	/**
-	 * Returns classname of the object
-	 * @return string
+	 * Return true if char is token char
+	 * @param {char} ch
+	 * @return {boolean}
 	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpUse";
+	bool isTokenChar (char ch){
+		return rs::strpos('qazwsxedcrfvtgbyhnujmikolp0123456789_.', rs::strtolower(ch)) !== -1;
 	}
 	
 }
+

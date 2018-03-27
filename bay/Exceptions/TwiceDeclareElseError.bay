@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Parser Library.
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -15,23 +15,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+namespace BayrellLang.Exceptions;
+
+use BayrellParser.Exceptions.ParserError;
+use BayrellLang.LangConstant;
 
 
-export class OpUse extends OpValueString{
+class TwiceDeclareElseError extends ParserError{
 	
-	public string op = "op_use";
-	
-	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpUse";
+	void constructor(ContextInterface context, int line, int col, Object prev = null){	
+		
+		if (context == null)
+			context = rtl::globalContext();
+			
+		parent::constructor(
+			context, 
+			context.translate("ERROR_TWICE_DECLARE_ERROR"), 
+			LangConstant::ERROR_TWICE_DECLARE_ERROR, 
+			prev
+		);
+		
+		this.line = line;
+		this.pos = col;
 	}
 	
 }

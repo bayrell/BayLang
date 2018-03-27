@@ -18,10 +18,10 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValue1;
+use BayrellLang.OpCodes.OpValueString;
 
 
-export class OpNamespace extends OpValue1{
+export class OpNamespace extends OpValueString{
 	
 	public string op = "op_namespace";
 	

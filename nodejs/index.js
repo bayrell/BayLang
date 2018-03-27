@@ -22,9 +22,11 @@ module.exports = {
 	'Exceptions': {
 		'EndOfStringExpected': require("./Exceptions/EndOfStringExpected.js"),
 		'HexNumberExpected': require("./Exceptions/HexNumberExpected.js"),
+		'TwiceDeclareElseError': require("./Exceptions/TwiceDeclareElseError.js"),
 	},
 	'LangBay': {
 		'ParserBay': require("./LangBay/ParserBay.js"),
+		'ParserBayNameToken': require("./LangBay/ParserBayNameToken.js"),
 		'ParserBayToken': require("./LangBay/ParserBayToken.js"),
 	},
 	'LangES6': {
