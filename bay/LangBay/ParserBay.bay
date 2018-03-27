@@ -934,7 +934,46 @@ export class ParserBay extends CommonParser{
 		
 		this.matchNextToken(";");
 		
-		return new OpNamespace(name);
+		return new OpUse(name);
+	}
+	
+	
+	
+	/**
+	 * Read operator return
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorReturn(){
+		this.matchNextToken("return");
+		BaseOpCode value = this.readExpression();
+		this.matchNextToken(";");
+		return new OpReturn(value);
+	}
+	
+	
+	
+	/**
+	 * Read operator throw
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorThrow(){
+		this.matchNextToken("throw");
+		BaseOpCode value = this.readExpression();
+		this.matchNextToken(";");
+		return new OpThrow(value);
+	}
+	
+	
+	
+	/**
+	 * Read operator delete
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorDelete(){
+		this.matchNextToken("delete");
+		BaseOpCode value = this.readCallDynamic(true, true, false, false);
+		this.matchNextToken(";");
+		return new OpDelete(value);
 	}
 	
 	
@@ -965,6 +1004,25 @@ export class ParserBay extends CommonParser{
 		}
 		else if (this.findNextToken("use")){
 			return this.readOperatorUse();
+		}
+		else if (this.findNextToken("return")){
+			return this.readOperatorReturn();
+		}
+		else if (this.findNextToken("throw")){
+			return this.readOperatorThrow();
+		}
+		else if (this.findNextToken("delete")){
+			return this.readOperatorDelete();
+		}
+		else if (this.findNextToken("break")){
+			this.matchNextToken('break');
+			this.matchNextToken(';');
+			return new OpBreak();
+		}
+		else if (this.findNextToken("continue")){
+			this.matchNextToken('continue');
+			this.matchNextToken(';');
+			return new OpContinue();
 		}
 		
 		BaseOpCode res = this.readOperatorAssign();
