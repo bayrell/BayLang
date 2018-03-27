@@ -19,15 +19,15 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpTryCatchChilds;
 
 
-export class OpTernary extends BaseOpCode{
+export class OpTryCatch extends BaseOpCode{
 	
-	public string op = "op_ternary";
+	public string op = "op_try_catch";
 	
-	public BaseOpCode condition = null;
-	public BaseOpCode if_true = null;
-	public BaseOpCode if_false = null;
+	public Vector<BaseOpCode> op_try = null;
+	public Vector<OpTryCatchChilds> op_catch = null;
 	
 	
 	/**
@@ -35,7 +35,7 @@ export class OpTernary extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpTernary";
+		return "BayrellLang.OpCodes.OpTryCatch";
 	}
 	
 	
@@ -43,11 +43,11 @@ export class OpTernary extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode condition = null, BaseOpCode if_true = null, BaseOpCode if_false = null){
+	void constructor(Vector<BaseOpCode> op_try = null, Vector<OpTryCatchChilds> op_catch = null)
+	{
 		parent();
-		this.condition = condition;
-		this.if_true = if_true;
-		this.if_false = if_false;
+		this.op_try = op_try;
+		this.op_catch = op_catch;
 	}
 	
 	
@@ -67,10 +67,8 @@ export class OpTernary extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("condition");
-		names.push("expr");
-		names.push("if_true");
-		names.push("if_false");
+		names.push("op_try");
+		names.push("op_catch");
 	}
 	
 	
@@ -81,10 +79,8 @@ export class OpTernary extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'condition') return this.condition;
-		else if (variable_name == 'expr') return this.expr;
-		else if (variable_name == 'if_true') return this.if_true;
-		else if (variable_name == 'if_false') return this.if_false;
+		if (variable_name == 'op_try') return this.op_try;
+		else if (variable_name == 'op_catch') return this.op_catch;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -96,10 +92,8 @@ export class OpTernary extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'condition') this.condition = value;
-		if (variable_name == 'expr') this.expr = value;
-		if (variable_name == 'if_true') this.if_true = value;
-		if (variable_name == 'if_false') this.if_false = value;
+		if (variable_name == 'op_try') this.op_try = value;
+		if (variable_name == 'op_catch') this.op_catch = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -110,11 +104,9 @@ export class OpTernary extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpTernary){
-			this.condition = clone obj.condition;
-			this.expr = clone obj.expr;
-			this.if_true = clone obj.if_true;
-			this.if_false = clone obj.if_false;
+		if (obj instanceof OpTryCatch){
+			this.op_try = clone obj.op_try;
+			this.op_catch = clone obj.op_catch;
 		}
 		parent::assign(obj);
 	}

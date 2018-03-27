@@ -19,15 +19,17 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpIfElse;
 
 
-export class OpTernary extends BaseOpCode{
+export class OpIf extends BaseOpCode{
 	
-	public string op = "op_ternary";
+	public string op = "op_if";
 	
 	public BaseOpCode condition = null;
-	public BaseOpCode if_true = null;
-	public BaseOpCode if_false = null;
+	public Vector<BaseOpCode> if_true = null;
+	public Vector<BaseOpCode> if_false = null;
+	public Vector<OpIfElse> if_else = null;
 	
 	
 	/**
@@ -35,7 +37,7 @@ export class OpTernary extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpTernary";
+		return "BayrellLang.OpCodes.OpIf";
 	}
 	
 	
@@ -43,11 +45,14 @@ export class OpTernary extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode condition = null, BaseOpCode if_true = null, BaseOpCode if_false = null){
+	void constructor(BaseOpCode condition = null, Vector<BaseOpCode> if_true = null, 
+		Vector<BaseOpCode> if_false = null, Vector<OpIfElse> if_else)
+	{
 		parent();
 		this.condition = condition;
 		this.if_true = if_true;
 		this.if_false = if_false;
+		this.if_else = if_else;
 	}
 	
 	
@@ -71,6 +76,7 @@ export class OpTernary extends BaseOpCode{
 		names.push("expr");
 		names.push("if_true");
 		names.push("if_false");
+		names.push("if_else");
 	}
 	
 	
@@ -85,6 +91,7 @@ export class OpTernary extends BaseOpCode{
 		else if (variable_name == 'expr') return this.expr;
 		else if (variable_name == 'if_true') return this.if_true;
 		else if (variable_name == 'if_false') return this.if_false;
+		else if (variable_name == 'if_else') return this.if_else;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -100,6 +107,7 @@ export class OpTernary extends BaseOpCode{
 		if (variable_name == 'expr') this.expr = value;
 		if (variable_name == 'if_true') this.if_true = value;
 		if (variable_name == 'if_false') this.if_false = value;
+		if (variable_name == 'if_else') this.if_else = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -110,11 +118,12 @@ export class OpTernary extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpTernary){
+		if (obj instanceof OpIf){
 			this.condition = clone obj.condition;
 			this.expr = clone obj.expr;
 			this.if_true = clone obj.if_true;
 			this.if_false = clone obj.if_false;
+			this.if_else = clone obj.if_else;
 		}
 		parent::assign(obj);
 	}
