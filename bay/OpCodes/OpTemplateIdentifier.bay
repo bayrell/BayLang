@@ -19,12 +19,13 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellRtl.Interfaces.SerializeInterface;
 
-
-export class OpValue1 extends BaseOpCode{
+export class OpTemplateIdentifier extends BaseOpCode{
 	
-	public string op = "op_value";
-	public BaseOpCode value = null;
+	public string op = "op_template_identifier";
+	public BaseOpCode t = null;
+	public Vector<BaseOpCode> childs = null;
 	
 	
 	/**
@@ -32,7 +33,7 @@ export class OpValue1 extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpValue";
+		return "BayrellLang.OpCodes.OpTemplateIdentifier";
 	}
 	
 	
@@ -40,9 +41,10 @@ export class OpValue1 extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode value = null){
+	void constructor(BaseOpCode t = null, Vector<BaseOpCode> childs = null){
 		parent();
-		this.value = value;
+		this.t = t;
+		this.childs = childs;
 	}
 	
 	
@@ -62,7 +64,8 @@ export class OpValue1 extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("value");
+		names.push("type");
+		names.push("childs");
 	}
 	
 	
@@ -73,7 +76,8 @@ export class OpValue1 extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value') return this.value;
+		if (variable_name == 'type') return this.t;
+		else if (variable_name == 'childs') return this.childs;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -85,7 +89,8 @@ export class OpValue1 extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
+		if (variable_name == 'type') this.t = value;
+		else if (variable_name == 'childs') this.childs = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -96,8 +101,9 @@ export class OpValue1 extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpValue){
-			this.value = clone obj.value;
+		if (obj instanceof OpTypeIdentifier){
+			this.t = clone obj.t;
+			this.childs = clone obj.childs;
 		}
 		parent::assign(obj);
 	}

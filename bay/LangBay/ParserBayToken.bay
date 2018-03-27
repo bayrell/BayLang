@@ -24,6 +24,7 @@ use BayrellRtl.Types.Vector;
 use BayrellParser.ParserToken;
 use BayrellParser.Exceptions.ParserEOF;
 use BayrellParser.Exceptions.ParserExpected;
+use BayrellLang.Exceptions.EndOfStringExpected;
 
 
 export class ParserBayToken extends ParserToken{
@@ -70,6 +71,71 @@ export class ParserBayToken extends ParserToken{
 	
 	
 	/**
+	 * Read next token as string
+	 */
+	string readTokenString(){				
+		var arr1 = ['n', 'r', 't', '\\', '"', "'"];
+		/*
+		\[0-7]{1,3}	- последовательность символов, соответствующая регулярному выражению символа в восьмеричной системе счисления, который молча переполняется, чтобы поместиться в байт (т.е. "\400" === "\000")
+		\x[0-9A-Fa-f]{1,2} - последовательность символов, соответствующая регулярному выражению символа в шестнадцатеричной системе счисления
+		\u{[0-9A-Fa-f]+} - последовательность символов, соответствующая регулярному выражению символа Unicode, которая отображается в строка в представлении UTF-8 (добавлено в PHP 7.0.0)
+		*/
+		Vector<string> arr1 = (new Vector)
+			.push("n")
+			.push("r")
+			.push("t")
+			.push("\\")
+			.push("'")
+			.push('"')
+		;
+		
+		int start_line = this.start_line;
+		int start_col = this.start_col;
+		string match_char = this.lookChar();
+		this.moveChar(match_char);
+		
+		string res_str = "";
+		string look = this.lookChar();
+		
+		while (look != match_char){
+			
+			if (look == '\\'){
+				this.moveChar(look);
+				string look2 = this.lookChar();
+				if (arr1.indexOf(look2) != -1){
+					if (look2 == 'n') res_str ~= '\n';
+					else if (look2 == 'r') res_str ~= '\r';
+					else if (look2 == 't') res_str ~= '\t';
+					else if (look2 == '\\') res_str ~= '\\';
+					else if (look2 == '"') res_str ~= '"';
+					else if (look2 == "'") res_str ~= "'";
+				}
+				else{
+					res_str ~= look2;
+				}
+				this.moveChar(look2);
+			}
+			else{
+				res_str ~= look;
+				this.moveChar(look);
+			}
+			
+			look = this.lookChar();
+		}
+		
+		if (this.lookChar() == match_char){
+			this.moveChar(match_char);
+		}
+		else{
+			throw new EndOfStringExpected(this.context(), start_line, start_col);
+		}
+		
+		return res_str;
+	}
+	
+	
+	
+	/**
 	 * Get next token without move cursor pos. Throws error if EOF.
 	 * @param {BayrellParserToken} token
 	 */
@@ -101,11 +167,18 @@ export class ParserBayToken extends ParserToken{
 		}
 		
 		
+		string look = this.lookChar();
+		if (look == "'" or look == '"'){
+			this.tp = self::TOKEN_STRING;
+			this.token = this.readTokenString();
+			this.success = true;
+			return;
+		}
+		
+		
 		/* Try to read normal token */
 		this.tp = self::TOKEN_BASE;
 		this.success = true;
-		
-		string look = this.lookChar();
 		this.token = this.token ~ look;
 		this.moveChar(look);
 		

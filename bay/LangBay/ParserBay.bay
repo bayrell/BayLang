@@ -24,6 +24,9 @@ use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
+use BayrellLang.OpCodes.OpArray;
+use BayrellLang.OpCodes.OpAssign;
+use BayrellLang.OpCodes.OpAssignDeclare;
 use BayrellLang.OpCodes.OpBitAnd;
 use BayrellLang.OpCodes.OpBitNot;
 use BayrellLang.OpCodes.OpBitOr;
@@ -55,8 +58,8 @@ use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
 use BayrellLang.OpCodes.OpSub;
+use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
-use BayrellLang.OpCodes.OpTypeIdentifier;
 use BayrellLang.LangBay.ParserBayToken;
 use BayrellLang.Exceptions.HexNumberExpected;
 use BayrellParser.Exceptions.ParserError;
@@ -228,7 +231,7 @@ export class ParserBay extends CommonParser{
 				this.matchNextToken("[");
 				ident = this.readExpression();
 				this.matchNextToken("]");
-				obj = new OpGetArray(obj, ident);
+				obj = new OpArray(obj, ident);
 			}
 			
 			else if (this.findNextToken("::") and allow_static){
@@ -258,7 +261,7 @@ export class ParserBay extends CommonParser{
 	 * Read type identifier
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readTypeIdentifier(){
+	BaseOpCode readTemplateIdentifier(){
 		BaseOpCode op_code1 = this.readCallDynamic(true, false, false, false);
 		if (not this.findNextToken("<")){
 			return op_code1;
@@ -276,7 +279,7 @@ export class ParserBay extends CommonParser{
 		}
 		this.matchNextToken(">");
 		
-		return new OpTypeIdentifier(op_code1, v);
+		return new OpTemplateIdentifier(op_code1, v);
 	}
 	
 	
@@ -287,7 +290,7 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readNewInstance(){
 		this.matchNextToken("new");
-		BaseOpCode ident = this.readTypeIdentifier();
+		BaseOpCode ident = this.readTemplateIdentifier();
 		Vector<BaseOpCode> v = this.readCallBody();
 		return new OpNew(ident, v);
 	}
@@ -691,10 +694,80 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read expression
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readAssign(){
+		
+		BaseOpCode op_type = null;
+		BaseOpCode op_ident = null;
+		BaseOpCode op_exp = null;
+		bool success = false;
+		
+		/* Read declare */
+		this.pushToken();
+		try{
+			op_type = this.readTemplateIdentifier();
+			op_ident = this.readIdentifier();
+			if (this.findNextToken("=")){
+				success = true;
+			}
+		}
+		catch (Exception ex){
+			if (ex instanceof ParserError){
+				success = false;
+			}
+			else{
+				throw ex;
+			}
+		}
+		if (success){
+			this.popToken();
+			this.matchNextToken("=");
+			op_exp = this.readExpression();
+			return new OpAssignDeclare(op_type, op_ident, op_exp);
+		}
+		this.popAssignToken();
+		
+		
+		/* Read assign */
+		success = false;
+		this.pushToken();
+		try{
+			op_ident = this.readCallDynamic(true, true, false, false);
+			if (this.findNextToken("=")){
+				success = true;
+			}
+		}
+		catch (Exception ex){
+			if (ex instanceof ParserError){
+				success = false;
+			}
+			else{
+				throw ex;
+			}
+		}
+		if (success){
+			this.popToken();
+			this.matchNextToken("=");
+			op_exp = this.readExpression();
+			return new OpAssign(op_ident, op_exp);
+		}
+		this.popAssignToken();
+		
+		
+		return null;
+	}
+	
+	
+	
+	/**
 	 * Parser function
 	 */
 	void runParser(){
-		this._result = this.readExpression();
+		this._result = this.readAssign();
+		/* this._result = this.readExpression(); */
+		/* this._result = this.readAssign(); */
 		/* this.matchNextToken(';'); */
 	}
 	

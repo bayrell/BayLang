@@ -22,7 +22,7 @@ use BayrellParser.Exceptions.ParserError;
 use BayrellLang.LangConstant;
 
 
-class HexNumberExpected extends ParserError{
+class EndOfStringExpected extends ParserError{
 	
 	void constructor(ContextInterface context, int line, int col, Object prev = null){	
 		
@@ -31,8 +31,8 @@ class HexNumberExpected extends ParserError{
 			
 		parent::constructor(
 			context, 
-			context.translate("ERROR_PARSER_HEX_NUMBER_EXPECTED"), 
-			LangConstant::ERROR_PARSER_HEX_NUMBER_EXPECTED, 
+			context.translate("ERROR_END_OF_THE_STRING_EXPECTED"), 
+			LangConstant::ERROR_END_OF_THE_STRING_EXPECTED, 
 			prev
 		);
 		

@@ -20,6 +20,7 @@
 module.exports = {
 	VERSION: '0.2.0',
 	'Exceptions': {
+		'EndOfStringExpected': require("./Exceptions/EndOfStringExpected.js"),
 		'HexNumberExpected': require("./Exceptions/HexNumberExpected.js"),
 	},
 	'LangBay': {
@@ -33,6 +34,9 @@ module.exports = {
 		'BaseOpCode': require("./OpCodes/BaseOpCode.js"),
 		'OpAdd': require("./OpCodes/OpAdd.js"),
 		'OpAnd': require("./OpCodes/OpAnd.js"),
+		'OpArray': require("./OpCodes/OpArray.js"),
+		'OpAssign': require("./OpCodes/OpAssign.js"),
+		'OpAssignDeclare': require("./OpCodes/OpAssignDeclare.js"),
 		'OpBitAnd': require("./OpCodes/OpBitAnd.js"),
 		'OpBitNot': require("./OpCodes/OpBitNot.js"),
 		'OpBitOr': require("./OpCodes/OpBitOr.js"),
@@ -64,14 +68,15 @@ module.exports = {
 		'OpStatic': require("./OpCodes/OpStatic.js"),
 		'OpString': require("./OpCodes/OpString.js"),
 		'OpSub': require("./OpCodes/OpSub.js"),
+		'OpTemplateIdentifier': require("./OpCodes/OpTemplateIdentifier.js"),
 		'OpTernary': require("./OpCodes/OpTernary.js"),
-		'OpTypeIdentifier': require("./OpCodes/OpTypeIdentifier.js"),
 		'OpValue1': require("./OpCodes/OpValue1.js"),
 		'OpValue2': require("./OpCodes/OpValue2.js"),
 		'OpValueString': require("./OpCodes/OpValueString.js"),
 	},
 	'CommonParser': require("./CommonParser.js"),
 	'CommonTranslator': require("./CommonTranslator.js"),
+	'LangConstant': require("./LangConstant.js"),
 	'ModuleDescription': require("./ModuleDescription.js"),
 };
 
