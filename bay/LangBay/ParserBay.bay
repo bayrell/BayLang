@@ -878,6 +878,71 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read operator for
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorFor(){
+		
+		BaseOpCode loop_condition = null;
+		BaseOpCode loop_init = null;
+		BaseOpCode loop_inc = null;
+		Vector<BaseOpCode> childs = null
+		
+		/* Read loop header */
+		this.matchNextToken("for");
+		this.matchNextToken("(");
+		loop_init = this.readOperatorAssign();
+		this.matchNextToken(";");
+		loop_condition = this.readExpression();
+		this.matchNextToken(";");
+		loop_inc = this.readExpression();
+		this.matchNextToken(";");
+		this.matchNextToken(")");
+		
+		/* Read operators block */
+		this.matchNextToken("{");
+		childs = this.readOperatorsBlock();
+		this.matchNextToken("}");
+		
+		return new OpFor(loop_condition, loop_init, loop_inc, childs);
+	}
+	
+	
+	
+	/**
+	 * Read operator try
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorTry(){
+		
+		Vector<BaseOpCode> op_try = null;
+		Vector<OpTryCatchChilds> op_catch = new Vector();
+		
+		/* Read try block */
+		this.matchNextToken("try");
+		this.matchNextToken("{");
+		op_try = this.readOperatorsBlock();
+		this.matchNextToken("}");
+		
+		/* Read catch */
+		while (this.findNextToken("catch")){
+			OpTryCatchChilds try_catch_child = new OpTryCatchChilds();
+			this.matchNextToken("(");
+			try_catch_child.op_type = this.readTemplateIdentifier();
+			try_catch_child.op_ident = this.readIdentifier();
+			this.matchNextToken(")");
+			this.matchNextToken("{");
+			try_catch_child.childs = this.readOperatorsBlock();
+			this.matchNextToken("}");
+			op_catch.push(try_catch_child);
+		}
+		
+		return new OpTryCatch(op_try, op_catch);
+	}
+	
+	
+	
+	/**
 	 * Read operator namespace
 	 * @return BaseOpCode
 	 */
@@ -995,10 +1060,12 @@ export class ParserBay extends CommonParser{
 		else if (this.findNextToken("while")){
 			return this.readOperatorWhile();
 		}
-		/*
 		else if (this.findNextToken("for")){
 			return this.readOperatorFor();
-		}*/
+		}
+		else if (this.findNextToken("try")){
+			return this.readOperatorTry();
+		}
 		else if (this.findNextToken("namespace")){
 			return this.readOperatorNamespace();
 		}
