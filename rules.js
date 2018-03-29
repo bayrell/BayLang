@@ -71,6 +71,7 @@ module.exports = {
 		'OpCodes/OpValue1',
 		'OpCodes/OpValue2',
 		'OpCodes/OpValueString',
+		'OutputContainer',
 		'LangBay/ParserBay',
 		'LangBay/ParserBayNameToken',
 		'LangBay/ParserBayToken',

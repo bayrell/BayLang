@@ -16,25 +16,124 @@
  *  limitations under the License.
  */
 
-namespace bayrell_lang;
-use .BayrellCode import BayrellCode;
-use .BayrellTranslator import BayrellTranslator;
-use bayrell_rtl import rtl;
+namespace BayrellLang;
 
-export class BayrellTranslatorBay extends BayrellTranslator {
+use BayrellLang.CommonTranslator;
+use BayrellLang.Output.OutputAbstract;
+use BayrellLang.Output.OutputChilds;
+use BayrellLang.Output.OutputNope;
+use BayrellLang.Output.OutputOneLine;
+use BayrellLang.Output.OutputString;
+
+
+export class TranslatorBay extends CommonTranslator {
 	
 	
 	/**
-	 * Возвращает название текущего класса
-	 * @return {string} 
+	 * Operator ADD
 	 */
-	string getClassName(){
-		return "bayrell_lang.BayrellTranslatorBay";
+	OutputAbstract OpAdd(OpAdd code_tree){
+		OutputNope tag = new OutputNope();
+		tag.addChild( this.translateRun(code_tree.value1) );
+		tag.addChild( (new OutputString()).setValueAtSameLine('+') );
+		tag.addChild( this.translateRun(code_tree.value2) );
+		return tag;
 	}
 	
 	
-	static string string_encode(string s){
-		return rtl::json_encode(s);
+	/**
+	 * Operator AND
+	 */
+	OutputAbstract OpAnd(OpAnd code_tree){ 
+		return (new OutputOneLine())
+			.addChild(this.translateRun(code_tree.value1))
+			.addChild((new OutputString()).setValueAtSameLine('and'))
+			.addChild(this.translateRun(code_tree.value2))
+		;
 	}
+	
+	
+	OutputAbstract OpArray(OpArray code_tree){  return null; }
+	
+	
+	
+	/**
+	 * Assign
+	 */
+	OutputAbstract OpAssign(OpAssign code_tree){ 
+		return (new OutputOneLine())
+			.addChild(this.translateRun(code_tree.ident))
+			.addChild((new OutputString()).setValueAtSameLine('='))
+			.addChild(this.translateRun(code_tree.value))
+		;
+	}
+	
+	
+	
+	OutputAbstract OpAssignDeclare(OpAssignDeclare code_tree){  return null; }
+	OutputAbstract OpBitAnd(OpBitAnd code_tree){  return null; }
+	OutputAbstract OpBitNot(OpBitNot code_tree){  return null; }
+	OutputAbstract OpBitOr(OpBitOr code_tree){  return null; }
+	OutputAbstract OpBitXor(OpBitXor code_tree){  return null; }
+	OutputAbstract OpBreak(OpBreak code_tree){  return null; }
+	OutputAbstract OpCall(OpCall code_tree){  return null; }
+	OutputAbstract OpChilds(OpChilds code_tree){  return null; }
+	OutputAbstract OpClone(OpClone code_tree){  return null; }
+	OutputAbstract OpCompare(OpCompare code_tree){  return null; }
+	OutputAbstract OpConcat(OpConcat code_tree){  return null; }
+	OutputAbstract OpContinue(OpContinue code_tree){  return null; }
+	OutputAbstract OpDelete(OpDelete code_tree){  return null; }
+	OutputAbstract OpDiv(OpDiv code_tree){  return null; }
+	OutputAbstract OpDynamic(OpDynamic code_tree){  return null; }
+	OutputAbstract OpFlags(OpFlags code_tree){  return null; }
+	OutputAbstract OpFor(OpFor code_tree){  return null; }
+	OutputAbstract OpHexNumber(OpHexNumber code_tree){  return null; }
+	
+	
+	/**
+	 * Identifier
+	 */
+	OutputAbstract OpIdentifier(OpIdentifier code_tree){  
+		return (new OutputString()).setValueAtSameLine(code_tree.value);
+	}
+	
+	
+	OutputAbstract OpIf(OpIf code_tree){  return null; }
+	OutputAbstract OpIfElse(OpIfElse code_tree){  return null; }
+	OutputAbstract OpMod(OpMod code_tree){  return null; }
+	OutputAbstract OpMult(OpMult code_tree){  return null; }
+	OutputAbstract OpNamespace(OpNamespace code_tree){  return null; }
+	OutputAbstract OpNew(OpNew code_tree){  return null; }
+	OutputAbstract OpNope(OpNope code_tree){  return null; }
+	OutputAbstract OpNot(OpNot code_tree){  return null; }
+	
+	
+	/**
+	 * Number
+	 */
+	OutputAbstract OpNumber(OpNumber code_tree){
+		return (new OutputString()).setValueAtSameLine(code_tree.value);
+	}
+	
+	
+	OutputAbstract OpOr(OpOr code_tree){  return null; }
+	OutputAbstract OpPostDec(OpPostDec code_tree){  return null; }
+	OutputAbstract OpPostInc(OpPostInc code_tree){  return null; }
+	OutputAbstract OpPow(OpPow code_tree){  return null; }
+	OutputAbstract OpPreDec(OpPreDec code_tree){  return null; }
+	OutputAbstract OpPreInc(OpPreInc code_tree){  return null; }
+	OutputAbstract OpReturn(OpReturn code_tree){  return null; }
+	OutputAbstract OpShiftLeft(OpShiftLeft code_tree){  return null; }
+	OutputAbstract OpShiftRight(OpShiftRight code_tree){  return null; }
+	OutputAbstract OpStatic(OpStatic code_tree){  return null; }
+	OutputAbstract OpString(OpString code_tree){  return null; }
+	OutputAbstract OpSub(OpSub code_tree){  return null; }
+	OutputAbstract OpTemplateIdentifier(OpTemplateIdentifier code_tree){  return null; }
+	OutputAbstract OpTernary(OpTernary code_tree){  return null; }
+	OutputAbstract OpThrow(OpThrow code_tree){  return null; }
+	OutputAbstract OpTryCatch(OpTryCatch code_tree){  return null; }
+	OutputAbstract OpUse(OpUse code_tree){  return null; }
+	OutputAbstract OpWhile(OpWhile code_tree){  return null; }
+	
 	
 }

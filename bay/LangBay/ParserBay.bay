@@ -741,7 +741,6 @@ export class ParserBay extends CommonParser{
 			this.popToken();
 			this.matchNextToken("=");
 			op_exp = this.readExpression();
-			this.matchNextToken(";");
 			return new OpAssignDeclare(op_type, op_ident, op_exp);
 		}
 		this.popAssignToken();
@@ -768,7 +767,6 @@ export class ParserBay extends CommonParser{
 			this.popToken();
 			this.matchNextToken("=");
 			op_exp = this.readExpression();
-			this.matchNextToken(";");
 			return new OpAssign(op_ident, op_exp);
 		}
 		this.popAssignToken();
@@ -862,7 +860,7 @@ export class ParserBay extends CommonParser{
 		Vector<BaseOpCode> childs = null;
 		
 		/* Read condition */
-		this.matchNextToken("if");
+		this.matchNextToken("while");
 		this.matchNextToken("(");
 		condition = this.readExpression();
 		this.matchNextToken(")");
@@ -886,7 +884,7 @@ export class ParserBay extends CommonParser{
 		BaseOpCode loop_condition = null;
 		BaseOpCode loop_init = null;
 		BaseOpCode loop_inc = null;
-		Vector<BaseOpCode> childs = null
+		Vector<BaseOpCode> childs = null;
 		
 		/* Read loop header */
 		this.matchNextToken("for");
@@ -896,7 +894,6 @@ export class ParserBay extends CommonParser{
 		loop_condition = this.readExpression();
 		this.matchNextToken(";");
 		loop_inc = this.readExpression();
-		this.matchNextToken(";");
 		this.matchNextToken(")");
 		
 		/* Read operators block */
@@ -927,6 +924,7 @@ export class ParserBay extends CommonParser{
 		/* Read catch */
 		while (this.findNextToken("catch")){
 			OpTryCatchChilds try_catch_child = new OpTryCatchChilds();
+			this.matchNextToken("catch");
 			this.matchNextToken("(");
 			try_catch_child.op_type = this.readTemplateIdentifier();
 			try_catch_child.op_ident = this.readIdentifier();
@@ -1094,10 +1092,11 @@ export class ParserBay extends CommonParser{
 		
 		BaseOpCode res = this.readOperatorAssign();
 		if (res){
+			this.matchNextToken(";");
 			return res;
 		}
 		
-		return null;
+		return this.readCallDynamic();
 	}
 	
 	
@@ -1117,7 +1116,7 @@ export class ParserBay extends CommonParser{
 		}
 	
 		BaseOpCode op_code = null;
-		while (not this.findNextToken("}") and not this.isEOF()){
+		while ( (not this.findNextToken("}")) and (not this.isEOF()) ){
 			op_code = this.readOperator();
 			if (op_code != null){
 				res.push(op_code);

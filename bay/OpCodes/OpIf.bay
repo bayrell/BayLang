@@ -73,7 +73,6 @@ export class OpIf extends BaseOpCode{
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
 		names.push("condition");
-		names.push("expr");
 		names.push("if_true");
 		names.push("if_false");
 		names.push("if_else");
@@ -88,7 +87,6 @@ export class OpIf extends BaseOpCode{
 	 */
 	public var takeValue(string variable_name, var default_value = null){
 		if (variable_name == 'condition') return this.condition;
-		else if (variable_name == 'expr') return this.expr;
 		else if (variable_name == 'if_true') return this.if_true;
 		else if (variable_name == 'if_false') return this.if_false;
 		else if (variable_name == 'if_else') return this.if_else;
@@ -104,7 +102,6 @@ export class OpIf extends BaseOpCode{
 	 */
 	public void assignValue(string variable_name, var value){
 		if (variable_name == 'condition') this.condition = value;
-		if (variable_name == 'expr') this.expr = value;
 		if (variable_name == 'if_true') this.if_true = value;
 		if (variable_name == 'if_false') this.if_false = value;
 		if (variable_name == 'if_else') this.if_else = value;
@@ -120,7 +117,6 @@ export class OpIf extends BaseOpCode{
 	void assign(CoreObject obj){
 		if (obj instanceof OpIf){
 			this.condition = clone obj.condition;
-			this.expr = clone obj.expr;
 			this.if_true = clone obj.if_true;
 			this.if_false = clone obj.if_false;
 			this.if_else = clone obj.if_else;

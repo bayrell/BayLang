@@ -93,6 +93,7 @@ module.exports = {
 	'CommonTranslator': require("./CommonTranslator.js"),
 	'LangConstant': require("./LangConstant.js"),
 	'ModuleDescription': require("./ModuleDescription.js"),
+	'OutputContainer': require("./OutputContainer.js"),
 };
 
 

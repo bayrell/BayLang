@@ -24,4 +24,317 @@ use BayrellLang.CommonTranslator;
 export class TranslatorES6 extends CommonTranslator {
 	
 	
+	
+	/**
+	 * ADD
+	 */
+	string OpAdd(OpAdd op_code){
+		return this.translateRun(op_code.value1) ~ ' + ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * AND
+	 */
+	string OpAnd(OpAnd op_code){ 
+		return this.translateRun(op_code.value1) ~ ' and ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Array
+	 */
+	string OpArray(OpArray op_code){
+		return this.translateRun(op_code.value1) ~ '[' ~ this.s(this.translateRun(op_code.value2)) ~ this.s(']');
+	}
+	
+	
+	
+	/**
+	 * Bit AND
+	 */
+	string OpBitAnd(OpBitAnd op_code){
+		return this.translateRun(op_code.value1) ~ ' & ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Bit NOT
+	 */
+	string OpBitNot(OpBitNot op_code){
+		return '!' ~ this.translateRun(op_code.value);
+	}
+	
+	
+	
+	/**
+	 * Bit OR
+	 */
+	string OpBitOr(OpBitOr op_code){
+		return this.translateRun(op_code.value1) ~ ' | ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Bit XOR
+	 */
+	string OpBitXor(OpBitXor op_code){
+		return this.translateRun(op_code.value1) ~ ' ^ ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	string OpCall(OpCall op_code){  return ""; }
+	
+	string OpCompare(OpCompare op_code){  return ""; }
+	
+	
+	/**
+	 * Concat strings
+	 */
+	string OpConcat(OpConcat op_code){
+		return 
+			'toString(' ~
+			this.s(this.translateRun(op_code.value1)) ~ 
+			this.s(') + ') ~ 
+			this.s('toString(') ~
+			this.s(this.translateRun(op_code.value2)) ~ 
+			this.s(')')
+		;
+	}
+	
+	
+	
+	/**
+	 * Divide
+	 */
+	string OpDiv(OpDiv op_code){
+		return this.translateRun(op_code.value1) ~ ' / ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	string OpDynamic(OpDynamic op_code){  return ""; }
+	
+	
+	
+	/**
+	 * HexNumber
+	 */
+	string OpHexNumber(OpHexNumber op_code){
+		return op_code.value;
+	}
+	
+	
+	
+	/**
+	 * Identifier
+	 */
+	string OpIdentifier(OpIdentifier op_code){
+		return op_code.value;
+	}
+	
+	
+	
+	/**
+	 * Module
+	 */
+	string OpMod(OpMod op_code){
+		return this.translateRun(op_code.value1) ~ ' % ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Multiply
+	 */
+	string OpMult(OpMult op_code){
+		return this.translateRun(op_code.value1) ~ ' * ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * New
+	 */
+	string OpNew(OpNew op_code){  return ""; }
+	
+	
+	
+	/**
+	 * Not
+	 */
+	string OpNot(OpNot op_code){
+		return '!' ~ this.translateRun(op_code.value);
+	}
+	
+	
+	
+	/**
+	 * Number
+	 */
+	string OpNumber(OpNumber op_code){
+		return op_code.value;
+	}
+	
+	
+	
+	/**
+	 * Or
+	 */
+	string OpOr(OpOr op_code){
+		return this.translateRun(op_code.value1) ~ ' || ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Post decrement
+	 */
+	string OpPostDec(OpPostDec op_code){
+		return this.translateRun(op_code.value) ~ '--';
+	}
+	
+	
+	
+	/**
+	 * Post increment
+	 */
+	string OpPostInc(OpPostInc op_code){
+		return this.translateRun(op_code.value) ~ '++';
+	}
+	
+	
+	
+	/**
+	 * Pow
+	 */
+	string OpPow(OpPow op_code){
+		return this.translateRun(op_code.value1) ~ ' ** ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Pre decrement
+	 */
+	string OpPreDec(OpPreDec op_code){
+		return '--' ~ this.translateRun(op_code.value);
+	}
+	
+	
+	
+	/**
+	 * Pre increment
+	 */
+	string OpPreInc(OpPreInc op_code){
+		return '++' ~ this.translateRun(op_code.value);
+	}
+	
+	
+	
+	/**
+	 * Bit shift left
+	 */
+	string OpShiftLeft(OpShiftLeft op_code){
+		return this.translateRun(op_code.value1) ~ ' << ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	
+	/**
+	 * Bit shift right
+	 */
+	string OpShiftRight(OpShiftRight op_code){
+		return this.translateRun(op_code.value1) ~ ' >> ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	string OpStatic(OpStatic op_code){  return ""; }
+	
+	
+	
+	/**
+	 * String
+	 */
+	string OpString(OpString op_code){
+		return '"' ~ op_code.value ~ '"';
+	}
+	
+	
+	
+	/**
+	 * Sub
+	 */
+	string OpSub(OpSub op_code){
+		return this.translateRun(op_code.value1) ~ ' - ' ~ this.s(this.translateRun(op_code.value2));
+	}
+	
+	
+	string OpTemplateIdentifier(OpTemplateIdentifier op_code){  return ""; }
+	string OpTernary(OpTernary op_code){  return ""; }
+	
+	
+	
+	/**
+	 * Assign
+	 */
+	string OpAssign(OpAssign op_code){
+		
+		this.pushOneLine(true);
+		
+		/* one line */
+		this.pushOneLine(true);
+		string res = this.translateRun(op_code.ident) ~ ' = ';
+		this.popOneLine();
+		
+		/* result */
+		this.levelInc();
+		res ~= this.s(this.translateRun(op_code.value));
+		this.levelDec();
+		
+		res ~= this.s(';');
+		this.popOneLine();
+		return res;
+	}
+	
+	
+	/**
+	 * Assign declare
+	 */
+	string OpAssignDeclare(OpAssignDeclare op_code){
+		
+		this.pushOneLine(true);
+		
+		/* one line */
+		this.pushOneLine(true);
+		string res = this.translateRun(op_code.tp) ~ this.translateRun(op_code.ident) ~ ' = ';
+		this.popOneLine();
+		
+		/* result */
+		this.levelInc();
+		res ~= this.s(this.translateRun(op_code.value));
+		this.levelDec();
+		
+		res ~= this.s(';');
+		this.popOneLine();
+		return res;
+	}
+	
+	
+	
+	string OpBreak(OpBreak op_code){  return ""; }
+	string OpClone(OpClone op_code){  return ""; }
+	string OpContinue(OpContinue op_code){  return ""; }
+	string OpDelete(OpDelete op_code){  return ""; }
+	string OpFor(OpFor op_code){  return ""; }
+	string OpIf(OpIf op_code){  return ""; }
+	string OpIfElse(OpIfElse op_code){  return ""; }
+	string OpNamespace(OpNamespace op_code){  return ""; }
+	string OpReturn(OpReturn op_code){  return ""; }
+	string OpThrow(OpThrow op_code){  return ""; }
+	string OpTryCatch(OpTryCatch op_code){  return ""; }
+	string OpUse(OpUse op_code){  return ""; }
+	string OpWhile(OpWhile op_code){  return ""; }
 }

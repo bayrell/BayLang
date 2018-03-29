@@ -20,20 +20,430 @@ namespace BayrellLang;
 
 
 use BayrellRtl.ContextObject;
+use BayrellRtl.Lib.rs;
+use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpAdd;
+use BayrellLang.OpCodes.OpAnd;
+use BayrellLang.OpCodes.OpArray;
+use BayrellLang.OpCodes.OpAssign;
+use BayrellLang.OpCodes.OpAssignDeclare;
+use BayrellLang.OpCodes.OpBitAnd;
+use BayrellLang.OpCodes.OpBitNot;
+use BayrellLang.OpCodes.OpBitOr;
+use BayrellLang.OpCodes.OpBitXor;
+use BayrellLang.OpCodes.OpBreak;
+use BayrellLang.OpCodes.OpCall;
+use BayrellLang.OpCodes.OpChilds;
+use BayrellLang.OpCodes.OpClone;
+use BayrellLang.OpCodes.OpCompare;
+use BayrellLang.OpCodes.OpConcat;
+use BayrellLang.OpCodes.OpContinue;
+use BayrellLang.OpCodes.OpDelete;
+use BayrellLang.OpCodes.OpDiv;
+use BayrellLang.OpCodes.OpDynamic;
+use BayrellLang.OpCodes.OpFlags;
+use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpHexNumber;
+use BayrellLang.OpCodes.OpIdentifier;
+use BayrellLang.OpCodes.OpIf;
+use BayrellLang.OpCodes.OpIfElse;
+use BayrellLang.OpCodes.OpMod;
+use BayrellLang.OpCodes.OpMult;
+use BayrellLang.OpCodes.OpNamespace;
+use BayrellLang.OpCodes.OpNew;
+use BayrellLang.OpCodes.OpNope;
+use BayrellLang.OpCodes.OpNot;
+use BayrellLang.OpCodes.OpNumber;
+use BayrellLang.OpCodes.OpOr;
+use BayrellLang.OpCodes.OpPostDec;
+use BayrellLang.OpCodes.OpPostInc;
+use BayrellLang.OpCodes.OpPow;
+use BayrellLang.OpCodes.OpPreDec;
+use BayrellLang.OpCodes.OpPreInc;
+use BayrellLang.OpCodes.OpReturn;
+use BayrellLang.OpCodes.OpShiftLeft;
+use BayrellLang.OpCodes.OpShiftRight;
+use BayrellLang.OpCodes.OpStatic;
+use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpSub;
+use BayrellLang.OpCodes.OpTemplateIdentifier;
+use BayrellLang.OpCodes.OpTernary;
+use BayrellLang.OpCodes.OpThrow;
+use BayrellLang.OpCodes.OpTryCatch;
+use BayrellLang.OpCodes.OpUse;
+use BayrellLang.OpCodes.OpWhile;
+use BayrellLang.OutputContainer;
 
 
 export class CommonTranslator extends ContextObject{
 	
 	
+	public Vector<boolean> one_lines = null;
+	public Vector<int> opcode_levels = null;
+	
+	public int indent_level = 0;
+	public string indent = "  ";
+	public string space = " ";
+	public string crlf = "\n";
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param {BayrellObject} obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof CommonTranslator){
+			this.one_lines = clone obj.one_lines;
+			this.opcode_levels = clone obj.opcode_levels;
+			this.one_line = obj.one_line;
+			this.indent_level = obj.indent_level;
+			this.indent = obj.indent;
+			this.space = obj.space;
+			this.crlf = obj.crlf;
+		}
+		parent::assign(obj);
+	}
+	
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor (ContextInterface context = null){
+		parent(context);
+		this.one_lines = new Vector<boolean>();
+		this.opcode_levels = new Vector<int>();
+	}
+	
+	
+	
+	/**
+	 * Get current level
+	 */
+	int getCurrentOpCodeLevel(){
+		return this.opcode_levels.get(this.opcode_levels.count() - 1, 999);
+	}
+	
+	
+	
+	/**
+	 * Get old level
+	 */
+	int getOldOpCodeLevel(){
+		return this.opcode_levels.get(this.opcode_levels.count() - 2, 999);
+	}
+	
+	
+	
+	/**
+	 * Push new level
+	 */
+	void pushOpCodeLevel(int level){
+		this.opcode_levels.push(level);
+	}
+	
+	
+
+	/**
+	 * Pop level
+	 */
+	void pushOpCodeLevel(){
+		return this.opcode_levels.pop();
+	}
+	
+	
+	
+	/**
+	 * Push new level
+	 */
+	void pushOneLine(int level){
+		this.one_lines.push(level);
+	}
+	
+	
+
+	/**
+	 * Pop level
+	 */
+	void popOneLine(){
+		return this.one_lines.pop();
+	}
+	
+	
+	
+	/**
+	 * Returns if is one line
+	 */
+	void isOneLine(){
+		return this.one_lines.get(this.one_lines.count() - 1, false);
+	}
+	
+	
+	
+	/**
+	 * Increment indent level
+	 */
+	void levelInc(){
+		if (not this.isOneLine())
+			this.indent_level++;
+	}
+	
+	
+	
+	/**
+	 * Decrease indent level
+	 */
+	void levelDec(){
+		if (not this.isOneLine())
+			this.indent_level--;
+	}
+	
+	
+	
+	/**
+	 * Output string
+	 */
+	string s(string s){
+		if (this.isOneLine())
+			return s;
+		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level) ~ s;
+	}
+	
+	
+	
+	string OpAdd(OpAdd op_code){ return ""; }
+	string OpAnd(OpAnd op_code){ return ""; }
+	string OpArray(OpArray op_code){  return ""; }
+	string OpAssign(OpAssign op_code){  return ""; }
+	string OpAssignDeclare(OpAssignDeclare op_code){  return ""; }
+	string OpBitAnd(OpBitAnd op_code){  return ""; }
+	string OpBitNot(OpBitNot op_code){  return ""; }
+	string OpBitOr(OpBitOr op_code){  return ""; }
+	string OpBitXor(OpBitXor op_code){  return ""; }
+	string OpBreak(OpBreak op_code){  return ""; }
+	string OpCall(OpCall op_code){  return ""; }
+	string OpClone(OpClone op_code){  return ""; }
+	string OpCompare(OpCompare op_code){  return ""; }
+	string OpConcat(OpConcat op_code){  return ""; }
+	string OpContinue(OpContinue op_code){  return ""; }
+	string OpDelete(OpDelete op_code){  return ""; }
+	string OpDiv(OpDiv op_code){  return ""; }
+	string OpDynamic(OpDynamic op_code){  return ""; }
+	string OpFlags(OpFlags op_code){  return ""; }
+	string OpFor(OpFor op_code){  return ""; }
+	string OpHexNumber(OpHexNumber op_code){  return ""; }
+	string OpIdentifier(OpIdentifier op_code){  return ""; }
+	string OpIf(OpIf op_code){  return ""; }
+	string OpIfElse(OpIfElse op_code){  return ""; }
+	string OpMod(OpMod op_code){  return ""; }
+	string OpMult(OpMult op_code){  return ""; }
+	string OpNamespace(OpNamespace op_code){  return ""; }
+	string OpNew(OpNew op_code){  return ""; }
+	string OpNope(OpNope op_code){  return ""; }
+	string OpNot(OpNot op_code){  return ""; }
+	string OpNumber(OpNumber op_code){  return ""; }
+	string OpOr(OpOr op_code){  return ""; }
+	string OpPostDec(OpPostDec op_code){  return ""; }
+	string OpPostInc(OpPostInc op_code){  return ""; }
+	string OpPow(OpPow op_code){  return ""; }
+	string OpPreDec(OpPreDec op_code){  return ""; }
+	string OpPreInc(OpPreInc op_code){  return ""; }
+	string OpReturn(OpReturn op_code){  return ""; }
+	string OpShiftLeft(OpShiftLeft op_code){  return ""; }
+	string OpShiftRight(OpShiftRight op_code){  return ""; }
+	string OpStatic(OpStatic op_code){  return ""; }
+	string OpString(OpString op_code){  return ""; }
+	string OpSub(OpSub op_code){  return ""; }
+	string OpTemplateIdentifier(OpTemplateIdentifier op_code){  return ""; }
+	string OpTernary(OpTernary op_code){  return ""; }
+	string OpThrow(OpThrow op_code){  return ""; }
+	string OpTryCatch(OpTryCatch op_code){  return ""; }
+	string OpUse(OpUse op_code){  return ""; }
+	string OpWhile(OpWhile op_code){  return ""; }
+	
+	
 	
 	/**
 	 * Translate to language
-	 * @param BaseOpCode code_tree - Abstract syntax tree
+	 * @param BaseOpCode op_code - Abstract syntax tree
 	 * @returns string - The result
 	 */
-	string translate(BaseOpCode code_tree){
+	string translateRun(BaseOpCode op_code){
+		
+		
+		if (op_code instanceof OpNope){
+			string res = "";
+			for (int i=0; i<op_code.childs.count(); i++){
+				if (i==0){
+					res ~= this.translateRun(op_code.childs[i]);
+				}
+				else{
+					res ~= this.s( this.translateRun(op_code.childs[i]) );
+				}
+			}
+			return res;
+		}
+		
+		
+		else if (op_code instanceof OpAdd){
+			return this.OpAdd(op_code);
+		}
+		else if (op_code instanceof OpAnd){
+			return this.OpAnd(op_code);
+		}
+		else if (op_code instanceof OpArray){
+			return this.OpArray(op_code);
+		}
+		else if (op_code instanceof OpAssign){
+			return this.OpAssign(op_code);
+		}
+		else if (op_code instanceof OpAssignDeclare){
+			return this.OpAssignDeclare(op_code);
+		}
+		else if (op_code instanceof OpBitAnd){
+			return this.OpBitAnd(op_code);
+		}
+		else if (op_code instanceof OpBitNot){
+			return this.OpBitNot(op_code);
+		}
+		else if (op_code instanceof OpBitOr){
+			return this.OpBitOr(op_code);
+		}
+		else if (op_code instanceof OpBitXor){
+			return this.OpBitXor(op_code);
+		}
+		else if (op_code instanceof OpBreak){
+			return this.OpBreak(op_code);
+		}
+		else if (op_code instanceof OpCall){
+			return this.OpCall(op_code);
+		}
+		else if (op_code instanceof OpClone){
+			return this.OpClone(op_code);
+		}
+		else if (op_code instanceof OpCompare){
+			return this.OpCompare(op_code);
+		}
+		else if (op_code instanceof OpConcat){
+			return this.OpConcat(op_code);
+		}
+		else if (op_code instanceof OpContinue){
+			return this.OpContinue(op_code);
+		}
+		else if (op_code instanceof OpDelete){
+			return this.OpDelete(op_code);
+		}
+		else if (op_code instanceof OpDynamic){
+			return this.OpDynamic(op_code);
+		}
+		else if (op_code instanceof OpFlags){
+			return this.OpFlags(op_code);
+		}
+		else if (op_code instanceof OpFor){
+			return this.OpFor(op_code);
+		}
+		else if (op_code instanceof OpHexNumber){
+			return this.OpHexNumber(op_code);
+		}
+		else if (op_code instanceof OpIdentifier){
+			return this.OpIdentifier(op_code);
+		}
+		else if (op_code instanceof OpIf){
+			return this.OpIf(op_code);
+		}
+		else if (op_code instanceof OpIfElse){
+			return this.OpIfElse(op_code);
+		}
+		else if (op_code instanceof OpMod){
+			return this.OpMod(op_code);
+		}
+		else if (op_code instanceof OpMult){
+			return this.OpMult(op_code);
+		}
+		else if (op_code instanceof OpNamespace){
+			return this.OpNamespace(op_code);
+		}
+		else if (op_code instanceof OpNew){
+			return this.OpNew(op_code);
+		}
+		else if (op_code instanceof OpNope){
+			return this.OpNope(op_code);
+		}
+		else if (op_code instanceof OpNot){
+			return this.OpNot(op_code);
+		}
+		else if (op_code instanceof OpNumber){
+			return this.OpNumber(op_code);
+		}
+		else if (op_code instanceof OpOr){
+			return this.OpOr(op_code);
+		}
+		else if (op_code instanceof OpPostDec){
+			return this.OpPostDec(op_code);
+		}
+		else if (op_code instanceof OpPostInc){
+			return this.OpPostInc(op_code);
+		}
+		else if (op_code instanceof OpPow){
+			return this.OpPow(op_code);
+		}
+		else if (op_code instanceof OpPreDec){
+			return this.OpPreDec(op_code);
+		}
+		else if (op_code instanceof OpPreInc){
+			return this.OpPreInc(op_code);
+		}
+		else if (op_code instanceof OpReturn){
+			return this.OpReturn(op_code);
+		}
+		else if (op_code instanceof OpShiftLeft){
+			return this.OpShiftLeft(op_code);
+		}
+		else if (op_code instanceof OpShiftRight){
+			return this.OpShiftRight(op_code);
+		}
+		else if (op_code instanceof OpStatic){
+			return this.OpStatic(op_code);
+		}
+		else if (op_code instanceof OpString){
+			return this.OpString(op_code);
+		}
+		else if (op_code instanceof OpSub){
+			return this.OpSub(op_code);
+		}
+		else if (op_code instanceof OpTemplateIdentifier){
+			return this.OpTemplateIdentifier(op_code);
+		}
+		else if (op_code instanceof OpTernary){
+			return this.OpTernary(op_code);
+		}
+		else if (op_code instanceof OpThrow){
+			return this.OpThrow(op_code);
+		}
+		else if (op_code instanceof OpTryCatch){
+			return this.OpTryCatch(op_code);
+		}
+		else if (op_code instanceof OpUse){
+			return this.OpUse(op_code);
+		}
+		else if (op_code instanceof OpWhile){
+			return this.OpWhile(op_code);
+		}
+		
 		return "";
+	}
+	
+	
+	
+	/**
+	 * Translate to language
+	 * @param BaseOpCode op_code - Abstract syntax tree
+	 * @returns string - The result
+	 */
+	string translate(BaseOpCode op_code){
+		return this.translateRun(op_code);
 	}
 	
 	
