@@ -167,6 +167,29 @@ export class CommonTranslator extends ContextObject{
 	
 	
 	/**
+	 * Begin operation
+	 */
+	bool beginOperation(bool push_one_line = true){
+		bool old_is_operation = this.is_operation;
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(push_one_line);
+		return old_is_operation;
+	}
+	
+	
+	
+	/**
+	 * End operation
+	 */
+	void endOperation(bool old_is_operation = false){
+		this.popOneLine();
+		this.is_operation = old_is_operation;
+	}
+	
+	
+	
+	/**
 	 * Output string
 	 */
 	string s(string s){

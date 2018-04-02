@@ -507,9 +507,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpAssign(OpAssign op_code){
 		
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		bool old_is_operation = this.beginOperation();
 		
 		/* one line */
 		this.pushOneLine(true);
@@ -522,9 +520,8 @@ export class TranslatorES6 extends CommonTranslator {
 		res ~= this.s(this.translateRun(op_code.value));
 		this.levelDec();
 		
-		res ~= this.s(';');
-		this.popOneLine();
-		this.is_operation = false;
+		if (not old_is_operation) res ~= this.s(';');
+		this.endOperation(old_is_operation);
 		
 		return res;
 	}
@@ -535,13 +532,11 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpAssignDeclare(OpAssignDeclare op_code){
 		
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		bool old_is_operation = this.beginOperation();
 		
 		/* one line */
 		this.pushOneLine(true);
-		string res = this.translateRun(op_code.tp) ~ this.translateRun(op_code.ident) ~ ' = ';
+		string res = this.translateRun(op_code.tp) ~ " " ~ this.translateRun(op_code.ident) ~ ' = ';
 		this.popOneLine();
 		
 		/* result */
@@ -550,9 +545,8 @@ export class TranslatorES6 extends CommonTranslator {
 		res ~= this.s(this.translateRun(op_code.value));
 		this.levelDec();
 		
-		res ~= this.s(';');
-		this.popOneLine();
-		this.is_operation = false;
+		if (not old_is_operation) res ~= this.s(';');
+		this.endOperation(old_is_operation);
 		
 		return res;
 	}
@@ -572,9 +566,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Clone
 	 */
 	string OpClone(OpClone op_code){
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		this.beginOperation();
 		
 		/* result */
 		string s = "clone ";
@@ -582,9 +574,7 @@ export class TranslatorES6 extends CommonTranslator {
 		s ~= this.s(this.translateRun(op_code.value));
 		s ~= ";";
 		
-		this.popOneLine();
-		this.is_operation = false;
-		
+		this.endOperation();
 		return s;
 	}
 	
@@ -603,9 +593,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Delete
 	 */
 	string OpDelete(OpDelete op_code){
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		this.beginOperation();
 		
 		/* result */
 		string s = "delete ";
@@ -613,9 +601,7 @@ export class TranslatorES6 extends CommonTranslator {
 		s ~= this.s(this.translateRun(op_code.value));
 		s ~= ";";
 		
-		this.popOneLine();
-		this.is_operation = false;
-		
+		this.endOperation();
 		return s;
 	}
 	
@@ -624,7 +610,28 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * For
 	 */
-	string OpFor(OpFor op_code){  return ""; }
+	string OpFor(OpFor op_code){
+		string s = "";
+		
+		/* Header */
+		this.beginOperation();
+		s ~= "for (" ~ 
+			this.translateRun(op_code.loop_init) ~ "; " ~
+			this.translateRun(op_code.loop_condition) ~ "; " ~
+			this.translateRun(op_code.loop_inc) ~ "){"
+		;
+		this.endOperation();
+		
+		/* Childs */
+		this.levelInc();
+		for (int i=0; i<op_code.childs.count(); i++){
+			s ~= this.s(this.translateRun(op_code.childs.item(i)));
+		}
+		this.levelDec();
+		s ~= this.s("}");
+		
+		return s;
+	}
 	
 	
 	
@@ -635,12 +642,9 @@ export class TranslatorES6 extends CommonTranslator {
 		string s = "";
 		
 		/* Condition */
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		this.beginOperation();
 		s ~= "if (" ~ this.translateRun(op_code.condition) ~ "){";
-		this.popOneLine();
-		this.is_operation = false;
+		this.endOperation();
 		
 		/* If true */
 		this.levelInc();
@@ -655,12 +659,9 @@ export class TranslatorES6 extends CommonTranslator {
 		for (int i=0; i<op_code.if_else.count(); i++){
 			OpIfElse if_else = op_code.if_else.item(i);
 			
-			this.is_operation = true;
-			this.current_opcode_level = 0;
-			this.pushOneLine(true);
+			this.beginOperation();
 			string res = "elseif (" ~ this.translateRun(if_else.condition) ~ "){";
-			this.popOneLine();
-			this.is_operation = false;
+			this.endOperation();
 			s ~= this.s(res);
 			
 			this.levelInc();
@@ -693,9 +694,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Return
 	 */
 	string OpReturn(OpReturn op_code){
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		this.beginOperation();
 		
 		/* result */
 		string s = "return ";
@@ -705,9 +704,7 @@ export class TranslatorES6 extends CommonTranslator {
 		this.levelDec();
 		
 		s ~= this.s(";");
-		this.popOneLine();
-		this.is_operation = false;
-		
+		this.endOperation();
 		return s;
 	}
 	
@@ -717,9 +714,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Throw
 	 */
 	string OpThrow(OpThrow op_code){
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		this.beginOperation();
 		
 		/* result */
 		string s = "throw ";
@@ -727,9 +722,7 @@ export class TranslatorES6 extends CommonTranslator {
 		s ~= this.s(this.translateRun(op_code.value));
 		s ~= ";";
 		
-		this.popOneLine();
-		this.is_operation = false;
-		
+		this.endOperation();
 		return s;
 	}
 	
@@ -738,7 +731,47 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Try Catch
 	 */
-	string OpTryCatch(OpTryCatch op_code){  return ""; }
+	string OpTryCatch(OpTryCatch op_code){
+		string s = "";
+		
+		s ~= "try{";
+		this.levelInc();
+		for (int i=0; i<op_code.op_try.count(); i++){
+			s ~= this.s(this.translateRun(op_code.op_try.item(i)));
+		}
+		this.levelDec();
+		s ~= this.s("}");
+		
+		
+		string is_else = "";
+		s ~= "catch(_the_exception){";
+		for (int i=0; i<op_code.childs.count(); i++){
+			OpTryCatchChilds try_catch = op_code.childs.item(i);
+			
+			this.beginOperation();
+			string tp = this.translateRun(try_catch.op_type);
+			string name = this.translateRun(try_catch.op_ident);
+			this.endOperation();
+			
+			/* catch childs */
+			this.levelInc();
+			s ~= this.s(is_else ~ "if (_the_exception instanceof " ~ tp ~ "){");
+			this.levelInc();
+			s ~= this.s("var " ~ name ~ " = _the_exception;");
+			for (int j=0; j<try_catch.childs.count(); j++){
+				s ~= this.s(this.translateRun(try_catch.childs.item(j)));
+			}
+			this.levelDec();
+			s ~= this.s("}");
+			this.levelDec();
+			
+			is_else = "else"; 
+		}
+		s ~= this.s("}");
+		
+		
+		return s;
+	}
 	
 	
 	
@@ -749,12 +782,9 @@ export class TranslatorES6 extends CommonTranslator {
 		string s = "";
 		
 		/* Condition */
-		this.is_operation = true;
-		this.current_opcode_level = 0;
-		this.pushOneLine(true);
+		this.beginOperation();
 		s ~= "while (" ~ this.translateRun(op_code.condition) ~ "){";
-		this.popOneLine();
-		this.is_operation = false;
+		this.endOperation();
 		
 		/* Childs */
 		this.levelInc();
@@ -770,7 +800,7 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	
-	/** ======================== Namespace and use ======================== */	
+	/** ======================== Namespace and use ======================== */
 	
 	
 	/**

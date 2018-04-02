@@ -27,7 +27,7 @@ export class OpTryCatch extends BaseOpCode{
 	public string op = "op_try_catch";
 	
 	public Vector<BaseOpCode> op_try = null;
-	public Vector<OpTryCatchChilds> op_catch = null;
+	public Vector<OpTryCatchChilds> childs = null;
 	
 	
 	/**
@@ -43,11 +43,11 @@ export class OpTryCatch extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(Vector<BaseOpCode> op_try = null, Vector<OpTryCatchChilds> op_catch = null)
+	void constructor(Vector<BaseOpCode> op_try = null, Vector<OpTryCatchChilds> childs = null)
 	{
 		parent();
 		this.op_try = op_try;
-		this.op_catch = op_catch;
+		this.childs = childs;
 	}
 	
 	
@@ -68,7 +68,7 @@ export class OpTryCatch extends BaseOpCode{
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
 		names.push("op_try");
-		names.push("op_catch");
+		names.push("childs");
 	}
 	
 	
@@ -80,7 +80,7 @@ export class OpTryCatch extends BaseOpCode{
 	 */
 	public var takeValue(string variable_name, var default_value = null){
 		if (variable_name == 'op_try') return this.op_try;
-		else if (variable_name == 'op_catch') return this.op_catch;
+		else if (variable_name == 'childs') return this.childs;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -93,7 +93,7 @@ export class OpTryCatch extends BaseOpCode{
 	 */
 	public void assignValue(string variable_name, var value){
 		if (variable_name == 'op_try') this.op_try = value;
-		if (variable_name == 'op_catch') this.op_catch = value;
+		if (variable_name == 'childs') this.childs = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -106,7 +106,7 @@ export class OpTryCatch extends BaseOpCode{
 	void assign(CoreObject obj){
 		if (obj instanceof OpTryCatch){
 			this.op_try = clone obj.op_try;
-			this.op_catch = clone obj.op_catch;
+			this.childs = clone obj.childs;
 		}
 		parent::assign(obj);
 	}
