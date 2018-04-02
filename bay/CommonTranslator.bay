@@ -80,8 +80,9 @@ export class CommonTranslator extends ContextObject{
 	
 	
 	public Vector<boolean> one_lines = null;
-	public Vector<int> opcode_levels = null;
 	
+	public bool is_operation = false;
+	public int current_opcode_level = 0;
 	public int indent_level = 0;
 	public string indent = "  ";
 	public string space = " ";
@@ -96,8 +97,8 @@ export class CommonTranslator extends ContextObject{
 	void assign(CoreObject obj){
 		if (obj instanceof CommonTranslator){
 			this.one_lines = clone obj.one_lines;
-			this.opcode_levels = clone obj.opcode_levels;
-			this.one_line = obj.one_line;
+			this.is_operation = obj.is_operation;
+			this.current_opcode_level = obj.current_opcode_level;
 			this.indent_level = obj.indent_level;
 			this.indent = obj.indent;
 			this.space = obj.space;
@@ -114,43 +115,6 @@ export class CommonTranslator extends ContextObject{
 	void constructor (ContextInterface context = null){
 		parent(context);
 		this.one_lines = new Vector<boolean>();
-		this.opcode_levels = new Vector<int>();
-	}
-	
-	
-	
-	/**
-	 * Get current level
-	 */
-	int getCurrentOpCodeLevel(){
-		return this.opcode_levels.get(this.opcode_levels.count() - 1, 999);
-	}
-	
-	
-	
-	/**
-	 * Get old level
-	 */
-	int getOldOpCodeLevel(){
-		return this.opcode_levels.get(this.opcode_levels.count() - 2, 999);
-	}
-	
-	
-	
-	/**
-	 * Push new level
-	 */
-	void pushOpCodeLevel(int level){
-		this.opcode_levels.push(level);
-	}
-	
-	
-
-	/**
-	 * Pop level
-	 */
-	void pushOpCodeLevel(){
-		return this.opcode_levels.pop();
 	}
 	
 	
@@ -211,6 +175,17 @@ export class CommonTranslator extends ContextObject{
 		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level) ~ s;
 	}
 	
+	
+	
+	/**
+	 * Output string witch brackets
+	 */
+	string o(string s, int old_opcode_level, int current_opcode_level){
+		if (old_opcode_level > current_opcode_level){
+			return "("~s~")";
+		}
+		return s;
+	}
 	
 	
 	string OpAdd(OpAdd op_code){ return ""; }

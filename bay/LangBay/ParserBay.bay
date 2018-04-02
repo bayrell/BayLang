@@ -222,15 +222,74 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read new or await function
+	 */
+	BaseOpCode readGroupExpression(){
+		if (this.findNextToken('(')){
+			this.matchNextToken('(');
+			BaseOpCode op_code = this.readExpression();
+			this.matchNextToken(')');
+			return op_code;
+		}
+		return this.readIdentifier();
+	}
+	
+	
+	
+	/**
+	 * Read new instance
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readNewInstance(){
+		this.matchNextToken("new");
+		BaseOpCode ident = this.readTemplateIdentifier();
+		Vector<BaseOpCode> v = this.readCallBody();
+		return new OpNew(ident, v);
+	}
+	
+	
+	
+	/**
+	 * Read call await
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readCallAwait(){
+		this.matchNextToken("await");
+		BaseOpCode ident = this.readCallDynamic(true, true, true, true, false);
+		Vector<BaseOpCode> v = this.readCallBody();
+		return new OpCallAwait(ident, v);
+	}
+	
+	
+	
+	/**
+	 * Read new or await function
+	 */
+	BaseOpCode readNewAwait(){
+		if (this.findNextToken('new')){
+			return this.readNewInstance();
+		}
+		else if (this.findNextToken('await')){
+			return this.readCallAwait();
+		}
+		return this.readGroupExpression();
+	}
+	
+	
+	
+	/**
 	 * Read call dynamic
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readCallDynamic(bool allow_dynamic = true, bool allow_bracket = true, 
-	bool allow_static = true, bool allow_call = true){
+	bool allow_static = true, bool allow_call = true, bool allow_new_await = false){
 		
 		bool can_static = true;
 		
-		BaseOpCode obj = this.readIdentifier();
+		BaseOpCode obj = null;
+		if (allow_new_await) obj = this.readNewAwait();
+		else obj = this.readGroupExpression();
+			
 		BaseOpCode ident = null;
 		while ((this.findNextToken(".") and allow_dynamic) or 
 		       (this.findNextToken("[") and allow_bracket) or 
@@ -278,7 +337,7 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readTemplateIdentifier(){
-		BaseOpCode op_code1 = this.readCallDynamic(true, false, false, false);
+		BaseOpCode op_code1 = this.readCallDynamic(true, false, false, false, false);
 		if (not this.findNextToken("<")){
 			return op_code1;
 		}
@@ -286,11 +345,11 @@ export class ParserBay extends CommonParser{
 		Vector<BaseOpCode> v = new Vector();
 		
 		this.matchNextToken("<");
-		BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false);
+		BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false, false);
 		v.push(op_code2);
 		
 		while (this.findNextToken(",")){
-			BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false);
+			BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false, false);
 			v.push(op_code2);		
 		}
 		this.matchNextToken(">");
@@ -301,55 +360,16 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read new instance
-	 * @return BaseOpCode
-	 */
-	BaseOpCode readNewInstance(){
-		this.matchNextToken("new");
-		BaseOpCode ident = this.readTemplateIdentifier();
-		Vector<BaseOpCode> v = this.readCallBody();
-		return new OpNew(ident, v);
-	}
-	
-	
-	
-	/**
-	 * Read call await
-	 * @return BaseOpCode
-	 */
-	BaseOpCode readCallAwait(){
-		this.matchNextToken("await");
-		BaseOpCode ident = this.readCallDynamic();
-		Vector<BaseOpCode> v = this.readCallBody();
-		return new OpCallAwait(ident, v);
-	}
-	
-	
-	
-	/**
 	 * Read element
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readExpressionElement(){
 		
-		if (this.findNextToken('(')){
-			this.matchNextToken('(');
-			BaseOpCode op_code = this.readExpression();
-			this.matchNextToken(')');
-			return op_code;
-		}
-		else if (this.findNextToken('new')){
-			return this.readNewInstance();
-		}
-		else if (this.findNextToken('await')){
-			return this.readCallAwait();
-		}
-		
 		BaseOpCode op_code = this.readFixed();
 		if (op_code != null)
 			return op_code;
 			
-		return this.readCallDynamic();
+		return this.readCallDynamic(true, true, true, true, true);
 	}
 	
 	
@@ -691,7 +711,7 @@ export class ParserBay extends CommonParser{
 			this.matchNextToken(':');
 			BaseOpCode if_false = this.readExpressionOr();
 			
-			return OpTernary(op_code, if_true, if_false);
+			return new OpTernary(op_code, if_true, if_false);
 		}
 		
 		return op_code;
@@ -750,7 +770,7 @@ export class ParserBay extends CommonParser{
 		success = false;
 		this.pushToken();
 		try{
-			op_ident = this.readCallDynamic(true, true, false, false);
+			op_ident = this.readCallDynamic(true, true, false, false, false);
 			if (this.findNextToken("=")){
 				success = true;
 			}
@@ -1034,7 +1054,7 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readOperatorDelete(){
 		this.matchNextToken("delete");
-		BaseOpCode value = this.readCallDynamic(true, true, false, false);
+		BaseOpCode value = this.readCallDynamic(true, true, false, false, false);
 		this.matchNextToken(";");
 		return new OpDelete(value);
 	}
@@ -1096,7 +1116,7 @@ export class ParserBay extends CommonParser{
 			return res;
 		}
 		
-		return this.readCallDynamic();
+		return this.readCallDynamic(true, true, true, true, true);
 	}
 	
 	
