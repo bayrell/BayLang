@@ -498,8 +498,8 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	
-	/** ============================ Operators ============================ */
 	
+	/** ============================ Operators ============================ */
 	
 	
 	/**
@@ -559,17 +559,228 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	
-	string OpBreak(OpBreak op_code){  return ""; }
-	string OpClone(OpClone op_code){  return ""; }
-	string OpContinue(OpContinue op_code){  return ""; }
-	string OpDelete(OpDelete op_code){  return ""; }
+	/**
+	 * Break
+	 */
+	string OpBreak(OpBreak op_code){
+		return "break;"; 
+	}
+	
+	
+	
+	/**
+	 * Clone
+	 */
+	string OpClone(OpClone op_code){
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(true);
+		
+		/* result */
+		string s = "clone ";
+		this.current_opcode_level = 0;
+		s ~= this.s(this.translateRun(op_code.value));
+		s ~= ";";
+		
+		this.popOneLine();
+		this.is_operation = false;
+		
+		return s;
+	}
+	
+	
+	
+	/**
+	 * Continue
+	 */
+	string OpContinue(OpContinue op_code){
+		return "continue;"; 
+	}
+	
+	
+	
+	/**
+	 * Delete
+	 */
+	string OpDelete(OpDelete op_code){
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(true);
+		
+		/* result */
+		string s = "delete ";
+		this.current_opcode_level = 0;
+		s ~= this.s(this.translateRun(op_code.value));
+		s ~= ";";
+		
+		this.popOneLine();
+		this.is_operation = false;
+		
+		return s;
+	}
+	
+	
+	
+	/**
+	 * For
+	 */
 	string OpFor(OpFor op_code){  return ""; }
-	string OpIf(OpIf op_code){  return ""; }
-	string OpIfElse(OpIfElse op_code){  return ""; }
-	string OpNamespace(OpNamespace op_code){  return ""; }
-	string OpReturn(OpReturn op_code){  return ""; }
-	string OpThrow(OpThrow op_code){  return ""; }
+	
+	
+	
+	/**
+	 * If
+	 */
+	string OpIf(OpIf op_code){
+		string s = "";
+		
+		/* Condition */
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(true);
+		s ~= "if (" ~ this.translateRun(op_code.condition) ~ "){";
+		this.popOneLine();
+		this.is_operation = false;
+		
+		/* If true */
+		this.levelInc();
+		for (int i=0; i<op_code.if_true.count(); i++){
+			s ~= this.s(this.translateRun(op_code.if_true.item(i)));
+		}
+		this.levelDec();
+		s ~= this.s("}");
+		
+		
+		/* If else */
+		for (int i=0; i<op_code.if_else.count(); i++){
+			OpIfElse if_else = op_code.if_else.item(i);
+			
+			this.is_operation = true;
+			this.current_opcode_level = 0;
+			this.pushOneLine(true);
+			string res = "elseif (" ~ this.translateRun(if_else.condition) ~ "){";
+			this.popOneLine();
+			this.is_operation = false;
+			s ~= this.s(res);
+			
+			this.levelInc();
+			for (int i=0; i<if_else.if_true.count(); i++){
+				s ~= this.s(this.translateRun(if_else.if_true.item(i)));
+			}
+			this.levelDec();
+			s ~= this.s("}");
+		}
+		
+		
+		/* If false */
+		if (op_code.if_false != null){
+			s ~= this.s("else {");
+			this.levelInc();
+			for (int i=0; i<op_code.if_false.count(); i++){
+				s ~= this.s(this.translateRun(op_code.if_false.item(i)));
+			}
+			this.levelDec();
+			s ~= this.s("}");
+		}
+		
+		
+		return s;
+	}
+	
+	
+	
+	/**
+	 * Return
+	 */
+	string OpReturn(OpReturn op_code){
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(true);
+		
+		/* result */
+		string s = "return ";
+		this.current_opcode_level = 0;
+		this.levelInc();
+		s ~= this.s(this.translateRun(op_code.value));
+		this.levelDec();
+		
+		s ~= this.s(";");
+		this.popOneLine();
+		this.is_operation = false;
+		
+		return s;
+	}
+	
+	
+	
+	/**
+	 * Throw
+	 */
+	string OpThrow(OpThrow op_code){
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(true);
+		
+		/* result */
+		string s = "throw ";
+		this.current_opcode_level = 0;
+		s ~= this.s(this.translateRun(op_code.value));
+		s ~= ";";
+		
+		this.popOneLine();
+		this.is_operation = false;
+		
+		return s;
+	}
+	
+	
+	
+	/**
+	 * Try Catch
+	 */
 	string OpTryCatch(OpTryCatch op_code){  return ""; }
+	
+	
+	
+	/**
+	 * While
+	 */
+	string OpWhile(OpWhile op_code){
+		string s = "";
+		
+		/* Condition */
+		this.is_operation = true;
+		this.current_opcode_level = 0;
+		this.pushOneLine(true);
+		s ~= "while (" ~ this.translateRun(op_code.condition) ~ "){";
+		this.popOneLine();
+		this.is_operation = false;
+		
+		/* Childs */
+		this.levelInc();
+		for (int i=0; i<op_code.childs.count(); i++){
+			s ~= this.s(this.translateRun(op_code.childs.item(i)));
+		}
+		this.levelDec();
+		s ~= this.s("}");
+		
+		return s;
+	}
+	
+	
+	
+	
+	/** ======================== Namespace and use ======================== */	
+	
+	
+	/**
+	 * Namespace
+	 */
+	string OpNamespace(OpNamespace op_code){  return ""; }
+	
+	
+	/**
+	 * Use
+	 */
 	string OpUse(OpUse op_code){  return ""; }
-	string OpWhile(OpWhile op_code){  return ""; }
 }

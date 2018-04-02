@@ -830,6 +830,7 @@ export class ParserBay extends CommonParser{
 					OpIfElse op_if_else = new OpIfElse();
 					
 					/* Read condition */
+					this.matchNextToken("if");
 					this.matchNextToken("(");
 					op_if_else.condition = this.readExpression();
 					this.matchNextToken(")");
@@ -853,6 +854,7 @@ export class ParserBay extends CommonParser{
 				OpIfElse op_if_else = new OpIfElse();
 				
 				/* Read condition */
+				this.matchNextToken("elseif");
 				this.matchNextToken("(");
 				op_if_else.condition = this.readExpression();
 				this.matchNextToken(")");

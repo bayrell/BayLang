@@ -211,7 +211,6 @@ export class CommonTranslator extends ContextObject{
 	string OpHexNumber(OpHexNumber op_code){  return ""; }
 	string OpIdentifier(OpIdentifier op_code){  return ""; }
 	string OpIf(OpIf op_code){  return ""; }
-	string OpIfElse(OpIfElse op_code){  return ""; }
 	string OpMod(OpMod op_code){  return ""; }
 	string OpMult(OpMult op_code){  return ""; }
 	string OpNamespace(OpNamespace op_code){  return ""; }
@@ -327,9 +326,6 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpIf){
 			return this.OpIf(op_code);
-		}
-		else if (op_code instanceof OpIfElse){
-			return this.OpIfElse(op_code);
 		}
 		else if (op_code instanceof OpMod){
 			return this.OpMod(op_code);
