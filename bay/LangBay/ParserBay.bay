@@ -774,33 +774,9 @@ export class ParserBay extends CommonParser{
 		
 		BaseOpCode op_type = null;
 		BaseOpCode op_ident = null;
+		string op_ident_name = "";
 		BaseOpCode op_exp = null;
 		bool success = false;
-		
-		/* Read declare */
-		this.pushToken();
-		try{
-			op_type = this.readTemplateIdentifier();
-			op_ident = this.readIdentifier();
-			if (this.findNextToken("=")){
-				success = true;
-			}
-		}
-		catch (Exception ex){
-			if (ex instanceof ParserError){
-				success = false;
-			}
-			else{
-				throw ex;
-			}
-		}
-		if (success){
-			this.popToken();
-			this.matchNextToken("=");
-			op_exp = this.readExpression();
-			return new OpAssignDeclare(op_type, op_ident, op_exp);
-		}
-		this.popAssignToken();
 		
 		
 		/* Read assign */
@@ -829,7 +805,32 @@ export class ParserBay extends CommonParser{
 		this.popAssignToken();
 		
 		
-		return null;
+		/* Read declare */
+		this.pushToken();
+		try{
+			op_type = this.readTemplateIdentifier();
+			op_ident_name = this.readIdentifierName();
+			if (this.findNextToken("=")){
+				success = true;
+			}
+		}
+		catch (Exception ex){
+			if (ex instanceof ParserError){
+				success = false;
+			}
+			else{
+				throw ex;
+			}
+		}
+		if (success){
+			this.popToken();
+			this.matchNextToken("=");
+			op_exp = this.readExpression();
+			return new OpAssignDeclare(op_type, op_ident_name, op_exp);
+		}
+		this.popToken();
+		
+		return new OpAssignDeclare(op_type, op_ident_name, null);
 	}
 	
 	
@@ -1173,14 +1174,39 @@ export class ParserBay extends CommonParser{
 	 * Read operator namespace
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readDeclareClassFunction(){
-		OpClassDeclare res = new OpClassDeclare();
+	OpFunctionDeclare readDeclareClassFunction(){
+		OpFunctionDeclare res = new OpFunctionDeclare();
 		
+		this.pushToken();
 		res.result_type = this.readTemplateIdentifier();
 		res.name = this.readIdentifierName();
+		
+		/* If not function */
+		if (this.lookToken() != "("){
+			this.popAssignToken();
+			return null;
+		}
+		
 		this.matchNextToken("(");
+		while (not this.findNextTokenVector(")") and not this.isEOF()){
+			
+			BaseOpCode op_code = this.readOperatorAssign();
+			if (op_code instanceof OpAssign){
+				this.parserError("Assign are not alowed here");
+			}
+			else if (op_code instanceof OpAssignDeclare){
+				res.args.push(op_code);
+			}
+			
+			if (this.findNextToken(",")){
+				this.matchNextToken(",");
+				continue;
+			}
+			break;
+		}
 		this.matchNextToken(")");
 		res.childs = this.readOperatorsBlock();
+		this.popToken();
 		
 		return res;
 	}
@@ -1223,10 +1249,10 @@ export class ParserBay extends CommonParser{
 		BaseOpCode op_code = null;
 		this.matchNextToken("class");
 		
-		res.class_name = this.readIdentifier();
+		res.class_name = this.readIdentifierName();
 		if (this.findNextToken("extends")){
 			this.matchNextToken("extends");
-			res.extends = this.readIdentifier();
+			res.class_extends = this.readIdentifier();
 		}
 		
 		if (this.findNextToken("implements")){
@@ -1246,6 +1272,13 @@ export class ParserBay extends CommonParser{
 		while ((not this.findNextToken("}")) and (not this.isEOF())){
 			
 			flags = this.readFlags();
+			op_code = this.readDeclareClassFunction();
+			if (op_code){
+				op_code.flags = flags;
+				res.class_functions.push(op_code);
+				continue;
+			}
+			
 			op_code = this.readOperatorAssign();
 			if (op_code instanceof OpAssign){
 				this.parserError("Assign are not alowed here");
@@ -1254,13 +1287,6 @@ export class ParserBay extends CommonParser{
 				op_code.flags = flags;
 				res.class_variables.push(op_code);
 				this.matchNextToken(";");
-				continue;
-			}
-			
-			op_code = this.readDeclareClassFunction();
-			if (op_code){
-				op_code.flags = flags;
-				res.class_functions.push(op_code);
 				continue;
 			}
 			

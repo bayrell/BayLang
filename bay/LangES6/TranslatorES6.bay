@@ -559,18 +559,26 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpAssignDeclare(OpAssignDeclare op_code){
 		
+		string res = "";
 		bool old_is_operation = this.beginOperation();
 		
-		/* one line */
-		this.pushOneLine(true);
-		string res = this.translateRun(op_code.tp) ~ " " ~ this.translateRun(op_code.ident) ~ ' = ';
-		this.popOneLine();
-		
-		/* result */
-		this.current_opcode_level = 0;
-		this.levelInc();
-		res ~= this.s(this.translateRun(op_code.value));
-		this.levelDec();
+		if (op_code.value == null){
+			this.pushOneLine(true);
+			res = this.translateRun(op_code.tp) ~ " " ~ op_code.name;
+			this.popOneLine();
+		}
+		else{
+			/* one line */
+			this.pushOneLine(true);
+			res = this.translateRun(op_code.tp) ~ " " ~ op_code.name ~ ' = ';
+			this.popOneLine();
+			
+			/* result */
+			this.current_opcode_level = 0;
+			this.levelInc();
+			res ~= this.s(this.translateRun(op_code.value));
+			this.levelDec();
+		}
 		
 		if (not old_is_operation) res ~= this.s(';');
 		this.endOperation(old_is_operation);
@@ -851,4 +859,178 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		return "";
 	}
+	
+	
+	
+	
+	/** ============================= Classes ============================= */
+	
+	
+	/**
+	 * Function declare
+	 */
+	string OpFunctionDeclare(OpFunctionDeclare op_code){
+		string res = "";
+		string ch = "";
+		string s = "";
+		
+		/* Header */
+		this.beginOperation();
+		res ~= op_code.name;
+		res ~= "(";
+		for (int i=0; i<op_code.args.count(); i++){
+			OpAssignDeclare variable = op_code.args.item(i);
+			this.pushOneLine(true);
+			res ~= ch ~ this.translateRun(variable.tp) ~ " " ~ variable.name;
+			this.popOneLine();
+			ch = ", ";
+		}
+		res ~= ")";
+		res ~= "{";
+		this.endOperation();
+		this.levelInc();
+		
+		/* Default variables */
+		for (int i=0; i<op_code.args.count(); i++){
+			OpAssignDeclare variable = op_code.args.item(i);
+			if (variable.value == null)
+				continue;
+			this.pushOneLine(true);
+			s = "if ("~variable.name~" == undefined) "~variable.name~"="~this.translateRun(variable.value)~";";
+			this.popOneLine();
+			res ~= this.s(s);
+		}
+		
+		/* Childs */
+		for (int i=0; i<op_code.childs.count(); i++){
+			res ~= this.s(this.translateRun(op_code.childs.item(i)));
+		}
+		this.levelDec();
+		res ~= this.s("}");
+		
+		return res;
+	}
+	
+	
+	
+	
+	/**
+	 * Class declare header
+	 */
+	string OpClassDeclareHeader(OpClassDeclare op_code){
+		
+		string s = "";
+		string res = "";
+		string name = "";
+		string ch = "";
+		Vector<string> v = rs::explode(".", this.current_namespace);
+		
+		for (int i=0; i<v.count(); i++){
+			name ~= ch ~ v.item(i);
+			s = "if (typeof "~name~" == 'undefined') "~name~" = {};";
+			if (i==0) res ~= s;
+			else res ~= this.s(s);
+			ch = ".";
+		}
+		
+		this.beginOperation();
+		s = this.current_namespace ~ "." ~ op_code.class_name ~ " = class";
+		if (op_code.class_extends != ""){
+			s ~= " extends " ~ this.translateRun(op_code.class_extends);
+		}
+		s ~= "{";
+		this.endOperation();
+		res ~= this.s(s);
+		this.levelInc();
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Class declare footer
+	 */
+	string OpClassDeclareFooter(OpClassDeclare op_code){
+		
+		string res = "";
+		
+		/* Static variables */
+		for (int i=0; i<op_code.class_variables.count(); i++){
+			OpAssignDeclare variable = op_code.class_variables.item(i);
+			if (variable.flags != null and variable.flags.p_static == true){
+				this.beginOperation();
+				string s = this.current_namespace ~ "." ~ op_code.class_name ~ "." ~ variable.name ~ " = " ~
+					this.translateRun(variable.value) ~ ";";
+				this.endOperation();
+				res ~= this.s(s);
+			}
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Class declare
+	 */
+	string OpClassDeclare(OpClassDeclare op_code){
+		string res = "";
+		
+		
+		/* Header */
+		res ~= this.OpClassDeclareHeader(op_code);
+		
+		
+		/* Init function */
+		if (this.current_namespace != 'BayrellRtl' or op_code.class_name != 'CoreObject'){
+			res ~= this.s("_init(){");
+			this.levelInc();
+			
+			/* super init */
+			if (op_code.class_extends != ""){
+				res ~= this.s("super._init();");
+			}
+			
+			/* Output variables */
+			for (int i=0; i<op_code.class_variables.count(); i++){
+				OpAssignDeclare variable = op_code.class_variables.item(i);
+				if (variable.flags != null and variable.flags.p_static == false){
+					this.beginOperation();
+					string s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+					this.endOperation();
+					res ~= this.s(s);
+				}
+			}
+			
+			/* Implements */
+			if (op_code.class_implements != null and op_code.class_implements.count() > 0){
+				/* res ~= " implements " ~ rs::implode(", ", op_code.class_implements); */
+			}
+			
+			this.levelDec();
+			res ~= this.s("}");
+		}
+		
+		
+		/* Class functions */
+		for (int i=0; i<op_code.class_functions.count(); i++){
+			res ~= this.s(this.OpFunctionDeclare(op_code.class_functions.item(i)));
+		}
+		
+		
+		/* Footer class */
+		this.levelDec();
+		res ~= this.s("}");
+		
+		
+		/* Footer */
+		res ~= this.OpClassDeclareFooter(op_code);
+		
+		
+		return res;
+	}
+	
+	
 }

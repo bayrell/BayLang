@@ -35,6 +35,7 @@ use BayrellLang.OpCodes.OpBitXor;
 use BayrellLang.OpCodes.OpBreak;
 use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpChilds;
+use BayrellLang.OpCodes.OpClassDeclare;
 use BayrellLang.OpCodes.OpClone;
 use BayrellLang.OpCodes.OpCompare;
 use BayrellLang.OpCodes.OpConcat;
@@ -44,6 +45,7 @@ use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
 use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
@@ -222,6 +224,7 @@ export class CommonTranslator extends ContextObject{
 	string OpBitXor(OpBitXor op_code){  return ""; }
 	string OpBreak(OpBreak op_code){  return ""; }
 	string OpCall(OpCall op_code){  return ""; }
+	string OpClassDeclare(OpClassDeclare op_code){  return ""; }
 	string OpClone(OpClone op_code){  return ""; }
 	string OpCompare(OpCompare op_code){  return ""; }
 	string OpConcat(OpConcat op_code){  return ""; }
@@ -231,6 +234,7 @@ export class CommonTranslator extends ContextObject{
 	string OpDynamic(OpDynamic op_code){  return ""; }
 	string OpFlags(OpFlags op_code){  return ""; }
 	string OpFor(OpFor op_code){  return ""; }
+	string OpFunctionDeclare(OpFunctionDeclare op_code){  return ""; }
 	string OpHexNumber(OpHexNumber op_code){  return ""; }
 	string OpIdentifier(OpIdentifier op_code){  return ""; }
 	string OpIf(OpIf op_code){  return ""; }
@@ -272,9 +276,15 @@ export class CommonTranslator extends ContextObject{
 		
 		if (op_code instanceof OpNope){
 			string res = "";
+			string s = "";
+			bool flag = true;
 			for (int i=0; i<op_code.childs.count(); i++){
-				if (i==0){
+				s = this.translateRun(op_code.childs[i]);
+				if (s == "")
+					continue;
+				if (flag){
 					res ~= this.translateRun(op_code.childs[i]);
+					flag = false;
 				}
 				else{
 					res ~= this.s( this.translateRun(op_code.childs[i]) );
@@ -317,6 +327,9 @@ export class CommonTranslator extends ContextObject{
 		else if (op_code instanceof OpCall){
 			return this.OpCall(op_code);
 		}
+		else if (op_code instanceof OpClassDeclare){
+			return this.OpClassDeclare(op_code);
+		}
 		else if (op_code instanceof OpClone){
 			return this.OpClone(op_code);
 		}
@@ -340,6 +353,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpFor){
 			return this.OpFor(op_code);
+		}
+		else if (op_code instanceof OpFunctionDeclare){
+			return this.OpFunctionDeclare(op_code);
 		}
 		else if (op_code instanceof OpHexNumber){
 			return this.OpHexNumber(op_code);

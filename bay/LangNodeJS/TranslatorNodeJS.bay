@@ -15,118 +15,59 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-namespace bayrell_lang;
-use .BayrellCode import BayrellCode;
-use .BayrellTranslatorES6 import BayrellTranslatorES6;
-use bayrell_rtl import re, rtl;
+
+namespace BayrellLang.LangNodeJS;
+
+use BayrellRtl.Lib.rs;
+use BayrellLang.CommonTranslator;
 
 
-export class BayrellTranslatorNodeJS extends BayrellTranslatorES6 {
+export class TranslatorNodeJS extends TranslatorES6 {
 	
-	string getClassName(){
-		return "bayrell_lang.BayrellTranslatorNodeJS";
+	
+	
+	/**
+	 * Class declare header
+	 */
+	string OpClassDeclareHeader(OpClassDeclare op_code){
+		res = "";
+		
+		this.beginOperation();
+		res ~= "class " ~ op_code.class_name;
+		if (op_code.class_extends != ""){
+			res ~= " extends " ~ this.translateRun(op_code.class_extends);
+		}
+		if (op_code.class_implements != null and op_code.class_implements.count() > 0){
+			res ~= " implements " ~ rs::implode(", ", op_code.class_implements);
+		}
+		res ~= "{";
+		this.endOperation();
+		this.levelInc();
+		
+		return res;
 	}
 	
 	
-	BayrellInterpreter createInterpreter(){
-		BayrellInterpreter runtime = BayrellTranslatorES6.prototype.createInterpreter.call(this);
+	
+	/**
+	 * Class declare footer
+	 */
+	string OpClassDeclareFooter(OpClassDeclare op_code){
 		
-		runtime.addData({
-			'JAVASCRIPT': true,
-			'ES6': false,
-			'NODEJS': true,
-		});
+		res = "";
+		for (int i=0; i<op_code.class_variables.count(); i++){
+			OpAssignDeclare variable = op_code.class_variables.item(i);
+			if (variable.flags != null and variable.flags.p_static == true){
+				this.beginOperation();
+				string s = op_code.class_name ~ "." ~ variable.name ~ " = " ~
+					this.translateRun(variable.value) ~ ";";
+				this.endOperation();
+				res ~= this.s(s);
+			}
+		}
 		
-		return runtime;
+		return res;
 	}
 	
-	string op_use(json code_tree, int level){
-		
-		/* Инициируем переменные */
-		string _res = "";
-		string name = code_tree['str_name'];
-		string lib_name = name;
-		string lib_path = lib_name;
-		string var_name = "m_" ~ re::replace("\\.", "_", lib_name);
-		string module_name="";
-		
-		
-		/* Если используемый модуль находится в том же модуле, что и namespace */
-		if (lib_name[0] == "."){
-		
-			/* Получаем название модуля */
-			array arr = rtl::explode(".", this._namespace);
-			string module_name = rtl::attr(arr, 0, "");
-			
-			array arr3 = [];
-			array arr2 = rtl::explode(".", lib_name);
-			
-			
-			arr2[0] = module_name;
-			
-			/* Находим общее начало у массивов arr и arr2 */
-			int i = 0;
-			int j = 0;
-			int arr_sz = rtl::count(arr);
-			int arr2_sz = rtl::count(arr2);
-			
-			while (i < arr_sz and j < arr2_sz and arr[i] == arr2[j]){ i++; j++; }
-			
-			/* Добавляем относительный путь */
-			if (i == arr_sz){
-				rtl::array_push(arr3, ".");
-			}
-			else{
-				while (i < arr_sz){
-					rtl::array_push(arr3, "..");
-					i++;
-				}
-			}
-			
-			/* Добавляем основной путь */
-			while (j < arr2_sz){
-				rtl::array_push(arr3, arr2[j]);
-				j++;
-			}
-			
-			
-			lib_path = rtl::implode("/", arr3) ~ ".js";
-		}
-		
-		else{
-			/* Получаем название модуля */
-			array arr = rtl::explode(".", lib_name);
-			string module_name = rtl::attr(arr, 0, "");		
-		
-			lib_path = module_name;
-		}
-		
-		
-		/* Добавляем require */
-		_res = _res ~ this.out("var " ~ var_name ~ " = require('" ~ lib_path ~ "');", level);
-		
-		
-		/* Добавляем загрузку модулей */
-		int sz = rtl::count(code_tree['arr']);
-		if (sz > 0){
-			for (int i = 0; i < sz; i++){
-				var obj = code_tree.arr[i];
-				_res = _res ~ this.out("var " ~ obj ~ " = " ~ var_name ~ "." ~ obj ~ ";", level);
-			}
-		}
-		
-		return _res;
-	}
-	
-	string op_declare_class(json code_tree, int level){
-		var is_export = code_tree.flags.export;
-		var name = code_tree['str_name'];
-		string s = parent(code_tree, level);
-		if (is_export){
-			s = s + this.out("module.exports." + name + " = " + name + ";", level);
-		}
-		
-		return s;
-	}
 	
 }

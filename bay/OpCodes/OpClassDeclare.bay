@@ -26,7 +26,7 @@ export class OpClassDeclare extends BaseOpCode{
 	
 	public string op = "op_class";
 	public string class_name = "";
-	public string class_extends = "";
+	public BaseOpCode class_extends = "";
 	public Vector<string> class_implements = null;
 	public Vector<OpAssignDeclare> class_variables = null;
 	public Vector<OpFunctionDeclare> class_functions = null;
@@ -40,7 +40,7 @@ export class OpClassDeclare extends BaseOpCode{
 	void assign(CoreObject obj){
 		if (obj instanceof OpClassDeclare){
 			this.class_name = obj.class_name;
-			this.class_extends = obj.class_extends;
+			this.class_extends = clone obj.class_extends;
 			this.class_implements = clone obj.class_implements;
 			this.class_variables = clone obj.class_variables;
 			this.class_functions = clone obj.class_functions;

@@ -25,9 +25,26 @@ export class OpAssignDeclare extends BaseOpCode{
 	
 	public string op = "op_assign_declare";
 	public BaseOpCode tp = null;
-	public BaseOpCode ident = null;
+	public string name = null;
 	public BaseOpCode value = null;
 	public OpFlags flags = null;
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpAssignDeclare){
+			this.tp = clone obj.tp;
+			this.name = clone obj.name;
+			this.value = clone obj.value;
+			this.flags = clone obj.flags;
+		}
+		parent::assign(obj);
+	}
+	
 	
 	
 	/**
@@ -43,10 +60,10 @@ export class OpAssignDeclare extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode tp = null, BaseOpCode ident = null, BaseOpCode value = null){
+	void constructor(BaseOpCode tp = null, string name = null, BaseOpCode value = null){
 		parent();
 		this.tp = tp;
-		this.ident = ident;
+		this.name = name;
 		this.value = value;
 	}
 	
@@ -103,19 +120,4 @@ export class OpAssignDeclare extends BaseOpCode{
 		else parent::assignValue(variable_name, value);
 	}
 	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpAssignDeclare){
-			this.tp = clone obj.tp;
-			this.ident = clone obj.ident;
-			this.value = clone obj.value;
-			this.flags = clone obj.flags;
-		}
-		parent::assign(obj);
-	}
 }
