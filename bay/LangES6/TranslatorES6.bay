@@ -18,11 +18,38 @@
 
 namespace BayrellLang.LangES6;
 
+use BayrellRtl.Lib.rs;
 use BayrellLang.CommonTranslator;
 
 
 export class TranslatorES6 extends CommonTranslator {
 	
+	Map<string, string> modules = null;
+	string current_namespace = "";
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param {BayrellObject} obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof TranslatorES6){
+			this.modules = clone obj.modules;
+			this.current_namespace = obj.current_namespace;
+		}
+		parent::assign(obj);
+	}
+	
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor (ContextInterface context = null){
+		parent(context);
+		this.modules = new Map<string, string>();
+	}
 	
 	
 	/** =========================== Identifier ============================ */
@@ -806,11 +833,22 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Namespace
 	 */
-	string OpNamespace(OpNamespace op_code){  return ""; }
+	string OpNamespace(OpNamespace op_code){
+		this.current_namespace = op_code.value;
+		return "";
+	}
 	
 	
 	/**
 	 * Use
 	 */
-	string OpUse(OpUse op_code){  return ""; }
+	string OpUse(OpUse op_code){
+		string lib_name = op_code.value;
+		Vector<string> arr = rs::explode(".", lib_name);
+		string class_name = arr.getLastItem("");
+		if (class_name != ""){
+			this.modules.set(class_name, lib_name);
+		}
+		return "";
+	}
 }

@@ -18,6 +18,7 @@
  
 namespace BayrellLang.OpCodes;
 
+use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellRtl.Interfaces.SerializeInterface;
 
@@ -33,12 +34,26 @@ export class OpFlags extends BaseOpCode{
 	public bool p_private = false;
 	public bool p_protected = false;
 	public bool p_declare = false;
+
 	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpFlags){
+			this.p_async = obj.p_async;
+			this.p_export = obj.p_export;
+			this.p_static = obj.p_static;
+			this.p_const = obj.p_const;
+			this.p_public = obj.p_public;
+			this.p_private = obj.p_private;
+			this.p_protected = obj.p_protected;
+			this.p_declare = obj.p_declare;
+		}
+		parent::assign(obj);
+	}
 	
-	static const array FLAGS = [
-		'export', 'static', 'const', 'public', 'private', 
-		'declare', 'protected', 'async',
-	];
 	
 	
 	/**
@@ -108,20 +123,40 @@ export class OpFlags extends BaseOpCode{
 	
 	
 	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
+	 * Assign flag
 	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpFlags){
-			this.p_async = obj.p_async;
-			this.p_export = obj.p_export;
-			this.p_static = obj.p_static;
-			this.p_const = obj.p_const;
-			this.p_public = obj.p_public;
-			this.p_private = obj.p_private;
-			this.p_protected = obj.p_protected;
-			this.p_declare = obj.p_declare;
+	public void assignFlag(string flag_name){
+		if (
+			flag_name == "export" or
+			flag_name == "static" or
+			flag_name == "const" or
+			flag_name == "public" or
+			flag_name == "private" or
+			flag_name == "declare" or
+			flag_name == "protected" or
+			flag_name == "async"
+		){
+			this.assignValue(flag_name, true);
+			return true;
 		}
-		parent::assign(obj);
+		return false;
+	}
+	
+	
+	
+	/**
+	 * Get flags
+	 */
+	public static Vector<string> getFlags(){
+		return (new Vector<string>())
+			.push("export")
+			.push("static")
+			.push("const")
+			.push("public")
+			.push("private")
+			.push("declare")
+			.push("protected")
+			.push("async")
+		;
 	}
 }

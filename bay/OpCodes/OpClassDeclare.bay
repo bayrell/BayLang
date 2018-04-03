@@ -1,0 +1,129 @@
+/*!
+ *  Bayrell Common Languages Transcompiler
+ *
+ *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+ 
+namespace BayrellLang.OpCodes;
+
+use BayrellRtl.Types.Vector;
+use BayrellLang.OpCodes.BaseOpCode;
+
+
+export class OpClassDeclare extends BaseOpCode{
+	
+	public string op = "op_class";
+	public string class_name = "";
+	public string class_extends = "";
+	public Vector<string> class_implements = null;
+	public Vector<OpAssignDeclare> class_variables = null;
+	public Vector<OpFunctionDeclare> class_functions = null;
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpClassDeclare){
+			this.class_name = obj.class_name;
+			this.class_extends = obj.class_extends;
+			this.class_implements = clone obj.class_implements;
+			this.class_variables = clone obj.class_variables;
+			this.class_functions = clone obj.class_functions;
+		}
+		parent::assign(obj);
+	}
+	
+	
+	
+	/**
+	 * Returns classname of the object
+	 * @return string
+	 */
+	public string getClassName(){
+		return "BayrellLang.OpCodes.OpClassDeclare";
+	}
+	
+	
+	
+	/**
+	 * Constructor
+	 */ 
+	void constructor(){
+		parent();
+		this.class_implements = new Vector<string>();
+		this.class_variables = new Vector<OpAssignDeclare>();
+		this.class_functions = new Vector<OpFunctionDeclare>();
+	}
+	
+	
+	
+	/**
+	 * Destructor
+	 */ 
+	void destructor(){
+		parent();
+	}
+	
+	
+	
+	/**
+	 * Returns name of variables to serialization
+	 * @return Vector<string>
+	 */
+	public void getVariablesNames(Vector<string> names){
+		parent::getVariablesNames(names);
+		names.push("class_name");
+		names.push("class_extends");
+		names.push("class_implements");
+		names.push("class_variables");
+		names.push("class_functions");
+	}
+	
+	
+	
+	/**
+	 * Returns instance of the value by variable name
+	 * @param string variable_name
+	 * @return var
+	 */
+	public var takeValue(string variable_name, var default_value = null){
+		if (variable_name == 'class_name') return this.class_name;
+		else if (variable_name == 'class_extends') return this.class_extends;
+		else if (variable_name == 'class_implements') return this.class_implements;
+		else if (variable_name == 'class_variables') return this.class_variables;
+		else if (variable_name == 'class_functions') return this.class_functions;
+		return parent::takeValue(variable_name, default_value);
+	}
+	
+	
+	
+	/**
+	 * Set new value instance by variable name
+	 * @param string variable_name
+	 * @param var value
+	 */
+	public void assignValue(string variable_name, var value){
+		if (variable_name == 'class_name') this.class_name = value;
+		else if (variable_name == 'class_extends') this.class_extends = value;
+		else if (variable_name == 'class_implements') this.class_implements = value;
+		else if (variable_name == 'class_variables') this.class_variables = value;
+		else if (variable_name == 'class_functions') this.class_functions = value;
+		else parent::assignValue(variable_name, value);
+	}
+	
+}

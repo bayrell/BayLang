@@ -35,6 +35,7 @@ use BayrellLang.OpCodes.OpBreak;
 use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpCallAwait;
 use BayrellLang.OpCodes.OpChilds;
+use BayrellLang.OpCodes.OpClassDeclare;
 use BayrellLang.OpCodes.OpClone;
 use BayrellLang.OpCodes.OpCompare;
 use BayrellLang.OpCodes.OpConcat;
@@ -44,6 +45,7 @@ use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
 use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
@@ -164,16 +166,51 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read name
+	 */
+	string readIdentifierName(){
+		string res = this.lookToken();
+		string s = rs::charAt(res, 0);
+		if (not this.isLetterChar(s) and s != "_"){
+			this.parserError(this.translate("ERROR_PARSER_FIRST_CHAR_MUST_BE_LETTER"));
+		}
+		this.readNextToken();
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Read name
+	 */
+	string readName(){
+		/* Create new token */
+		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
+		token.assign( this.current_token );
+		token.readNextToken();
+		
+		/* Get name */
+		string name = token.token;
+		
+		/* Assign next token */
+		this.current_token.assign(token);
+		this.next_token.assign(token);
+		this.next_token.readNextToken();
+		
+		/* Destroy new token */
+		delete token;
+		
+		return name;
+	}
+	
+	
+	
+	/**
 	 * Read Identifier
 	 * @return OpIdentifier
 	 */
 	OpIdentifier readIdentifier(){
-		string res = this.readNextToken().token;
-		
-		if (not this.isLetterChar(rs::charAt(res, 0))){
-			this.parserError(this.translate("ERROR_PARSER_FIRST_CHAR_MUST_BE_LETTER"));
-		}
-		
+		string res = this.readIdentifierName();
 		return new OpIdentifier(res);
 	}
 	
@@ -963,68 +1000,6 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read operator namespace
-	 * @return BaseOpCode
-	 */
-	BaseOpCode readOperatorNamespace(){
-		
-		this.matchNextToken("namespace");
-		
-		/* Create new token */
-		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
-		token.assign( this.current_token );
-		token.readNextToken();
-		
-		/* Get name */
-		string name = token.token;
-		
-		/* Assign next token */
-		this.current_token.assign(token);
-		this.next_token.assign(token);
-		this.next_token.readNextToken();
-		
-		/* Destroy new token */
-		delete token;
-		
-		this.matchNextToken(";");
-		
-		return new OpNamespace(name);
-	}
-	
-	
-	
-	/**
-	 * Read operator namespace
-	 * @return BaseOpCode
-	 */
-	BaseOpCode readOperatorUse(){
-		
-		this.matchNextToken("use");
-		
-		/* Create new token */
-		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
-		token.assign( this.current_token );
-		token.readNextToken();
-		
-		/* Get name */
-		string name = token.token;
-		
-		/* Assign next token */
-		this.current_token.assign(token);
-		this.next_token.assign(token);
-		this.next_token.readNextToken();
-		
-		/* Destroy new token */
-		delete token;
-		
-		this.matchNextToken(";");
-		
-		return new OpUse(name);
-	}
-	
-	
-	
-	/**
 	 * Read operator return
 	 * @return BaseOpCode
 	 */
@@ -1085,12 +1060,6 @@ export class ParserBay extends CommonParser{
 		}
 		else if (this.findNextToken("try")){
 			return this.readOperatorTry();
-		}
-		else if (this.findNextToken("namespace")){
-			return this.readOperatorNamespace();
-		}
-		else if (this.findNextToken("use")){
-			return this.readOperatorUse();
 		}
 		else if (this.findNextToken("return")){
 			return this.readOperatorReturn();
@@ -1155,10 +1124,193 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read operator namespace
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorNamespace(){
+		
+		this.matchNextToken("namespace");
+		
+		/* Create new token */
+		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
+		token.assign( this.current_token );
+		token.readNextToken();
+		
+		/* Get name */
+		string name = token.token;
+		
+		/* Assign next token */
+		this.current_token.assign(token);
+		this.next_token.assign(token);
+		this.next_token.readNextToken();
+		
+		/* Destroy new token */
+		delete token;
+		
+		this.matchNextToken(";");
+		
+		return new OpNamespace(name);
+	}
+	
+	
+	
+	/**
+	 * Read operator namespace
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorUse(){
+		
+		this.matchNextToken("use");
+		string name = this.readName();
+		this.matchNextToken(";");
+		
+		return new OpUse(name);
+	}
+	
+	
+	
+	/**
+	 * Read operator namespace
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readDeclareClassFunction(){
+		OpClassDeclare res = new OpClassDeclare();
+		
+		res.result_type = this.readTemplateIdentifier();
+		res.name = this.readIdentifierName();
+		this.matchNextToken("(");
+		this.matchNextToken(")");
+		res.childs = this.readOperatorsBlock();
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Read flags
+	 * @return OpFlags
+	 */
+	OpFlags readFlags(){
+		
+		OpFlags flags = null;
+		Vector<string> flags_vector = OpFlags::getFlags();
+		
+		if (this.findNextTokenVector(flags_vector)){
+			flags = new OpFlags();
+			while (this.findNextTokenVector(flags_vector)){
+				if (not flags.assignFlag(this.lookToken())){
+					this.parserError("Unknown flag '" ~ this.lookToken() ~ "'");
+				}
+				this.readNextToken();
+			}
+		}
+		
+		if (flags_vector != null) delete flags_vector;
+		return flags;
+	}
+	
+	
+	
+	/**
+	 * Read operator namespace
+	 * @return BaseOpCode
+	 */
+	OpClassDeclare readDeclareClass(OpFlags class_flags){
+		
+		OpFlags flags = null;
+		OpClassDeclare res = new OpClassDeclare();
+		BaseOpCode op_code = null;
+		this.matchNextToken("class");
+		
+		res.class_name = this.readIdentifier();
+		if (this.findNextToken("extends")){
+			this.matchNextToken("extends");
+			res.extends = this.readIdentifier();
+		}
+		
+		if (this.findNextToken("implements")){
+			this.matchNextToken("implements");
+			while ((not this.findToken("{")) and (not this.isEOF())){
+				res.implements.push( this.readName() );
+				if (this.findNextToken(",")){
+					this.matchNextToken(",");
+					continue;
+				}
+				break;
+			}
+			res.extends = this.readIdentifier();
+		}
+		
+		this.matchNextToken("{");
+		while ((not this.findNextToken("}")) and (not this.isEOF())){
+			
+			flags = this.readFlags();
+			op_code = this.readOperatorAssign();
+			if (op_code instanceof OpAssign){
+				this.parserError("Assign are not alowed here");
+			}
+			else if (op_code instanceof OpAssignDeclare){
+				op_code.flags = flags;
+				res.class_variables.push(op_code);
+				this.matchNextToken(";");
+				continue;
+			}
+			
+			op_code = this.readDeclareClassFunction();
+			if (op_code){
+				op_code.flags = flags;
+				res.class_functions.push(op_code);
+				continue;
+			}
+			
+			this.parserError("Unknown operator");
+		}
+		
+		this.matchNextToken("}");
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Read program
+	 * @return BaseOpCode
+	 */
+	Vector<BaseOpCode> readProgram(){
+		
+		BaseOpCode op_code = null;
+		Vector<BaseOpCode> res = new Vector();
+		
+		while (not this.isEOF()){
+			if (this.findNextToken("namespace")){
+				res.push(this.readOperatorNamespace());
+				continue;
+			}
+			else if (this.findNextToken("use")){
+				res.push(this.readOperatorUse());
+				continue;
+			}
+			
+			OpFlags flags = this.readFlags();
+			if (this.findNextToken("class")){
+				res.push(this.readDeclareClass(flags));
+			}
+			else {
+				this.parserError("Unknown token " ~ this.lookToken());
+			}
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
 	 * Parser function
 	 */
 	void runParser(){
-		this._result = new OpNope( this.readOperatorsBlock() );
+		this._result = new OpNope( this.readProgram() );
 	}
 	
 	
