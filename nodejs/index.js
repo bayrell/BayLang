@@ -32,6 +32,9 @@ module.exports = {
 	'LangES6': {
 		'TranslatorES6': require("./LangES6/TranslatorES6.js"),
 	},
+	'LangNodeJS': {
+		'TranslatorNodeJS': require("./LangNodeJS/TranslatorNodeJS.js"),
+	},
 	'OpCodes': {
 		'BaseOpCode': require("./OpCodes/BaseOpCode.js"),
 		'OpAdd': require("./OpCodes/OpAdd.js"),

@@ -94,6 +94,9 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpUse.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpWhile.js",
 	])
+	.load([
+		"/assets/bayrell_lang_es6/LangNodeJS/TranslatorNodeJS.js",
+	])
 	.success(function(){
 		$load.deliver('bayrell_lang_loaded');
 	});

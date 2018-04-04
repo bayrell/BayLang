@@ -183,7 +183,7 @@ export class ParserBay extends CommonParser{
 	/**
 	 * Read name
 	 */
-	string readName(){
+	string readDynamicName(){
 		/* Create new token */
 		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
 		token.assign( this.current_token );
@@ -335,8 +335,8 @@ export class ParserBay extends CommonParser{
 		
 			if (this.findNextToken(".") and allow_dynamic){
 				this.matchNextToken(".");
-				ident = this.readIdentifier();
-				obj = new OpDynamic(obj, ident);
+				name = this.readIdentifierName();
+				obj = new OpDynamic(obj, name);
 			}
 			
 			else if (this.findNextToken("[") and allow_bracket){
@@ -351,8 +351,8 @@ export class ParserBay extends CommonParser{
 					this.parserError(this.translate("ERROR_PARSER_STATIC_METHOD_IS_NOT_ALOWED_HERE"));
 				}
 				this.matchNextToken("::");
-				ident = this.readIdentifier();
-				obj = new OpStatic(obj, ident);
+				name = this.readIdentifierName();
+				obj = new OpStatic(obj, name);
 				can_static = false;
 			}
 			
@@ -810,9 +810,7 @@ export class ParserBay extends CommonParser{
 		try{
 			op_type = this.readTemplateIdentifier();
 			op_ident_name = this.readIdentifierName();
-			if (this.findNextToken("=")){
-				success = true;
-			}
+			success = true;
 		}
 		catch (Exception ex){
 			if (ex instanceof ParserError){
@@ -824,13 +822,15 @@ export class ParserBay extends CommonParser{
 		}
 		if (success){
 			this.popToken();
-			this.matchNextToken("=");
-			op_exp = this.readExpression();
+			if (this.findNextToken("=")){
+				this.matchNextToken("=");
+				op_exp = this.readExpression();
+			}
 			return new OpAssignDeclare(op_type, op_ident_name, op_exp);
 		}
-		this.popToken();
+		this.popAssignToken();
 		
-		return new OpAssignDeclare(op_type, op_ident_name, null);
+		return null;
 	}
 	
 	
@@ -1162,7 +1162,7 @@ export class ParserBay extends CommonParser{
 	BaseOpCode readOperatorUse(){
 		
 		this.matchNextToken("use");
-		string name = this.readName();
+		string name = this.readDynamicName();
 		this.matchNextToken(";");
 		
 		return new OpUse(name);
@@ -1258,7 +1258,7 @@ export class ParserBay extends CommonParser{
 		if (this.findNextToken("implements")){
 			this.matchNextToken("implements");
 			while ((not this.findToken("{")) and (not this.isEOF())){
-				res.implements.push( this.readName() );
+				res.implements.push( this.readDynamicName() );
 				if (this.findNextToken(",")){
 					this.matchNextToken(",");
 					continue;

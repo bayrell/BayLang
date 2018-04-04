@@ -25,7 +25,7 @@ export class OpStatic extends BaseOpCode{
 	
 	public string op = "op_static";
 	public BaseOpCode value = null;
-	public BaseOpCode ident = null;
+	public string name = null;
 	
 	
 	/**
@@ -41,10 +41,10 @@ export class OpStatic extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode value = null, BaseOpCode ident = null){
+	void constructor(BaseOpCode value = null, string name = null){
 		parent();
 		this.value = value;
-		this.ident = ident;
+		this.name = name;
 	}
 	
 	
@@ -65,7 +65,7 @@ export class OpStatic extends BaseOpCode{
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
 		names.push("value");
-		names.push("ident");
+		names.push("name");
 	}
 	
 	
@@ -77,7 +77,7 @@ export class OpStatic extends BaseOpCode{
 	 */
 	public var takeValue(string variable_name, var default_value = null){
 		if (variable_name == 'value') return this.value;
-		else if (variable_name == 'ident') return this.ident;
+		else if (variable_name == 'name') return this.name;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -90,7 +90,7 @@ export class OpStatic extends BaseOpCode{
 	 */
 	public void assignValue(string variable_name, var value){
 		if (variable_name == 'value') this.value = value;
-		else if (variable_name == 'ident') this.ident = value;
+		else if (variable_name == 'name') this.name = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -103,7 +103,7 @@ export class OpStatic extends BaseOpCode{
 	void assign(CoreObject obj){
 		if (obj instanceof OpStatic){
 			this.value = clone obj.value;
-			this.ident = clone obj.ident;
+			this.name = obj.name;
 		}
 		parent::assign(obj);
 	}

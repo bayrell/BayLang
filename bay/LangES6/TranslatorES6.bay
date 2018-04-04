@@ -19,6 +19,7 @@
 namespace BayrellLang.LangES6;
 
 use BayrellRtl.Lib.rs;
+use BayrellRtl.Types.Map;
 use BayrellLang.CommonTranslator;
 
 
@@ -26,6 +27,7 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	Map<string, string> modules = null;
 	string current_namespace = "";
+	string current_class_name = "";
 	
 	
 	
@@ -37,6 +39,7 @@ export class TranslatorES6 extends CommonTranslator {
 		if (obj instanceof TranslatorES6){
 			this.modules = clone obj.modules;
 			this.current_namespace = obj.current_namespace;
+			this.current_class_name = obj.current_class_name;
 		}
 		parent::assign(obj);
 	}
@@ -68,6 +71,16 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Identifier
 	 */
 	string OpIdentifier(OpIdentifier op_code){
+		if (op_code.value == 'parent'){
+			return "super";
+		}
+		else if (op_code.value == 'self'){
+			return this.current_namespace ~ "." ~ this.current_class_name;
+		}
+		else if (this.modules.has(op_code.value)){
+			return this.modules.item(op_code.value);
+		}
+		
 		return op_code.value;
 	}
 	
@@ -109,9 +122,9 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpDynamic(OpDynamic op_code){
 		this.current_opcode_level = 20;
-		string s = this.translateRun(op_code.value1);
+		string s = this.translateRun(op_code.value);
 		s = this.o(s, 20, this.current_opcode_level);
-		return s ~ '.' ~ this.s(this.translateRun(op_code.value2));
+		return s ~ '.' ~ op_code.name;
 	}
 	
 	
@@ -120,7 +133,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Static load
 	 */
 	string OpStatic(OpStatic op_code){
-		return this.translateRun(op_code.value) ~ '.' ~ this.translateRun(op_code.ident);
+		return this.translateRun(op_code.value) ~ '.' ~ op_code.name;
 	}
 	
 	
@@ -554,6 +567,7 @@ export class TranslatorES6 extends CommonTranslator {
 	}
 	
 	
+	
 	/**
 	 * Assign declare
 	 */
@@ -564,13 +578,13 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		if (op_code.value == null){
 			this.pushOneLine(true);
-			res = this.translateRun(op_code.tp) ~ " " ~ op_code.name;
+			res = "var " ~ op_code.name;
 			this.popOneLine();
 		}
 		else{
 			/* one line */
 			this.pushOneLine(true);
-			res = this.translateRun(op_code.tp) ~ " " ~ op_code.name ~ ' = ';
+			res = "var " ~ op_code.name ~ ' = ';
 			this.popOneLine();
 			
 			/* result */
@@ -977,11 +991,13 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpClassDeclare(OpClassDeclare op_code){
 		string res = "";
+		string s = "";
 		
+		/* Set current class name */
+		this.current_class_name = op_code.class_name;
 		
 		/* Header */
 		res ~= this.OpClassDeclareHeader(op_code);
-		
 		
 		/* Init function */
 		if (this.current_namespace != 'BayrellRtl' or op_code.class_name != 'CoreObject'){
@@ -998,7 +1014,7 @@ export class TranslatorES6 extends CommonTranslator {
 				OpAssignDeclare variable = op_code.class_variables.item(i);
 				if (variable.flags != null and variable.flags.p_static == false){
 					this.beginOperation();
-					string s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+					s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 					this.endOperation();
 					res ~= this.s(s);
 				}
@@ -1006,7 +1022,14 @@ export class TranslatorES6 extends CommonTranslator {
 			
 			/* Implements */
 			if (op_code.class_implements != null and op_code.class_implements.count() > 0){
-				/* res ~= " implements " ~ rs::implode(", ", op_code.class_implements); */
+				s = "if (this.__implements__ == undefined){this.__implements__ = [];}";
+				for (int i=0; i<op_code.class_implements.count(); i++){
+					string name = op_code.class_implements.item(i);
+					this.beginOperation();
+					s = "this.__implements__.push("~name~");";
+					this.endOperation();
+					res ~= this.s(s);
+				}
 			}
 			
 			this.levelDec();

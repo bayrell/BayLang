@@ -19,6 +19,8 @@
 namespace BayrellLang.LangNodeJS;
 
 use BayrellRtl.Lib.rs;
+use BayrellRtl.Lib.re;
+use BayrellLang.LangES6.TranslatorES6;
 use BayrellLang.CommonTranslator;
 
 
@@ -27,10 +29,86 @@ export class TranslatorNodeJS extends TranslatorES6 {
 	
 	
 	/**
+	 * Identifier
+	 */
+	string OpIdentifier(OpIdentifier op_code){
+		if (op_code.value == 'parent'){
+			return "super";
+		}
+		else if (op_code.value == 'self'){
+			return this.current_class_name;
+		}
+		
+		return op_code.value;
+	}
+	
+	
+	
+	/**
+	 * Use
+	 */
+	string OpUse(OpUse op_code){
+		
+		string res = "";
+		string lib_name = op_code.value;
+		string var_name = "m_" ~ re::replace("\\.", "_", lib_name);
+		
+		array arr1 = rs::explode(".", lib_name);
+		array arr2 = rs::explode(".", this.current_namespace);
+		int sz_arr1 = arr1.count();
+		int sz_arr2 = arr2.count();
+		
+		if (sz_arr1 < 2)
+			return "";
+		
+		string class_name = arr1.getLastItem();
+		
+		/* If same modules */
+		if (arr1.item(0) == arr2.item(0)){
+			int pos = 0;
+			while (pos < sz_arr1 and pos < sz_arr2 and arr1.item(pos) == arr2.item(pos)){
+				pos++;
+			}
+			
+			string js_path = "";
+			if (pos == arr2.count()){
+				js_path = "./";
+			}
+			else{
+				for (int j=pos; j<sz_arr2; j++){
+					js_path = js_path ~ "../";
+				}
+			}
+			
+			string ch = "";
+			for (int j=pos; j<sz_arr1; j++){
+				js_path = js_path ~ ch ~ arr1.item(j);
+				ch = "/";
+			}
+			
+			string module_name = arr1.shift();
+			string module_path = rs::implode(".", arr1);
+			
+			js_path = js_path ~ ".js";
+			res = "var " ~ class_name ~ " = require('" ~ js_path ~ "');";
+		}
+		
+		/* If different modules */
+		else{
+			string module_name = arr1.shift();
+			string module_path = rs::implode(".", arr1);
+			res = "var " ~ class_name ~ " = require('" ~ module_name ~ "')." ~ module_path ~ ";";
+		}
+		
+		return res;
+	}
+	
+	
+	/**
 	 * Class declare header
 	 */
 	string OpClassDeclareHeader(OpClassDeclare op_code){
-		res = "";
+		string res = "";
 		
 		this.beginOperation();
 		res ~= "class " ~ op_code.class_name;
@@ -53,8 +131,8 @@ export class TranslatorNodeJS extends TranslatorES6 {
 	 * Class declare footer
 	 */
 	string OpClassDeclareFooter(OpClassDeclare op_code){
+		string  res = "";
 		
-		res = "";
 		for (int i=0; i<op_code.class_variables.count(); i++){
 			OpAssignDeclare variable = op_code.class_variables.item(i);
 			if (variable.flags != null and variable.flags.p_static == true){
@@ -65,6 +143,8 @@ export class TranslatorNodeJS extends TranslatorES6 {
 				res ~= this.s(s);
 			}
 		}
+		
+		res ~= this.s("module.exports = "~op_code.class_name~";");
 		
 		return res;
 	}
