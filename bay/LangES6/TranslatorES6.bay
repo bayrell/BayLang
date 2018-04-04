@@ -30,6 +30,24 @@ export class TranslatorES6 extends CommonTranslator {
 	string current_class_name = "";
 	
 	
+	/**
+	 * Get name
+	 */
+	string getName(string name){
+		if (name == 'parent'){
+			return "super";
+		}
+		else if (name == 'self'){
+			return this.current_namespace ~ "." ~ this.current_class_name;
+		}
+		else if (this.modules.has(name)){
+			return this.modules.item(name);
+		}
+		
+		return name;
+	}
+	
+	
 	
 	/**
 	 * Assign all data from other object
@@ -71,17 +89,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Identifier
 	 */
 	string OpIdentifier(OpIdentifier op_code){
-		if (op_code.value == 'parent'){
-			return "super";
-		}
-		else if (op_code.value == 'self'){
-			return this.current_namespace ~ "." ~ this.current_class_name;
-		}
-		else if (this.modules.has(op_code.value)){
-			return this.modules.item(op_code.value);
-		}
-		
-		return op_code.value;
+		return this.getName(op_code.value);
 	}
 	
 	
@@ -242,10 +250,10 @@ export class TranslatorES6 extends CommonTranslator {
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 13;
 		return this.o(
-			'toString(' ~
+			this.getName("rtl") ~ '.toString(' ~
 			this.s(this.translateRun(op_code.value1)) ~ 
 			this.s(') + ') ~ 
-			this.s('toString(') ~
+			this.s(this.getName("rtl") ~ '.toString(') ~
 			this.s(this.translateRun(op_code.value2)) ~ 
 			this.s(')'),
 			old_opcode_level, 13
@@ -551,8 +559,13 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* one line */
 		this.pushOneLine(true);
-		string res = this.translateRun(op_code.ident) ~ ' = ';
+		string res = this.translateRun(op_code.ident);
 		this.popOneLine();
+		
+		if (op_code.op_name == "=") res ~= " = ";
+		else if (op_code.op_name == "~=") res ~= " += ";
+		else if (op_code.op_name == "+=") res ~= " += ";
+		else if (op_code.op_name == "-=") res ~= " -= ";
 		
 		/* result */
 		this.current_opcode_level = 0;
@@ -857,6 +870,10 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpNamespace(OpNamespace op_code){
 		this.current_namespace = op_code.value;
+		this.modules.clear();
+		if (this.current_namespace != 'BayrellRtl'){
+			this.modules.set("rtl", "BayrellRtl.Lib.rtl");
+		}
 		return "";
 	}
 	

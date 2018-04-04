@@ -62,6 +62,7 @@ export class ParserBayToken extends ParserToken{
 			.push("--")
 			.push("+=")
 			.push("-=")
+			.push("~=")
 			.push("!=")
 			.push("**")
 			.push("<<")

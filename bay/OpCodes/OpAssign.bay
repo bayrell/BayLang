@@ -26,6 +26,7 @@ export class OpAssign extends BaseOpCode{
 	public string op = "op_assign";
 	public BaseOpCode ident = null;
 	public BaseOpCode value = null;
+	public string op_name = "";
 	
 	
 	/**
@@ -41,10 +42,11 @@ export class OpAssign extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode ident = null, BaseOpCode value = null){
+	void constructor(BaseOpCode ident = null, BaseOpCode value = null, string op_name = ""){
 		parent();
 		this.ident = ident;
 		this.value = value;
+		this.op_name = op_name;
 	}
 	
 	
@@ -66,6 +68,7 @@ export class OpAssign extends BaseOpCode{
 		parent::getVariablesNames(names);
 		names.push("ident");
 		names.push("value");
+		names.push("op_name");
 	}
 	
 	
@@ -78,6 +81,7 @@ export class OpAssign extends BaseOpCode{
 	public var takeValue(string variable_name, var default_value = null){
 		if (variable_name == 'ident') return this.ident;
 		else if (variable_name == 'value') return this.value;
+		else if (variable_name == 'op_name') return this.op_name;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -91,6 +95,7 @@ export class OpAssign extends BaseOpCode{
 	public void assignValue(string variable_name, var value){
 		if (variable_name == 'ident') this.ident = value;
 		else if (variable_name == 'value') this.value = value;
+		else if (variable_name == 'op_name') this.op_name = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -104,6 +109,7 @@ export class OpAssign extends BaseOpCode{
 		if (obj instanceof OpAssign){
 			this.ident = clone obj.ident;
 			this.value = clone obj.value;
+			this.op_name = obj.op_name;
 		}
 		parent::assign(obj);
 	}

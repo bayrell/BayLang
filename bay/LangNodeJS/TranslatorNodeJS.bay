@@ -29,17 +29,17 @@ export class TranslatorNodeJS extends TranslatorES6 {
 	
 	
 	/**
-	 * Identifier
+	 * Get name
 	 */
-	string OpIdentifier(OpIdentifier op_code){
-		if (op_code.value == 'parent'){
+	string getName(string name){
+		if (name == 'parent'){
 			return "super";
 		}
-		else if (op_code.value == 'self'){
+		else if (name == 'self'){
 			return this.current_class_name;
 		}
 		
-		return op_code.value;
+		return name;
 	}
 	
 	

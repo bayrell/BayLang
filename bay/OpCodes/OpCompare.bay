@@ -24,7 +24,7 @@ use BayrellLang.OpCodes.BaseOpCode;
 export class OpCompare extends BaseOpCode{
 	
 	public string op = "op_compare";
-	public string cond = null;
+	public string cond = "";
 	public BaseOpCode value1 = null;
 	public BaseOpCode value2 = null;
 	
