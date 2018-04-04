@@ -155,7 +155,7 @@ export class ParserBay extends CommonParser{
 		
 		
 		/* Try to read string */
-		if (this.lookType() == ParserBayToken::TOKEN_STRING){
+		if (this.lookNextTokenType() == ParserBayToken::TOKEN_STRING){
 			return new OpString(this.readAnyNextToken().token);
 		}
 		
@@ -169,7 +169,7 @@ export class ParserBay extends CommonParser{
 	 * Read name
 	 */
 	string readIdentifierName(){
-		string res = this.lookToken();
+		string res = this.lookNextToken();
 		string s = rs::charAt(res, 0);
 		if (not this.isLetterChar(s) and s != "_"){
 			this.parserError(this.translate("ERROR_PARSER_FIRST_CHAR_MUST_BE_LETTER"));
@@ -853,9 +853,15 @@ export class ParserBay extends CommonParser{
 		this.matchNextToken(")");
 		
 		/* Read if true operators block */
-		this.matchNextToken("{");
-		if_true = this.readOperatorsBlock();
-		this.matchNextToken("}");
+		if (this.lookNextToken() == '{'){
+			this.matchNextToken("{");
+			if_true = this.readOperatorsBlock();
+			this.matchNextToken("}");
+		}
+		else{
+			if_true = new Vector<BaseOpCode>();
+			if_true.push(this.readOperator());
+		}
 		
 		/* Read else or elseif */
 		while (this.findNextToken("elseif") or this.findNextToken("else")){
@@ -874,15 +880,29 @@ export class ParserBay extends CommonParser{
 					this.matchNextToken(")");
 					
 					/* Read operators block */
-					this.matchNextToken("{");
-					op_if_else.if_true = this.readOperatorsBlock();
-					this.matchNextToken("}");
+					if (this.lookNextToken() == '{'){
+						this.matchNextToken("{");
+						op_if_else.if_true = this.readOperatorsBlock();
+						this.matchNextToken("}");
+					}
+					else{
+						op_if_else.if_true = new Vector<BaseOpCode>();
+						op_if_else.if_true.push(this.readOperator());
+					}
 					if_else.push(op_if_else);
 				}
 				
 				/* Read false operators block */
 				else{
-					if_false = this.readOperatorsBlock();
+					if (this.lookNextToken() == '{'){
+						this.matchNextToken("{");
+						if_false = this.readOperatorsBlock();
+						this.matchNextToken("}");
+					}
+					else{
+						if_false = new Vector<BaseOpCode>();
+						if_false.push(this.readOperator());
+					}
 					break;
 				}
 			}
@@ -898,10 +918,16 @@ export class ParserBay extends CommonParser{
 				this.matchNextToken(")");
 				
 				/* Read operators block */
-				this.matchNextToken("{");
-				op_if_else.if_true = this.readOperatorsBlock();
-				this.matchNextToken("}");
-				if_else.push(op_if_else);
+				if (this.lookNextToken() == '{'){
+					this.matchNextToken("{");
+					op_if_else.if_true = this.readOperatorsBlock();
+					this.matchNextToken("}");
+					if_else.push(op_if_else);
+				}
+				else{
+					op_if_else.if_true = new Vector<BaseOpCode>();
+					op_if_else.if_true.push(this.readOperator());
+				}
 			}
 		}
 		
@@ -1182,7 +1208,7 @@ export class ParserBay extends CommonParser{
 		res.name = this.readIdentifierName();
 		
 		/* If not function */
-		if (this.lookToken() != "("){
+		if (this.lookNextToken() != "("){
 			this.popAssignToken();
 			return null;
 		}
@@ -1225,8 +1251,8 @@ export class ParserBay extends CommonParser{
 		if (this.findNextTokenVector(flags_vector)){
 			flags = new OpFlags();
 			while (this.findNextTokenVector(flags_vector)){
-				if (not flags.assignFlag(this.lookToken())){
-					this.parserError("Unknown flag '" ~ this.lookToken() ~ "'");
+				if (not flags.assignFlag(this.lookNextToken())){
+					this.parserError("Unknown flag '" ~ this.lookNextToken() ~ "'");
 				}
 				this.readNextToken();
 			}
@@ -1323,7 +1349,7 @@ export class ParserBay extends CommonParser{
 				res.push(this.readDeclareClass(flags));
 			}
 			else {
-				this.parserError("Unknown token " ~ this.lookToken());
+				this.parserError("Unknown token " ~ this.lookNextToken());
 			}
 		}
 		
@@ -1336,6 +1362,7 @@ export class ParserBay extends CommonParser{
 	 * Parser function
 	 */
 	void runParser(){
+		this.skip_comments = true;
 		this._result = new OpNope( this.readProgram() );
 	}
 	

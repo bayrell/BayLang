@@ -29,6 +29,7 @@ export class CommonParser extends CoreParser{
 	
 	
 	protected BaseOpCode _result = null;
+	public bool skip_comments = false;
 	
 	
 	
@@ -240,7 +241,7 @@ export class CommonParser extends CoreParser{
 		}
 		
 		if (not this.isNextTokenHexNumber()){
-			if (this.lookType() == ParserToken::TOKEN_BASE and this.isHexStringBegin(this.lookToken())){
+			if (this.lookNextTokenType() == ParserToken::TOKEN_BASE and this.isHexStringBegin(this.lookNextToken())){
 				int start_line = this.next_token.start_line;
 				int start_col = this.next_token.start_col;
 				throw new HexNumberExpected(this.context(), start_line, start_col);					

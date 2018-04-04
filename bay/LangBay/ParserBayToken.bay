@@ -39,9 +39,16 @@ export class ParserBayToken extends ParserToken{
 	
 	
 	/**
+	 * Current content of the file
+	 */
+	public ParserBay parser = null;
+	
+	
+	
+	/**
 	 * Constructor
 	 */
-	void constructor (ContextInterface context = null, BayrellParserInterface parser = null){
+	void constructor (ContextInterface context = null, ParserBay parser = null){
 		parent(context, parser);
 		this._special_tokens = (new Vector<string>())
 			.push("!==")
@@ -136,10 +143,58 @@ export class ParserBayToken extends ParserToken{
 	
 	
 	/**
+	 * Read comments
+	 */
+	string readComment(string open_tag){
+		
+		string res = "";
+		string ch = "";
+		string look = "";
+		this.moveString(open_tag);
+		
+		while (not this.isEOF()){
+			ch = this.lookChar();
+			look = this.lookString(2);
+			if (look == "*/"){
+				break;
+			}
+			res ~= ch;
+			this.moveChar(ch);
+		}
+		
+		if (look == "*/"){
+			this.moveString(look);
+		}
+		else{
+			throw new ParserEOF(this.context(), start_line, start_col);
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Skip comments
+	 */
+	public void skipComments(){
+		string look = this.lookString(2);
+		while (look == "/*"){ /* */
+			this.readComment(look);
+			look = this.lookString(2);
+			this.skipSystemChar();
+		}
+	}
+	
+	
+	
+	/**
 	 * Get next token without move cursor pos. Throws error if EOF.
 	 * @param {BayrellParserToken} token
 	 */
 	public void readNextToken(){
+		
+		string look = "";
 		
 		this.tp = self::TOKEN_NONE;
 		this.token = "";
@@ -151,7 +206,10 @@ export class ParserBayToken extends ParserToken{
 			throw new ParserEOF(this.context());
 		}
 		
-		this.skipSystemChar();		
+		this.skipSystemChar();
+		if (this.parser.skip_comments){
+			this.skipComments();
+		}
 		this.start_line = this.line;
 		this.start_col = this.col;
 		
@@ -167,16 +225,24 @@ export class ParserBayToken extends ParserToken{
 		}
 		
 		
-		string look = this.lookChar();
+		look = this.lookChar();
 		if (look == "'" or look == '"'){
 			this.tp = self::TOKEN_STRING;
 			this.token = this.readTokenString();
 			this.success = true;
 			return;
 		}
+		look = this.lookString(2);
+		if (look == "/*"){ /* */
+			this.tp = self::TOKEN_COMMENT;
+			this.token = this.readComment(look);
+			this.success = true;
+			return;
+		}
 		
 		
 		/* Try to read normal token */
+		look = this.lookChar();
 		this.tp = self::TOKEN_BASE;
 		this.success = true;
 		this.token = this.token ~ look;
