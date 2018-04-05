@@ -29,7 +29,7 @@ export class CommonParser extends CoreParser{
 	
 	
 	protected BaseOpCode _result = null;
-	public bool skip_comments = false;
+	public bool skip_comments = true;
 	
 	
 	

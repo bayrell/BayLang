@@ -21,6 +21,61 @@ namespace BayrellLang.LangES6;
 use BayrellRtl.Lib.rs;
 use BayrellRtl.Types.Map;
 use BayrellLang.CommonTranslator;
+use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpAdd;
+use BayrellLang.OpCodes.OpAnd;
+use BayrellLang.OpCodes.OpArray;
+use BayrellLang.OpCodes.OpAssign;
+use BayrellLang.OpCodes.OpAssignDeclare;
+use BayrellLang.OpCodes.OpBitAnd;
+use BayrellLang.OpCodes.OpBitNot;
+use BayrellLang.OpCodes.OpBitOr;
+use BayrellLang.OpCodes.OpBitXor;
+use BayrellLang.OpCodes.OpBreak;
+use BayrellLang.OpCodes.OpCall;
+use BayrellLang.OpCodes.OpCallAwait;
+use BayrellLang.OpCodes.OpChilds;
+use BayrellLang.OpCodes.OpClassDeclare;
+use BayrellLang.OpCodes.OpClone;
+use BayrellLang.OpCodes.OpCompare;
+use BayrellLang.OpCodes.OpConcat;
+use BayrellLang.OpCodes.OpContinue;
+use BayrellLang.OpCodes.OpDelete;
+use BayrellLang.OpCodes.OpDiv;
+use BayrellLang.OpCodes.OpDynamic;
+use BayrellLang.OpCodes.OpFlags;
+use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionDeclare;
+use BayrellLang.OpCodes.OpHexNumber;
+use BayrellLang.OpCodes.OpIdentifier;
+use BayrellLang.OpCodes.OpIf;
+use BayrellLang.OpCodes.OpIfElse;
+use BayrellLang.OpCodes.OpMod;
+use BayrellLang.OpCodes.OpMult;
+use BayrellLang.OpCodes.OpNamespace;
+use BayrellLang.OpCodes.OpNew;
+use BayrellLang.OpCodes.OpNope;
+use BayrellLang.OpCodes.OpNot;
+use BayrellLang.OpCodes.OpNumber;
+use BayrellLang.OpCodes.OpOr;
+use BayrellLang.OpCodes.OpPostDec;
+use BayrellLang.OpCodes.OpPostInc;
+use BayrellLang.OpCodes.OpPow;
+use BayrellLang.OpCodes.OpPreDec;
+use BayrellLang.OpCodes.OpPreInc;
+use BayrellLang.OpCodes.OpReturn;
+use BayrellLang.OpCodes.OpShiftLeft;
+use BayrellLang.OpCodes.OpShiftRight;
+use BayrellLang.OpCodes.OpStatic;
+use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpSub;
+use BayrellLang.OpCodes.OpTemplateIdentifier;
+use BayrellLang.OpCodes.OpTernary;
+use BayrellLang.OpCodes.OpThrow;
+use BayrellLang.OpCodes.OpTryCatch;
+use BayrellLang.OpCodes.OpTryCatchChilds;
+use BayrellLang.OpCodes.OpUse;
+use BayrellLang.OpCodes.OpWhile;
 
 
 export class TranslatorES6 extends CommonTranslator {
@@ -249,15 +304,33 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpConcat(OpConcat op_code){
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 13;
-		return this.o(
-			this.getName("rtl") ~ '.toString(' ~
-			this.s(this.translateRun(op_code.value1)) ~ 
-			this.s(') + ') ~ 
-			this.s(this.getName("rtl") ~ '.toString(') ~
-			this.s(this.translateRun(op_code.value2)) ~ 
-			this.s(')'),
-			old_opcode_level, 13
-		);
+		
+		
+		string res = "";
+		if ( (op_code.value1 instanceof OpConcat) or (op_code.value1 instanceof OpString) ){
+			res ~= this.s(this.translateRun(op_code.value1));
+		}
+		else{
+			res ~= 
+				this.getName("rtl") ~ ".toString(" ~
+				this.s(this.translateRun(op_code.value1)) ~
+				")"
+			;
+		}
+		
+		res ~= this.s('+');
+		if ( (op_code.value2 instanceof OpConcat) or (op_code.value2 instanceof OpString) ){
+			res ~= this.s(this.translateRun(op_code.value2));
+		}
+		else{
+			res ~= 
+				this.getName("rtl") ~ ".toString(" ~
+				this.s(this.translateRun(op_code.value2)) ~
+				")"
+			;
+		}
+		
+		return this.o(res, old_opcode_level, 13);
 	}
 	
 	
@@ -324,7 +397,7 @@ export class TranslatorES6 extends CommonTranslator {
 			string ch = "";
 			for (int i=0; i<op_code.args.count(); i++){
 				BaseOpCode op = op_code.args.item(i);
-				s ~= ch + this.s(this.translateRun(op));
+				s ~= ch ~ this.s(this.translateRun(op));
 				ch = ", ";
 			}
 		}
@@ -628,15 +701,17 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Clone
 	 */
 	string OpClone(OpClone op_code){
-		this.beginOperation();
+		
+		bool old_is_operation = this.beginOperation();
 		
 		/* result */
 		string s = "clone ";
 		this.current_opcode_level = 0;
 		s ~= this.s(this.translateRun(op_code.value));
-		s ~= ";";
 		
-		this.endOperation();
+		if (not old_is_operation) res ~= this.s(';');
+		this.endOperation(old_is_operation);
+		
 		return s;
 	}
 	
@@ -727,8 +802,8 @@ export class TranslatorES6 extends CommonTranslator {
 			s ~= this.s(res);
 			
 			this.levelInc();
-			for (int i=0; i<if_else.if_true.count(); i++){
-				s ~= this.s(this.translateRun(if_else.if_true.item(i)));
+			for (int j=0; j<if_else.if_true.count(); j++){
+				s ~= this.s(this.translateRun(if_else.if_true.item(j)));
 			}
 			this.levelDec();
 			s ~= this.s("}");

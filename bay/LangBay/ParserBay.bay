@@ -292,9 +292,21 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readCallAwait(){
 		this.matchNextToken("await");
-		BaseOpCode ident = this.readCallDynamic(true, true, true, true, false);
+		BaseOpCode ident = this.readCallDynamic(true, true, true, true);
 		Vector<BaseOpCode> v = this.readCallBody();
 		return new OpCallAwait(ident, v);
+	}
+	
+	
+	
+	/**
+	 * Read clone
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readClone(){
+		this.matchNextToken("clone");
+		BaseOpCode value = this.readExpression();
+		return new OpClone(value);
 	}
 	
 	
@@ -309,6 +321,9 @@ export class ParserBay extends CommonParser{
 		else if (this.findNextToken('await')){
 			return this.readCallAwait();
 		}
+		else if (this.findNextToken('clone')){
+			return this.readClone();
+		}
 		return this.readGroupExpression();
 	}
 	
@@ -319,14 +334,10 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readCallDynamic(bool allow_dynamic = true, bool allow_bracket = true, 
-	bool allow_static = true, bool allow_call = true, bool allow_new_await = false){
+	bool allow_static = true, bool allow_call = true){
 		
 		bool can_static = true;
-		
-		BaseOpCode obj = null;
-		if (allow_new_await) obj = this.readNewAwait();
-		else obj = this.readGroupExpression();
-			
+		BaseOpCode obj = this.readGroupExpression();
 		BaseOpCode ident = null;
 		while ((this.findNextToken(".") and allow_dynamic) or 
 		       (this.findNextToken("[") and allow_bracket) or 
@@ -374,7 +385,7 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readTemplateIdentifier(){
-		BaseOpCode op_code1 = this.readCallDynamic(true, false, false, false, false);
+		BaseOpCode op_code1 = this.readCallDynamic(true, false, false, false);
 		if (not this.findNextToken("<")){
 			return op_code1;
 		}
@@ -382,12 +393,14 @@ export class ParserBay extends CommonParser{
 		Vector<BaseOpCode> v = new Vector();
 		
 		this.matchNextToken("<");
-		BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false, false);
-		v.push(op_code2);
-		
-		while (this.findNextToken(",")){
-			BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false, false);
-			v.push(op_code2);		
+		while (true){
+			BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false);
+			v.push(op_code2);
+			if (this.findNextToken(",")){
+				this.matchNextToken(",");
+				continue;
+			}
+			break;
 		}
 		this.matchNextToken(">");
 		
@@ -402,11 +415,21 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readExpressionElement(){
 		
+		if (this.findNextToken('new')){
+			return this.readNewInstance();
+		}
+		else if (this.findNextToken('await')){
+			return this.readCallAwait();
+		}
+		else if (this.findNextToken('clone')){
+			return this.readClone();
+		}
+		
 		BaseOpCode op_code = this.readFixed();
 		if (op_code != null)
 			return op_code;
 			
-		return this.readCallDynamic(true, true, true, true, true);
+		return this.readCallDynamic(true, true, true, true);
 	}
 	
 	
@@ -789,7 +812,7 @@ export class ParserBay extends CommonParser{
 		success = false;
 		this.pushToken();
 		try{
-			op_ident = this.readCallDynamic(true, true, false, false, false);
+			op_ident = this.readCallDynamic(true, true, false, false);
 			if (this.findNextTokenVector(v) != -1){
 				success = true;
 			}
@@ -1069,7 +1092,7 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readOperatorDelete(){
 		this.matchNextToken("delete");
-		BaseOpCode value = this.readCallDynamic(true, true, false, false, false);
+		BaseOpCode value = this.readCallDynamic(true, true, false, false);
 		this.matchNextToken(";");
 		return new OpDelete(value);
 	}
@@ -1125,7 +1148,8 @@ export class ParserBay extends CommonParser{
 			return res;
 		}
 		
-		return this.readCallDynamic(true, true, true, true, true);
+		return this.readExpressionElement();
+		/*return this.readCallDynamic(true, true, true, true);*/
 	}
 	
 	
@@ -1373,7 +1397,6 @@ export class ParserBay extends CommonParser{
 	 * Parser function
 	 */
 	void runParser(){
-		this.skip_comments = true;
 		this._result = new OpNope( this.readProgram() );
 	}
 	

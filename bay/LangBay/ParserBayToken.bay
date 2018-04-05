@@ -182,8 +182,8 @@ export class ParserBayToken extends ParserToken{
 		string look = this.lookString(2);
 		while (look == "/*"){ /* */
 			this.readComment(look);
-			look = this.lookString(2);
 			this.skipSystemChar();
+			look = this.lookString(2);
 		}
 	}
 	
