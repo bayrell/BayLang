@@ -80,6 +80,8 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpPow.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpPreDec.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpPreInc.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpPreprocessorCase.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpPreprocessorSwitch.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpReturn.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpShiftLeft.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpShiftRight.js",
@@ -95,6 +97,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpWhile.js",
 	])
 	.load([
+		"/assets/bayrell_lang_es6/OpCodes/OpInterfaceDeclare.js",
 		"/assets/bayrell_lang_es6/LangNodeJS/TranslatorNodeJS.js",
 	])
 	.success(function(){

@@ -20,6 +20,7 @@ namespace BayrellLang.OpCodes;
 
 use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpFlags;
 
 
 export class OpClassDeclare extends BaseOpCode{
@@ -30,6 +31,8 @@ export class OpClassDeclare extends BaseOpCode{
 	public Vector<string> class_implements = null;
 	public Vector<OpAssignDeclare> class_variables = null;
 	public Vector<OpFunctionDeclare> class_functions = null;
+	public Vector<BaseOpCode> class_template = null;
+	public OpFlags flags = null;
 	
 	
 	
@@ -44,6 +47,8 @@ export class OpClassDeclare extends BaseOpCode{
 			this.class_implements = clone obj.class_implements;
 			this.class_variables = clone obj.class_variables;
 			this.class_functions = clone obj.class_functions;
+			this.class_template = clone obj.class_template;
+			this.flags = clone obj.flags;
 		}
 		parent::assign(obj);
 	}
@@ -61,6 +66,19 @@ export class OpClassDeclare extends BaseOpCode{
 	
 	
 	/**
+	 * Read is Flag
+	 */
+	public boolean isFlag(string name){
+		if (this.flags == null)
+			return false;
+		if (not OpFlags::hasFlag(name))
+			return false;
+		return this.flags.takeValue(name);
+	}
+	
+	
+	
+	/**
 	 * Constructor
 	 */ 
 	void constructor(){
@@ -68,6 +86,7 @@ export class OpClassDeclare extends BaseOpCode{
 		this.class_implements = new Vector<string>();
 		this.class_variables = new Vector<OpAssignDeclare>();
 		this.class_functions = new Vector<OpFunctionDeclare>();
+		this.class_template = new Vector<BaseOpCode>();
 	}
 	
 	
@@ -88,10 +107,12 @@ export class OpClassDeclare extends BaseOpCode{
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
 		names.push("class_name");
+		names.push("class_template");
 		names.push("class_extends");
 		names.push("class_implements");
 		names.push("class_variables");
 		names.push("class_functions");
+		names.push("flags");
 	}
 	
 	
@@ -107,6 +128,8 @@ export class OpClassDeclare extends BaseOpCode{
 		else if (variable_name == 'class_implements') return this.class_implements;
 		else if (variable_name == 'class_variables') return this.class_variables;
 		else if (variable_name == 'class_functions') return this.class_functions;
+		else if (variable_name == 'class_template') return this.class_template;
+		else if (variable_name == 'flags') return this.flags;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -123,6 +146,8 @@ export class OpClassDeclare extends BaseOpCode{
 		else if (variable_name == 'class_implements') this.class_implements = value;
 		else if (variable_name == 'class_variables') this.class_variables = value;
 		else if (variable_name == 'class_functions') this.class_functions = value;
+		else if (variable_name == 'class_template') this.class_template = value;
+		else if (variable_name == 'flags') this.flags = value;
 		else parent::assignValue(variable_name, value);
 	}
 	

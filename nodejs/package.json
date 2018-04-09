@@ -4,6 +4,7 @@
 	"Exceptions/*.js",
 	"LangBay/*.js",
 	"LangES6/*.js",
+	"LangNodeJS/*.js",
 	"OpCodes/*.js",
     "*.js"
   ],

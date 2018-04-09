@@ -126,16 +126,7 @@ export class OpFlags extends BaseOpCode{
 	 * Assign flag
 	 */
 	public void assignFlag(string flag_name){
-		if (
-			flag_name == "export" or
-			flag_name == "static" or
-			flag_name == "const" or
-			flag_name == "public" or
-			flag_name == "private" or
-			flag_name == "declare" or
-			flag_name == "protected" or
-			flag_name == "async"
-		){
+		if (self::hasFlag(flag_name)){
 			this.assignValue(flag_name, true);
 			return true;
 		}
@@ -158,5 +149,26 @@ export class OpFlags extends BaseOpCode{
 			.push("protected")
 			.push("async")
 		;
+	}
+	
+	
+	
+	/**
+	 * Get flags
+	 */
+	public static boolean hasFlag(string flag_name){
+		if (
+			flag_name == "export" or
+			flag_name == "static" or
+			flag_name == "const" or
+			flag_name == "public" or
+			flag_name == "private" or
+			flag_name == "declare" or
+			flag_name == "protected" or
+			flag_name == "async"
+		){
+			return true;
+		}
+		return false;
 	}
 }

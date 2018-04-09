@@ -20,6 +20,7 @@ namespace BayrellLang.LangNodeJS;
 
 use BayrellRtl.Lib.rs;
 use BayrellRtl.Lib.re;
+use BayrellLang.OpCodes.OpPreprocessorCase;
 use BayrellLang.LangES6.TranslatorES6;
 use BayrellLang.CommonTranslator;
 
@@ -149,5 +150,18 @@ export class TranslatorNodeJS extends TranslatorES6 {
 		return res;
 	}
 	
+	
+	
+	/**
+	 * Calc preprocessor condition
+	 */
+	bool calcPreprocessorCondition(OpPreprocessorCase op_case){
+		if (op_case.condition instanceof OpIdentifier){
+			if (op_case.condition.value == "JAVASCRIPT" or op_case.condition.value == "ES6"){
+				return true;
+			}
+		}
+		return false;
+	}
 	
 }

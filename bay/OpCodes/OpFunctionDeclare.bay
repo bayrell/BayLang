@@ -20,6 +20,7 @@ namespace BayrellLang.OpCodes;
 
 use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpFlags;
 
 
 export class OpFunctionDeclare extends BaseOpCode{
@@ -29,6 +30,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 	public BaseOpCode result_type = null;
 	public Vector<OpAssignDeclare> args = null;
 	public Vector<BaseOpCode> childs = null;
+	public OpFlags flags = null;
 	
 	
 	
@@ -42,6 +44,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 			this.result_type = obj.result_type;
 			this.args = clone obj.args;
 			this.childs = clone obj.childs;
+			this.flags = clone obj.flags;
 		}
 		parent::assign(obj);
 	}
@@ -54,6 +57,19 @@ export class OpFunctionDeclare extends BaseOpCode{
 	 */
 	public string getClassName(){
 		return "BayrellLang.OpCodes.OpFunctionDeclare";
+	}
+	
+	
+	
+	/**
+	 * Read is Flag
+	 */
+	public boolean isFlag(string name){
+		if (this.flags == null)
+			return false;
+		if (not OpFlags::hasFlag(name))
+			return false;
+		return this.flags.takeValue(name);
 	}
 	
 	
@@ -86,6 +102,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 		names.push("name");
 		names.push("result_type");
 		names.push("args");
+		names.push("flags");
 	}
 	
 	
@@ -99,6 +116,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 		if (variable_name == 'name') return this.name;
 		else if (variable_name == 'result_type') return this.result_type;
 		else if (variable_name == 'args') return this.args;
+		else if (variable_name == 'flags') return this.flags;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -113,6 +131,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 		if (variable_name == 'name') this.name = value;
 		else if (variable_name == 'result_type') this.result_type = value;
 		else if (variable_name == 'args') this.args = value;
+		else if (variable_name == 'flags') this.flags = value;
 		else parent::assignValue(variable_name, value);
 	}
 	

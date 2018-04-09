@@ -50,6 +50,7 @@ use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
+use BayrellLang.OpCodes.OpInterfaceDeclare;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -63,6 +64,8 @@ use BayrellLang.OpCodes.OpPostInc;
 use BayrellLang.OpCodes.OpPow;
 use BayrellLang.OpCodes.OpPreDec;
 use BayrellLang.OpCodes.OpPreInc;
+use BayrellLang.OpCodes.OpPreprocessorCase;
+use BayrellLang.OpCodes.OpPreprocessorSwitch;
 use BayrellLang.OpCodes.OpReturn;
 use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
@@ -336,6 +339,7 @@ export class ParserBay extends CommonParser{
 	BaseOpCode readCallDynamic(bool allow_dynamic = true, bool allow_bracket = true, 
 	bool allow_static = true, bool allow_call = true){
 		
+		string name = "";
 		bool can_static = true;
 		BaseOpCode obj = this.readGroupExpression();
 		BaseOpCode ident = null;
@@ -1141,6 +1145,9 @@ export class ParserBay extends CommonParser{
 			this.matchNextToken(';');
 			return new OpContinue();
 		}
+		else if (this.findNextTokenPreprocessor()){
+			return this.readPreprocessor();
+		}
 		
 		BaseOpCode res = this.readOperatorAssign();
 		if (res){
@@ -1232,6 +1239,31 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read flags
+	 * @return OpFlags
+	 */
+	OpFlags readFlags(){
+		
+		OpFlags flags = null;
+		Vector<string> flags_vector = OpFlags::getFlags();
+		
+		if (this.findNextTokenVector(flags_vector) != -1){
+			flags = new OpFlags();
+			while (this.findNextTokenVector(flags_vector) != -1){
+				if (not flags.assignFlag(this.lookNextToken())){
+					this.parserError("Unknown flag '" ~ this.lookNextToken() ~ "'");
+				}
+				this.readNextToken();
+			}
+		}
+		
+		if (flags_vector != null) delete flags_vector;
+		return flags;
+	}
+	
+	
+	
+	/**
 	 * Read operator namespace
 	 * @return BaseOpCode
 	 */
@@ -1266,35 +1298,17 @@ export class ParserBay extends CommonParser{
 			break;
 		}
 		this.matchNextToken(")");
-		res.childs = this.readOperatorsBlock();
 		this.popToken();
 		
-		return res;
-	}
-	
-	
-	
-	/**
-	 * Read flags
-	 * @return OpFlags
-	 */
-	OpFlags readFlags(){
 		
-		OpFlags flags = null;
-		Vector<string> flags_vector = OpFlags::getFlags();
-		
-		if (this.findNextTokenVector(flags_vector) != -1){
-			flags = new OpFlags();
-			while (this.findNextTokenVector(flags_vector) != -1){
-				if (not flags.assignFlag(this.lookNextToken())){
-					this.parserError("Unknown flag '" ~ this.lookNextToken() ~ "'");
-				}
-				this.readNextToken();
-			}
+		if (this.findNextToken("{")){
+			res.childs = this.readOperatorsBlock();
+		}
+		else{
+			this.matchNextToken(";");
 		}
 		
-		if (flags_vector != null) delete flags_vector;
-		return flags;
+		return res;
 	}
 	
 	
@@ -1303,14 +1317,27 @@ export class ParserBay extends CommonParser{
 	 * Read operator namespace
 	 * @return BaseOpCode
 	 */
-	OpClassDeclare readDeclareClass(OpFlags class_flags){
+	OpClassDeclare readClassBody(OpClassDeclare res){
 		
 		OpFlags flags = null;
-		OpClassDeclare res = new OpClassDeclare();
 		BaseOpCode op_code = null;
-		this.matchNextToken("class");
-		
 		res.class_name = this.readIdentifierName();
+		
+		if (this.findNextToken("<")){
+			this.matchNextToken("<");
+			while (true){
+				BaseOpCode op_code2 = this.readCallDynamic(true, false, false, false);
+				res.class_template.push(op_code2);
+				if (this.findNextToken(",")){
+					this.matchNextToken(",");
+					continue;
+				}
+				break;
+			}
+			this.matchNextToken(">");
+		}
+		
+		
 		if (this.findNextToken("extends")){
 			this.matchNextToken("extends");
 			res.class_extends = this.readIdentifier();
@@ -1318,15 +1345,14 @@ export class ParserBay extends CommonParser{
 		
 		if (this.findNextToken("implements")){
 			this.matchNextToken("implements");
-			while ((not this.findToken("{")) and (not this.isEOF())){
-				res.implements.push( this.readDynamicName() );
+			while ((not this.findNextToken("{")) and (not this.isEOF())){
+				res.class_implements.push( this.readDynamicName() );
 				if (this.findNextToken(",")){
 					this.matchNextToken(",");
 					continue;
 				}
 				break;
 			}
-			res.extends = this.readIdentifier();
 		}
 		
 		this.matchNextToken("{");
@@ -1355,7 +1381,101 @@ export class ParserBay extends CommonParser{
 		}
 		
 		this.matchNextToken("}");
+	}
+	
+	
+	
+	/**
+	 * Read operator namespace
+	 * @return BaseOpCode
+	 */
+	OpClassDeclare readDeclareClass(OpFlags class_flags){
+		OpClassDeclare res = new OpClassDeclare();
+		this.matchNextToken("class");
+		this.readClassBody(res);
+		res.flags = class_flags;
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Read operator namespace
+	 * @return BaseOpCode
+	 */
+	OpInterfaceDeclare readDeclareInterface(OpFlags class_flags){
+		OpInterfaceDeclare res = new OpInterfaceDeclare();
+		this.matchNextToken("interface");
+		this.readClassBody(res);
+		res.flags = class_flags;
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Prepocessor
+	 */
+	bool findNextTokenPreprocessor(){
+		string token = this.lookNextToken();
+		if (
+			(this.lookNextTokenType() == ParserBayToken::TOKEN_BASE) and (
+				token == "#switch" or
+				token == "#ifcode"
+			)
+		){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	
+	/**
+	 * Read prepocessors block
+	 */
+	BaseOpCode readPreprocessor(){
+	
+		if (this.findNextToken("#switch")){
+			
+			Vector<BaseOpCode> childs = new Vector();
+			
+			string comment; int pos;
+			this.matchNextToken("#switch");
+			Vector<string> v = (new Vector())
+				.push("#case")
+				.push("#endswitch")
+			;
+			while (this.findNextToken("#case")){
+				this.matchNextToken("#case");
+				this.matchNextToken("ifcode");
+				
+				OpPreprocessorCase op_case = new OpPreprocessorCase();
+				op_case.condition = this.readExpression();
+				if (not this.findNextToken("then")){
+					this.nextTokenExpected("then");
+				}
+				op_case.value = rs::trim(this.next_token.readUntilVector(v));
+				childs.push(op_case);
+				
+				this.readAnyNextToken();
+				pos = this.findNextTokenVector(v);
+				if (pos == -1){
+					this.parserError("Unknown preprocessor token " ~ this.lookNextToken());
+				}
+			}
+			this.matchNextToken("#endswitch");
+			delete v;
+			
+			return new OpPreprocessorSwitch(childs);
+		}
+		else if (this.findNextToken("#ifcode")){
+			this.matchNextToken("#endifcode");
+		}
+		else{
+			this.parserError("Unknown preprocessor token " ~ this.lookNextToken());
+		}
 	}
 	
 	
@@ -1378,10 +1498,17 @@ export class ParserBay extends CommonParser{
 				res.push(this.readOperatorUse());
 				continue;
 			}
+			else if (this.findNextTokenPreprocessor()){
+				res.push(this.readPreprocessor());
+				continue;
+			}
 			
 			OpFlags flags = this.readFlags();
 			if (this.findNextToken("class")){
 				res.push(this.readDeclareClass(flags));
+			}
+			else if (this.findNextToken("interface")){
+				res.push(this.readDeclareInterface(flags));
 			}
 			else {
 				this.parserError("Unknown token " ~ this.lookNextToken());

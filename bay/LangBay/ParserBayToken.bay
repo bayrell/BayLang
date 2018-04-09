@@ -105,7 +105,7 @@ export class ParserBayToken extends ParserToken{
 		string res_str = "";
 		string look = this.lookChar();
 		
-		while (look != match_char){
+		while (look != match_char and not this.isEOF()){
 			
 			if (look == '\\'){
 				this.moveChar(look);
@@ -252,7 +252,7 @@ export class ParserBayToken extends ParserToken{
 		if (this.isTokenChar(look)){
 			try{
 				look = this.lookChar();			
-				while (this.isTokenChar(look)) {
+				while (this.isTokenChar(look) and not this.isEOF()) {
 					this.token = this.token ~ look;
 					this.moveChar(look);
 					look = this.lookChar();

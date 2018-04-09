@@ -1,0 +1,111 @@
+/*!
+ *  Bayrell Common Languages Transcompiler
+ *
+ *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayrellLang.OpCodes;
+
+use BayrellLang.OpCodes.BaseOpCode;
+
+
+export class OpPreprocessorCase extends BaseOpCode{
+	
+	public string op = "op_preprocessor_case";
+	public BaseOpCode condition = null;
+	public string value = null;
+	
+	
+	/**
+	 * Returns classname of the object
+	 * @return string
+	 */
+	public string getClassName(){
+		return "BayrellLang.OpCodes.OpPreprocessorCase";
+	}
+	
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(BaseOpCode condition = null, string value = ""){
+		parent();
+		this.condition = condition;
+		this.value = value;
+	}
+	
+	
+	
+	/**
+	 * Destructor
+	 */
+	void destructor(){
+		parent();
+	}
+	
+	
+	
+	/**
+	 * Returns name of variables to serialization
+	 * @return Vector<string>
+	 */
+	public void getVariablesNames(Vector<string> names){
+		parent::getVariablesNames(names);
+		names.push("condition");
+		names.push("value");
+	}
+	
+	
+	
+	/**
+	 * Returns instance of the value by variable name
+	 * @param string variable_name
+	 * @return var
+	 */
+	public var takeValue(string variable_name, var default_value = null){
+		if (variable_name == 'condition') return this.condition;
+		if (variable_name == 'value') return this.value;
+		return parent::takeValue(variable_name, default_value);
+	}
+	
+	
+	
+	/**
+	 * Set new value instance by variable name
+	 * @param string variable_name
+	 * @param var value
+	 */
+	public void assignValue(string variable_name, var value){
+		if (variable_name == 'condition') this.condition = value;
+		else if (variable_name == 'value') this.value = value;
+		else
+			parent::assignValue(variable_name, value);
+	}
+	
+	
+	
+	/**
+	 * Assign all data from other object
+	 * @param CoreObject obj
+	 */
+	void assign(CoreObject obj){
+		if (obj instanceof OpValue2){
+			this.condition = clone obj.condition;
+			this.comment = obj.comment;
+		}
+		parent::assign(obj);
+	}
+}

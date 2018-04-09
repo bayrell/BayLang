@@ -50,6 +50,7 @@ use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
+use BayrellLang.OpCodes.OpInterfaceDeclare;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -63,6 +64,7 @@ use BayrellLang.OpCodes.OpPostInc;
 use BayrellLang.OpCodes.OpPow;
 use BayrellLang.OpCodes.OpPreDec;
 use BayrellLang.OpCodes.OpPreInc;
+use BayrellLang.OpCodes.OpPreprocessorSwitch;
 use BayrellLang.OpCodes.OpReturn;
 use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
@@ -238,6 +240,7 @@ export class CommonTranslator extends ContextObject{
 	string OpHexNumber(OpHexNumber op_code){  return ""; }
 	string OpIdentifier(OpIdentifier op_code){  return ""; }
 	string OpIf(OpIf op_code){  return ""; }
+	string OpInterfaceDeclare(OpInterfaceDeclare op_code){  return ""; }
 	string OpMod(OpMod op_code){  return ""; }
 	string OpMult(OpMult op_code){  return ""; }
 	string OpNamespace(OpNamespace op_code){  return ""; }
@@ -251,6 +254,7 @@ export class CommonTranslator extends ContextObject{
 	string OpPow(OpPow op_code){  return ""; }
 	string OpPreDec(OpPreDec op_code){  return ""; }
 	string OpPreInc(OpPreInc op_code){  return ""; }
+	string OpPreprocessorSwitch(OpPreInc op_code){  return ""; }
 	string OpReturn(OpReturn op_code){  return ""; }
 	string OpShiftLeft(OpShiftLeft op_code){  return ""; }
 	string OpShiftRight(OpShiftRight op_code){  return ""; }
@@ -366,6 +370,9 @@ export class CommonTranslator extends ContextObject{
 		else if (op_code instanceof OpIf){
 			return this.OpIf(op_code);
 		}
+		else if (op_code instanceof OpInterfaceDeclare){
+			return this.OpInterfaceDeclare(op_code);
+		}
 		else if (op_code instanceof OpMod){
 			return this.OpMod(op_code);
 		}
@@ -404,6 +411,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpPreInc){
 			return this.OpPreInc(op_code);
+		}
+		else if (op_code instanceof OpPreprocessorSwitch){
+			return this.OpPreprocessorSwitch(op_code);
 		}
 		else if (op_code instanceof OpReturn){
 			return this.OpReturn(op_code);

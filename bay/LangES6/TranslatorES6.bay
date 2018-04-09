@@ -50,6 +50,7 @@ use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
+use BayrellLang.OpCodes.OpInterfaceDeclare;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -63,6 +64,8 @@ use BayrellLang.OpCodes.OpPostInc;
 use BayrellLang.OpCodes.OpPow;
 use BayrellLang.OpCodes.OpPreDec;
 use BayrellLang.OpCodes.OpPreInc;
+use BayrellLang.OpCodes.OpPreprocessorCase;
+use BayrellLang.OpCodes.OpPreprocessorSwitch;
 use BayrellLang.OpCodes.OpReturn;
 use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
@@ -595,6 +598,11 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpCompare(OpCompare op_code){
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 10;
+		
+		if (op_code.cond == 'implements'){
+			return this.o("rtl.implements(" ~ this.translateRun(op_code.value1) ~ ", " ~ this.s(this.translateRun(op_code.value2)) ~ ")");
+		}
+		
 		return this.o(
 			this.translateRun(op_code.value1) ~ ' ' ~ op_code.cond ~ ' ' ~ this.s(this.translateRun(op_code.value2)),
 			old_opcode_level, 10
@@ -980,6 +988,11 @@ export class TranslatorES6 extends CommonTranslator {
 		string ch = "";
 		string s = "";
 		
+		/* Skip if declare function */
+		if (op_code.isFlag("declare")){
+			return "";
+		}
+		
 		/* Header */
 		this.beginOperation();
 		res ~= op_code.name;
@@ -1008,8 +1021,10 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		/* Childs */
-		for (int i=0; i<op_code.childs.count(); i++){
-			res ~= this.s(this.translateRun(op_code.childs.item(i)));
+		if (op_code.childs != null){
+			for (int i=0; i<op_code.childs.count(); i++){
+				res ~= this.s(this.translateRun(op_code.childs.item(i)));
+			}
 		}
 		this.levelDec();
 		res ~= this.s("}");
@@ -1088,6 +1103,11 @@ export class TranslatorES6 extends CommonTranslator {
 		/* Set current class name */
 		this.current_class_name = op_code.class_name;
 		
+		/* Skip if declare class */
+		if (op_code.isFlag("declare")){
+			return "";
+		}
+		
 		/* Header */
 		res ~= this.OpClassDeclareHeader(op_code);
 		
@@ -1118,7 +1138,7 @@ export class TranslatorES6 extends CommonTranslator {
 				for (int i=0; i<op_code.class_implements.count(); i++){
 					string name = op_code.class_implements.item(i);
 					this.beginOperation();
-					s = "this.__implements__.push("~name~");";
+					s = "this.__implements__.push(" ~ this.getName(name) ~ ");";
 					this.endOperation();
 					res ~= this.s(s);
 				}
@@ -1147,5 +1167,47 @@ export class TranslatorES6 extends CommonTranslator {
 		return res;
 	}
 	
+	
+	
+	/**
+	 * Interface declare
+	 */
+	string OpInterfaceDeclare(OpInterfaceDeclare op_code){
+		return OpClassDeclare(op_code);
+	}
+	
+	
+	
+	/** =========================== Preprocessor ========================== */
+	
+	bool calcPreprocessorCondition(OpPreprocessorCase op_case){
+		if (op_case.condition instanceof OpIdentifier){
+			if (op_case.condition.value == "JAVASCRIPT" or op_case.condition.value == "ES6"){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	
+	/**
+	 * Interface declare
+	 */
+	string OpPreprocessorSwitch(OpPreprocessorSwitch op_code){
+		
+		if (op_code.childs == null)
+			return "";
+		
+		string res = "";
+		for (int i=0; i<op_code.childs.count(); i++){
+			OpPreprocessorCase op_case = op_code.childs.item(i);
+			if (this.calcPreprocessorCondition(op_case)){
+				res ~= op_case.value;
+			}
+		}
+		
+		return res;
+	}
 	
 }
