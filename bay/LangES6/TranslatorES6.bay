@@ -1150,7 +1150,7 @@ export class TranslatorES6 extends CommonTranslator {
 			
 			/* Implements */
 			if (op_code.class_implements != null and op_code.class_implements.count() > 0){
-				s = "if (this.__implements__ == undefined){this.__implements__ = [];}";
+				res ~= this.s("if (this.__implements__ == undefined){this.__implements__ = [];}");
 				for (int i=0; i<op_code.class_implements.count(); i++){
 					string name = op_code.class_implements.item(i);
 					this.beginOperation();
