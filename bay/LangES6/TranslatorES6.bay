@@ -1118,6 +1118,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Set current class name */
 		this.current_class_name = op_code.class_name;
+		this.modules.set(this.current_class_name, this.current_namespace ~ "." ~ this.current_class_name);
 		
 		/* Skip if declare class */
 		if (op_code.isFlag("declare")){

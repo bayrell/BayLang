@@ -29,7 +29,7 @@ class TwiceDeclareElseError extends ParserError{
 		if (context == null)
 			context = rtl::globalContext();
 			
-		parent::constructor(
+		parent(
 			context, 
 			context.translate("ERROR_TWICE_DECLARE_ERROR"), 
 			LangConstant::ERROR_TWICE_DECLARE_ERROR, 

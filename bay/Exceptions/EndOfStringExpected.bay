@@ -29,7 +29,7 @@ class EndOfStringExpected extends ParserError{
 		if (context == null)
 			context = rtl::globalContext();
 			
-		parent::constructor(
+		parent(
 			context, 
 			context.translate("ERROR_END_OF_THE_STRING_EXPECTED"), 
 			LangConstant::ERROR_END_OF_THE_STRING_EXPECTED, 

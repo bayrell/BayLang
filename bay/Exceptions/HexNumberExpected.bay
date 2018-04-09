@@ -29,7 +29,7 @@ class HexNumberExpected extends ParserError{
 		if (context == null)
 			context = rtl::globalContext();
 			
-		parent::constructor(
+		parent(
 			context, 
 			context.translate("ERROR_PARSER_HEX_NUMBER_EXPECTED"), 
 			LangConstant::ERROR_PARSER_HEX_NUMBER_EXPECTED, 
