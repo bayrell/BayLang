@@ -208,6 +208,8 @@ export class CommonTranslator extends ContextObject{
 	 * Output string witch brackets
 	 */
 	string o(string s, int old_opcode_level, int current_opcode_level){
+		if (this.is_operation == false)
+			return s;
 		if (old_opcode_level > current_opcode_level){
 			return "("~s~")";
 		}
@@ -283,6 +285,7 @@ export class CommonTranslator extends ContextObject{
 			string s = "";
 			bool flag = true;
 			for (int i=0; i<op_code.childs.count(); i++){
+				this.current_opcode_level = 0;
 				s = this.translateRun(op_code.childs[i]);
 				if (s == "")
 					continue;

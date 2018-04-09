@@ -115,7 +115,7 @@ export class ParserBay extends CommonParser{
 		try{
 			res = this.matchHexNumber();
 		}
-		catch (Exception ex){
+		catch (var ex){
 			if (ex instanceof HexNumberExpected){
 				throw ex;
 			}
@@ -140,7 +140,7 @@ export class ParserBay extends CommonParser{
 		try{
 			res = this.matchDouble();
 		}
-		catch (Exception ex){
+		catch (var ex){
 			if (ex instanceof ParserError){
 				res = null;
 			}
@@ -821,7 +821,7 @@ export class ParserBay extends CommonParser{
 				success = true;
 			}
 		}
-		catch (Exception ex){
+		catch (var ex){
 			if (ex instanceof ParserError){
 				success = false;
 			}
@@ -850,7 +850,7 @@ export class ParserBay extends CommonParser{
 			op_ident_name = this.readIdentifierName();
 			success = true;
 		}
-		catch (Exception ex){
+		catch (var ex){
 			if (ex instanceof ParserError){
 				success = false;
 			}
@@ -1256,27 +1256,9 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readOperatorNamespace(){
-		
 		this.matchNextToken("namespace");
-		
-		/* Create new token */
-		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
-		token.assign( this.current_token );
-		token.readNextToken();
-		
-		/* Get name */
-		string name = token.token;
-		
-		/* Assign next token */
-		this.current_token.assign(token);
-		this.next_token.assign(token);
-		this.next_token.readNextToken();
-		
-		/* Destroy new token */
-		delete token;
-		
-		this.matchNextToken(";");
-		
+		string name = this.readDynamicName();
+		this.matchNextToken(";");		
 		return new OpNamespace(name);
 	}
 	

@@ -220,6 +220,9 @@ export class CommonParser extends CoreParser{
 			value ~= "." ~ this.readNextToken().token;
 		}
 		
+		if (sign == "-")
+			return "-" ~ value;
+		
 		return value;
 	}
 	

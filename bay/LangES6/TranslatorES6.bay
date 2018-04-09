@@ -86,6 +86,7 @@ export class TranslatorES6 extends CommonTranslator {
 	Map<string, string> modules = null;
 	string current_namespace = "";
 	string current_class_name = "";
+	string current_function_name = "";
 	
 	
 	/**
@@ -565,7 +566,16 @@ export class TranslatorES6 extends CommonTranslator {
 		this.pushOneLine(true);
 		
 		/* Function name */
-		s ~= this.translateRun(op_code.value);
+		bool f = true;
+		if (op_code.value instanceof OpIdentifier){
+			if (op_code.value.value == 'parent' and this.current_function_name != "constructor"){
+				s ~= "super." ~ this.current_class_name;
+				f = false;
+			}
+		}
+		if (f){
+			s ~= this.translateRun(op_code.value);
+		}
 		
 		/* Call arguments */
 		int old_opcode_level = this.current_opcode_level;
@@ -606,7 +616,7 @@ export class TranslatorES6 extends CommonTranslator {
 		this.current_opcode_level = 10;
 		
 		if (op_code.cond == 'implements'){
-			return this.o("rtl.implements(" ~ this.translateRun(op_code.value1) ~ ", " ~ this.s(this.translateRun(op_code.value2)) ~ ")");
+			return this.o(this.getName("rtl") ~ ".implements(" ~ this.translateRun(op_code.value1) ~ ", " ~ this.s(this.translateRun(op_code.value2)) ~ ")");
 		}
 		
 		return this.o(
@@ -719,9 +729,10 @@ export class TranslatorES6 extends CommonTranslator {
 		bool old_is_operation = this.beginOperation();
 		
 		/* result */
-		string s = "clone ";
+		string s = this.getName("rtl") ~ ".clone(";
 		this.current_opcode_level = 0;
 		s ~= this.s(this.translateRun(op_code.value));
+		s ~= this.s(")");
 		
 		if (not old_is_operation) res ~= this.s(';');
 		this.endOperation(old_is_operation);
@@ -744,16 +755,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Delete
 	 */
 	string OpDelete(OpDelete op_code){
-		this.beginOperation();
-		
-		/* result */
-		string s = "delete ";
-		this.current_opcode_level = 0;
-		s ~= this.s(this.translateRun(op_code.value));
-		s ~= ";";
-		
-		this.endOperation();
-		return s;
+		return "";
 	}
 	
 	
@@ -811,7 +813,7 @@ export class TranslatorES6 extends CommonTranslator {
 			OpIfElse if_else = op_code.if_else.item(i);
 			
 			this.beginOperation();
-			string res = "elseif (" ~ this.translateRun(if_else.condition) ~ "){";
+			string res = "else if (" ~ this.translateRun(if_else.condition) ~ "){";
 			this.endOperation();
 			s ~= this.s(res);
 			
@@ -903,6 +905,8 @@ export class TranslatorES6 extends CommonTranslator {
 			string tp = this.translateRun(try_catch.op_type);
 			string name = this.translateRun(try_catch.op_ident);
 			this.endOperation();
+			
+			if (tp == 'var') tp = 'Error';
 			
 			/* catch childs */
 			this.levelInc();
@@ -999,14 +1003,20 @@ export class TranslatorES6 extends CommonTranslator {
 			return "";
 		}
 		
+		/* Static function */
+		if (op_code.isFlag("static")){
+			res ~= "static ";
+		}
+		
 		/* Header */
 		this.beginOperation();
 		res ~= op_code.name;
+		this.current_function_name = op_code.name;
 		res ~= "(";
 		for (int i=0; i<op_code.args.count(); i++){
 			OpAssignDeclare variable = op_code.args.item(i);
 			this.pushOneLine(true);
-			res ~= ch ~ this.translateRun(variable.tp) ~ " " ~ variable.name;
+			res ~= ch ~ variable.name;
 			this.popOneLine();
 			ch = ", ";
 		}
@@ -1220,6 +1230,19 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Translate to language
+	 * @param BaseOpCode op_code - Abstract syntax tree
+	 * @returns string - The result
+	 */
+	string translate(BaseOpCode op_code){
+		string s = this.s("use strict;");
+		s ~= this.translateRun(op_code);
+		return s;
 	}
 	
 }
