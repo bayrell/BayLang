@@ -816,7 +816,7 @@ export class ParserBay extends CommonParser{
 		success = false;
 		this.pushToken();
 		try{
-			op_ident = this.readCallDynamic(true, true, false, false);
+			op_ident = this.readCallDynamic(true, true, true, false);
 			if (this.findNextTokenVector(v) != -1){
 				success = true;
 			}
@@ -1070,7 +1070,10 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readOperatorReturn(){
 		this.matchNextToken("return");
-		BaseOpCode value = this.readExpression();
+		BaseOpCode value = null;
+		if (not this.findNextToken(";")){
+			value = this.readExpression();
+		}
 		this.matchNextToken(";");
 		return new OpReturn(value);
 	}
@@ -1099,6 +1102,47 @@ export class ParserBay extends CommonParser{
 		BaseOpCode value = this.readCallDynamic(true, true, false, false);
 		this.matchNextToken(";");
 		return new OpDelete(value);
+	}
+	
+	
+	
+	/**
+	 * Read postfix
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorPostfix(){
+		this.pushToken();
+		BaseOpCode op_code = this.readExpressionElement();
+		if (this.findNextToken('++')){
+			this.matchNextToken('++');
+			this.popToken();
+			return new OpPostInc(op_code);
+		}
+		else if (this.findNextToken('--')){
+			this.matchNextToken('--');
+			this.popToken();
+			return new OpPostDec(op_code);
+		}
+		this.popAssignToken();
+		return null;
+	}
+	
+	
+	
+	/**
+	 * Read prefix
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOperatorPrefix(){
+		if (this.findNextToken('++')){
+			this.matchNextToken('++');
+			return new OpPreInc( this.readExpressionPostfix() );
+		}
+		else if (this.findNextToken('--')){
+			this.matchNextToken('--');
+			return new OpPreDec( this.readExpressionPostfix() );
+		}
+		return null;
 	}
 	
 	
@@ -1149,6 +1193,21 @@ export class ParserBay extends CommonParser{
 			return this.readPreprocessor();
 		}
 		
+		/* Read prefix ++ or -- */
+		BaseOpCode res = this.readOperatorPrefix();
+		if (res){
+			this.matchNextToken(";");
+			return res;
+		}
+		
+		/* Read postfix ++ or -- */
+		BaseOpCode res = this.readOperatorPostfix();
+		if (res){
+			this.matchNextToken(";");
+			return res;
+		}
+		
+		/* Read assign operator */
 		BaseOpCode res = this.readOperatorAssign();
 		if (res){
 			this.matchNextToken(";");
@@ -1357,6 +1416,11 @@ export class ParserBay extends CommonParser{
 		
 		this.matchNextToken("{");
 		while ((not this.findNextToken("}")) and (not this.isEOF())){
+			
+			if (this.findNextTokenPreprocessor()){
+				res.class_functions.push(this.readPreprocessor());
+				continue;
+			}
 			
 			flags = this.readFlags();
 			op_code = this.readDeclareClassFunction();

@@ -165,7 +165,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * String
 	 */
 	string OpString(OpString op_code){
-		return '"' ~ op_code.value ~ '"';
+		return rs::json_encode(op_code.value);
 	}
 	
 	
@@ -445,8 +445,9 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpPostDec(OpPostDec op_code){
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 17;
+		string semicolon = this.is_operation ? "" : ";";
 		return this.o(
-			this.translateRun(op_code.value) ~ '--',
+			this.translateRun(op_code.value) ~ '--' ~ semicolon,
 			old_opcode_level, 17
 		);
 	}
@@ -459,8 +460,9 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpPostInc(OpPostInc op_code){
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 17;
+		string semicolon = this.is_operation ? "" : ";";
 		return this.o(
-			this.translateRun(op_code.value) ~ '++',
+			this.translateRun(op_code.value) ~ '++' ~ semicolon,
 			old_opcode_level, 17
 		);
 	}
@@ -487,8 +489,9 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpPreDec(OpPreDec op_code){
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 16;
+		string semicolon = this.is_operation ? "" : ";";
 		return this.o(
-			'--' ~ this.translateRun(op_code.value),
+			'--' ~ this.translateRun(op_code.value) ~ semicolon,
 			old_opcode_level, 16
 		);
 	}
@@ -501,8 +504,9 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpPreInc(OpPreInc op_code){
 		int old_opcode_level = this.current_opcode_level;
 		this.current_opcode_level = 16;
+		string semicolon = this.is_operation ? "" : ";";
 		return this.o(
-			'++' ~ this.translateRun(op_code.value),
+			'++' ~ this.translateRun(op_code.value) ~ semicolon,
 			old_opcode_level, 16
 		);
 	}
@@ -586,6 +590,8 @@ export class TranslatorES6 extends CommonTranslator {
 		if (not this.is_operation){
 			s ~= ";";
 		}
+		
+		this.current_opcode_level = 20;
 		
 		return s;
 	}
@@ -1151,7 +1157,13 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Class functions */
 		for (int i=0; i<op_code.class_functions.count(); i++){
-			res ~= this.s(this.OpFunctionDeclare(op_code.class_functions.item(i)));
+			BaseOpCode op_code2 = op_code.class_functions.item(i);
+			if (op_code2 instanceof OpFunctionDeclare){
+				res ~= this.s(this.OpFunctionDeclare(op_code2));
+			}
+			else if (op_code2 instanceof OpPreprocessorSwitch){
+				res ~= this.s(this.OpPreprocessorSwitch(op_code2));
+			}
 		}
 		
 		

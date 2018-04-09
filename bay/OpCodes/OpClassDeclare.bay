@@ -30,7 +30,7 @@ export class OpClassDeclare extends BaseOpCode{
 	public BaseOpCode class_extends = "";
 	public Vector<string> class_implements = null;
 	public Vector<OpAssignDeclare> class_variables = null;
-	public Vector<OpFunctionDeclare> class_functions = null;
+	public Vector<BaseOpCode> class_functions = null;
 	public Vector<BaseOpCode> class_template = null;
 	public OpFlags flags = null;
 	
@@ -85,7 +85,7 @@ export class OpClassDeclare extends BaseOpCode{
 		parent();
 		this.class_implements = new Vector<string>();
 		this.class_variables = new Vector<OpAssignDeclare>();
-		this.class_functions = new Vector<OpFunctionDeclare>();
+		this.class_functions = new Vector<BaseOpCode>();
 		this.class_template = new Vector<BaseOpCode>();
 	}
 	
