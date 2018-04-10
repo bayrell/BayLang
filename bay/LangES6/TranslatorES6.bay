@@ -87,6 +87,7 @@ export class TranslatorES6 extends CommonTranslator {
 	string current_namespace = "";
 	string current_class_name = "";
 	string current_function_name = "";
+	string current_module_name = "";
 	
 	
 	/**
@@ -963,6 +964,8 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpNamespace(OpNamespace op_code){
 		this.current_namespace = op_code.value;
+		Vetor<string> arr = rs::explode(".", this.current_namespace);
+		this.current_module_name = arr.item(0);
 		this.modules.clear();
 		if (this.current_namespace != 'BayrellRtl'){
 			this.modules.set("rtl", "BayrellRtl.Lib.rtl");
@@ -1226,7 +1229,7 @@ export class TranslatorES6 extends CommonTranslator {
 		for (int i=0; i<op_code.childs.count(); i++){
 			OpPreprocessorCase op_case = op_code.childs.item(i);
 			if (this.calcPreprocessorCondition(op_case)){
-				res ~= op_case.value;
+				res ~= this.s(op_case.value);
 			}
 		}
 		
