@@ -35,6 +35,9 @@ module.exports = {
 	'LangNodeJS': {
 		'TranslatorNodeJS': require("./LangNodeJS/TranslatorNodeJS.js"),
 	},
+	'LangPHP': {
+		'TranslatorPHP': require("./LangPHP/TranslatorPHP.js"),
+	},
 	'OpCodes': {
 		'BaseOpCode': require("./OpCodes/BaseOpCode.js"),
 		'OpAdd': require("./OpCodes/OpAdd.js"),

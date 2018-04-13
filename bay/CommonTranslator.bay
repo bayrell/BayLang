@@ -87,6 +87,7 @@ export class CommonTranslator extends ContextObject{
 	
 	public bool is_operation = false;
 	public int current_opcode_level = 0;
+	public int max_opcode_level = 100;
 	public int indent_level = 0;
 	public string indent = "  ";
 	public string space = " ";
@@ -207,10 +208,10 @@ export class CommonTranslator extends ContextObject{
 	/**
 	 * Output string witch brackets
 	 */
-	string o(string s, int old_opcode_level, int current_opcode_level){
+	string o(string s, int current_opcode_level){
 		if (this.is_operation == false)
 			return s;
-		if (old_opcode_level > current_opcode_level){
+		if (current_opcode_level > this.current_opcode_level){
 			return "("~s~")";
 		}
 		return s;

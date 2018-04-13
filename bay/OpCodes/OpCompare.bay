@@ -24,7 +24,7 @@ use BayrellLang.OpCodes.BaseOpCode;
 export class OpCompare extends BaseOpCode{
 	
 	public string op = "op_compare";
-	public string cond = "";
+	public string condition = "";
 	public BaseOpCode value1 = null;
 	public BaseOpCode value2 = null;
 	
@@ -42,9 +42,9 @@ export class OpCompare extends BaseOpCode{
 	/**
 	 * Constructor
 	 */
-	void constructor(string cond = "", BaseOpCode value1 = null, BaseOpCode value2 = null){
+	void constructor(string condition = "", BaseOpCode value1 = null, BaseOpCode value2 = null){
 		parent();
-		this.cond = cond;
+		this.condition = condition;
 		this.value1 = value1;
 		this.value2 = value2;
 	}
@@ -66,7 +66,7 @@ export class OpCompare extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
-		names.push("cond");
+		names.push("condition");
 		names.push("value1");
 		names.push("value2");
 	}
@@ -79,7 +79,7 @@ export class OpCompare extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'cond') return this.cond;
+		if (variable_name == 'condition') return this.condition;
 		if (variable_name == 'value1') return this.value1;
 		if (variable_name == 'value2') return this.value2;
 		return parent::takeValue(variable_name, default_value);
@@ -93,7 +93,7 @@ export class OpCompare extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'cond') this.cond = value;
+		if (variable_name == 'condition') this.condition = value;
 		else if (variable_name == 'value1') this.value1 = value;
 		else if (variable_name == 'value2') this.value2 = value;
 		else
@@ -108,7 +108,7 @@ export class OpCompare extends BaseOpCode{
 	 */
 	void assign(CoreObject obj){
 		if (obj instanceof OpCompare){
-			this.cond = clone obj.cond;
+			this.condition = clone obj.condition;
 			this.value1 = clone obj.value1;
 			this.value2 = clone obj.value2;
 		}

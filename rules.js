@@ -82,6 +82,7 @@ module.exports = {
 		'LangBay/ParserBayToken',
 		'LangES6/TranslatorES6',
 		'LangNodeJS/TranslatorNodeJS',
+		'LangPHP/TranslatorPHP',
 		'Exceptions/EndOfStringExpected',
 		'Exceptions/HexNumberExpected',
 		'Exceptions/TwiceDeclareElseError',
