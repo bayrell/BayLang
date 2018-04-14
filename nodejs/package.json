@@ -5,6 +5,7 @@
 	"LangBay/*.js",
 	"LangES6/*.js",
 	"LangNodeJS/*.js",
+	"LangPHP/*.js",
 	"OpCodes/*.js",
     "*.js"
   ],

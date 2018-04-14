@@ -55,6 +55,7 @@ module.exports = {
 		'OpChilds': require("./OpCodes/OpChilds.js"),
 		'OpClassDeclare': require("./OpCodes/OpClassDeclare.js"),
 		'OpClone': require("./OpCodes/OpClone.js"),
+		'OpComment': require("./OpCodes/OpComment.js"),
 		'OpCompare': require("./OpCodes/OpCompare.js"),
 		'OpConcat': require("./OpCodes/OpConcat.js"),
 		'OpContinue': require("./OpCodes/OpContinue.js"),

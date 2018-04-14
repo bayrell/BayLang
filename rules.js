@@ -31,6 +31,7 @@ module.exports = {
 		'OpCodes/OpChilds',
 		'OpCodes/OpClassDeclare',
 		'OpCodes/OpClone',
+		'OpCodes/OpComment',
 		'OpCodes/OpCompare',
 		'OpCodes/OpConcat',
 		'OpCodes/OpContinue',

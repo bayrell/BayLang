@@ -37,6 +37,7 @@ use BayrellLang.OpCodes.OpCallAwait;
 use BayrellLang.OpCodes.OpChilds;
 use BayrellLang.OpCodes.OpClassDeclare;
 use BayrellLang.OpCodes.OpClone;
+use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
 use BayrellLang.OpCodes.OpConcat;
 use BayrellLang.OpCodes.OpContinue;
@@ -788,7 +789,11 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readExpression(){
-		return this.readExpressionTernary();
+		bool old_skip_comments = this.skip_comments;
+		this.skip_comments = true;
+		BaseOpCode res = this.readExpressionTernary();
+		this.skip_comments = old_skip_comments;
+		return res;
 	}
 	
 	
@@ -878,6 +883,9 @@ export class ParserBay extends CommonParser{
 	 * @return BaseOpCode
 	 */
 	BaseOpCode readOperatorIf(){
+		
+		bool old_skip_comments = this.skip_comments;
+		this.skip_comments = true;
 		
 		BaseOpCode condition = null;
 		Vector<BaseOpCode> if_true = null;
@@ -969,6 +977,7 @@ export class ParserBay extends CommonParser{
 			}
 		}
 		
+		this.skip_comments = old_skip_comments;
 		return new OpIf(condition, if_true, if_false, if_else);
 	}
 	
@@ -1157,7 +1166,9 @@ export class ParserBay extends CommonParser{
 			this.matchNextToken(';');
 			return null;
 		}
-		
+		else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
+			return new OpComment(this.readAnyNextToken().token);
+		}
 		else if (this.findNextToken("if")){
 			return this.readOperatorIf();
 		}
@@ -1403,6 +1414,10 @@ export class ParserBay extends CommonParser{
 				res.class_functions.push(this.readPreprocessor());
 				continue;
 			}
+			else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
+				res.class_functions.push(new OpComment(this.readAnyNextToken().token));
+				continue;
+			}
 			
 			flags = this.readFlags();
 			op_code = this.readDeclareClassFunction();
@@ -1484,7 +1499,6 @@ export class ParserBay extends CommonParser{
 	BaseOpCode readPreprocessor(){
 	
 		if (this.findNextToken("#switch")){
-			
 			Vector<BaseOpCode> childs = new Vector();
 			
 			string comment; int pos;
@@ -1536,7 +1550,11 @@ export class ParserBay extends CommonParser{
 		Vector<BaseOpCode> res = new Vector();
 		
 		while (not this.isEOF()){
-			if (this.findNextToken("namespace")){
+			if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
+				res.push(new OpComment(this.readAnyNextToken().token));
+				continue;
+			}
+			else if (this.findNextToken("namespace")){
 				res.push(this.readOperatorNamespace());
 				continue;
 			}

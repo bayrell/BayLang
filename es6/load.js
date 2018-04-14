@@ -54,6 +54,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpCallAwait.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpClassDeclare.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpClone.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpComment.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpCompare.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpConcat.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpContinue.js",

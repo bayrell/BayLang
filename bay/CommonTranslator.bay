@@ -37,6 +37,7 @@ use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpChilds;
 use BayrellLang.OpCodes.OpClassDeclare;
 use BayrellLang.OpCodes.OpClone;
+use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
 use BayrellLang.OpCodes.OpConcat;
 use BayrellLang.OpCodes.OpContinue;
@@ -89,7 +90,7 @@ export class CommonTranslator extends ContextObject{
 	public int current_opcode_level = 0;
 	public int max_opcode_level = 100;
 	public int indent_level = 0;
-	public string indent = "  ";
+	public string indent = "\t";
 	public string space = " ";
 	public string crlf = "\n";
 	
@@ -231,6 +232,7 @@ export class CommonTranslator extends ContextObject{
 	string OpCall(OpCall op_code){  return ""; }
 	string OpClassDeclare(OpClassDeclare op_code){  return ""; }
 	string OpClone(OpClone op_code){  return ""; }
+	string OpComment(OpCompare op_code){  return ""; }
 	string OpCompare(OpCompare op_code){  return ""; }
 	string OpConcat(OpConcat op_code){  return ""; }
 	string OpContinue(OpContinue op_code){  return ""; }
@@ -301,7 +303,12 @@ export class CommonTranslator extends ContextObject{
 			return res;
 		}
 		
+		/* Inherited functions */
+		else if (op_code instanceof OpInterfaceDeclare){
+			return this.OpInterfaceDeclare(op_code);
+		}
 		
+		/* Other functions */
 		else if (op_code instanceof OpAdd){
 			return this.OpAdd(op_code);
 		}
@@ -341,6 +348,9 @@ export class CommonTranslator extends ContextObject{
 		else if (op_code instanceof OpClone){
 			return this.OpClone(op_code);
 		}
+		else if (op_code instanceof OpComment){
+			return this.OpComment(op_code);
+		}
 		else if (op_code instanceof OpCompare){
 			return this.OpCompare(op_code);
 		}
@@ -373,9 +383,6 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpIf){
 			return this.OpIf(op_code);
-		}
-		else if (op_code instanceof OpInterfaceDeclare){
-			return this.OpInterfaceDeclare(op_code);
 		}
 		else if (op_code instanceof OpMod){
 			return this.OpMod(op_code);

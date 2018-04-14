@@ -19,7 +19,7 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
-
+use BayrellLang.OpCodes.OpFlags;
 
 export class OpAssignDeclare extends BaseOpCode{
 	
@@ -43,6 +43,19 @@ export class OpAssignDeclare extends BaseOpCode{
 			this.flags = clone obj.flags;
 		}
 		parent::assign(obj);
+	}
+	
+	
+	
+	/**
+	 * Read is Flag
+	 */
+	public boolean isFlag(string name){
+		if (this.flags == null)
+			return false;
+		if (not OpFlags::hasFlag(name))
+			return false;
+		return this.flags.takeValue(name);
 	}
 	
 	
