@@ -329,7 +329,7 @@ export class TranslatorPHP extends CommonTranslator {
 			;
 		}
 		
-		res ~= this.s('+');
+		res ~= this.s(' . ');
 		if ( (op_code.value2 instanceof OpConcat) or (op_code.value2 instanceof OpString) ){
 			res ~= this.o(this.s(this.translateRun(op_code.value2)), 13);
 		}
@@ -572,7 +572,11 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpCompare(OpCompare op_code){
 		this.current_opcode_level = 10;
-		return this.op(op_code, op_code.condition, 10);
+		string condition = op_code.condition;
+		if (condition == 'implements'){
+			condition = 'instanceof';
+		}
+		return this.op(op_code, condition, 10);
 	}
 	
 	
@@ -636,15 +640,18 @@ export class TranslatorPHP extends CommonTranslator {
 		string res = "";
 		bool old_is_operation = this.beginOperation();
 		
+		string ch_var = "$";
+		if (op_code.isFlag("const")) ch_var = "";
+		
 		if (op_code.value == null){
 			this.pushOneLine(true);
-			res = "$" ~ op_code.name;
+			res = ch_var ~ op_code.name;
 			this.popOneLine();
 		}
 		else{
 			/* one line */
 			this.pushOneLine(true);
-			res = "$" ~ op_code.name ~ ' = ';
+			res = ch_var ~ op_code.name ~ ' = ';
 			this.popOneLine();
 			
 			/* result */
@@ -679,7 +686,7 @@ export class TranslatorPHP extends CommonTranslator {
 		bool old_is_operation = this.beginOperation();
 		
 		/* result */
-		string s = this.getName("rtl") ~ ".clone(";
+		string s = "rtl::_clone(";
 		this.current_opcode_level = 0;
 		s ~= this.s(this.translateRun(op_code.value));
 		s ~= this.s(")");
@@ -974,7 +981,7 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.name == 'constructor'){
 			res ~= '__construct';
 		}
-		else if (op_code.name == 'constructor'){
+		else if (op_code.name == 'destructor'){
 			res ~= '__destruct';
 		}
 		else{
@@ -1066,19 +1073,21 @@ export class TranslatorPHP extends CommonTranslator {
 				this.beginOperation();
 				
 				string s = "";
-				if (variable.isFlag("protected")){
-					s ~= "protected ";
+				if (variable.isFlag("const")){
+					s ~= "const ";
 				}
-				else {
-					s ~= "public ";
+				else{
+					if (variable.isFlag("static")){
+						s ~= "static ";
+					}
+					if (variable.isFlag("protected")){
+						s ~= "protected ";
+					}
+					else {
+						s ~= "public ";
+					}
 				}
-				if (variable.isFlag("static")){
-					s ~= "static ";
-				}
-				s ~= "$" ~ variable.name;
-				if (variable.value != null){
-					s ~= " = " ~ this.translateRun(variable.value);
-				}
+				s ~= this.OpAssignDeclare(variable);
 				s ~= ";";
 				
 				this.endOperation();

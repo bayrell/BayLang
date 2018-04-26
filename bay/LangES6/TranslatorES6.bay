@@ -513,7 +513,7 @@ export class TranslatorES6 extends CommonTranslator {
 		bool f = true;
 		if (op_code.value instanceof OpIdentifier){
 			if (op_code.value.value == 'parent' and this.current_function_name != "constructor"){
-				s ~= "super." ~ this.current_class_name;
+				s ~= "super." ~ this.current_function_name;
 				f = false;
 			}
 		}
@@ -665,7 +665,7 @@ export class TranslatorES6 extends CommonTranslator {
 		bool old_is_operation = this.beginOperation();
 		
 		/* result */
-		string s = this.getName("rtl") ~ ".clone(";
+		string s = this.getName("rtl") ~ "._clone(";
 		this.current_opcode_level = 0;
 		s ~= this.s(this.translateRun(op_code.value));
 		s ~= this.s(")");
@@ -1137,7 +1137,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Interface declare
 	 */
 	string OpInterfaceDeclare(OpInterfaceDeclare op_code){
-		return OpClassDeclare(op_code);
+		return this.OpClassDeclare(op_code);
 	}
 	
 	

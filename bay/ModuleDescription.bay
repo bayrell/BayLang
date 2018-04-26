@@ -42,7 +42,7 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * @return string
 	 */	
 	public static string getModuleVersion(){
-		return "0.2.1";
+		return "0.2.2";
 	}
 	
 	
@@ -89,5 +89,13 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	}
 	
 	
+	
+	/**
+	 * Returns required modules
+	 * @return Map<string, string>
+	 */	
+	public static Map<string, string> getRequiredDevModules(){
+		return null;
+	}
 
 }
