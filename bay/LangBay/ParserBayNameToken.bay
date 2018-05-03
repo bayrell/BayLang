@@ -30,7 +30,7 @@ use BayrellLang.Exceptions.EndOfStringExpected;
 export class ParserBayNameToken extends ParserToken{
 	
 	static const string TOKEN_NONE = 'none';
-	static const string TOKEN_BASE = 'token';
+	static const string TOKEN_BASE = 'base';
 	
 	
 	/**

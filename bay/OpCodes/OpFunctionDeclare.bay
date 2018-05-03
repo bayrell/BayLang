@@ -102,6 +102,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 		names.push("name");
 		names.push("result_type");
 		names.push("args");
+		names.push("childs");
 		names.push("flags");
 	}
 	
@@ -116,6 +117,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 		if (variable_name == 'name') return this.name;
 		else if (variable_name == 'result_type') return this.result_type;
 		else if (variable_name == 'args') return this.args;
+		else if (variable_name == 'childs') return this.childs;
 		else if (variable_name == 'flags') return this.flags;
 		return parent::takeValue(variable_name, default_value);
 	}
@@ -131,6 +133,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 		if (variable_name == 'name') this.name = value;
 		else if (variable_name == 'result_type') this.result_type = value;
 		else if (variable_name == 'args') this.args = value;
+		else if (variable_name == 'childs') this.childs = value;
 		else if (variable_name == 'flags') this.flags = value;
 		else parent::assignValue(variable_name, value);
 	}

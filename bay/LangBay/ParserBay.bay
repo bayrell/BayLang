@@ -132,7 +132,7 @@ export class ParserBay extends CommonParser{
 			return new OpHexNumber(res);
 		}
 		else{
-			this.popAssignToken();
+			this.popReturnToken();
 		}
 		
 		
@@ -154,7 +154,7 @@ export class ParserBay extends CommonParser{
 			return new OpNumber(res);
 		}
 		else{
-			this.popAssignToken();
+			this.popReturnToken();
 		}
 		
 		
@@ -187,7 +187,7 @@ export class ParserBay extends CommonParser{
 	/**
 	 * Read name
 	 */
-	string readDynamicName(){
+	string readDynamicNameOld(){
 		/* Create new token */
 		ParserBayNameToken token = new ParserBayNameToken(this.context(), this);
 		token.assign( this.current_token );
@@ -203,6 +203,28 @@ export class ParserBay extends CommonParser{
 		
 		/* Destroy new token */
 		delete token;
+		
+		return name;
+	}
+	
+	
+	
+	/**
+	 * Read name
+	 */
+	string readDynamicName(){
+		/* Create new token */
+		ParserToken next_token = new ParserBayNameToken(this.context(), this);
+		this.pushToken(next_token);
+		
+		/* Get name */
+		string name = next_token.token;
+		
+		/* Assign next token */
+		this.popReturnToken();
+		this.assignCurrentToken(next_token);
+		
+		delete next_token;
 		
 		return name;
 	}
@@ -844,7 +866,7 @@ export class ParserBay extends CommonParser{
 			delete v;
 			return new OpAssign(op_ident, op_exp, op_name);
 		}
-		this.popAssignToken();
+		this.popReturnToken();
 		delete v;
 		
 		
@@ -871,7 +893,7 @@ export class ParserBay extends CommonParser{
 			}
 			return new OpAssignDeclare(op_type, op_ident_name, op_exp);
 		}
-		this.popAssignToken();
+		this.popReturnToken();
 		
 		return null;
 	}
@@ -1132,7 +1154,7 @@ export class ParserBay extends CommonParser{
 			this.popToken();
 			return new OpPostDec(op_code);
 		}
-		this.popAssignToken();
+		this.popReturnToken();
 		return null;
 	}
 	
@@ -1328,9 +1350,10 @@ export class ParserBay extends CommonParser{
 		
 		/* If not function */
 		if (this.lookNextToken() != "("){
-			this.popAssignToken();
+			this.popReturnToken();
 			return null;
 		}
+		
 		
 		this.matchNextToken("(");
 		while (not this.findNextToken(")") and not this.isEOF()){

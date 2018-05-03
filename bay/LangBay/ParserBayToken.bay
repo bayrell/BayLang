@@ -30,7 +30,7 @@ use BayrellLang.Exceptions.EndOfStringExpected;
 export class ParserBayToken extends ParserToken{
 	
 	static const string TOKEN_NONE = 'none';
-	static const string TOKEN_BASE = 'token';
+	static const string TOKEN_BASE = 'base';
 	static const string TOKEN_STRING = 'string';
 	static const string TOKEN_COMMENT = 'comment';
 	
@@ -73,7 +73,6 @@ export class ParserBayToken extends ParserToken{
 			.push("#endswitch")
 			.push("#endif")
 		;
-		
 	}
 	
 	
@@ -196,22 +195,13 @@ export class ParserBayToken extends ParserToken{
 		
 		string look = "";
 		
-		this.tp = self::TOKEN_NONE;
-		this.token = "";
-		this.success = false;
-		this.start_line = this.line;
-		this.start_col = this.col;
-		
-		if (this.isEOF()){
-			throw new ParserEOF(this.context());
-		}
-		
+		/* Init next token function */
+		this.readNextTokenInit();
 		this.skipSystemChar();
 		if (this.parser.skip_comments){
 			this.skipComments();
 		}
-		this.start_line = this.line;
-		this.start_col = this.col;
+		this.initStartPos();
 		
 		
 		/* Try to read special tokens */
@@ -241,29 +231,8 @@ export class ParserBayToken extends ParserToken{
 		}
 		
 		
-		/* Try to read normal token */
-		look = this.lookChar();
-		this.tp = self::TOKEN_BASE;
-		this.success = true;
-		this.token = this.token ~ look;
-		this.moveChar(look);
-		
-		if (this.isTokenChar(look)){
-			try{
-				look = this.lookChar();			
-				while (this.isTokenChar(look) and not this.isEOF()) {
-					this.token = this.token ~ look;
-					this.moveChar(look);
-					look = this.lookChar();
-				}
-			}
-			catch (var e){
-				if (e instanceof ParserEOF){}
-				else{
-					throw e;
-				}
-			}
-		}
+		/* Read base token */
+		this.readNextTokenBase();
 		
 	}
 	
