@@ -52,6 +52,7 @@ use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
 use BayrellLang.OpCodes.OpInterfaceDeclare;
+use BayrellLang.OpCodes.OpMap;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -79,6 +80,7 @@ use BayrellLang.OpCodes.OpThrow;
 use BayrellLang.OpCodes.OpTryCatch;
 use BayrellLang.OpCodes.OpTryCatchChilds;
 use BayrellLang.OpCodes.OpUse;
+use BayrellLang.OpCodes.OpVector;
 use BayrellLang.OpCodes.OpWhile;
 use BayrellLang.LangBay.ParserBayToken;
 use BayrellLang.LangBay.ParserBayNameToken;
@@ -274,9 +276,6 @@ export class ParserBay extends CommonParser{
 		if (not this.findNextToken(")")){
 			v = this.readCallArgs();
 		}
-		else{
-			v = new Vector<BaseOpCode>();
-		}
 		this.matchNextToken(")");
 		
 		return v;
@@ -440,6 +439,51 @@ export class ParserBay extends CommonParser{
 	 * Read element
 	 * @return BaseOpCode
 	 */
+	BaseOpCode readVector(){
+		OpVector res = new OpVector();
+		this.matchNextToken("[");
+		while (not this.findNextToken("]")){
+			res.values.push( this.readExpression() );
+			if (this.findNextToken(","))
+				this.matchNextToken(",");
+		}
+		this.matchNextToken("]");
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Read element
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readMap(){
+		OpMap res = new OpMap();
+		this.matchNextToken("{");
+		while (not this.findNextToken("}")){
+			if (this.lookNextTokenType() != ParserBayToken::TOKEN_STRING){
+				this.parserExpected("string");
+			}
+			
+			string key = this.readAnyNextToken().token;
+			this.matchNextToken(":");
+			
+			string value = this.readExpression();
+			res.values.set(key, value);
+			
+			if (this.findNextToken(","))
+				this.matchNextToken(",");
+		}
+		this.matchNextToken("}");
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Read element
+	 * @return BaseOpCode
+	 */
 	BaseOpCode readExpressionElement(){
 		
 		if (this.findNextToken('new')){
@@ -450,6 +494,12 @@ export class ParserBay extends CommonParser{
 		}
 		else if (this.findNextToken('clone')){
 			return this.readClone();
+		}
+		else if (this.findNextToken('[')){
+			return this.readVector();
+		}
+		else if (this.findNextToken('{')){
+			return this.readMap();
 		}
 		
 		BaseOpCode op_code = this.readFixed();
@@ -1305,9 +1355,14 @@ export class ParserBay extends CommonParser{
 		
 		this.matchNextToken("use");
 		string name = this.readDynamicName();
+		string alias_name = "";
+		if (this.findNextToken("as")){
+			this.matchNextToken("as");
+			alias_name = this.readIdentifierName();
+		}
 		this.matchNextToken(";");
 		
-		return new OpUse(name);
+		return new OpUse(name, alias_name);
 	}
 	
 	
@@ -1434,11 +1489,11 @@ export class ParserBay extends CommonParser{
 		while ((not this.findNextToken("}")) and (not this.isEOF())){
 			
 			if (this.findNextTokenPreprocessor()){
-				res.class_functions.push(this.readPreprocessor());
+				res.childs.push(this.readPreprocessor());
 				continue;
 			}
 			else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
-				res.class_functions.push(new OpComment(this.readAnyNextToken().token));
+				res.childs.push(new OpComment(this.readAnyNextToken().token));
 				continue;
 			}
 			
@@ -1446,7 +1501,7 @@ export class ParserBay extends CommonParser{
 			op_code = this.readDeclareClassFunction();
 			if (op_code){
 				op_code.flags = flags;
-				res.class_functions.push(op_code);
+				res.childs.push(op_code);
 				continue;
 			}
 			

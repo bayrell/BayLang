@@ -55,7 +55,9 @@ export class TranslatorNodeJS extends TranslatorES6 {
 		this.current_module_name = arr.item(0);
 		this.modules.clear();
 		if (this.current_module_name != 'BayrellRtl'){
-			return "var rtl = require('BayrellRtl').Lib.rtl;";
+			return "var rtl = require('BayrellRtl').Lib.rtl;" ~
+				this.s("var Vector = require('BayrellRtl').Types.Vector;") ~
+				this.s("var Map = require('BayrellRtl').Types.Map;");
 		}
 		return "";
 	}
@@ -80,6 +82,9 @@ export class TranslatorNodeJS extends TranslatorES6 {
 			return "";
 		
 		string class_name = arr1.getLastItem();
+		if (op_code.alias_name != ""){
+			class_name = op_code.alias_name;
+		}
 		
 		/* If same modules */
 		if (arr1.item(0) == arr2.item(0)){

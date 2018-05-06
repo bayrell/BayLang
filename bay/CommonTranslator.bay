@@ -34,6 +34,7 @@ use BayrellLang.OpCodes.OpBitOr;
 use BayrellLang.OpCodes.OpBitXor;
 use BayrellLang.OpCodes.OpBreak;
 use BayrellLang.OpCodes.OpCall;
+use BayrellLang.OpCodes.OpCallAwait;
 use BayrellLang.OpCodes.OpChilds;
 use BayrellLang.OpCodes.OpClassDeclare;
 use BayrellLang.OpCodes.OpClone;
@@ -52,6 +53,7 @@ use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
 use BayrellLang.OpCodes.OpInterfaceDeclare;
+use BayrellLang.OpCodes.OpMap;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -77,6 +79,7 @@ use BayrellLang.OpCodes.OpTernary;
 use BayrellLang.OpCodes.OpThrow;
 use BayrellLang.OpCodes.OpTryCatch;
 use BayrellLang.OpCodes.OpUse;
+use BayrellLang.OpCodes.OpVector;
 use BayrellLang.OpCodes.OpWhile;
 use BayrellLang.OutputContainer;
 
@@ -196,6 +199,20 @@ export class CommonTranslator extends ContextObject{
 	
 	
 	/**
+	 * Output operation
+	 */
+	string op(BaseOpCode op_code, string op, int opcode_level){
+		string res = "";
+		res ~= this.o(this.translateRun(op_code.value1), opcode_level);
+		res ~= ' ' ~ op ~ ' ';
+		res ~= this.o(this.translateRun(op_code.value2), opcode_level);
+		this.current_opcode_level = opcode_level;
+		return res;	
+	}
+	
+	
+	
+	/**
 	 * Output string
 	 */
 	string s(string s){
@@ -217,6 +234,7 @@ export class CommonTranslator extends ContextObject{
 		}
 		return s;
 	}
+	
 	
 	
 	string OpAdd(OpAdd op_code){ return ""; }
@@ -285,19 +303,19 @@ export class CommonTranslator extends ContextObject{
 		
 		if (op_code instanceof OpNope){
 			string res = "";
-			string s = "";
+			string code_str = "";
 			bool flag = true;
 			for (int i=0; i<op_code.childs.count(); i++){
 				this.current_opcode_level = 0;
-				s = this.translateRun(op_code.childs[i]);
-				if (s == "")
+				code_str = this.translateRun(op_code.childs[i]);
+				if (code_str == "")
 					continue;
 				if (flag){
-					res ~= this.translateRun(op_code.childs[i]);
+					res ~= code_str;
 					flag = false;
 				}
 				else{
-					res ~= this.s( this.translateRun(op_code.childs[i]) );
+					res ~= this.s(code_str);
 				}
 			}
 			return res;
@@ -381,6 +399,9 @@ export class CommonTranslator extends ContextObject{
 		else if (op_code instanceof OpIdentifier){
 			return this.OpIdentifier(op_code);
 		}
+		else if (op_code instanceof OpMap){
+			return this.OpMap(op_code);
+		}
 		else if (op_code instanceof OpIf){
 			return this.OpIf(op_code);
 		}
@@ -458,6 +479,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpUse){
 			return this.OpUse(op_code);
+		}
+		else if (op_code instanceof OpVector){
+			return this.OpVector(op_code);
 		}
 		else if (op_code instanceof OpWhile){
 			return this.OpWhile(op_code);

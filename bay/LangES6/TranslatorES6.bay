@@ -52,6 +52,7 @@ use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
 use BayrellLang.OpCodes.OpInterfaceDeclare;
+use BayrellLang.OpCodes.OpMap;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -79,6 +80,7 @@ use BayrellLang.OpCodes.OpThrow;
 use BayrellLang.OpCodes.OpTryCatch;
 use BayrellLang.OpCodes.OpTryCatchChilds;
 use BayrellLang.OpCodes.OpUse;
+use BayrellLang.OpCodes.OpVector;
 use BayrellLang.OpCodes.OpWhile;
 
 
@@ -233,17 +235,6 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/** ============================ Operations ============================ */
-	
-	
-	string op(BaseOpCode op_code, string op, int opcode_level){
-		string res = "";
-		res ~= this.o(this.translateRun(op_code.value1), opcode_level);
-		res ~= ' ' ~ op ~ ' ';
-		res ~= this.o(this.translateRun(op_code.value2), opcode_level);
-		this.current_opcode_level = opcode_level;
-		return res;	
-	}
-	
 	
 	
 	/**
@@ -579,6 +570,49 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	
+	/** ========================== Vector and Map ========================= */
+	
+	
+	/**
+	 * Vector
+	 */
+	string OpVector(OpVector op_code){
+		string res = "";
+		
+		res ~= "(new " ~ this.getName("Vector") ~ "())";
+		for (var i=0; i<op_code.values.count(); i++){
+			BaseOpCode item = op_code.values.item(i);
+			this.current_opcode_level = this.max_opcode_level;
+			res ~= this.s(".push(" ~ this.translateRun(item) ~ ")");
+		}
+		this.current_opcode_level = this.max_opcode_level;
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Map
+	 */
+	string OpMap(OpMap op_code){
+		string res = "";
+		
+		Vector<string> keys = op_code.values.keys();
+		
+		res ~= "(new " ~ this.getName("Map") ~ "())";
+		for (var i=0; i<keys.count(); i++){
+			string key = keys.item(i);
+			BaseOpCode item = op_code.values.item(key);
+			this.current_opcode_level = this.max_opcode_level;
+			res ~= this.s(".set(" ~ rs::json_encode(key) ~ ", " ~ this.translateRun(item) ~ ")");
+		}
+		this.current_opcode_level = this.max_opcode_level;
+		
+		return res;
+	}
+	
+	
 	
 	/** ============================ Operators ============================ */
 	
@@ -904,9 +938,12 @@ export class TranslatorES6 extends CommonTranslator {
 		this.modules.clear();
 		if (this.current_namespace != 'BayrellRtl'){
 			this.modules.set("rtl", "BayrellRtl.Lib.rtl");
+			this.modules.set("Vector", "BayrellRtl.Types.Vector");
+			this.modules.set("Map", "BayrellRtl.Types.Map");
 		}
 		return "";
 	}
+	
 	
 	
 	/**
@@ -916,7 +953,10 @@ export class TranslatorES6 extends CommonTranslator {
 		string lib_name = op_code.value;
 		Vector<string> arr = rs::explode(".", lib_name);
 		string class_name = arr.getLastItem("");
-		if (class_name != ""){
+		if (op_code.alias_name != ""){
+			this.modules.set(op_code.alias_name, lib_name);
+		}
+		else if (class_name != ""){
 			this.modules.set(class_name, lib_name);
 		}
 		return "";
@@ -1105,8 +1145,8 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		
 		/* Class functions */
-		for (int i=0; i<op_code.class_functions.count(); i++){
-			BaseOpCode op_code2 = op_code.class_functions.item(i);
+		for (int i=0; i<op_code.childs.count(); i++){
+			BaseOpCode op_code2 = op_code.childs.item(i);
 			if (op_code2 instanceof OpFunctionDeclare){
 				res ~= this.s(this.OpFunctionDeclare(op_code2));
 			}

@@ -68,6 +68,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpIdentifier.js",	
 		"/assets/bayrell_lang_es6/OpCodes/OpIf.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpIfElse.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpMap.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpMod.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpMult.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpNamespace.js",
@@ -95,6 +96,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/OpCodes/OpTryCatch.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpTryCatchChilds.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpUse.js",
+		"/assets/bayrell_lang_es6/OpCodes/OpVector.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpWhile.js",
 	])
 	.load([
