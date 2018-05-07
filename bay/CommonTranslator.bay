@@ -123,7 +123,6 @@ export class CommonTranslator extends ContextObject{
 	 */
 	void constructor (ContextInterface context = null){
 		parent(context);
-		this.one_lines = new Vector<boolean>();
 	}
 	
 	
@@ -307,7 +306,7 @@ export class CommonTranslator extends ContextObject{
 			bool flag = true;
 			for (int i=0; i<op_code.childs.count(); i++){
 				this.current_opcode_level = 0;
-				code_str = this.translateRun(op_code.childs[i]);
+				code_str = this.translateRun(op_code.childs.item(i));
 				if (code_str == "")
 					continue;
 				if (flag){
@@ -493,11 +492,25 @@ export class CommonTranslator extends ContextObject{
 	
 	
 	/**
+	 * Reset translator to default settings
+	 */
+	void resetTranslator(){
+		this.one_lines = new Vector<boolean>();
+		this.is_operation = false;
+		this.current_opcode_level = 0;
+		this.max_opcode_level = 100;
+		this.indent_level = 0;
+	}
+	
+	
+	
+	/**
 	 * Translate to language
 	 * @param BaseOpCode op_code - Abstract syntax tree
 	 * @returns string - The result
 	 */
 	string translate(BaseOpCode op_code){
+		this.resetTranslator();
 		return this.translateRun(op_code);
 	}
 	

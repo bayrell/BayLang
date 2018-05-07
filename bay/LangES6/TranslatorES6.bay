@@ -521,7 +521,7 @@ export class TranslatorES6 extends CommonTranslator {
 			string ch = "";
 			for (int i=0; i<op_code.args.count(); i++){
 				BaseOpCode op = op_code.args.item(i);
-				s ~= ch + this.s(this.translateRun(op));
+				s ~= ch ~ this.s(this.translateRun(op));
 				ch = ", ";
 			}
 		}
@@ -1222,6 +1222,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @returns string - The result
 	 */
 	string translate(BaseOpCode op_code){
+		this.resetTranslator();
 		string s = '"use strict;"' ~ this.crlf;
 		s ~= this.translateRun(op_code);
 		return s;

@@ -1195,6 +1195,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 * @returns string - The result
 	 */
 	string translate(BaseOpCode op_code){
+		this.resetTranslator();
 		string s = "<?php" ~ this.crlf;
 		s ~= this.translateRun(op_code);
 		return s;
