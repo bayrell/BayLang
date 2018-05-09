@@ -207,7 +207,7 @@ export class CommonParser extends CoreParser{
 		}
 		
 		if (not this.isNextTokenNumber()){
-			this.nextTokenExpected("number");
+			throw this.nextTokenExpected("number");
 		}
 		
 		string value = this.readNextToken().token;
@@ -215,7 +215,7 @@ export class CommonParser extends CoreParser{
 			this.matchNextToken(".");
 			
 			if (not this.isNextTokenNumber()){
-				this.nextTokenExpected("double");
+				throw this.nextTokenExpected("double");
 			}
 			value ~= "." ~ this.readNextToken().token;
 		}
@@ -250,7 +250,7 @@ export class CommonParser extends CoreParser{
 				throw new HexNumberExpected(this.context(), start_line, start_col);					
 			}
 			else{
-				this.nextTokenExpected(this.translate("ERROR_PARSER_HEX_NUMBER_EXPECTED"));
+				throw this.nextTokenExpected(this.translate("ERROR_PARSER_HEX_NUMBER_EXPECTED"));
 			}
 		}
 		
