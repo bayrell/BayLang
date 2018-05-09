@@ -96,7 +96,7 @@ export class OpValueString extends BaseOpCode{
 	 * @param CoreObject obj
 	 */
 	void assign(CoreObject obj){
-		if (obj instanceof OpValue){
+		if (obj instanceof OpValueString){
 			this.value = clone obj.value;
 		}
 		parent::assign(obj);
