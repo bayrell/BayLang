@@ -178,7 +178,7 @@ export class ParserBay extends CommonParser{
 		string res = this.lookNextToken();
 		string s = rs::charAt(res, 0);
 		if (not this.isLetterChar(s) and s != "_"){
-			this.parserError(this.translate("ERROR_PARSER_FIRST_CHAR_MUST_BE_LETTER"));
+			throw this.parserError(this.translate("ERROR_PARSER_FIRST_CHAR_MUST_BE_LETTER"));
 		}
 		this.readNextToken();
 		return res;
@@ -385,7 +385,7 @@ export class ParserBay extends CommonParser{
 			
 			else if (this.findNextToken("::") and allow_static){
 				if (not can_static){
-					this.parserError(this.translate("ERROR_PARSER_STATIC_METHOD_IS_NOT_ALOWED_HERE"));
+					throw this.parserError(this.translate("ERROR_PARSER_STATIC_METHOD_IS_NOT_ALOWED_HERE"));
 				}
 				this.matchNextToken("::");
 				name = this.readIdentifierName();
@@ -462,7 +462,7 @@ export class ParserBay extends CommonParser{
 		this.matchNextToken("{");
 		while (not this.findNextToken("}")){
 			if (this.lookNextTokenType() != ParserBayToken::TOKEN_STRING){
-				this.parserExpected("string");
+				throw this.parserExpected("string");
 			}
 			
 			string key = this.readAnyNextToken().token;
@@ -600,7 +600,7 @@ export class ParserBay extends CommonParser{
 				op_code = new OpMod(op_code, this.readExpressionPow());
 			}
 			else{
-				this.nextTokenExpected('"*", "/" or "%"');
+				throw this.nextTokenExpected('"*", "/" or "%"');
 			}
 		}
 		
@@ -628,7 +628,7 @@ export class ParserBay extends CommonParser{
 				op_code = new OpSub(op_code, this.readExpressionFactor());
 			}
 			else{
-				this.nextTokenExpected('"+" or "-"');
+				throw this.nextTokenExpected('"+" or "-"');
 			}
 		}
 		
@@ -656,7 +656,7 @@ export class ParserBay extends CommonParser{
 				op_code = new OpShiftRight(op_code, this.readExpressionArithmetic());
 			}
 			else{
-				this.nextTokenExpected('"<<" or ">>"');
+				throw this.nextTokenExpected('"<<" or ">>"');
 			}
 		}
 		
@@ -1380,7 +1380,7 @@ export class ParserBay extends CommonParser{
 			flags = new OpFlags();
 			while (this.findNextTokenVector(flags_vector) != -1){
 				if (not flags.assignFlag(this.lookNextToken())){
-					this.parserError("Unknown flag '" ~ this.lookNextToken() ~ "'");
+					throw this.parserError("Unknown flag '" ~ this.lookNextToken() ~ "'");
 				}
 				this.readNextToken();
 			}
@@ -1415,7 +1415,7 @@ export class ParserBay extends CommonParser{
 			
 			BaseOpCode op_code = this.readOperatorAssign();
 			if (op_code instanceof OpAssign){
-				this.parserError("Assign are not alowed here");
+				throw this.parserError("Assign are not alowed here");
 			}
 			else if (op_code instanceof OpAssignDeclare){
 				res.args.push(op_code);
@@ -1507,7 +1507,7 @@ export class ParserBay extends CommonParser{
 			
 			op_code = this.readOperatorAssign();
 			if (op_code instanceof OpAssign){
-				this.parserError("Assign are not alowed here");
+				throw this.parserError("Assign are not alowed here");
 			}
 			else if (op_code instanceof OpAssignDeclare){
 				op_code.flags = flags;
@@ -1516,7 +1516,7 @@ export class ParserBay extends CommonParser{
 				continue;
 			}
 			
-			this.parserError("Unknown operator");
+			throw this.parserError("Unknown operator");
 		}
 		
 		this.matchNextToken("}");
@@ -1592,7 +1592,7 @@ export class ParserBay extends CommonParser{
 				OpPreprocessorCase op_case = new OpPreprocessorCase();
 				op_case.condition = this.readExpression();
 				if (not this.findNextToken("then")){
-					this.nextTokenExpected("then");
+					throw this.nextTokenExpected("then");
 				}
 				op_case.value = rs::trim(this.next_token.readUntilVector(v));
 				childs.push(op_case);
@@ -1600,7 +1600,7 @@ export class ParserBay extends CommonParser{
 				this.readAnyNextToken();
 				pos = this.findNextTokenVector(v);
 				if (pos == -1){
-					this.parserError("Unknown preprocessor token " ~ this.lookNextToken());
+					throw this.parserError("Unknown preprocessor token " ~ this.lookNextToken());
 				}
 			}
 			this.matchNextToken("#endswitch");
@@ -1612,7 +1612,7 @@ export class ParserBay extends CommonParser{
 			this.matchNextToken("#endifcode");
 		}
 		else{
-			this.parserError("Unknown preprocessor token " ~ this.lookNextToken());
+			throw this.parserError("Unknown preprocessor token " ~ this.lookNextToken());
 		}
 	}
 	
@@ -1653,7 +1653,7 @@ export class ParserBay extends CommonParser{
 				res.push(this.readDeclareInterface(flags));
 			}
 			else {
-				this.parserError("Unknown token " ~ this.lookNextToken());
+				throw this.parserError("Unknown token " ~ this.lookNextToken());
 			}
 		}
 		
