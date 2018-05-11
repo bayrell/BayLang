@@ -149,6 +149,15 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
+	 * Escape string
+	 */
+	string escapeString(string s){
+		return rs::json_encode(s);
+	}
+	
+	
+	
+	/**
 	 * Comment
 	 */
 	string OpComment(OpComment op_code){
@@ -194,7 +203,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpString(OpString op_code){
 		this.current_opcode_level = this.max_opcode_level;
-		return rs::json_encode(op_code.value);
+		return this.escapeString(op_code.value);
 	}
 	
 	
