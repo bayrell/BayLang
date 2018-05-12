@@ -37,6 +37,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 	])
 	.load([
 		"/assets/bayrell_lang_es6/LangBay/ParserBay.js",
+		"/assets/bayrell_lang_es6/LangBay/ParserBayFactory.js",
 		"/assets/bayrell_lang_es6/LangBay/ParserBayNameToken.js",
 		"/assets/bayrell_lang_es6/LangBay/ParserBayToken.js",
 		"/assets/bayrell_lang_es6/LangES6/TranslatorES6.js",

@@ -21,6 +21,7 @@ namespace BayrellLang;
 use BayrellRtl.CoreObject;
 use BayrellRtl.ContextObject;
 use BayrellRtl.Interfaces.FactoryInterface;
+use BayrellRtl.Lib.fs;
 use BayrellRtl.Lib.Utils as RtlUtils;
 use BayrellLang.LangBay.ParserBay;
 use BayrellLang.LangES6.TranslatorES6;
@@ -76,6 +77,35 @@ class Utils extends ContextObject{
 		delete translator;
 		
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Transcompile Bayrell language to other
+	 * @string string parser_factory_name
+	 * @string string translator_factory_name
+	 * @string string src_file_name
+	 * @string string dest_file_name
+	 */
+	public static void translateFile(
+		string parser_factory_name, 
+		string translator_factory_name, 
+		string src_file_name, 
+		string dest_file_name, 
+		ContextInterface context = null
+	){
+		string content = fs::fileGetContents(src_file_name);
+		string res = self::translate(
+			parser_factory_name,
+			translator_factory_name,
+			content,
+			context
+		);
+		
+		string dir = fs::dirname(dest_file_name);
+		fs::mkdir(dir);
+		fs::filePutContents(dest_file_name, res);
 	}
 	
 }

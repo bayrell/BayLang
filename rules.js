@@ -15,6 +15,7 @@ module.exports = {
 		'Exceptions/HexNumberExpected',
 		'Exceptions/TwiceDeclareElseError',
 		'LangBay/ParserBay',
+		'LangBay/ParserBayFactory',
 		'LangBay/ParserBayNameToken',
 		'LangBay/ParserBayToken',
 		'LangES6/TranslatorES6',

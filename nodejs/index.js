@@ -18,7 +18,7 @@
 
 
 module.exports = {
-	VERSION: '0.2.3',
+	VERSION: '0.2.4',
 	'Exceptions': {
 		'EndOfStringExpected': require("./Exceptions/EndOfStringExpected.js"),
 		'HexNumberExpected': require("./Exceptions/HexNumberExpected.js"),
@@ -26,6 +26,7 @@ module.exports = {
 	},
 	'LangBay': {
 		'ParserBay': require("./LangBay/ParserBay.js"),
+		'ParserBayFactory': require("./LangBay/ParserBayFactory.js"),
 		'ParserBayNameToken': require("./LangBay/ParserBayNameToken.js"),
 		'ParserBayToken': require("./LangBay/ParserBayToken.js"),
 	},
