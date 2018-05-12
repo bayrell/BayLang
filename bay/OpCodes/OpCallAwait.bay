@@ -18,7 +18,6 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
 

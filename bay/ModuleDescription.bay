@@ -18,8 +18,6 @@
 
 namespace BayrellLang;
 
-use BayrellRtl.Types.Map;
-use BayrellRtl.Types.Vector;
 use BayrellRtl.Interfaces.ContextInterface;
 use BayrellRtl.Interfaces.ModuleDescriptionInterface;
 

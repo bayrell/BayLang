@@ -23,7 +23,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/CommonTranslator.js",
 		"/assets/bayrell_lang_es6/LangConstant.js",
 		"/assets/bayrell_lang_es6/ModuleDescription.js",
-		"/assets/bayrell_lang_es6/OutputContainer.js",
+		"/assets/bayrell_lang_es6/Utils.js",
 		"/assets/bayrell_lang_es6/OpCodes/BaseOpCode.js",
 		"/assets/bayrell_lang_es6/Exceptions/EndOfStringExpected.js",
 		"/assets/bayrell_lang_es6/Exceptions/HexNumberExpected.js",
@@ -40,6 +40,7 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 		"/assets/bayrell_lang_es6/LangBay/ParserBayNameToken.js",
 		"/assets/bayrell_lang_es6/LangBay/ParserBayToken.js",
 		"/assets/bayrell_lang_es6/LangES6/TranslatorES6.js",
+		"/assets/bayrell_lang_es6/LangES6/TranslatorES6Factory.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpAdd.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpAnd.js",
 		"/assets/bayrell_lang_es6/OpCodes/OpArray.js",
@@ -102,7 +103,9 @@ $load.subscribe(["bayrell_rtl_loaded", "bayrell_parser_loaded"], function(){
 	.load([
 		"/assets/bayrell_lang_es6/OpCodes/OpInterfaceDeclare.js",
 		"/assets/bayrell_lang_es6/LangNodeJS/TranslatorNodeJS.js",
+		"/assets/bayrell_lang_es6/LangNodeJS/TranslatorNodeJSFactory.js",
 		"/assets/bayrell_lang_es6/LangPHP/TranslatorPHP.js",
+		"/assets/bayrell_lang_es6/LangPHP/TranslatorPHPFactory.js",
 	])
 	.success(function(){
 		$load.deliver('bayrell_lang_loaded');

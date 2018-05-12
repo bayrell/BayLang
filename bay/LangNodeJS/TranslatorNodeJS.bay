@@ -56,8 +56,9 @@ export class TranslatorNodeJS extends TranslatorES6 {
 		this.modules.clear();
 		if (this.current_module_name != 'BayrellRtl'){
 			return "var rtl = require('BayrellRtl').Lib.rtl;" ~
-				this.s("var Vector = require('BayrellRtl').Types.Vector;") ~
-				this.s("var Map = require('BayrellRtl').Types.Map;");
+				this.s("var Map = require('BayrellRtl').Types.Map;") ~
+				this.s("var Vector = require('BayrellRtl').Types.Vector;")
+			;
 		}
 		return "";
 	}

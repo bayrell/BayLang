@@ -16,10 +16,22 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang;
+namespace BayrellLang.LangPHP;
 
+use BayrellRtl.CoreObject;
 use BayrellRtl.ContextObject;
+use BayrellRtl.Interfaces.FactoryInterface;
+use BayrellLang.LangPHP.TranslatorPHP;
 
 
-export class OutputContainer extends ContextObject{
+class TranslatorPHPFactory extends ContextObject implements FactoryInterface{
+	
+	
+	/**
+	 * Returns new Instance
+	 */
+	public CoreObject newInstance(){
+		return new TranslatorPHP(this.context());
+	}
+	
 }

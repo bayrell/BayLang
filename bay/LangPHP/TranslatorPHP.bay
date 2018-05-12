@@ -19,7 +19,6 @@
 namespace BayrellLang.LangPHP;
 
 use BayrellRtl.Lib.rs;
-use BayrellRtl.Types.Map;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -432,6 +431,7 @@ export class TranslatorPHP extends CommonTranslator {
 		string semicolon = this.is_operation ? "" : ";";
 		string res = this.o(this.translateRun(op_code.value), 17) ~ '--';
 		this.current_opcode_level = 17;
+		if (not this.is_operation) res ~= ";";
 		return res;
 	}
 	
@@ -444,6 +444,7 @@ export class TranslatorPHP extends CommonTranslator {
 		string semicolon = this.is_operation ? "" : ";";
 		string res = this.o(this.translateRun(op_code.value), 17) ~ '++';
 		this.current_opcode_level = 17;
+		if (not this.is_operation) res ~= ";";
 		return res;
 	}
 	
@@ -465,6 +466,7 @@ export class TranslatorPHP extends CommonTranslator {
 		string semicolon = this.is_operation ? "" : ";";
 		string res = '--' ~ this.o(this.translateRun(op_code.value), 16);
 		this.current_opcode_level = 16;
+		if (not this.is_operation) res ~= ";";
 		return res;
 	}
 	
@@ -477,6 +479,7 @@ export class TranslatorPHP extends CommonTranslator {
 		string semicolon = this.is_operation ? "" : ";";
 		string res = '++' ~ this.o(this.translateRun(op_code.value), 16);
 		this.current_opcode_level = 16;
+		if (not this.is_operation) res ~= ";";
 		return res;
 	}
 	
@@ -927,8 +930,13 @@ export class TranslatorPHP extends CommonTranslator {
 		this.current_module_name = arr.item(0);
 		this.modules.clear();
 		string res = "namespace " ~ rs::implode("\\", arr) ~ ";";
-		if (this.current_namespace != 'BayrellRtl'){
+		if (this.current_module_name != 'BayrellRtl'){
 			res ~= this.s("use BayrellRtl\\Lib\\rtl;");
+			res ~= this.s("use BayrellRtl\\Types\\Map;");
+			res ~= this.s("use BayrellRtl\\Types\\Vector;");
+			this.modules.set("rtl", "BayrellRtl.Lib.rtl");
+			this.modules.set("Map", "BayrellRtl.Types.Map");
+			this.modules.set("Vector", "BayrellRtl.Types.Vector");
 		}
 		return res;
 	}

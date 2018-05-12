@@ -16,30 +16,22 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang.LangBay;
+namespace BayrellLang.LangNodeJS;
+
+use BayrellRtl.CoreObject;
+use BayrellRtl.ContextObject;
+use BayrellRtl.Interfaces.FactoryInterface;
+use BayrellLang.LangNodeJS.TranslatorNodeJS;
 
 
-use BayrellRtl.Lib.rs;
-use BayrellParser.ParserToken;
-use BayrellParser.Exceptions.ParserEOF;
-use BayrellParser.Exceptions.ParserExpected;
-use BayrellLang.Exceptions.EndOfStringExpected;
-
-
-export class ParserBayNameToken extends ParserToken{
-	
-	static const string TOKEN_NONE = 'none';
-	static const string TOKEN_BASE = 'base';
+class TranslatorNodeJSFactory extends ContextObject implements FactoryInterface{
 	
 	
 	/**
-	 * Return true if char is token char
-	 * @param {char} ch
-	 * @return {boolean}
+	 * Returns new Instance
 	 */
-	bool isTokenChar (char ch){
-		return rs::strpos('qazwsxedcrfvtgbyhnujmikolp0123456789_.', rs::strtolower(ch)) !== -1;
+	public CoreObject newInstance(){
+		return new TranslatorNodeJS(this.context());
 	}
 	
 }
-

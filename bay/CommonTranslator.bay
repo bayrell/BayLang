@@ -21,7 +21,6 @@ namespace BayrellLang;
 
 use BayrellRtl.ContextObject;
 use BayrellRtl.Lib.rs;
-use BayrellRtl.Types.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
@@ -81,7 +80,6 @@ use BayrellLang.OpCodes.OpTryCatch;
 use BayrellLang.OpCodes.OpUse;
 use BayrellLang.OpCodes.OpVector;
 use BayrellLang.OpCodes.OpWhile;
-use BayrellLang.OutputContainer;
 
 
 export class CommonTranslator extends ContextObject{

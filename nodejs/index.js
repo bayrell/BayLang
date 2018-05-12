@@ -31,12 +31,15 @@ module.exports = {
 	},
 	'LangES6': {
 		'TranslatorES6': require("./LangES6/TranslatorES6.js"),
+		'TranslatorES6Factory': require("./LangES6/TranslatorES6Factory.js"),
 	},
 	'LangNodeJS': {
 		'TranslatorNodeJS': require("./LangNodeJS/TranslatorNodeJS.js"),
+		'TranslatorNodeJSFactory': require("./LangNodeJS/TranslatorNodeJSFactory.js"),
 	},
 	'LangPHP': {
 		'TranslatorPHP': require("./LangPHP/TranslatorPHP.js"),
+		'TranslatorPHPFactory': require("./LangPHP/TranslatorPHPFactory.js"),
 	},
 	'OpCodes': {
 		'BaseOpCode': require("./OpCodes/BaseOpCode.js"),
@@ -105,7 +108,7 @@ module.exports = {
 	'CommonTranslator': require("./CommonTranslator.js"),
 	'LangConstant': require("./LangConstant.js"),
 	'ModuleDescription': require("./ModuleDescription.js"),
-	'OutputContainer': require("./OutputContainer.js"),
+	'Utils': require("./Utils.js"),
 };
 
 

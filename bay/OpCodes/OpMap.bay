@@ -18,7 +18,6 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellRtl.Types.Map;
 use BayrellLang.OpCodes.BaseOpCode;
 
 

@@ -19,7 +19,6 @@
 namespace BayrellLang.LangBay;
 
 use BayrellRtl.Lib.rs;
-use BayrellRtl.Types.Vector;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
