@@ -95,16 +95,4 @@ export class OpTemplateIdentifier extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpTypeIdentifier){
-			this.t = clone obj.t;
-			this.childs = clone obj.childs;
-		}
-		parent::assign(obj);
-	}
 }

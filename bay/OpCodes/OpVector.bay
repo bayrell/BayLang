@@ -94,15 +94,4 @@ export class OpVector extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpArray){
-			this.values = clone obj.values;
-		}
-		parent::assign(obj);
-	}
 }

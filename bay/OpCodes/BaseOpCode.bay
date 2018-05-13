@@ -80,15 +80,4 @@ export class BaseOpCode extends CoreObject implements SerializeInterface{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof BaseOpCode){
-			this.op = obj.op;
-		}
-		parent::assign(obj);
-	}
 }

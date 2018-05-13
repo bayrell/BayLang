@@ -101,17 +101,4 @@ export class OpTryCatchChilds extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpTryCatchChilds){
-			this.op_type = clone obj.op_type;
-			this.op_ident = clone obj.op_ident;
-			this.childs = clone obj.childs;
-		}
-		parent::assign(obj);
-	}
 }

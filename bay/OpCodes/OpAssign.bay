@@ -99,18 +99,4 @@ export class OpAssign extends BaseOpCode{
 		else parent::assignValue(variable_name, value);
 	}
 	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpAssign){
-			this.ident = clone obj.ident;
-			this.value = clone obj.value;
-			this.op_name = obj.op_name;
-		}
-		parent::assign(obj);
-	}
 }

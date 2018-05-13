@@ -97,16 +97,4 @@ export class OpWhile extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpWhile){
-			this.condition = clone obj.condition;
-			this.childs = clone obj.childs;
-		}
-		parent::assign(obj);
-	}
 }

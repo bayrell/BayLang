@@ -107,19 +107,4 @@ export class OpFor extends BaseOpCode{
 		else parent::assignValue(variable_name, value);
 	}
 	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpFor){
-			this.loop_condition = clone obj.loop_condition;
-			this.loop_init = clone obj.loop_init;
-			this.loop_inc = clone obj.loop_inc;
-			this.childs = clone obj.childs;
-		}
-		parent::assign(obj);
-	}
 }

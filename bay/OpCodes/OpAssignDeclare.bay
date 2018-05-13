@@ -32,22 +32,6 @@ export class OpAssignDeclare extends BaseOpCode{
 	
 	
 	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpAssignDeclare){
-			this.tp = clone obj.tp;
-			this.name = clone obj.name;
-			this.value = clone obj.value;
-			this.flags = clone obj.flags;
-		}
-		parent::assign(obj);
-	}
-	
-	
-	
-	/**
 	 * Read is Flag
 	 */
 	public boolean isFlag(string name){

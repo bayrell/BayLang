@@ -68,9 +68,9 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * @return Vector<string>
 	 */	
 	public static Vector<string> getInterfaces(){
-		return (new Vector())
-			.push('BayrellRtl.Interfaces.ModuleDescriptionInterface')
-		;
+		return [
+			'BayrellRtl.Interfaces.ModuleDescriptionInterface',
+		];
 	}
 	
 	
@@ -80,10 +80,10 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * @return Map<string, string>
 	 */	
 	public static Map<string, string> getRequiredModules(){
-		return (new Map<string, string>())
-			.set('BayrellRtl', '>=0.2 <1.0')
-			.set('BayrellParser', '>=0.1 <1.0')
-		;
+		return {
+			'BayrellRtl': '>=0.2 <1.0',
+			'BayrellParser': '>=0.1 <1.0',
+		};
 	}
 	
 	

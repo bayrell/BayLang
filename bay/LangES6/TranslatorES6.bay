@@ -94,23 +94,6 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
-	 * Assign all data from other object
-	 * @param {BayrellObject} obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof TranslatorES6){
-			this.modules = clone obj.modules;
-			this.current_namespace = obj.current_namespace;
-			this.current_class_name = obj.current_class_name;
-			this.current_function_name = obj.current_function_name;
-			this.current_module_name = obj.current_module_name;
-		}
-		parent::assign(obj);
-	}
-	
-	
-	
-	/**
 	 * Get name
 	 */
 	string getName(string name){

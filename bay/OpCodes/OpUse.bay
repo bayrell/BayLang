@@ -27,18 +27,6 @@ export class OpUse extends OpValueString{
 	public string alias_name = "";
 	
 	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpUse){
-			this.alias_name = clone obj.alias_name;
-		}
-		parent::assign(obj);
-	}
-	
-	
 	
 	/**
 	 * Returns classname of the object

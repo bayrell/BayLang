@@ -96,16 +96,4 @@ export class OpValue2 extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpValue2){
-			this.value1 = clone obj.value1;
-			this.value2 = clone obj.value2;
-		}
-		parent::assign(obj);
-	}
 }

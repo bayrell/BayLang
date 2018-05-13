@@ -98,25 +98,6 @@ export class CommonTranslator extends ContextObject{
 	
 	
 	/**
-	 * Assign all data from other object
-	 * @param {BayrellObject} obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof CommonTranslator){
-			this.one_lines = clone obj.one_lines;
-			this.is_operation = obj.is_operation;
-			this.current_opcode_level = obj.current_opcode_level;
-			this.indent_level = obj.indent_level;
-			this.indent = obj.indent;
-			this.space = obj.space;
-			this.crlf = obj.crlf;
-		}
-		parent::assign(obj);
-	}
-	
-	
-	
-	/**
 	 * Constructor
 	 */
 	void constructor (ContextInterface context = null){

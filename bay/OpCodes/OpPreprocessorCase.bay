@@ -96,16 +96,4 @@ export class OpPreprocessorCase extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpValue2){
-			this.condition = clone obj.condition;
-			this.comment = obj.comment;
-		}
-		parent::assign(obj);
-	}
 }

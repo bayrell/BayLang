@@ -18,11 +18,10 @@
 
 namespace BayrellLang;
 
+use BayrellRtl.Lib.fs;
 use BayrellRtl.CoreObject;
 use BayrellRtl.ContextObject;
 use BayrellRtl.Interfaces.FactoryInterface;
-use BayrellRtl.Lib.fs;
-use BayrellRtl.Lib.Utils as RtlUtils;
 use BayrellLang.LangBay.ParserBay;
 use BayrellLang.LangES6.TranslatorES6;
 use BayrellLang.CommonParser;
@@ -32,6 +31,7 @@ use BayrellLang.CommonTranslator;
 class Utils extends ContextObject{
 	
 	
+	
 	/**
 	 * Transcompile one language to other
 	 * @string string parser_factory_name
@@ -39,11 +39,44 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static string translate(string parser_factory_name, string translator_factory_name, string source, 
-	ContextInterface context = null){
+	public static BaseOpCode getAST(FactoryInterface parser_factory, string source){
+		CommonParser parser = parser_factory.newInstance();
+		parser.parseString(source);
+		BaseOpCode code_tree = parser.getAST();
+		delete parser;
+		return code_tree;
+	}
+	
+	
+	
+	/**
+	 * Transcompile one language to other
+	 * @string string parser_factory_name
+	 * @string string translator_factory_name
+	 * @string string source
+	 * @return string
+	 */
+	public static string translateAST(FactoryInterface translator_factory, BaseOpCode code_tree){		
+		CommonTranslator translator = translator_factory.newInstance();
+		string res = translator.translate(code_tree);
+		delete translator;
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Transcompile one language to other
+	 * @string string parser_factory_name
+	 * @string string translator_factory_name
+	 * @string string source
+	 * @return string
+	 */
+	public static string translate(FactoryInterface parser_factory, FactoryInterface translator_factory, 
+	string source){
 		
-		CommonParser parser = RtlUtils::factory(parser_factory_name, context);
-		CommonTranslator translator = RtlUtils::factory(translator_factory_name, context);
+		CommonParser parser = parser_factory.newInstance();
+		CommonTranslator translator = translator_factory.newInstance();
 		
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
@@ -63,11 +96,10 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static string translateBay(string translator_factory_name, string source, 
-	ContextInterface context = null){
+	public static string translateBay(FactoryInterface translator_factory, string source){
 		
-		CommonParser parser = new ParserBay(context);
-		CommonTranslator translator = RtlUtils::factory(translator_factory_name, context);
+		CommonTranslator translator = translator_factory.newInstance();
+		CommonParser parser = new ParserBay(translator.context());
 		
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
@@ -83,22 +115,21 @@ class Utils extends ContextObject{
 	
 	/**
 	 * Transcompile Bayrell language to other
-	 * @string string parser_factory_name
-	 * @string string translator_factory_name
+	 * @string FactoryInterface parser_factory
+	 * @string FactoryInterface translator_factory
 	 * @string string src_file_name
 	 * @string string dest_file_name
 	 */
 	public static void translateFile(
-		string parser_factory_name, 
-		string translator_factory_name, 
+		FactoryInterface parser_factory, 
+		FactoryInterface translator_factory,
 		string src_file_name, 
-		string dest_file_name, 
-		ContextInterface context = null
+		string dest_file_name
 	){
 		string content = fs::fileGetContents(src_file_name);
 		string res = self::translate(
-			parser_factory_name,
-			translator_factory_name,
+			parser_factory,
+			translator_factory,
 			content,
 			context
 		);

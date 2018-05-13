@@ -45,6 +45,15 @@ export class ParserBayToken extends ParserToken{
 	
 	
 	/**
+	 * Returns new Instance
+	 */
+	public CoreObject createNewInstance(){
+		return new ParserBayToken(this.context(), this.parser);
+	}
+	
+	
+	
+	/**
 	 * Constructor
 	 */
 	void constructor (ContextInterface context = null, ParserBay parser = null){

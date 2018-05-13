@@ -36,25 +36,6 @@ export class OpClassDeclare extends BaseOpCode{
 	
 	
 	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpClassDeclare){
-			this.class_name = obj.class_name;
-			this.class_extends = clone obj.class_extends;
-			this.class_implements = clone obj.class_implements;
-			this.class_variables = clone obj.class_variables;
-			this.class_template = clone obj.class_template;
-			this.childs = clone obj.childs;
-			this.flags = clone obj.flags;
-		}
-		parent::assign(obj);
-	}
-	
-	
-	
-	/**
 	 * Returns classname of the object
 	 * @return string
 	 */

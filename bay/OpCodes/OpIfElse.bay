@@ -99,17 +99,4 @@ export class OpIfElse extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpIf){
-			this.condition = clone obj.condition;
-			this.expr = clone obj.expr;
-			this.if_true = clone obj.if_true;
-		}
-		parent::assign(obj);
-	}
 }

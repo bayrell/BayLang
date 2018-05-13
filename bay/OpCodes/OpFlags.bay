@@ -33,25 +33,6 @@ export class OpFlags extends BaseOpCode{
 	public bool p_private = false;
 	public bool p_protected = false;
 	public bool p_declare = false;
-
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpFlags){
-			this.p_async = obj.p_async;
-			this.p_export = obj.p_export;
-			this.p_static = obj.p_static;
-			this.p_const = obj.p_const;
-			this.p_public = obj.p_public;
-			this.p_private = obj.p_private;
-			this.p_protected = obj.p_protected;
-			this.p_declare = obj.p_declare;
-		}
-		parent::assign(obj);
-	}
 	
 	
 	

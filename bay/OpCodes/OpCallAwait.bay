@@ -96,17 +96,4 @@ export class OpCallAwait extends BaseOpCode{
 			parent::assignValue(variable_name, value);
 	}
 	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpChilds){
-			this.value = clone obj.value;
-			this.args = clone obj.args;
-		}
-		parent::assign(obj);
-	}
 }

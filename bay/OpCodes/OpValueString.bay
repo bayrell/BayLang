@@ -32,7 +32,7 @@ export class OpValueString extends BaseOpCode{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpValue";
+		return "BayrellLang.OpCodes.OpValueString";
 	}
 	
 	
@@ -89,16 +89,4 @@ export class OpValueString extends BaseOpCode{
 		else parent::assignValue(variable_name, value);
 	}
 	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpValueString){
-			this.value = clone obj.value;
-		}
-		parent::assign(obj);
-	}
 }

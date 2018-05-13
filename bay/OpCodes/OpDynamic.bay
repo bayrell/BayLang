@@ -94,17 +94,4 @@ export class OpDynamic extends BaseOpCode{
 		else parent::assignValue(variable_name, value);
 	}
 	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpDynamic){
-			this.value = clone obj.value;
-			this.name = obj.name;
-		}
-		parent::assign(obj);
-	}
 }

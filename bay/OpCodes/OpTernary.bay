@@ -104,18 +104,4 @@ export class OpTernary extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpTernary){
-			this.condition = clone obj.condition;
-			this.expr = clone obj.expr;
-			this.if_true = clone obj.if_true;
-			this.if_false = clone obj.if_false;
-		}
-		parent::assign(obj);
-	}
 }
