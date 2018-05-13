@@ -130,8 +130,7 @@ class Utils extends ContextObject{
 		string res = self::translate(
 			parser_factory,
 			translator_factory,
-			content,
-			context
+			content
 		);
 		
 		string dir = fs::dirname(dest_file_name);

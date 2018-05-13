@@ -583,6 +583,49 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	
+	/** ========================== Vector and Map ========================= */
+	
+	
+	/**
+	 * Vector
+	 */
+	string OpVector(OpVector op_code){
+		string res = "";
+		
+		res ~= "(new " ~ this.getName("Vector") ~ "())";
+		for (var i=0; i<op_code.values.count(); i++){
+			BaseOpCode item = op_code.values.item(i);
+			this.current_opcode_level = this.max_opcode_level;
+			res ~= this.s("->push(" ~ this.translateRun(item) ~ ")");
+		}
+		this.current_opcode_level = this.max_opcode_level;
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Map
+	 */
+	string OpMap(OpMap op_code){
+		string res = "";
+		
+		Vector<string> keys = op_code.values.keys();
+		
+		res ~= "(new " ~ this.getName("Map") ~ "())";
+		for (var i=0; i<keys.count(); i++){
+			string key = keys.item(i);
+			BaseOpCode item = op_code.values.item(key);
+			this.current_opcode_level = this.max_opcode_level;
+			res ~= this.s("->set(" ~ rs::json_encode(key) ~ ", " ~ this.translateRun(item) ~ ")");
+		}
+		this.current_opcode_level = this.max_opcode_level;
+		
+		return res;
+	}
+	
+	
 	
 	/** ============================ Operators ============================ */
 	
