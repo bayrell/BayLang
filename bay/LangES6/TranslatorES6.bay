@@ -18,6 +18,7 @@
 
 namespace BayrellLang.LangES6;
 
+use BayrellRtl.Lib.re;
 use BayrellRtl.Lib.rs;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
@@ -126,7 +127,21 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Escape string
 	 */
 	string escapeString(string s){
-		return rs::json_encode(s);
+		s = re::replace('\\\\', '\\\\', s);
+		s = re::replace('"', '\\\"', s);
+		s = re::replace('\n', '\\n', s);
+		s = re::replace('\r', '\\r', s);
+		s = re::replace('\t', '\\t', s);
+		return s;
+	}
+	
+	
+	
+	/**
+	 * Escape string
+	 */
+	string convertString(string s){
+		return '"' ~ this.escapeString(s) ~ '"';
 	}
 	
 	
@@ -177,7 +192,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpString(OpString op_code){
 		this.current_opcode_level = this.max_opcode_level;
-		return this.escapeString(op_code.value);
+		return this.convertString(op_code.value);
 	}
 	
 	
