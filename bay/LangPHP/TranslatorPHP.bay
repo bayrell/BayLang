@@ -1157,6 +1157,104 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
+	 * Class init functions
+	 */
+	string OpClassInit(Vector<OpAssignDeclare> class_variables){
+		
+		string res = "";
+		bool has_serializable = false;
+		bool has_cloneable = false;
+		
+		
+		for (int i=0; i<class_variables.count(); i++){
+			OpAssignDeclare variable = class_variables.item(i);
+			if (variable.isFlag("serializable")){
+				has_serializable = true;
+			}
+			if (variable.isFlag("cloneable")){
+				has_cloneable = true;
+			}
+		}
+		
+		if (this.current_module_name != 'BayrellRtl' and this.current_class_name != 'CoreObject'){
+			/* If has cloneable variables */
+			if (has_cloneable){
+				res ~= this.s("function assign($obj){");
+				this.levelInc();
+				res ~= this.s("if ($obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("cloneable")){
+						res ~= this.s("$this->" ~ variable.name ~ " = " ~
+							this.getName("rtl") ~ "::_clone(" ~
+							"$obj->" ~ variable.name ~ ");"
+						);
+					}
+				}
+				this.levelDec();
+				res ~= this.s("}");
+				res ~= this.s("parser::assign($obj);");
+				this.levelDec();
+				res ~= this.s("}");
+			}
+			
+			/* If has serializable variables */
+			if (has_serializable){
+				
+				/* assignValue function */
+				res ~= this.s("function assignValue($variable_name, $value){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("serializable")){
+						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
+							"$this->" ~ variable.name ~ " = $value;";
+						if (i == 0) res ~= this.s(take_value_s);
+						else res ~= this.s("else " ~ take_value_s);
+					}
+				}
+				res ~= this.s("else parent::assignValue($variable_name, $value);");
+				this.levelDec();
+				res ~= this.s("}");
+				
+				
+				/* takeValue function */
+				res ~= this.s("function takeValue($variable_name, $default_value){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("serializable")){
+						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
+							"return $this->" ~ variable.name ~ ";";
+						if (i == 0) res ~= this.s(take_value_s);
+						else res ~= this.s("else " ~ take_value_s);
+					}
+				}
+				res ~= this.s("return parent::takeValue($variable_name, $default_value);");
+				this.levelDec();
+				res ~= this.s("}");		
+
+
+				/* getVariablesNames function */
+				res ~= this.s("function getVariablesNames($names){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("serializable"))
+						res ~= this.s("$names->push(" ~ this.convertString(variable.name) ~ ");");
+				}
+				this.levelDec();
+				res ~= this.s("}");
+			}		
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
 	 * Class declare
 	 */
 	string OpClassDeclare(OpClassDeclare op_code){
@@ -1177,6 +1275,8 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		/* Variables */
 		res ~= this.OpClassDeclareVariables(op_code);
+		res ~= this.OpClassInit(op_code.class_variables);
+		
 		
 		/* Class functions */
 		for (int i=0; i<op_code.childs.count(); i++){

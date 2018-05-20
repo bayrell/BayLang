@@ -33,6 +33,8 @@ export class OpFlags extends BaseOpCode{
 	public bool p_private = false;
 	public bool p_protected = false;
 	public bool p_declare = false;
+	public bool p_serializable = false;
+	public bool p_cloneable = false;
 	
 	
 	
@@ -52,6 +54,7 @@ export class OpFlags extends BaseOpCode{
 	 */
 	public void getVariablesNames(Vector<string> names){
 		parent::getVariablesNames(names);
+		names.push("async");
 		names.push("export");
 		names.push("static");
 		names.push("const");
@@ -59,7 +62,8 @@ export class OpFlags extends BaseOpCode{
 		names.push("private");
 		names.push("declare");
 		names.push("protected");
-		names.push("async");
+		names.push("serializable");
+		names.push("cloneable");
 	}
 	
 	
@@ -70,14 +74,16 @@ export class OpFlags extends BaseOpCode{
 	 * @return var
 	 */
 	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'export') return this.p_export;
+		if (variable_name == 'async') return this.p_async;
+		else if (variable_name == 'export') return this.p_export;
 		else if (variable_name == 'static') return this.p_static;
 		else if (variable_name == 'const') return this.p_const;
 		else if (variable_name == 'public') return this.p_public;
 		else if (variable_name == 'private') return this.p_private;
 		else if (variable_name == 'declare') return this.p_declare;
 		else if (variable_name == 'protected') return this.p_protected;
-		else if (variable_name == 'async') return this.p_async;
+		else if (variable_name == 'serializable') return this.p_serializable;
+		else if (variable_name == 'cloneable') return this.p_cloneable;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -89,14 +95,16 @@ export class OpFlags extends BaseOpCode{
 	 * @param var value
 	 */
 	public void assignValue(string variable_name, var value){
-		if (variable_name == 'export') this.p_export = value;
+		if (variable_name == 'async') this.p_async = value;
+		else if (variable_name == 'export') this.p_export = value;
 		else if (variable_name == 'static') this.p_static = value;
 		else if (variable_name == 'const') this.p_const = value;
 		else if (variable_name == 'public') this.p_public = value;
 		else if (variable_name == 'private') this.p_private = value;
 		else if (variable_name == 'declare') this.p_declare = value;
 		else if (variable_name == 'protected') this.p_protected = value;
-		else if (variable_name == 'async') this.p_async = value;
+		else if (variable_name == 'serializable') this.p_serializable = value;
+		else if (variable_name == 'cloneable') this.p_cloneable = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -120,6 +128,7 @@ export class OpFlags extends BaseOpCode{
 	 */
 	public static Vector<string> getFlags(){
 		return (new Vector<string>())
+			.push("async")
 			.push("export")
 			.push("static")
 			.push("const")
@@ -127,7 +136,8 @@ export class OpFlags extends BaseOpCode{
 			.push("private")
 			.push("declare")
 			.push("protected")
-			.push("async")
+			.push("serializable")
+			.push("cloneable")
 		;
 	}
 	
@@ -138,6 +148,7 @@ export class OpFlags extends BaseOpCode{
 	 */
 	public static boolean hasFlag(string flag_name){
 		if (
+			flag_name == "async" or
 			flag_name == "export" or
 			flag_name == "static" or
 			flag_name == "const" or
@@ -145,7 +156,8 @@ export class OpFlags extends BaseOpCode{
 			flag_name == "private" or
 			flag_name == "declare" or
 			flag_name == "protected" or
-			flag_name == "async"
+			flag_name == "serializable" or
+			flag_name == "cloneable"
 		){
 			return true;
 		}

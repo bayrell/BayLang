@@ -1094,6 +1094,149 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
+	 * Class init functions
+	 */
+	string OpClassInit(Vector<OpAssignDeclare> class_variables, Vector<string> class_implements){
+	
+		string res = "";
+		bool has_serializable = false;
+		bool has_cloneable = false;
+		bool has_variables = class_variables != null and class_variables.count() > 0;
+		bool has_implements = class_implements != null and class_implements.count() > 0;
+		
+		if (has_variables){
+			for (int i=0; i<class_variables.count(); i++){
+				OpAssignDeclare variable = class_variables.item(i);
+				if (variable.isFlag("serializable")){
+					has_serializable = true;
+				}
+				if (variable.isFlag("cloneable")){
+					has_cloneable = true;
+				}
+			}
+		}
+		
+		
+		if (this.current_module_name != 'BayrellRtl' and this.current_class_name != 'CoreObject'){
+			
+			/* Init function */
+			if (has_variables or has_implements){
+				res ~= this.s("_init(){");
+				this.levelInc();
+				
+				/* super init */
+				if (class_extends != ""){
+					res ~= this.s("super._init();");
+				}
+				
+				/* Output variables */
+				if (class_variables != null){
+					for (int i=0; i<class_variables.count(); i++){
+						OpAssignDeclare variable = class_variables.item(i);
+						if (variable.flags != null and variable.flags.p_static == false){
+							this.beginOperation();
+							s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							this.endOperation();
+							res ~= this.s(s);
+						}
+					}
+				}
+				
+				/* Implements */
+				if (class_implements != null and class_implements.count() > 0){
+					res ~= this.s("if (this.__implements__ == undefined){this.__implements__ = [];}");
+					for (int i=0; i<class_implements.count(); i++){
+						string name = class_implements.item(i);
+						this.beginOperation();
+						s = "this.__implements__.push(" ~ this.getName(name) ~ ");";
+						this.endOperation();
+						res ~= this.s(s);
+					}
+				}
+				
+				this.levelDec();
+				res ~= this.s("}");
+			}
+			
+			/* If has cloneable variables */
+			if (has_cloneable){
+				res ~= this.s("assign(obj){");
+				this.levelInc();
+				res ~= this.s("if (obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("cloneable")){
+						res ~= this.s("this." ~ variable.name ~ " = " ~
+							this.getName("rtl") ~ "._clone(" ~
+							"obj." ~ variable.name ~ ");"
+						);
+					}
+				}
+				this.levelDec();
+				res ~= this.s("}");
+				res ~= this.s("super.assign(obj);");
+				this.levelDec();
+				res ~= this.s("}");
+			}
+			
+			/* If has serializable variables */
+			if (has_serializable){
+				
+				/* assignValue function */
+				res ~= this.s("assignValue(variable_name, value){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("serializable")){
+						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
+							"this." ~ variable.name ~ " = value;";
+						if (i == 0) res ~= this.s(take_value_s);
+						else res ~= this.s("else " ~ take_value_s);
+					}
+				}
+				res ~= this.s("else super.assignValue(variable_name, value);");
+				this.levelDec();
+				res ~= this.s("}");
+				
+				
+				/* takeValue function */
+				res ~= this.s("takeValue(variable_name, default_value){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("serializable")){
+						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
+							"return this." ~ variable.name ~ ";";
+						if (i == 0) res ~= this.s(take_value_s);
+						else res ~= this.s("else " ~ take_value_s);
+					}
+				}
+				res ~= this.s("return super.takeValue(variable_name, default_value);");
+				this.levelDec();
+				res ~= this.s("}");		
+
+
+				/* getVariablesNames function */
+				res ~= this.s("getVariablesNames(names){");
+				this.levelInc();
+				for (int i=0; i<class_variables.count(); i++){
+					OpAssignDeclare variable = class_variables.item(i);
+					if (variable.isFlag("serializable"))
+						res ~= this.s("names.push(" ~ this.convertString(variable.name) ~ ");");
+				}
+				this.levelDec();
+				res ~= this.s("}");
+			}
+			
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
 	 * Class declare
 	 */
 	string OpClassDeclare(OpClassDeclare op_code){
@@ -1111,44 +1254,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Header */
 		res ~= this.OpClassDeclareHeader(op_code);
-		
-		/* Init function */
-		if (this.current_namespace != 'BayrellRtl' or op_code.class_name != 'CoreObject'){
-			res ~= this.s("_init(){");
-			this.levelInc();
-			
-			/* super init */
-			if (op_code.class_extends != ""){
-				res ~= this.s("super._init();");
-			}
-			
-			/* Output variables */
-			for (int i=0; i<op_code.class_variables.count(); i++){
-				OpAssignDeclare variable = op_code.class_variables.item(i);
-				if (variable.flags != null and variable.flags.p_static == false){
-					this.beginOperation();
-					s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
-					this.endOperation();
-					res ~= this.s(s);
-				}
-			}
-			
-			/* Implements */
-			if (op_code.class_implements != null and op_code.class_implements.count() > 0){
-				res ~= this.s("if (this.__implements__ == undefined){this.__implements__ = [];}");
-				for (int i=0; i<op_code.class_implements.count(); i++){
-					string name = op_code.class_implements.item(i);
-					this.beginOperation();
-					s = "this.__implements__.push(" ~ this.getName(name) ~ ");";
-					this.endOperation();
-					res ~= this.s(s);
-				}
-			}
-			
-			this.levelDec();
-			res ~= this.s("}");
-		}
-		
+		res ~= this.OpClassInit(op_code.class_variables, op_code.class_implements);
 		
 		/* Class functions */
 		for (int i=0; i<op_code.childs.count(); i++){
@@ -1164,11 +1270,9 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		
-		
 		/* Footer class */
 		this.levelDec();
 		res ~= this.s("}");
-		
 		
 		/* Footer */
 		res ~= this.OpClassDeclareFooter(op_code);

@@ -77,3 +77,5 @@ packagenames
 size_t
 implementsof
 not
+serializable
+cloneable
