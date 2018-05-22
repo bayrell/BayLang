@@ -899,7 +899,7 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		int try_catch_childs_sz = op_code.childs.count();
 		string is_else = "";
-		s ~= "catch(Exception $_the_exception){";
+		s ~= "catch(\\Exception $_the_exception){";
 		for (int i=0; i<try_catch_childs_sz; i++){
 			OpTryCatchChilds try_catch = op_code.childs.item(i);
 			
@@ -908,20 +908,20 @@ export class TranslatorPHP extends CommonTranslator {
 			string name = this.translateRun(try_catch.op_ident);
 			this.endOperation();
 			
-			if (tp == '$var') tp = 'Exception';
+			if (tp == '$var') tp = '\\Exception';
 			
 			/* catch childs */			
-			if (tp != 'Exception' or try_catch_childs_sz > 1){
+			if (tp != '\\Exception' or try_catch_childs_sz > 1){
 				this.levelInc();
 				s ~= this.s(is_else ~ "if ($_the_exception instanceof " ~ tp ~ "){");
 			}
 			this.levelInc();
-			s ~= this.s("var " ~ name ~ " = $_the_exception;");
+			s ~= this.s(name ~ " = $_the_exception;");
 			for (int j=0; j<try_catch.childs.count(); j++){
 				s ~= this.s(this.translateRun(try_catch.childs.item(j)));
 			}
 			this.levelDec();
-			if (tp != 'Exception' or try_catch_childs_sz > 1){
+			if (tp != '\\Exception' or try_catch_childs_sz > 1){
 				s ~= this.s("}");
 				this.levelDec();
 			}
@@ -1220,7 +1220,7 @@ export class TranslatorPHP extends CommonTranslator {
 				
 				
 				/* takeValue function */
-				res ~= this.s("function takeValue($variable_name, $default_value){");
+				res ~= this.s("function takeValue($variable_name, $default_value = null){");
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);

@@ -1096,8 +1096,10 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Class init functions
 	 */
-	string OpClassInit(Vector<OpAssignDeclare> class_variables, Vector<string> class_implements){
-	
+	string OpClassInit(Vector<OpAssignDeclare> class_variables, Vector<string> class_implements,
+	string class_extends = ""){
+		
+		string s = "";
 		string res = "";
 		bool has_serializable = false;
 		bool has_cloneable = false;
@@ -1203,6 +1205,7 @@ export class TranslatorES6 extends CommonTranslator {
 				/* takeValue function */
 				res ~= this.s("takeValue(variable_name, default_value){");
 				this.levelInc();
+				res ~= this.s("if (default_value == undefined) default_value = null;");
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable")){
@@ -1254,7 +1257,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Header */
 		res ~= this.OpClassDeclareHeader(op_code);
-		res ~= this.OpClassInit(op_code.class_variables, op_code.class_implements);
+		res ~= this.OpClassInit(op_code.class_variables, op_code.class_implements, op_code.class_extends);
 		
 		/* Class functions */
 		for (int i=0; i<op_code.childs.count(); i++){
