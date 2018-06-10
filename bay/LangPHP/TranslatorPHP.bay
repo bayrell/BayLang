@@ -215,7 +215,8 @@ export class TranslatorPHP extends CommonTranslator {
 	 * Array
 	 */
 	string OpArray(OpArray op_code){
-		return this.translateRun(op_code.value1) ~ '[' ~ this.s(this.translateRun(op_code.value2)) ~ this.s(']');
+		return "mb_substr(" ~ this.translateRun(op_code.value1) ~ 
+			", " ~ this.s(this.translateRun(op_code.value2)) ~ ", 1)";
 	}
 	
 	
