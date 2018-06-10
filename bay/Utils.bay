@@ -127,12 +127,9 @@ class Utils extends ContextObject{
 		string src_file_name, 
 		string dest_file_name
 	){
-		
 		ContextObject context = parser_factory.context();
-		FileSystemInterface file_system = context.getProvider("default.fs");
+		FileSystemInterface file_system = context.getProvider("default:fs");
 		string content = file_system.loadFile(src_file_name);
-		
-		/*string content = fs::fileGetContents(src_file_name);*/
 		string res = self::translate(
 			parser_factory,
 			translator_factory,
@@ -140,11 +137,6 @@ class Utils extends ContextObject{
 		);
 		
 		string dir = RtlUtils::dirname(dest_file_name);
-		
-		/*
-		fs::mkdir(dir);
-		fs::filePutContents(dest_file_name, res);
-		*/
 		file_system.makeDir(dir);
 		file_system.saveFile(dest_file_name, res);
 	}
