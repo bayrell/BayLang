@@ -127,18 +127,38 @@ class Utils extends ContextObject{
 		string src_file_name, 
 		string dest_file_name
 	){
+		
+		#switch
+		#case ifcode NODEJS then
+		var fsModule = require('fs');
+		var shellModule = require('shelljs');
+		var content = fsModule.readFileSync(filepath, {encoding : charset}).toString();
+		#endswitch
+		
+		/*
 		ContextObject context = parser_factory.context();
 		FileSystemInterface file_system = context.getProvider("default:fs");
 		string content = file_system.loadFile(src_file_name);
+		*/
+		
 		string res = self::translate(
 			parser_factory,
 			translator_factory,
 			content
 		);
-		
 		string dir = RtlUtils::dirname(dest_file_name);
+		
+		/*
 		file_system.makeDir(dir);
 		file_system.saveFile(dest_file_name, res);
+		*/
+		#switch
+		#case ifcode NODEJS then
+		if (!fsModule.existsSync(dir)){
+			shellModule.mkdir('-p', dirpath);
+		}
+		fsModule.writeFileSync(dest_file_name, res, {encoding : 'utf8'});
+		#endswitch
 	}
 	
 }
