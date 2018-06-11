@@ -132,7 +132,7 @@ class Utils extends ContextObject{
 		#case ifcode NODEJS then
 		var fsModule = require('fs');
 		var shellModule = require('shelljs');
-		var content = fsModule.readFileSync(filepath, {encoding : charset}).toString();
+		var content = fsModule.readFileSync(src_file_name, {encoding : 'utf8'}).toString();
 		#endswitch
 		
 		/*
