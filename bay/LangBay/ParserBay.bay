@@ -94,6 +94,8 @@ use BayrellParser.Exceptions.ParserError;
 export class ParserBay extends CommonParser{
 	
 	
+	bool is_interface = false;
+	
 	
 	/**
 	 * Tokens Fabric
@@ -1460,7 +1462,7 @@ export class ParserBay extends CommonParser{
 	 * Read declare class arrow function
 	 * @return BaseOpCode
 	 */
-	OpFunctionDeclare readDeclareArrowFunction(bool read_name = true){
+	OpFunctionDeclare readDeclareArrowFunction(bool read_name = true, bool is_declare_function = false){
 		
 		BaseOpCode op_code = null;
 		
@@ -1473,13 +1475,13 @@ export class ParserBay extends CommonParser{
 			}
 			op_code.args = this.readFunctionsArguments();
 			this.matchNextToken("=>");
-			op_code.return_function = this.readDeclareFunction(false);
+			op_code.return_function = this.readDeclareFunction(false, false);
 			return op_code;
 		}
 		
 		
 		/* Read function */
-		op_code = this.readDeclareFunction(read_name);
+		op_code = this.readDeclareFunction(read_name, is_declare_function);
 		return op_code;
 	}
 	
@@ -1489,7 +1491,7 @@ export class ParserBay extends CommonParser{
 	 * Read declare class function
 	 * @return BaseOpCode
 	 */
-	OpFunctionDeclare readDeclareFunction(bool read_name = true){
+	OpFunctionDeclare readDeclareFunction(bool read_name = true, bool is_declare_function = false){
 		OpFunctionDeclare res = new OpFunctionDeclare();
 		
 		this.pushToken();
@@ -1517,12 +1519,15 @@ export class ParserBay extends CommonParser{
 		
 		
 		/* Read body of the function */
-		if (this.findNextToken("{")){
-			res.childs = this.readOperatorsBlock();
-		}
-		else{
+		if (is_declare_function){
 			this.matchNextToken(";");
 		}
+		else{
+			this.matchNextToken("{");
+			res.childs = this.readOperatorsBlock();
+			this.matchNextToken("}");
+		}
+		
 		
 		return res;
 	}
@@ -1538,18 +1543,23 @@ export class ParserBay extends CommonParser{
 		BaseOpCode op_code = null;
 		
 		if (this.findNextTokenPreprocessor()){
-			return this.readPreprocessor();
+			op_code = this.readPreprocessor();
+			res.childs.push(op_code);
+			return ;
 		}
 		else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
-			return new OpComment(this.readAnyNextToken().token);
+			op_code = new OpComment(this.readAnyNextToken().token);
+			res.childs.push(op_code);
+			return ;
 		}
 		
 		/* Read flags */
 		flags = this.readFlags();
-		
+		bool is_declare_function = false;
+		if (flags != null and flags.p_declare or this.is_interface) is_declare_function = true;
 		
 		/* Read function */
-		op_code = this.readDeclareArrowFunction();
+		op_code = this.readDeclareArrowFunction(true, is_declare_function);
 		if (op_code){
 			op_code.flags = flags;
 			res.childs.push( op_code );
@@ -1645,7 +1655,9 @@ export class ParserBay extends CommonParser{
 	OpInterfaceDeclare readDeclareInterface(OpFlags class_flags){
 		OpInterfaceDeclare res = new OpInterfaceDeclare();
 		this.matchNextToken("interface");
+		this.is_interface = true;
 		this.readClassHead(res);
+		this.is_interface = false;
 		res.flags = class_flags;
 		return res;
 	}
