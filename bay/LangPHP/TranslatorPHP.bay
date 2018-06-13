@@ -89,7 +89,8 @@ export class TranslatorPHP extends CommonTranslator {
 	Map<string, string> modules = null;
 	string current_namespace = "";
 	string current_class_name = "";
-	string current_function_name = "";
+	Vector<string> current_function_name = null;
+	bool current_function_is_static = false;
 	string current_module_name = "";
 	bool is_static = false;
 	bool is_interface = false;
@@ -527,14 +528,14 @@ export class TranslatorPHP extends CommonTranslator {
 		bool f = true;
 		if (op_code.value instanceof OpIdentifier){
 			if (op_code.value.value == 'parent'){
-				if (this.current_function_name == "constructor"){
+				if (this.current_function_name.get(0) == "constructor"){
 					s ~= "parent::__construct";
 				}
-				else if (this.current_function_name == "destructor"){
+				else if (this.current_function_name.get(0) == "destructor"){
 					s ~= "parent::__destruct";
 				}
 				else{
-					s ~= "parent::" ~ this.current_function_name;
+					s ~= "parent::" ~ this.current_function_name.get(0);
 				}
 				f = false;
 			}
@@ -791,13 +792,13 @@ export class TranslatorPHP extends CommonTranslator {
 		string s = "";
 		
 		/* Header */
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		s ~= "for (" ~ 
 			this.translateRun(op_code.loop_init) ~ "; " ~
 			this.translateRun(op_code.loop_condition) ~ "; " ~
 			this.translateRun(op_code.loop_inc) ~ "){"
 		;
-		this.endOperation();
+		this.endOperation(old_is_operation);
 		
 		/* Childs */
 		this.levelInc();
@@ -819,9 +820,9 @@ export class TranslatorPHP extends CommonTranslator {
 		string s = "";
 		
 		/* Condition */
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		s ~= "if (" ~ this.translateRun(op_code.condition) ~ "){";
-		this.endOperation();
+		this.endOperation(old_is_operation);
 		
 		/* If true */
 		this.levelInc();
@@ -836,9 +837,9 @@ export class TranslatorPHP extends CommonTranslator {
 		for (int i=0; i<op_code.if_else.count(); i++){
 			OpIfElse if_else = op_code.if_else.item(i);
 			
-			this.beginOperation();
+			bool old_is_operation = this.beginOperation();
 			string res = "else if (" ~ this.translateRun(if_else.condition) ~ "){";
-			this.endOperation();
+			this.endOperation(old_is_operation);
 			s ~= this.s(res);
 			
 			this.levelInc();
@@ -871,7 +872,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 * Return
 	 */
 	string OpReturn(OpReturn op_code){
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		
 		/* result */
 		string s = "return ";
@@ -881,7 +882,7 @@ export class TranslatorPHP extends CommonTranslator {
 		this.levelDec();
 		
 		s ~= this.s(";");
-		this.endOperation();
+		this.endOperation(old_is_operation);
 		return s;
 	}
 	
@@ -891,7 +892,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 * Throw
 	 */
 	string OpThrow(OpThrow op_code){
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		
 		/* result */
 		string s = "throw ";
@@ -899,7 +900,7 @@ export class TranslatorPHP extends CommonTranslator {
 		s ~= this.s(this.translateRun(op_code.value));
 		s ~= ";";
 		
-		this.endOperation();
+		this.endOperation(old_is_operation);
 		return s;
 	}
 	
@@ -925,10 +926,10 @@ export class TranslatorPHP extends CommonTranslator {
 		for (int i=0; i<try_catch_childs_sz; i++){
 			OpTryCatchChilds try_catch = op_code.childs.item(i);
 			
-			this.beginOperation();
+			bool old_is_operation = this.beginOperation();
 			string tp = this.translateRun(try_catch.op_type);
 			string name = this.translateRun(try_catch.op_ident);
-			this.endOperation();
+			this.endOperation(old_is_operation);
 			
 			if (tp == '$var') tp = '\\Exception';
 			
@@ -950,6 +951,11 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			is_else = "else"; 
 		}
+		if (try_catch_childs_sz > 0){
+			this.levelInc();
+			s ~= this.s("else { throw $_the_exception; }");
+			this.levelDec();
+		}
 		s ~= this.s("}");
 		
 		
@@ -965,9 +971,9 @@ export class TranslatorPHP extends CommonTranslator {
 		string s = "";
 		
 		/* Condition */
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		s ~= "while (" ~ this.translateRun(op_code.condition) ~ "){";
-		this.endOperation();
+		this.endOperation(old_is_operation);
 		
 		/* Childs */
 		this.levelInc();
@@ -1050,15 +1056,25 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		/* Static function */
 		if (op_code.isFlag("static")){
-			res ~= "static ";
+			res ~= "static function ";
+			if (this.current_function_name.count() == 0){
+				this.current_function_is_static = true;
+			}
 		}
 		else{
-			use_vars.push("$this");
+			res ~= "function ";
+			if (this.current_function_name.count() == 0){
+				this.current_function_is_static = false;
+			}	
+			
+			if (!this.current_function_is_static and this.current_function_name.count() > 0){
+				use_vars.push("$this");
+			}
 		}
 		
 		/* Function Header */
-		this.current_function_name = op_code.name;
-		this.beginOperation();
+		this.current_function_name.push(op_code.name);
+		bool old_is_operation = this.beginOperation();
 		res ~= op_code.name;
 		res ~= "(";
 		for (int i=0; i<op_code.args.count(); i++){
@@ -1074,13 +1090,14 @@ export class TranslatorPHP extends CommonTranslator {
 		}
 		res ~= ")";
 		res ~= "{";
-		this.endOperation();
-		this.levelInc();
 		
+		this.levelInc();
 		res ~= this.s("return ");
 		res ~= this.OpFunctionDeclare(op_code.return_function, true, use_vars);
 		this.levelDec();
 		res ~= this.s("}");
+		this.endOperation(old_is_operation);
+		this.current_function_name.pop();
 		
 		return res;
 	}
@@ -1104,13 +1121,19 @@ export class TranslatorPHP extends CommonTranslator {
 		/* Static function */
 		if (op_code.isFlag("static")){
 			res ~= "static function ";
+			if (this.current_function_name.count() == 0){
+				this.current_function_is_static = true;
+			}
 		}
 		else{
 			res ~= "function ";
+			if (this.current_function_name.count() == 0){
+				this.current_function_is_static = false;
+			}
 		}
 		
 		/* Header */
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		if (op_code.name == 'constructor'){
 			res ~= '__construct';
 		}
@@ -1120,7 +1143,7 @@ export class TranslatorPHP extends CommonTranslator {
 		else{
 			res ~= op_code.name;
 		}
-		this.current_function_name = op_code.name;
+		this.current_function_name.push(op_code.name);
 		res ~= "(";
 		for (int i=0; i<op_code.args.count(); i++){
 			OpAssignDeclare variable = op_code.args.item(i);
@@ -1143,14 +1166,19 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 			res ~= ")";
 		}
+		else{
+			if (this.current_function_name.count() == 2 and !this.current_function_is_static){
+				res ~= " use ($this)";
+			}
+		}
 		
 		if (this.is_interface){
 			res ~= ";";
-			this.endOperation();
+			this.endOperation(old_is_operation);
 		}
 		else{
 			res ~= "{";
-			this.endOperation();
+			this.endOperation(old_is_operation);
 			this.levelInc();
 			
 			/* Childs */
@@ -1162,6 +1190,9 @@ export class TranslatorPHP extends CommonTranslator {
 			this.levelDec();
 			res ~= this.s("}" ~ (end_semicolon ? ";" : ""));
 		}
+		
+		this.current_function_name.pop();
+		
 		return res;
 	}
 	
@@ -1174,7 +1205,7 @@ export class TranslatorPHP extends CommonTranslator {
 	string OpClassDeclareHeader(OpClassDeclare op_code){
 		string res = "";
 		
-		this.beginOperation();
+		bool old_is_operation = this.beginOperation();
 		if (this.is_interface){
 			res ~= "interface ";
 		}
@@ -1196,7 +1227,7 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 		}
 		res ~= "{";
-		this.endOperation();
+		this.endOperation(old_is_operation);
 		this.levelInc();
 		
 		return res;
@@ -1213,7 +1244,7 @@ export class TranslatorPHP extends CommonTranslator {
 		for (int i=0; i<op_code.class_variables.count(); i++){
 			OpAssignDeclare variable = op_code.class_variables.item(i);
 			if (variable.flags != null){
-				this.beginOperation();
+				bool old_is_operation = this.beginOperation();
 				
 				string s = "";
 				if (variable.isFlag("const")){
@@ -1233,7 +1264,7 @@ export class TranslatorPHP extends CommonTranslator {
 				s ~= this.OpAssignDeclare(variable);
 				s ~= ";";
 				
-				this.endOperation();
+				this.endOperation(old_is_operation);
 				res ~= this.s(s);
 			}
 		}
@@ -1437,6 +1468,15 @@ export class TranslatorPHP extends CommonTranslator {
 		return res;
 	}
 	
+	
+	
+	/**
+	 * Reset translator to default settings
+	 */
+	void resetTranslator(){
+		parent();
+		this.current_function_name = new Vector<string>();
+	}
 	
 	
 	/**

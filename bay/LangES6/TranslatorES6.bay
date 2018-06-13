@@ -883,8 +883,9 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		
 		string is_else = "";
+		int try_catch_childs_sz = op_code.childs.count();
 		s ~= "catch(_the_exception){";
-		for (int i=0; i<op_code.childs.count(); i++){
+		for (int i=0; i<try_catch_childs_sz; i++){
 			OpTryCatchChilds try_catch = op_code.childs.item(i);
 			
 			this.beginOperation();
@@ -907,6 +908,11 @@ export class TranslatorES6 extends CommonTranslator {
 			this.levelDec();
 			
 			is_else = "else"; 
+		}
+		if (try_catch_childs_sz > 0){
+			this.levelInc();
+			s ~= this.s("else { throw _the_exception; }");
+			this.levelDec();
 		}
 		s ~= this.s("}");
 		
