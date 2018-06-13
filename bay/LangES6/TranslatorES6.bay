@@ -24,7 +24,6 @@ use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
-use BayrellLang.OpCodes.OpArray;
 use BayrellLang.OpCodes.OpAssign;
 use BayrellLang.OpCodes.OpAssignDeclare;
 use BayrellLang.OpCodes.OpBitAnd;
@@ -199,16 +198,16 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	
-	
-	/** ======================== Dynamic or static ======================== */
-	
-	
 	/**
-	 * Array
+	 * OpStringItem
 	 */
-	string OpArray(OpArray op_code){
+	string OpStringItem(OpStringItem op_code){
 		return this.translateRun(op_code.value1) ~ '[' ~ this.s(this.translateRun(op_code.value2)) ~ this.s(']');
 	}
+	
+	
+	
+	/** ======================== Dynamic or static ======================== */
 	
 	
 	

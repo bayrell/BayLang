@@ -24,7 +24,6 @@ use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
-use BayrellLang.OpCodes.OpArray;
 use BayrellLang.OpCodes.OpAssign;
 use BayrellLang.OpCodes.OpAssignDeclare;
 use BayrellLang.OpCodes.OpBitAnd;
@@ -73,6 +72,7 @@ use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpStringItem;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -208,17 +208,17 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	
-	
-	/** ======================== Dynamic or static ======================== */
-	
-	
 	/**
 	 * Array
 	 */
-	string OpArray(OpArray op_code){
+	string OpStringItem(OpStringItem op_code){
 		return "mb_substr(" ~ this.translateRun(op_code.value1) ~ 
 			", " ~ this.s(this.translateRun(op_code.value2)) ~ ", 1)";
 	}
+	
+	
+	
+	/** ======================== Dynamic or static ======================== */
 	
 	
 	

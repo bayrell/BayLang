@@ -95,6 +95,7 @@ module.exports = {
 		'OpShiftRight': require("./OpCodes/OpShiftRight.js"),
 		'OpStatic': require("./OpCodes/OpStatic.js"),
 		'OpString': require("./OpCodes/OpString.js"),
+		'OpStringItem': require("./OpCodes/OpStringItem.js"),
 		'OpSub': require("./OpCodes/OpSub.js"),
 		'OpTemplateIdentifier': require("./OpCodes/OpTemplateIdentifier.js"),
 		'OpTernary': require("./OpCodes/OpTernary.js"),

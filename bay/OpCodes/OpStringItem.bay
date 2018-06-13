@@ -22,9 +22,9 @@ use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpValue2;
 
 
-export class OpArray extends OpValue2{
+export class OpStringItem extends OpValue2{
 	
-	public string op = "op_array";
+	public string op = "op_string_item";
 	
 	
 	/**
@@ -32,7 +32,7 @@ export class OpArray extends OpValue2{
 	 * @return string
 	 */
 	public string getClassName(){
-		return "BayrellLang.OpCodes.OpArray";
+		return "BayrellLang.OpCodes.OpStringItem";
 	}
 	
 }

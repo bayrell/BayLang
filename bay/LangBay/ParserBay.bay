@@ -23,7 +23,6 @@ use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
-use BayrellLang.OpCodes.OpArray;
 use BayrellLang.OpCodes.OpAssign;
 use BayrellLang.OpCodes.OpAssignDeclare;
 use BayrellLang.OpCodes.OpBitAnd;
@@ -74,6 +73,7 @@ use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpStringItem;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -377,7 +377,7 @@ export class ParserBay extends CommonParser{
 				this.matchNextToken("[");
 				ident = this.readExpression();
 				this.matchNextToken("]");
-				obj = new OpArray(obj, ident);
+				obj = new OpStringItem(obj, ident);
 			}
 			
 			else if (this.findNextToken("::") and allow_static){

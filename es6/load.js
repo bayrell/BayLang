@@ -92,6 +92,7 @@ $load.subscribe(["BayrellRtl_loaded", "BayrellParser_loaded"], function(){
 		"/assets/BayrellLang/OpCodes/OpShiftRight.js",
 		"/assets/BayrellLang/OpCodes/OpStatic.js",
 		"/assets/BayrellLang/OpCodes/OpString.js",
+		"/assets/BayrellLang/OpCodes/OpStringItem.js",
 		"/assets/BayrellLang/OpCodes/OpSub.js",
 		"/assets/BayrellLang/OpCodes/OpTemplateIdentifier.js",
 		"/assets/BayrellLang/OpCodes/OpTernary.js",

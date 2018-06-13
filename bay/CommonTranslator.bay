@@ -24,7 +24,6 @@ use BayrellRtl.Lib.rs;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
-use BayrellLang.OpCodes.OpArray;
 use BayrellLang.OpCodes.OpAssign;
 use BayrellLang.OpCodes.OpAssignDeclare;
 use BayrellLang.OpCodes.OpBitAnd;
@@ -74,6 +73,7 @@ use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpStringItem;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -219,7 +219,6 @@ export class CommonTranslator extends ContextObject{
 	
 	string OpAdd(OpAdd op_code){ return ""; }
 	string OpAnd(OpAnd op_code){ return ""; }
-	string OpArray(OpArray op_code){  return ""; }
 	string OpAssign(OpAssign op_code){  return ""; }
 	string OpAssignDeclare(OpAssignDeclare op_code){  return ""; }
 	string OpBitAnd(OpBitAnd op_code){  return ""; }
@@ -265,6 +264,7 @@ export class CommonTranslator extends ContextObject{
 	string OpShiftRight(OpShiftRight op_code){  return ""; }
 	string OpStatic(OpStatic op_code){  return ""; }
 	string OpString(OpString op_code){  return ""; }
+	string OpStringItem(OpString op_code){  return ""; }
 	string OpSub(OpSub op_code){  return ""; }
 	string OpTemplateIdentifier(OpTemplateIdentifier op_code){  return ""; }
 	string OpTernary(OpTernary op_code){  return ""; }
@@ -314,9 +314,6 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpAnd){
 			return this.OpAnd(op_code);
-		}
-		else if (op_code instanceof OpArray){
-			return this.OpArray(op_code);
 		}
 		else if (op_code instanceof OpAssign){
 			return this.OpAssign(op_code);
@@ -449,6 +446,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpString){
 			return this.OpString(op_code);
+		}
+		else if (op_code instanceof OpStringItem){
+			return this.OpStringItem(op_code);
 		}
 		else if (op_code instanceof OpSub){
 			return this.OpSub(op_code);
