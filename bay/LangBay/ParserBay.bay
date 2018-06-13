@@ -1493,7 +1493,13 @@ export class ParserBay extends CommonParser{
 		OpFunctionDeclare res = new OpFunctionDeclare();
 		
 		this.pushToken();
-		res.result_type = this.readTemplateIdentifier();
+		try{
+			res.result_type = this.readTemplateIdentifier();
+		}
+		catch (ParserError ex){
+			this.popRollbackToken();
+			return null;
+		}
 		if (read_name){
 			res.name = this.readIdentifierName();
 		}
@@ -1526,7 +1532,7 @@ export class ParserBay extends CommonParser{
 	/**
 	 * Read class body
 	 */
-	BaseOpCode readClassBody(){
+	BaseOpCode readClassBody(OpClassDeclare res){
 		
 		OpFlags flags = null;
 		BaseOpCode op_code = null;
@@ -1541,11 +1547,13 @@ export class ParserBay extends CommonParser{
 		/* Read flags */
 		flags = this.readFlags();
 		
+		
 		/* Read function */
 		op_code = this.readDeclareArrowFunction();
 		if (op_code){
 			op_code.flags = flags;
-			return op_code;
+			res.childs.push( op_code );
+			return ;
 		}
 		
 		
@@ -1558,7 +1566,7 @@ export class ParserBay extends CommonParser{
 			op_code.flags = flags;
 			res.class_variables.push(op_code);
 			this.matchNextToken(";");
-			return op_code;
+			return ;
 		}
 		
 		throw this.parserError("Unknown operator");
@@ -1608,8 +1616,7 @@ export class ParserBay extends CommonParser{
 		
 		this.matchNextToken("{");
 		while ((not this.findNextToken("}")) and (not this.isEOF())){
-			BaseOpCode op_code = this.readClassBody();
-			res.childs.push( op_code );
+			this.readClassBody(res);
 		}
 		
 		this.matchNextToken("}");
