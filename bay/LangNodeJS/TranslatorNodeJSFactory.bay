@@ -20,6 +20,7 @@ namespace BayrellLang.LangNodeJS;
 
 use BayrellRtl.CoreObject;
 use BayrellRtl.ContextObject;
+use BayrellRtl.Interfaces.ContextInterface;
 use BayrellRtl.Interfaces.FactoryInterface;
 use BayrellLang.LangNodeJS.TranslatorNodeJS;
 
@@ -30,8 +31,8 @@ class TranslatorNodeJSFactory extends ContextObject implements FactoryInterface{
 	/**
 	 * Returns new Instance
 	 */
-	public CoreObject newInstance(){
-		return new TranslatorNodeJS(this.context());
+	public CoreObject newInstance(ContextInterface context){
+		return new TranslatorNodeJS(context);
 	}
 	
 }

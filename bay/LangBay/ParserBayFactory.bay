@@ -20,6 +20,7 @@ namespace BayrellLang.LangBay;
 
 use BayrellRtl.CoreObject;
 use BayrellRtl.ContextObject;
+use BayrellRtl.Interfaces.ContextInterface;
 use BayrellRtl.Interfaces.FactoryInterface;
 use BayrellLang.LangBay.ParserBay;
 
@@ -30,8 +31,8 @@ class ParserBayFactory extends ContextObject implements FactoryInterface{
 	/**
 	 * Returns new Instance
 	 */
-	public CoreObject newInstance(){
-		return new ParserBay(this.context());
+	public CoreObject newInstance(ContextInterface context){
+		return new ParserBay(context);
 	}
 	
 }

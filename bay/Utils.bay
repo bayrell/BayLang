@@ -40,8 +40,12 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static BaseOpCode getAST(FactoryInterface parser_factory, string source){
-		CommonParser parser = parser_factory.newInstance();
+	public static BaseOpCode getAST(
+		ContextInterface context, 
+		FactoryInterface parser_factory, 
+		string source
+	){
+		CommonParser parser = parser_factory.newInstance(context);
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
 		delete parser;
@@ -57,8 +61,12 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static string translateAST(FactoryInterface translator_factory, BaseOpCode code_tree){		
-		CommonTranslator translator = translator_factory.newInstance();
+	public static string translateAST(
+		ContextInterface context,
+		FactoryInterface translator_factory, 
+		BaseOpCode code_tree
+	){		
+		CommonTranslator translator = translator_factory.newInstance(context);
 		string res = translator.translate(code_tree);
 		delete translator;
 		return res;
@@ -73,11 +81,15 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static string translate(FactoryInterface parser_factory, FactoryInterface translator_factory, 
-	string source){
+	public static string translate(
+		ContextInterface context,
+		FactoryInterface parser_factory, 
+		FactoryInterface translator_factory, 
+		string source
+	){
 		
-		CommonParser parser = parser_factory.newInstance();
-		CommonTranslator translator = translator_factory.newInstance();
+		CommonParser parser = parser_factory.newInstance(context);
+		CommonTranslator translator = translator_factory.newInstance(context);
 		
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
@@ -97,10 +109,14 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static string translateBay(FactoryInterface translator_factory, string source){
+	public static string translateBay(
+		ContextInterface context,
+		FactoryInterface translator_factory, 
+		string source
+	){
 		
-		CommonTranslator translator = translator_factory.newInstance();
-		CommonParser parser = new ParserBay(translator.context());
+		CommonTranslator translator = translator_factory.newInstance(context);
+		CommonParser parser = new ParserBay(context);
 		
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
@@ -122,36 +138,37 @@ class Utils extends ContextObject{
 	 * @string string dest_file_name
 	 */
 	public static void translateFile(
+		ContextInterface context,
 		FactoryInterface parser_factory, 
 		FactoryInterface translator_factory,
 		string src_file_name, 
 		string dest_file_name
 	){
-		
+		/*
 		#switch
 		#case ifcode NODEJS then
 		var fsModule = require('fs');
 		var shellModule = require('shelljs');
 		var content = fsModule.readFileSync(src_file_name, {encoding : 'utf8'}).toString();
 		#endswitch
-		
-		/*
-		ContextObject context = parser_factory.context();
-		FileSystemInterface file_system = context.getProvider("default:fs");
-		string content = file_system.loadFile(src_file_name);
 		*/
 		
+		FileSystemInterface file_system = context.createProvider("default:fs");
+		string content = file_system.loadFile(src_file_name);
+		
 		string res = self::translate(
+			context,
 			parser_factory,
 			translator_factory,
 			content
 		);
 		string dir = RtlUtils::dirname(dest_file_name);
 		
-		/*
+		
 		file_system.makeDir(dir);
 		file_system.saveFile(dest_file_name, res);
-		*/
+		
+		/*
 		#switch
 		#case ifcode NODEJS then
 		if (!fsModule.existsSync(dir)){
@@ -159,6 +176,7 @@ class Utils extends ContextObject{
 		}
 		fsModule.writeFileSync(dest_file_name, res, {encoding : 'utf8'});
 		#endswitch
+		*/
 	}
 	
 }

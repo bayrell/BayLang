@@ -26,6 +26,7 @@ export class OpCall extends BaseOpCode{
 	public string op = "op_call";
 	public BaseOpCode value = null;
 	public Vector<BaseOpCode> args = null;
+	public bool is_await = false;
 	
 	
 	

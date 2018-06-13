@@ -102,6 +102,7 @@ $load.subscribe(["BayrellRtl_loaded", "BayrellParser_loaded"], function(){
 		"/assets/BayrellLang/OpCodes/OpWhile.js",
 	])
 	.load([
+		"/assets/BayrellLang/OpCodes/OpFunctionArrowDeclare.js",
 		"/assets/BayrellLang/OpCodes/OpInterfaceDeclare.js",
 		"/assets/BayrellLang/LangNodeJS/TranslatorNodeJS.js",
 		"/assets/BayrellLang/LangNodeJS/TranslatorNodeJSFactory.js",

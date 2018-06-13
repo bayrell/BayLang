@@ -49,6 +49,7 @@ module.exports = {
 		'OpCodes/OpDynamic',
 		'OpCodes/OpFlags',
 		'OpCodes/OpFor',
+		'OpCodes/OpFunctionArrowDeclare',
 		'OpCodes/OpFunctionDeclare',
 		'OpCodes/OpHexNumber',
 		'OpCodes/OpIdentifier',

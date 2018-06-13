@@ -15,24 +15,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+ 
+namespace BayrellLang.OpCodes;
 
-namespace BayrellLang.LangPHP;
-
-use BayrellRtl.CoreObject;
-use BayrellRtl.ContextObject;
-use BayrellRtl.Interfaces.ContextInterface;
-use BayrellRtl.Interfaces.FactoryInterface;
-use BayrellLang.LangPHP.TranslatorPHP;
+use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpFunctionDeclare;
+use BayrellLang.OpCodes.OpFlags;
 
 
-class TranslatorPHPFactory extends ContextObject implements FactoryInterface{
+export class OpFunctionArrowDeclare extends OpFunctionDeclare{
+	
+	public cloneable string op = "op_arrow_function";
+	public cloneable OpFunctionDeclare return_function = null;
 	
 	
 	/**
-	 * Returns new Instance
+	 * Returns classname of the object
+	 * @return string
 	 */
-	public CoreObject newInstance(ContextInterface context){
-		return new TranslatorPHP(context);
+	public string getClassName(){
+		return "BayrellLang.OpCodes.OpFunctionArrowDeclare";
 	}
+	
 	
 }

@@ -20,6 +20,7 @@ namespace BayrellLang.LangES6;
 
 use BayrellRtl.CoreObject;
 use BayrellRtl.ContextObject;
+use BayrellRtl.Interfaces.ContextInterface;
 use BayrellRtl.Interfaces.FactoryInterface;
 use BayrellLang.LangES6.TranslatorES6;
 
@@ -30,8 +31,8 @@ class TranslatorES6Factory extends ContextObject implements FactoryInterface{
 	/**
 	 * Returns new Instance
 	 */
-	public CoreObject newInstance(){
-		return new TranslatorES6(this.context());
+	public CoreObject newInstance(ContextInterface context){
+		return new TranslatorES6(context);
 	}
 	
 }

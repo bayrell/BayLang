@@ -46,6 +46,7 @@ use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
 use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionArrowDeclare;
 use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
@@ -975,27 +976,20 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
-	 * Function declare
+	 * Function header
 	 */
-	string OpFunctionDeclare(OpFunctionDeclare op_code){
+	string OpFunctionDeclareHeader(OpFunctionDeclare op_code){
+		
 		string res = "";
 		string ch = "";
-		string s = "";
-		
-		/* Skip if declare function */
-		if (op_code.isFlag("declare")){
-			return "";
-		}
 		
 		/* Static function */
 		if (op_code.isFlag("static")){
 			res ~= "static ";
 		}
 		
-		/* Header */
-		this.beginOperation();
+		/* Function Header */
 		res ~= op_code.name;
-		this.current_function_name = op_code.name;
 		res ~= "(";
 		for (int i=0; i<op_code.args.count(); i++){
 			OpAssignDeclare variable = op_code.args.item(i);
@@ -1005,9 +999,65 @@ export class TranslatorES6 extends CommonTranslator {
 			ch = ", ";
 		}
 		res ~= ")";
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Function arrow declare
+	 */
+	string OpFunctionArrowDeclare(OpFunctionArrowDeclare op_code){
+	
+		string res = "";
+		
+		/* Skip if declare function */
+		if (op_code.isFlag("declare")){
+			return "";
+		}
+		
+		/* Function Header */
+		this.current_function_name = op_code.name;
+		this.beginOperation();
+		res ~= this.OpFunctionDeclareHeader(op_code);
 		res ~= "{";
 		this.endOperation();
 		this.levelInc();
+		
+		res ~= this.s("return function ");
+		res ~= this.OpFunctionDeclare(op_code.return_function);
+		
+		this.levelDec();
+		res ~= this.s("}");
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Function declare
+	 */
+	string OpFunctionDeclare(OpFunctionDeclare op_code){
+		
+		string res = "";
+		string s = "";
+		
+		/* Skip if declare function */
+		if (op_code.isFlag("declare")){
+			return "";
+		}
+		
+		
+		/* Function Header */
+		this.current_function_name = op_code.name;
+		this.beginOperation();
+		res ~= this.OpFunctionDeclareHeader(op_code);
+		res ~= "{";
+		this.endOperation();
+		this.levelInc();
+		
 		
 		/* Default variables */
 		for (int i=0; i<op_code.args.count(); i++){
@@ -1262,7 +1312,10 @@ export class TranslatorES6 extends CommonTranslator {
 		/* Class functions */
 		for (int i=0; i<op_code.childs.count(); i++){
 			BaseOpCode op_code2 = op_code.childs.item(i);
-			if (op_code2 instanceof OpFunctionDeclare){
+			if (op_code2 instanceof OpFunctionArrowDeclare){
+				res ~= this.s(this.OpFunctionArrowDeclare(op_code2));
+			}
+			else if (op_code2 instanceof OpFunctionDeclare){
 				res ~= this.s(this.OpFunctionDeclare(op_code2));
 			}
 			else if (op_code2 instanceof OpPreprocessorSwitch){

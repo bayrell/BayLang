@@ -46,6 +46,7 @@ use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
 use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionArrowDeclare;
 use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
@@ -1012,10 +1013,65 @@ export class TranslatorPHP extends CommonTranslator {
 	/** ============================= Classes ============================= */
 	
 	
+	
+	/**
+	 * Function arrow declare
+	 */
+	string OpFunctionArrowDeclare(OpFunctionArrowDeclare op_code){
+	
+		string res = "";
+		string ch = "";
+		Vector<string> use_vars = new Vector();
+		
+		/* Skip if declare function */
+		if (op_code.isFlag("declare")){
+			return "";
+		}
+		
+		/* Static function */
+		if (op_code.isFlag("static")){
+			res ~= "static ";
+		}
+		else{
+			use_vars.push("$this");
+		}
+		
+		/* Function Header */
+		this.current_function_name = op_code.name;
+		this.beginOperation();
+		res ~= op_code.name;
+		res ~= "(";
+		for (int i=0; i<op_code.args.count(); i++){
+			OpAssignDeclare variable = op_code.args.item(i);
+			this.pushOneLine(true);
+			res ~= ch ~ "$" ~ variable.name;
+			if (variable.value != null){
+				res ~= " = " ~ this.translateRun(variable.value);
+			}
+			this.popOneLine();
+			use_vars.push("$" ~ variable.name);
+			ch = ", ";
+		}
+		res ~= ")";
+		res ~= "{";
+		this.endOperation();
+		this.levelInc();
+		
+		res ~= this.s("return ");
+		res ~= this.OpFunctionDeclare(op_code.return_function, true, use_vars);
+		this.levelDec();
+		res ~= this.s("}");
+		
+		return res;
+	}
+	
+	
+	
 	/**
 	 * Function declare
 	 */
-	string OpFunctionDeclare(OpFunctionDeclare op_code){
+	string OpFunctionDeclare(OpFunctionDeclare op_code, bool end_semicolon = false, Vector<string> use_vars = null){
+		
 		string res = "";
 		string ch = "";
 		string s = "";
@@ -1058,6 +1114,16 @@ export class TranslatorPHP extends CommonTranslator {
 		}
 		res ~= ")";
 		
+		if (use_vars != null){
+			ch = "";
+			res ~= " use (";
+			for (int i=0; i<use_vars.count(); i++){
+				res ~= ch ~ use_vars.item(i);
+				ch = ", ";
+			}
+			res ~= ")";
+		}
+		
 		if (this.is_interface){
 			res ~= ";";
 			this.endOperation();
@@ -1074,7 +1140,7 @@ export class TranslatorPHP extends CommonTranslator {
 				}
 			}
 			this.levelDec();
-			res ~= this.s("}");
+			res ~= this.s("}" ~ (end_semicolon ? ";" : ""));
 		}
 		return res;
 	}
@@ -1282,7 +1348,10 @@ export class TranslatorPHP extends CommonTranslator {
 		/* Class functions */
 		for (int i=0; i<op_code.childs.count(); i++){
 			BaseOpCode op_code2 = op_code.childs.item(i);
-			if (op_code2 instanceof OpFunctionDeclare){
+			if (op_code2 instanceof OpFunctionArrowDeclare){
+				res ~= this.s(this.OpFunctionArrowDeclare(op_code2));
+			}
+			else if (op_code2 instanceof OpFunctionDeclare){
 				res ~= this.s(this.OpFunctionDeclare(op_code2));
 			}
 			else if (op_code2 instanceof OpPreprocessorSwitch){

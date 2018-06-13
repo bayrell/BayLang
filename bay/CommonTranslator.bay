@@ -46,6 +46,7 @@ use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
 use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionArrowDeclare;
 use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
@@ -237,6 +238,7 @@ export class CommonTranslator extends ContextObject{
 	string OpDynamic(OpDynamic op_code){  return ""; }
 	string OpFlags(OpFlags op_code){  return ""; }
 	string OpFor(OpFor op_code){  return ""; }
+	string OpFunctionArrowDeclare(OpFunctionArrowDeclare op_code){  return ""; }
 	string OpFunctionDeclare(OpFunctionDeclare op_code){  return ""; }
 	string OpHexNumber(OpHexNumber op_code){  return ""; }
 	string OpIdentifier(OpIdentifier op_code){  return ""; }
@@ -367,6 +369,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpFor){
 			return this.OpFor(op_code);
+		}
+		else if (op_code instanceof OpFunctionArrowDeclare){
+			return this.OpFunctionArrowDeclare(op_code);
 		}
 		else if (op_code instanceof OpFunctionDeclare){
 			return this.OpFunctionDeclare(op_code);

@@ -68,6 +68,7 @@ module.exports = {
 		'OpDynamic': require("./OpCodes/OpDynamic.js"),
 		'OpFlags': require("./OpCodes/OpFlags.js"),
 		'OpFor': require("./OpCodes/OpFor.js"),
+		'OpFunctionArrowDeclare': require("./OpCodes/OpFunctionArrowDeclare.js"),
 		'OpFunctionDeclare': require("./OpCodes/OpFunctionDeclare.js"),
 		'OpHexNumber': require("./OpCodes/OpHexNumber.js"),
 		'OpIdentifier': require("./OpCodes/OpIdentifier.js"),

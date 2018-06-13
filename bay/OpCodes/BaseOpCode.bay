@@ -24,7 +24,7 @@ use BayrellRtl.Interfaces.SerializeInterface;
 
 export class BaseOpCode extends CoreObject implements SerializeInterface{
 	
-	public string op = "";
+	public cloneable string op = "";
 	
 	
 	/**

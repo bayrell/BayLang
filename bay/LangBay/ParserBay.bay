@@ -45,6 +45,7 @@ use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
 use BayrellLang.OpCodes.OpFor;
+use BayrellLang.OpCodes.OpFunctionArrowDeclare;
 use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
 use BayrellLang.OpCodes.OpIdentifier;
@@ -316,9 +317,11 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readCallAwait(){
 		this.matchNextToken("await");
-		BaseOpCode ident = this.readCallDynamic(true, true, true, true);
+		BaseOpCode obj = this.readCallDynamic(true, true, true, false);
 		Vector<BaseOpCode> v = this.readCallBody();
-		return new OpCallAwait(ident, v);
+		obj = new OpCall(obj, v);
+		obj.is_await = true;
+		return obj;
 	}
 	
 	
@@ -1242,6 +1245,11 @@ export class ParserBay extends CommonParser{
 		else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
 			return new OpComment(this.readAnyNextToken().token);
 		}
+		else if (this.findNextToken("await")){
+			res = this.readCallAwait();
+			this.matchNextToken(";");
+			return res;
+		}
 		else if (this.findNextToken("if")){
 			return this.readOperatorIf();
 		}
@@ -1396,22 +1404,11 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read operator namespace
+	 * Read declare class arguments
 	 * @return BaseOpCode
 	 */
-	OpFunctionDeclare readDeclareClassFunction(){
-		OpFunctionDeclare res = new OpFunctionDeclare();
-		
-		this.pushToken();
-		res.result_type = this.readTemplateIdentifier();
-		res.name = this.readIdentifierName();
-		
-		/* If not function */
-		if (this.lookNextToken() != "("){
-			this.popReturnToken();
-			return null;
-		}
-		
+	Vector<OpAssignDeclare> readFunctionsArguments(){
+		Vector<OpAssignDeclare> args = new Vector<OpAssignDeclare>();
 		
 		this.matchNextToken("(");
 		while (not this.findNextToken(")") and not this.isEOF()){
@@ -1421,7 +1418,7 @@ export class ParserBay extends CommonParser{
 				throw this.parserError("Assign are not alowed here");
 			}
 			else if (op_code instanceof OpAssignDeclare){
-				res.args.push(op_code);
+				args.push(op_code);
 			}
 			
 			if (this.findNextToken(",")){
@@ -1431,6 +1428,33 @@ export class ParserBay extends CommonParser{
 			break;
 		}
 		this.matchNextToken(")");
+		
+		return args;
+	}
+	
+	
+	
+	/**
+	 * Read declare class function
+	 * @return BaseOpCode
+	 */
+	OpFunctionDeclare readDeclareFunction(bool read_name = true){
+		OpFunctionDeclare res = new OpFunctionDeclare();
+		
+		this.pushToken();
+		res.result_type = this.readTemplateIdentifier();
+		if (read_name){
+			res.name = this.readIdentifierName();
+		}
+		
+		/* If not function */
+		if (this.lookNextToken() != "("){
+			this.popReturnToken();
+			return null;
+		}
+		
+		/* Read functions arguments */
+		res.args = this.readFunctionsArguments();
 		this.popToken();
 		
 		
@@ -1447,13 +1471,67 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read operator namespace
-	 * @return BaseOpCode
+	 * Read class body
 	 */
-	OpClassDeclare readClassBody(OpClassDeclare res){
+	BaseOpCode readClassBody(){
 		
 		OpFlags flags = null;
 		BaseOpCode op_code = null;
+		
+		if (this.findNextTokenPreprocessor()){
+			return this.readPreprocessor();
+		}
+		else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
+			return new OpComment(this.readAnyNextToken().token);
+		}
+		
+		
+		/* Read flags */
+		flags = this.readFlags();
+		
+		
+		/* Read arrow function */
+		if (this.findNextToken("func")){
+			this.matchNextToken("func");
+			op_code = new OpFunctionArrowDeclare();
+			op_code.name = this.readIdentifierName();
+			op_code.args = this.readFunctionsArguments();
+			op_code.flags = flags;
+			this.matchNextToken("=>");
+			op_code.return_function = this.readDeclareFunction(false);
+			return op_code;
+		}
+		
+		
+		/* Read function */
+		op_code = this.readDeclareFunction(true);
+		if (op_code){
+			op_code.flags = flags;
+			return op_code;
+		}
+		
+		op_code = this.readOperatorAssign();
+		if (op_code instanceof OpAssign){
+			throw this.parserError("Assign are not alowed here");
+		}
+		else if (op_code instanceof OpAssignDeclare){
+			op_code.flags = flags;
+			res.class_variables.push(op_code);
+			this.matchNextToken(";");
+			return op_code;
+		}
+		
+		throw this.parserError("Unknown operator");
+	}
+	
+	
+	
+	/**
+	 * Read class header
+	 * @return BaseOpCode
+	 */
+	OpClassDeclare readClassHead(OpClassDeclare res){
+		
 		res.class_name = this.readIdentifierName();
 		
 		if (this.findNextToken("<")){
@@ -1490,36 +1568,8 @@ export class ParserBay extends CommonParser{
 		
 		this.matchNextToken("{");
 		while ((not this.findNextToken("}")) and (not this.isEOF())){
-			
-			if (this.findNextTokenPreprocessor()){
-				res.childs.push(this.readPreprocessor());
-				continue;
-			}
-			else if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
-				res.childs.push(new OpComment(this.readAnyNextToken().token));
-				continue;
-			}
-			
-			flags = this.readFlags();
-			op_code = this.readDeclareClassFunction();
-			if (op_code){
-				op_code.flags = flags;
-				res.childs.push(op_code);
-				continue;
-			}
-			
-			op_code = this.readOperatorAssign();
-			if (op_code instanceof OpAssign){
-				throw this.parserError("Assign are not alowed here");
-			}
-			else if (op_code instanceof OpAssignDeclare){
-				op_code.flags = flags;
-				res.class_variables.push(op_code);
-				this.matchNextToken(";");
-				continue;
-			}
-			
-			throw this.parserError("Unknown operator");
+			BaseOpCode op_code = this.readClassBody();
+			res.childs.push( op_code );
 		}
 		
 		this.matchNextToken("}");
@@ -1534,7 +1584,7 @@ export class ParserBay extends CommonParser{
 	OpClassDeclare readDeclareClass(OpFlags class_flags){
 		OpClassDeclare res = new OpClassDeclare();
 		this.matchNextToken("class");
-		this.readClassBody(res);
+		this.readClassHead(res);
 		res.flags = class_flags;
 		return res;
 	}
@@ -1548,7 +1598,7 @@ export class ParserBay extends CommonParser{
 	OpInterfaceDeclare readDeclareInterface(OpFlags class_flags){
 		OpInterfaceDeclare res = new OpInterfaceDeclare();
 		this.matchNextToken("interface");
-		this.readClassBody(res);
+		this.readClassHead(res);
 		res.flags = class_flags;
 		return res;
 	}
