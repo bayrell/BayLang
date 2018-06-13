@@ -90,7 +90,7 @@ export class TranslatorES6 extends CommonTranslator {
 	Map<string, string> modules = null;
 	string current_namespace = "";
 	string current_class_name = "";
-	string current_function_name = "";
+	Vector<string> current_function_name = null;
 	string current_module_name = "";
 	
 	
@@ -510,8 +510,8 @@ export class TranslatorES6 extends CommonTranslator {
 		/* Function name */
 		bool f = true;
 		if (op_code.value instanceof OpIdentifier){
-			if (op_code.value.value == 'parent' and this.current_function_name != "constructor"){
-				s ~= "super." ~ this.current_function_name;
+			if (op_code.value.value == 'parent' and this.current_function_name.get(0) != "constructor"){
+				s ~= "super." ~ this.current_function_name.get(0);
 				f = false;
 			}
 		}
@@ -1002,6 +1002,9 @@ export class TranslatorES6 extends CommonTranslator {
 		if (op_code.isFlag("static")){
 			res ~= "static ";
 		}
+		else if (this.current_function_name.count() > 1){
+			res ~= "function ";
+		}
 		
 		/* Function Header */
 		res ~= op_code.name;
@@ -1033,18 +1036,19 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		/* Function Header */
-		this.current_function_name = op_code.name;
+		this.current_function_name.push(op_code.name);
 		this.beginOperation();
 		res ~= this.OpFunctionDeclareHeader(op_code);
 		res ~= "{";
 		this.endOperation();
 		this.levelInc();
 		
-		res ~= this.s("return function ");
+		res ~= this.s("return ");
 		res ~= this.OpFunctionDeclare(op_code.return_function);
 		
 		this.levelDec();
 		res ~= this.s("}");
+		this.current_function_name.pop();
 		
 		return res;
 	}
@@ -1066,7 +1070,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		
 		/* Function Header */
-		this.current_function_name = op_code.name;
+		this.current_function_name.push(op_code.name);
 		this.beginOperation();
 		res ~= this.OpFunctionDeclareHeader(op_code);
 		res ~= "{";
@@ -1093,6 +1097,7 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		this.levelDec();
 		res ~= this.s("}");
+		this.current_function_name.pop();
 		
 		return res;
 	}
@@ -1393,6 +1398,16 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Reset translator to default settings
+	 */
+	void resetTranslator(){
+		parent();
+		this.current_function_name = new Vector<string>();
 	}
 	
 	

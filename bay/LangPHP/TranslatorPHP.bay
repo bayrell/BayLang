@@ -1479,6 +1479,7 @@ export class TranslatorPHP extends CommonTranslator {
 	}
 	
 	
+	
 	/**
 	 * Translate to language
 	 * @param BaseOpCode op_code - Abstract syntax tree

@@ -1539,6 +1539,11 @@ export class ParserBay extends CommonParser{
 	 */
 	BaseOpCode readClassBody(OpClassDeclare res){
 		
+		if (this.findNextToken(";")){
+			this.matchNextToken(';');
+			return;
+		}
+		
 		OpFlags flags = null;
 		BaseOpCode op_code = null;
 		
