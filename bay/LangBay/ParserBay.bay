@@ -53,6 +53,7 @@ use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
 use BayrellLang.OpCodes.OpInterfaceDeclare;
 use BayrellLang.OpCodes.OpMap;
+use BayrellLang.OpCodes.OpMethod;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -339,19 +340,13 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read new or await function
+	 * Read method
+	 * @return BaseOpCode
 	 */
-	BaseOpCode readNewAwait(){
-		if (this.findNextToken('new')){
-			return this.readNewInstance();
-		}
-		else if (this.findNextToken('await')){
-			return this.readCallAwait();
-		}
-		else if (this.findNextToken('clone')){
-			return this.readClone();
-		}
-		return this.readGroupExpression();
+	BaseOpCode readMethod(){
+		this.matchNextToken("method");
+		BaseOpCode value = this.readCallDynamic(true, false, true, false);
+		return new OpMethod(value);
 	}
 	
 	
@@ -496,6 +491,9 @@ export class ParserBay extends CommonParser{
 		}
 		else if (this.findNextToken('clone')){
 			return this.readClone();
+		}
+		else if (this.findNextToken('method')){
+			return this.readMethod();
 		}
 		else if (this.findNextToken('[')){
 			return this.readVector();

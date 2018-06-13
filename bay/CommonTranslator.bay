@@ -54,6 +54,7 @@ use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
 use BayrellLang.OpCodes.OpInterfaceDeclare;
 use BayrellLang.OpCodes.OpMap;
+use BayrellLang.OpCodes.OpMethod;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -244,6 +245,7 @@ export class CommonTranslator extends ContextObject{
 	string OpIdentifier(OpIdentifier op_code){  return ""; }
 	string OpIf(OpIf op_code){  return ""; }
 	string OpInterfaceDeclare(OpInterfaceDeclare op_code){  return ""; }
+	string OpMethod(OpMethod op_code){  return ""; }
 	string OpMod(OpMod op_code){  return ""; }
 	string OpMult(OpMult op_code){  return ""; }
 	string OpNamespace(OpNamespace op_code){  return ""; }
@@ -384,6 +386,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpMap){
 			return this.OpMap(op_code);
+		}
+		else if (op_code instanceof OpMethod){
+			return this.OpMethod(op_code);
 		}
 		else if (op_code instanceof OpIf){
 			return this.OpIf(op_code);

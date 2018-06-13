@@ -71,6 +71,7 @@ $load.subscribe(["BayrellRtl_loaded", "BayrellParser_loaded"], function(){
 		"/assets/BayrellLang/OpCodes/OpIf.js",
 		"/assets/BayrellLang/OpCodes/OpIfElse.js",
 		"/assets/BayrellLang/OpCodes/OpMap.js",
+		"/assets/BayrellLang/OpCodes/OpMethod.js",
 		"/assets/BayrellLang/OpCodes/OpMod.js",
 		"/assets/BayrellLang/OpCodes/OpMult.js",
 		"/assets/BayrellLang/OpCodes/OpNamespace.js",

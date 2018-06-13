@@ -54,6 +54,7 @@ use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
 use BayrellLang.OpCodes.OpInterfaceDeclare;
 use BayrellLang.OpCodes.OpMap;
+use BayrellLang.OpCodes.OpMethod;
 use BayrellLang.OpCodes.OpMod;
 use BayrellLang.OpCodes.OpMult;
 use BayrellLang.OpCodes.OpNamespace;
@@ -617,6 +618,15 @@ export class TranslatorES6 extends CommonTranslator {
 		this.current_opcode_level = this.max_opcode_level;
 		
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Clone
+	 */
+	string OpMethod(OpMethod op_code){
+		return this.translateRun(op_code.value);
 	}
 	
 	

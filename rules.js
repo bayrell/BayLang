@@ -57,6 +57,7 @@ module.exports = {
 		'OpCodes/OpIfElse',
 		'OpCodes/OpInterfaceDeclare',
 		'OpCodes/OpMap',
+		'OpCodes/OpMethod',
 		'OpCodes/OpMod',
 		'OpCodes/OpMult',
 		'OpCodes/OpNamespace',

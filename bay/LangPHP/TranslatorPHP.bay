@@ -645,6 +645,26 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	
+	/**
+	 * Method
+	 */
+	string OpMethod(OpMethod op_code){
+		
+		if (op_code.value instanceof OpDynamic){
+			string name = op_code.value.name;
+			string obj = this.translateRun(op_code.value.value);
+			return "new \\BayrellRtl\\Types\\CallFunc("~obj~", "~this.convertString(name)~")";
+		}
+		else if (op_code.value instanceof OpStatic){
+			string name = op_code.value.name;
+			string obj = this.translateRun(op_code.value.value);
+			return "new \\BayrellRtl\\Types\\CallFunc("~obj~"::class, "~this.convertString(name)~")";
+		}
+		
+		return this.translateRun(op_code.value);
+	}
+	
+	
 	/** ============================ Operators ============================ */
 	
 	
