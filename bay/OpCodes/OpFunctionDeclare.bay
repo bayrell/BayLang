@@ -29,6 +29,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 	public BaseOpCode result_type = null;
 	public Vector<OpAssignDeclare> args = null;
 	public Vector<BaseOpCode> childs = null;
+	public Vector<string> use_variables = null;
 	public OpFlags flags = null;
 	
 	
@@ -62,6 +63,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 	void constructor(){
 		parent();
 		this.args = new Vector<OpAssignDeclare>();
+		this.use_variables = new Vector<string>();
 	}
 	
 	

@@ -1518,6 +1518,24 @@ export class ParserBay extends CommonParser{
 		res.args = this.readFunctionsArguments();
 		
 		
+		/* Read use variables*/
+		if (this.lookNextToken() == "use"){
+			this.matchNextToken("use");
+			this.matchNextToken("(");
+			while (this.lookNextToken() != ")" and not this.isEOF()){
+				string name = this.readIdentifierName();
+				res.use_variables.push(name);
+				if (this.lookNextToken() == ","){
+					this.matchNextToken(",");
+				}
+				else{
+					break;
+				}
+			}
+			this.matchNextToken(")");
+		}
+		
+		
 		/* Read body of the function */
 		if (is_declare_function){
 			this.matchNextToken(";");

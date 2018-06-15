@@ -1210,7 +1210,7 @@ export class TranslatorES6 extends CommonTranslator {
 				if (class_variables != null){
 					for (int i=0; i<class_variables.count(); i++){
 						OpAssignDeclare variable = class_variables.item(i);
-						if (variable.flags != null and variable.flags.p_static == false){
+						if (!variable.isFlag('static')){
 							this.beginOperation();
 							s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 							this.endOperation();
