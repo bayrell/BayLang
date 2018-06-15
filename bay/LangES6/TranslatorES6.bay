@@ -1042,10 +1042,12 @@ export class TranslatorES6 extends CommonTranslator {
 		res ~= "{";
 		this.endOperation();
 		this.levelInc();
+		this.pushOneLine(false);
 		
 		res ~= this.s("return ");
 		res ~= this.OpFunctionDeclare(op_code.return_function);
 		
+		this.popOneLine(false);
 		this.levelDec();
 		res ~= this.s("}");
 		this.current_function_name.pop();
@@ -1071,10 +1073,10 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Function Header */
 		this.current_function_name.push(op_code.name);
-		this.beginOperation();
 		res ~= this.OpFunctionDeclareHeader(op_code);
 		res ~= "{";
-		this.endOperation();
+		this.setOperation(false);
+		this.pushOneLine(false);
 		this.levelInc();
 		
 		
@@ -1095,8 +1097,11 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s(this.translateRun(op_code.childs.item(i)));
 			}
 		}
+		
+		
 		this.levelDec();
 		res ~= this.s("}");
+		this.popOneLine();
 		this.current_function_name.pop();
 		
 		return res;

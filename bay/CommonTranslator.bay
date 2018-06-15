@@ -179,6 +179,15 @@ export class CommonTranslator extends ContextObject{
 	
 	
 	/**
+	 * Set operation
+	 */
+	void setOperation(bool is_operation = false){
+		this.is_operation = is_operation;
+	}
+	
+	
+	
+	/**
 	 * Output operation
 	 */
 	string op(BaseOpCode op_code, string op, int opcode_level){
