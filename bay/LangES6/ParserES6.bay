@@ -16,34 +16,11 @@
  *  limitations under the License.
  */
  
-namespace bayrell_lang;
-use bayrell_rtl import rtl, BayrellTokenParser;
-use .BayrellCode import BayrellCode;
+namespace BayrellLang.LangES6;
 
 
-export class BayrellParserES6 extends BayrellTokenParser{
+class BayrellParserES6{
 	
-	
-	string getClassName(){
-		return "bayrell_lang.BayrellParserES6";
-	}
-	
-	void constructor (){
-		this.mathSemicolon = true;
-		
-		this.pair_tokens = [
-			"&&", "||", ">>", "<<", "->", 
-			"++", "--", "+=", "-=", "*=", "/=",
-		];
-		this.string_tokens = ['"', "'"];
-		this.comment_line_tokens = ['//', ];
-		this.comment_pair_tokens = {
-			'/*!': '*/',
-			'/**': '*/',
-			'/*': '*/',
-		};
-		this.comment_pair_tokens_sort = ['/*!', '/**', '/*']; /*! x */
-	}
 	
 	
 }
