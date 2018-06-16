@@ -867,15 +867,12 @@ export class ParserBay extends CommonParser{
 		this.pushToken();
 		
 		BaseOpCode res = null;
-		try{
-			res = this.readDeclareArrowFunction(false);
-			if (res != null){
-				this.popToken();
-				return res;
-			}
+		res = this.readDeclareArrowFunction(false);
+		if (res != null){
+			this.popToken();
+			return res;
 		}
-		catch (ParserError ex){
-		}
+		
 		
 		this.popRollbackToken();
 		
@@ -1511,11 +1508,16 @@ export class ParserBay extends CommonParser{
 			this.popRollbackToken();
 			return null;
 		}
-		this.popToken();
 		
 		
 		/* Read functions arguments */
-		res.args = this.readFunctionsArguments();
+		try{
+			res.args = this.readFunctionsArguments();
+		}
+		catch (ParserError ex){
+			this.popRollbackToken();
+			return null;
+		}
 		
 		
 		/* Read use variables*/
@@ -1541,12 +1543,16 @@ export class ParserBay extends CommonParser{
 			this.matchNextToken(";");
 		}
 		else{
+			if (this.lookNextToken() != "{"){
+				this.popRollbackToken();
+				return null;
+			}
 			this.matchNextToken("{");
 			res.childs = this.readOperatorsBlock();
 			this.matchNextToken("}");
 		}
 		
-		
+		this.popToken();
 		return res;
 	}
 	
