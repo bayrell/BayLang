@@ -23,10 +23,10 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpCompare extends BaseOpCode{
 	
-	public string op = "op_compare";
-	public string condition = "";
-	public BaseOpCode value1 = null;
-	public BaseOpCode value2 = null;
+	public serializable string op = "op_compare";
+	public serializable string condition = "";
+	public serializable BaseOpCode value1 = null;
+	public serializable BaseOpCode value2 = null;
 	
 	
 	/**
@@ -59,59 +59,4 @@ export class OpCompare extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("condition");
-		names.push("value1");
-		names.push("value2");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'condition') return this.condition;
-		if (variable_name == 'value1') return this.value1;
-		if (variable_name == 'value2') return this.value2;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'condition') this.condition = value;
-		else if (variable_name == 'value1') this.value1 = value;
-		else if (variable_name == 'value2') this.value2 = value;
-		else
-			parent::assignValue(variable_name, value);
-	}
-	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpCompare){
-			this.condition = clone obj.condition;
-			this.value1 = clone obj.value1;
-			this.value2 = clone obj.value2;
-		}
-		parent::assign(obj);
-	}
 }

@@ -24,14 +24,14 @@ use BayrellLang.OpCodes.OpFlags;
 
 export class OpClassDeclare extends BaseOpCode{
 	
-	public string op = "op_class";
-	public string class_name = "";
-	public BaseOpCode class_extends = "";
-	public Vector<string> class_implements = null;
-	public Vector<OpAssignDeclare> class_variables = null;
-	public Vector<BaseOpCode> childs = null;
-	public Vector<BaseOpCode> class_template = null;
-	public OpFlags flags = null;
+	public serializable string op = "op_class";
+	public serializable string class_name = "";
+	public serializable BaseOpCode class_extends = "";
+	public serializable Vector<string> class_implements = null;
+	public serializable Vector<OpAssignDeclare> class_variables = null;
+	public serializable Vector<BaseOpCode> childs = null;
+	public serializable Vector<BaseOpCode> class_template = null;
+	public serializable OpFlags flags = null;
 	
 	
 	
@@ -78,57 +78,5 @@ export class OpClassDeclare extends BaseOpCode{
 		parent();
 	}
 	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("class_name");
-		names.push("class_template");
-		names.push("class_extends");
-		names.push("class_implements");
-		names.push("class_variables");
-		names.push("childs");
-		names.push("flags");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'class_name') return this.class_name;
-		else if (variable_name == 'class_extends') return this.class_extends;
-		else if (variable_name == 'class_implements') return this.class_implements;
-		else if (variable_name == 'class_variables') return this.class_variables;
-		else if (variable_name == 'class_template') return this.class_template;
-		else if (variable_name == 'childs') return this.childs;
-		else if (variable_name == 'flags') return this.flags;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'class_name') this.class_name = value;
-		else if (variable_name == 'class_extends') this.class_extends = value;
-		else if (variable_name == 'class_implements') this.class_implements = value;
-		else if (variable_name == 'class_variables') this.class_variables = value;
-		else if (variable_name == 'class_template') this.class_template = value;
-		else if (variable_name == 'childs') this.childs = value;
-		else if (variable_name == 'flags') this.flags = value;
-		else parent::assignValue(variable_name, value);
-	}
 	
 }

@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValueString;
 
 export class OpHexNumber extends OpValueString{
 	
-	public string op = "op_hex_number";
+	public serializable string op = "op_hex_number";
 	
 	
 	/**

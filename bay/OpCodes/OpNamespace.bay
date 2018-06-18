@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValueString;
 
 export class OpNamespace extends OpValueString{
 	
-	public string op = "op_namespace";
+	public serializable string op = "op_namespace";
 	
 	
 	/**

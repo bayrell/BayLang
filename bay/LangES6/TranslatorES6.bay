@@ -1260,17 +1260,20 @@ export class TranslatorES6 extends CommonTranslator {
 			
 			/* If has serializable variables */
 			if (has_serializable){
+				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
 				res ~= this.s("assignValue(variable_name, value){");
 				this.levelInc();
+				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable")){
 						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"this." ~ variable.name ~ " = value;";
-						if (i == 0) res ~= this.s(take_value_s);
+						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
 						else res ~= this.s("else " ~ take_value_s);
+						class_variables_serializable_count++;
 					}
 				}
 				res ~= this.s("else super.assignValue(variable_name, value);");
@@ -1282,13 +1285,15 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("takeValue(variable_name, default_value){");
 				this.levelInc();
 				res ~= this.s("if (default_value == undefined) default_value = null;");
+				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable")){
 						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"return this." ~ variable.name ~ ";";
-						if (i == 0) res ~= this.s(take_value_s);
+						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
 						else res ~= this.s("else " ~ take_value_s);
+						class_variables_serializable_count++;
 					}
 				}
 				res ~= this.s("return super.takeValue(variable_name, default_value);");

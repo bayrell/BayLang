@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValue1;
 
 export class OpNot extends OpValue1{
 	
-	public string op = "op_not";
+	public serializable string op = "op_not";
 	
 	
 	/**

@@ -25,8 +25,8 @@ use BayrellLang.OpCodes.OpFlags;
 
 export class OpFunctionArrowDeclare extends OpFunctionDeclare{
 	
-	public cloneable string op = "op_arrow_function";
-	public cloneable OpFunctionDeclare return_function = null;
+	public serializable string op = "op_arrow_function";
+	public serializable OpFunctionDeclare return_function = null;
 	
 	
 	/**

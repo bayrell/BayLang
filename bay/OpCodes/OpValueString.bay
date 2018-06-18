@@ -23,8 +23,8 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpValueString extends BaseOpCode{
 	
-	public string op = "op_value";
-	public string value = "";
+	public serializable string op = "op_value";
+	public serializable string value = "";
 	
 	
 	/**
@@ -54,39 +54,5 @@ export class OpValueString extends BaseOpCode{
 		parent();
 	}
 	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("value");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value') return this.value;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
-		else parent::assignValue(variable_name, value);
-	}
 	
 }

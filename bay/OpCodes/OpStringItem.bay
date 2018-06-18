@@ -24,7 +24,7 @@ use BayrellLang.OpCodes.OpValue2;
 
 export class OpStringItem extends OpValue2{
 	
-	public string op = "op_string_item";
+	public serializable string op = "op_string_item";
 	
 	
 	/**

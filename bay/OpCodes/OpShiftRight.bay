@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValue2;
 
 export class OpShiftRight extends OpValue2{
 	
-	public string op = "op_shift_right";
+	public serializable string op = "op_shift_right";
 	
 	
 	/**

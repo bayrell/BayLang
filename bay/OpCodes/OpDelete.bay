@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValue1;
 
 export class OpDelete extends OpValue1{
 	
-	public string op = "op_delete";
+	public serializable string op = "op_delete";
 	
 	
 	/**

@@ -24,10 +24,9 @@ use BayrellLang.OpCodes.OpTryCatchChilds;
 
 export class OpTryCatch extends BaseOpCode{
 	
-	public string op = "op_try_catch";
-	
-	public Vector<BaseOpCode> op_try = null;
-	public Vector<OpTryCatchChilds> childs = null;
+	public serializable string op = "op_try_catch";
+	public serializable Vector<BaseOpCode> op_try = null;
+	public serializable Vector<OpTryCatchChilds> childs = null;
 	
 	
 	/**
@@ -60,54 +59,4 @@ export class OpTryCatch extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("op_try");
-		names.push("childs");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'op_try') return this.op_try;
-		else if (variable_name == 'childs') return this.childs;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'op_try') this.op_try = value;
-		if (variable_name == 'childs') this.childs = value;
-		else parent::assignValue(variable_name, value);
-	}
-	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpTryCatch){
-			this.op_try = clone obj.op_try;
-			this.childs = clone obj.childs;
-		}
-		parent::assign(obj);
-	}
 }

@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValueString;
 
 export class OpString extends OpValueString{
 	
-	public string op = "op_string";
+	public serializable string op = "op_string";
 	
 	
 	/**

@@ -23,12 +23,11 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpFor extends BaseOpCode{
 	
-	public string op = "op_for";
-	
-	public BaseOpCode loop_condition = null;
-	public BaseOpCode loop_init = null;
-	public BaseOpCode loop_inc = null;
-	public Vector<BaseOpCode> childs = null;
+	public serializable string op = "op_for";
+	public serializable BaseOpCode loop_condition = null;
+	public serializable BaseOpCode loop_init = null;
+	public serializable BaseOpCode loop_inc = null;
+	public serializable Vector<BaseOpCode> childs = null;
 	
 	
 	/**
@@ -61,50 +60,6 @@ export class OpFor extends BaseOpCode{
 	 */ 
 	void destructor(){
 		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("loop_condition");
-		names.push("loop_init");
-		names.push("loop_inc");
-		names.push("childs");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'loop_condition') return this.loop_condition;
-		else if (variable_name == 'loop_init') return this.loop_init;
-		else if (variable_name == 'loop_inc') return this.loop_inc;
-		else if (variable_name == 'childs') return this.childs;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'loop_condition') this.loop_condition = value;
-		if (variable_name == 'loop_init') this.loop_init = value;
-		if (variable_name == 'loop_inc') this.loop_inc = value;
-		if (variable_name == 'childs') this.childs = value;
-		else parent::assignValue(variable_name, value);
 	}
 	
 }

@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpChilds;
 
 export class OpPreprocessorSwitch extends OpChilds{
 	
-	public string op = "op_preprocessor_switch";
+	public serializable string op = "op_preprocessor_switch";
 	
 	
 	/**

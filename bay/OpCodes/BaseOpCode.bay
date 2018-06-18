@@ -24,7 +24,7 @@ use BayrellRtl.Interfaces.SerializeInterface;
 
 export class BaseOpCode extends CoreObject implements SerializeInterface{
 	
-	public cloneable string op = "";
+	public serializable string op = "";
 	
 	
 	/**
@@ -43,41 +43,5 @@ export class BaseOpCode extends CoreObject implements SerializeInterface{
 	public string getClassName(){
 		return "BayrellLang.OpCodes.BaseOpCode";
 	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		names.push("op");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'op')
-			return this.op;
-		return null;
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'op')
-			this.op = value;
-	}
-	
 	
 }

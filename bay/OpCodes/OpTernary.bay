@@ -23,11 +23,10 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpTernary extends BaseOpCode{
 	
-	public string op = "op_ternary";
-	
-	public BaseOpCode condition = null;
-	public BaseOpCode if_true = null;
-	public BaseOpCode if_false = null;
+	public serializable string op = "op_ternary";
+	public serializable BaseOpCode condition = null;
+	public serializable BaseOpCode if_true = null;
+	public serializable BaseOpCode if_false = null;
 	
 	
 	/**
@@ -57,50 +56,6 @@ export class OpTernary extends BaseOpCode{
 	 */ 
 	void destructor(){
 		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("condition");
-		names.push("expr");
-		names.push("if_true");
-		names.push("if_false");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'condition') return this.condition;
-		else if (variable_name == 'expr') return this.expr;
-		else if (variable_name == 'if_true') return this.if_true;
-		else if (variable_name == 'if_false') return this.if_false;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'condition') this.condition = value;
-		if (variable_name == 'expr') this.expr = value;
-		if (variable_name == 'if_true') this.if_true = value;
-		if (variable_name == 'if_false') this.if_false = value;
-		else parent::assignValue(variable_name, value);
 	}
 	
 	

@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValue1;
 
 export class OpPostInc extends OpValue1{
 	
-	public string op = "op_post_inc";
+	public serializable string op = "op_post_inc";
 	
 	
 	/**

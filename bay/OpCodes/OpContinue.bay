@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpContinue extends BaseOpCode{
 	
-	public string op = "op_continue";
+	public serializable string op = "op_continue";
 	
 	
 	/**

@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValue2;
 
 export class OpConcat extends OpValue2{
 	
-	public string op = "op_concat";
+	public serializable string op = "op_concat";
 	
 	
 	/**

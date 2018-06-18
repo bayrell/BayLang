@@ -24,7 +24,7 @@ use BayrellLang.OpCodes.OpClassDeclare;
 
 export class OpInterfaceDeclare extends OpClassDeclare{
 	
-	public string op = "op_interace";
+	public serializable string op = "op_interace";
 	
 	
 	/**

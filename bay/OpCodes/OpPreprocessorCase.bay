@@ -23,9 +23,9 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpPreprocessorCase extends BaseOpCode{
 	
-	public string op = "op_preprocessor_case";
-	public BaseOpCode condition = null;
-	public string value = null;
+	public serializable string op = "op_preprocessor_case";
+	public serializable BaseOpCode condition = null;
+	public serializable string value = null;
 	
 	
 	/**
@@ -54,45 +54,6 @@ export class OpPreprocessorCase extends BaseOpCode{
 	 */
 	void destructor(){
 		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("condition");
-		names.push("value");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'condition') return this.condition;
-		if (variable_name == 'value') return this.value;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'condition') this.condition = value;
-		else if (variable_name == 'value') this.value = value;
-		else
-			parent::assignValue(variable_name, value);
 	}
 	
 	

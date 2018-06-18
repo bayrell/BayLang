@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpChilds;
 
 export class OpNope extends OpChilds{
 	
-	public string op = "op_nope";
+	public serializable string op = "op_nope";
 	
 	
 	/**

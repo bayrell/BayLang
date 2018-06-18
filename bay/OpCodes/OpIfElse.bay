@@ -23,10 +23,9 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpIfElse extends BaseOpCode{
 	
-	public string op = "op_if_else";
-	
-	public BaseOpCode condition = null;
-	public Vector<BaseOpCode> if_true = null;
+	public serializable string op = "op_if_else";
+	public serializable BaseOpCode condition = null;
+	public serializable Vector<BaseOpCode> if_true = null;
 	
 	
 	/**
@@ -42,8 +41,7 @@ export class OpIfElse extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(BaseOpCode condition = null, Vector<BaseOpCode> if_true = null)
-	{
+	void constructor(BaseOpCode condition = null, Vector<BaseOpCode> if_true = null){
 		parent();
 		this.condition = condition;
 		this.if_true = if_true;
@@ -57,46 +55,5 @@ export class OpIfElse extends BaseOpCode{
 	void destructor(){
 		parent();
 	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		names.push("condition");
-		names.push("expr");
-		names.push("if_true");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'condition') return this.condition;
-		else if (variable_name == 'expr') return this.expr;
-		else if (variable_name == 'if_true') return this.if_true;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'condition') this.condition = value;
-		if (variable_name == 'expr') this.expr = value;
-		if (variable_name == 'if_true') this.if_true = value;
-		else parent::assignValue(variable_name, value);
-	}
-	
 	
 }

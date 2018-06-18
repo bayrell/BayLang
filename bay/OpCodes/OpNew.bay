@@ -22,9 +22,9 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpNew extends BaseOpCode{
 	
-	public string op = "op_new";
-	public BaseOpCode value = null;
-	public Vector<BaseOpCode> args = null;
+	public serializable string op = "op_new";
+	public serializable BaseOpCode value = null;
+	public serializable Vector<BaseOpCode> args = null;
 	
 	
 	
@@ -55,45 +55,6 @@ export class OpNew extends BaseOpCode{
 	void destructor(){
 		delete this.args;
 		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("value");
-		names.push("args");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value') return this.value;
-		else if (variable_name == 'args') return this.args;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
-		else if (variable_name == 'args') this.args = value;
-		else
-			parent::assignValue(variable_name, value);
 	}
 	
 	

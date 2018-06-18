@@ -23,10 +23,10 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpAssign extends BaseOpCode{
 	
-	public string op = "op_assign";
-	public BaseOpCode ident = null;
-	public BaseOpCode value = null;
-	public string op_name = "";
+	public serializable string op = "op_assign";
+	public serializable BaseOpCode ident = null;
+	public serializable BaseOpCode value = null;
+	public serializable string op_name = "";
 	
 	
 	/**
@@ -56,47 +56,6 @@ export class OpAssign extends BaseOpCode{
 	 */ 
 	void destructor(){
 		parent();
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("ident");
-		names.push("value");
-		names.push("op_name");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'ident') return this.ident;
-		else if (variable_name == 'value') return this.value;
-		else if (variable_name == 'op_name') return this.op_name;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'ident') this.ident = value;
-		else if (variable_name == 'value') this.value = value;
-		else if (variable_name == 'op_name') this.op_name = value;
-		else parent::assignValue(variable_name, value);
 	}
 	
 }

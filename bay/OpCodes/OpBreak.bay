@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpBreak extends BaseOpCode{
 	
-	public string op = "op_break";
+	public serializable string op = "op_break";
 	
 	
 	/**

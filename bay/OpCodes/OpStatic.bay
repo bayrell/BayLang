@@ -23,9 +23,9 @@ use BayrellLang.OpCodes.BaseOpCode;
 
 export class OpStatic extends BaseOpCode{
 	
-	public string op = "op_static";
-	public BaseOpCode value = null;
-	public string name = null;
+	public serializable string op = "op_static";
+	public serializable BaseOpCode value = null;
+	public serializable string name = null;
 	
 	
 	/**
@@ -57,54 +57,4 @@ export class OpStatic extends BaseOpCode{
 	}
 	
 	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names){
-		parent::getVariablesNames(names);
-		names.push("value");
-		names.push("name");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null){
-		if (variable_name == 'value') return this.value;
-		else if (variable_name == 'name') return this.name;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value){
-		if (variable_name == 'value') this.value = value;
-		else if (variable_name == 'name') this.name = value;
-		else parent::assignValue(variable_name, value);
-	}
-	
-	
-	
-	/**
-	 * Assign all data from other object
-	 * @param CoreObject obj
-	 */
-	void assign(CoreObject obj){
-		if (obj instanceof OpStatic){
-			this.value = clone obj.value;
-			this.name = obj.name;
-		}
-		parent::assign(obj);
-	}
 }

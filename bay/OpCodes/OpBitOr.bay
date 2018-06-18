@@ -23,7 +23,7 @@ use BayrellLang.OpCodes.OpValue2;
 
 export class OpBitOr extends OpValue2{
 	
-	public string op = "op_bit_or";
+	public serializable string op = "op_bit_or";
 	
 	
 	/**
