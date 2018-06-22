@@ -654,12 +654,12 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.value instanceof OpDynamic){
 			string name = op_code.value.name;
 			string obj = this.translateRun(op_code.value.value);
-			return "new \\BayrellRtl\\Types\\CallFunc("~obj~", "~this.convertString(name)~")";
+			return "new \\BayrellRtl\\Types\\Callback("~obj~", "~this.convertString(name)~")";
 		}
 		else if (op_code.value instanceof OpStatic){
 			string name = op_code.value.name;
 			string obj = this.translateRun(op_code.value.value);
-			return "new \\BayrellRtl\\Types\\CallFunc("~obj~"::class, "~this.convertString(name)~")";
+			return "new \\BayrellRtl\\Types\\Callback("~obj~"::class, "~this.convertString(name)~")";
 		}
 		
 		return this.translateRun(op_code.value);
@@ -1084,7 +1084,7 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= " = " ~ this.translateRun(variable.value);
 			}
 			this.popOneLine();
-			use_vars.push("$" ~ variable.name);
+			use_vars.push(variable.name);
 			ch = ", ";
 		}
 		res ~= ")";
@@ -1161,9 +1161,11 @@ export class TranslatorPHP extends CommonTranslator {
 			if (use_vars == null){
 				Vector<string> use_vars = new Vector();
 			}
-			use_vars.prepend("$this");
+			/*use_vars.prepend("$this");*/
 		}
-		if (use_vars != null) flag_use = true;
+		if (use_vars != null){
+			if (use_vars.count() > 0) flag_use = true;
+		}
 		if (op_code.use_variables != null){
 			if (op_code.use_variables.count() > 0) flag_use = true;
 		}		
@@ -1173,13 +1175,13 @@ export class TranslatorPHP extends CommonTranslator {
 			res ~= " use (";
 			if (use_vars != null){
 				for (int i=0; i<use_vars.count(); i++){
-					res ~= ch ~ use_vars.item(i);
+					res ~= ch ~ "&$" ~ use_vars.item(i);
 					ch = ", ";
 				}
 			}
 			if (op_code.use_variables != null){
 				for (int i=0; i<op_code.use_variables.count(); i++){
-					res ~= ch ~ "$" ~ op_code.use_variables.item(i);
+					res ~= ch ~ "&$" ~ op_code.use_variables.item(i);
 					ch = ", ";
 				}
 			}
