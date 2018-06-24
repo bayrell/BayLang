@@ -18,11 +18,10 @@
 
 namespace BayrellLang;
 
-use BayrellRtl.Lib.fs;
-use BayrellRtl.Lib.Utils as RtlUtils;
-use BayrellRtl.CoreObject;
-use BayrellRtl.ContextObject;
-use BayrellRtl.Interfaces.FactoryInterface;
+use Runtime.CoreObject;
+use Runtime.ContextObject;
+use Runtime.Interfaces.FactoryInterface;
+use BayrellCommon.Utils as BayrellCommonUtils;
 use BayrellLang.LangBay.ParserBay;
 use BayrellLang.LangES6.TranslatorES6;
 use BayrellLang.CommonParser;
@@ -162,7 +161,7 @@ class Utils extends ContextObject{
 			translator_factory,
 			content
 		);
-		string dir = RtlUtils::dirname(dest_file_name);
+		string dir = BayrellCommonUtils::dirname(dest_file_name);
 		
 		
 		file_system.makeDir(dir);

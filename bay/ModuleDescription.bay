@@ -18,8 +18,8 @@
 
 namespace BayrellLang;
 
-use BayrellRtl.Interfaces.ContextInterface;
-use BayrellRtl.Interfaces.ModuleDescriptionInterface;
+use Runtime.Interfaces.ContextInterface;
+use Runtime.Interfaces.ModuleDescriptionInterface;
 
 
 class ModuleDescription implements ModuleDescriptionInterface{
@@ -40,7 +40,7 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * @return string
 	 */
 	public static string getModuleVersion(){
-		return "0.2.7";
+		return "0.4.0";
 	}
 	
 	
@@ -69,7 +69,7 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 */	
 	public static Vector<string> getInterfaces(){
 		return [
-			'BayrellRtl.Interfaces.ModuleDescriptionInterface',
+			'Runtime.Interfaces.ModuleDescriptionInterface',
 		];
 	}
 	
@@ -81,7 +81,7 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 */	
 	public static Map<string, string> getRequiredModules(){
 		return {
-			'BayrellRtl': '>=0.2 <1.0',
+			'Runtime': '>=0.2 <1.0',
 			'BayrellParser': '>=0.1 <1.0',
 		};
 	}

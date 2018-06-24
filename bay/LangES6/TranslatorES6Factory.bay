@@ -18,10 +18,10 @@
 
 namespace BayrellLang.LangES6;
 
-use BayrellRtl.CoreObject;
-use BayrellRtl.ContextObject;
-use BayrellRtl.Interfaces.ContextInterface;
-use BayrellRtl.Interfaces.FactoryInterface;
+use Runtime.CoreObject;
+use Runtime.ContextObject;
+use Runtime.Interfaces.ContextInterface;
+use Runtime.Interfaces.FactoryInterface;
 use BayrellLang.LangES6.TranslatorES6;
 
 

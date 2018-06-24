@@ -18,8 +18,8 @@
 
 namespace BayrellLang.LangES6;
 
-use BayrellRtl.Lib.re;
-use BayrellRtl.Lib.rs;
+use Runtime.re;
+use Runtime.rs;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -958,10 +958,10 @@ export class TranslatorES6 extends CommonTranslator {
 		Vetor<string> arr = rs::explode(".", this.current_namespace);
 		this.current_module_name = arr.item(0);
 		this.modules.clear();
-		if (this.current_module_name != 'BayrellRtl'){
-			this.modules.set("rtl", "BayrellRtl.Lib.rtl");
-			this.modules.set("Map", "BayrellRtl.Types.Map");
-			this.modules.set("Vector", "BayrellRtl.Types.Vector");
+		if (this.current_module_name != 'Runtime'){
+			this.modules.set("rtl", "Runtime.rtl");
+			this.modules.set("Map", "Runtime.Map");
+			this.modules.set("Vector", "Runtime.Vector");
 		}
 		return "";
 	}
@@ -1195,7 +1195,7 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		
-		if (this.current_module_name != 'BayrellRtl' and this.current_class_name != 'CoreObject'){
+		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
 			
 			/* Init function */
 			if (has_variables or has_implements){
@@ -1321,6 +1321,41 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
+	 * Class declare body
+	 */
+	string OpClassBody(OpClassDeclare op_code){
+		string res = "";
+		for (int i=0; i<op_code.childs.count(); i++){
+			BaseOpCode item = op_code.childs.item(i);
+			res ~= this.s(this.OpClassBodyItem(item));
+		}
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Class declare body item
+	 */
+	string OpClassBodyItem(BaseOpCode op_code){
+		if (op_code instanceof OpFunctionArrowDeclare){
+			return this.OpFunctionArrowDeclare(op_code);
+		}
+		else if (op_code instanceof OpFunctionDeclare){
+			return this.OpFunctionDeclare(op_code);
+		}
+		else if (op_code instanceof OpPreprocessorSwitch){
+			return this.OpPreprocessorSwitch(op_code);
+		}
+		else if (op_code instanceof OpComment){
+			return this.OpComment(op_code);
+		}
+		return "";
+	}
+	
+	
+	
+	/**
 	 * Class declare
 	 */
 	string OpClassDeclare(OpClassDeclare op_code){
@@ -1340,22 +1375,8 @@ export class TranslatorES6 extends CommonTranslator {
 		res ~= this.OpClassDeclareHeader(op_code);
 		res ~= this.OpClassInit(op_code.class_variables, op_code.class_implements, op_code.class_extends);
 		
-		/* Class functions */
-		for (int i=0; i<op_code.childs.count(); i++){
-			BaseOpCode op_code2 = op_code.childs.item(i);
-			if (op_code2 instanceof OpFunctionArrowDeclare){
-				res ~= this.s(this.OpFunctionArrowDeclare(op_code2));
-			}
-			else if (op_code2 instanceof OpFunctionDeclare){
-				res ~= this.s(this.OpFunctionDeclare(op_code2));
-			}
-			else if (op_code2 instanceof OpPreprocessorSwitch){
-				res ~= this.s(this.OpPreprocessorSwitch(op_code2));
-			}
-			else if (op_code2 instanceof OpComment){
-				res ~= this.s(this.OpComment(op_code2));
-			}
-		}
+		/* Body */
+		res ~= this.OpClassBody(op_code);
 		
 		/* Footer class */
 		this.levelDec();

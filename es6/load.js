@@ -17,7 +17,7 @@
  */
 
  
-$load.subscribe(["BayrellRtl_loaded", "BayrellParser_loaded"], function(){
+$load.subscribe(["Runtime_loaded", "BayrellParser_loaded"], function(){
 	$load([
 		"/assets/BayrellLang/CommonParser.js",
 		"/assets/BayrellLang/CommonTranslator.js",

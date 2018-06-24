@@ -18,7 +18,7 @@
 
 
 module.exports = {
-	VERSION: '0.3.1',
+	VERSION: '0.4.0',
 	'Exceptions': {
 		'EndOfStringExpected': require("./Exceptions/EndOfStringExpected.js"),
 		'HexNumberExpected': require("./Exceptions/HexNumberExpected.js"),

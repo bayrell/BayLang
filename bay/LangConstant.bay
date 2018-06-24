@@ -18,7 +18,7 @@
 
 namespace BayrellLang;
 
-use BayrellRtl.RuntimeConstant;
+use Runtime.RuntimeConstant;
 
 
 class LangConstant{

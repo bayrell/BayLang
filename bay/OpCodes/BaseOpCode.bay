@@ -18,8 +18,8 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellRtl.CoreObject;
-use BayrellRtl.Interfaces.SerializeInterface;
+use Runtime.CoreObject;
+use Runtime.Interfaces.SerializeInterface;
 
 
 export class BaseOpCode extends CoreObject implements SerializeInterface{

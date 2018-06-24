@@ -19,7 +19,7 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
-use BayrellRtl.Interfaces.SerializeInterface;
+
 
 export class OpFlags extends BaseOpCode{
 	

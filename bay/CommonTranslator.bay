@@ -19,8 +19,8 @@
 namespace BayrellLang;
 
 
-use BayrellRtl.ContextObject;
-use BayrellRtl.Lib.rs;
+use Runtime.rs;
+use Runtime.ContextObject;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
@@ -289,27 +289,41 @@ export class CommonTranslator extends ContextObject{
 	 * @param BaseOpCode op_code - Abstract syntax tree
 	 * @returns string - The result
 	 */
+	string translateChilds(Vector<BaseOpCode> childs){
+		if (childs == null)
+			return "";
+			
+		string res = "";
+		string code_str = "";
+		bool flag = true;
+		for (int i=0; i<childs.count(); i++){
+			this.current_opcode_level = 0;
+			code_str = this.translateRun(childs.item(i));
+			if (code_str == "")
+				continue;
+			if (flag){
+				res ~= code_str;
+				flag = false;
+			}
+			else{
+				res ~= this.s(code_str);
+			}
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Translate to language
+	 * @param BaseOpCode op_code - Abstract syntax tree
+	 * @returns string - The result
+	 */
 	string translateRun(BaseOpCode op_code){
 		
-		
 		if (op_code instanceof OpNope){
-			string res = "";
-			string code_str = "";
-			bool flag = true;
-			for (int i=0; i<op_code.childs.count(); i++){
-				this.current_opcode_level = 0;
-				code_str = this.translateRun(op_code.childs.item(i));
-				if (code_str == "")
-					continue;
-				if (flag){
-					res ~= code_str;
-					flag = false;
-				}
-				else{
-					res ~= this.s(code_str);
-				}
-			}
-			return res;
+			return this.translateChilds(op_code.childs);
 		}
 		
 		/* Inherited functions */

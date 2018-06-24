@@ -18,8 +18,8 @@
 
 namespace BayrellLang.LangPHP;
 
-use BayrellRtl.Lib.re;
-use BayrellRtl.Lib.rs;
+use Runtime.re;
+use Runtime.rs;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -654,12 +654,12 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.value instanceof OpDynamic){
 			string name = op_code.value.name;
 			string obj = this.translateRun(op_code.value.value);
-			return "new \\BayrellRtl\\Types\\Callback("~obj~", "~this.convertString(name)~")";
+			return "new \\Runtime\\Callback("~obj~", "~this.convertString(name)~")";
 		}
 		else if (op_code.value instanceof OpStatic){
 			string name = op_code.value.name;
 			string obj = this.translateRun(op_code.value.value);
-			return "new \\BayrellRtl\\Types\\Callback("~obj~"::class, "~this.convertString(name)~")";
+			return "new \\Runtime\\Callback("~obj~"::class, "~this.convertString(name)~")";
 		}
 		
 		return this.translateRun(op_code.value);
@@ -1001,13 +1001,13 @@ export class TranslatorPHP extends CommonTranslator {
 		this.current_module_name = arr.item(0);
 		this.modules.clear();
 		string res = "namespace " ~ rs::implode("\\", arr) ~ ";";
-		if (this.current_module_name != 'BayrellRtl'){
-			res ~= this.s("use BayrellRtl\\Lib\\rtl;");
-			res ~= this.s("use BayrellRtl\\Types\\Map;");
-			res ~= this.s("use BayrellRtl\\Types\\Vector;");
-			this.modules.set("rtl", "BayrellRtl.Lib.rtl");
-			this.modules.set("Map", "BayrellRtl.Types.Map");
-			this.modules.set("Vector", "BayrellRtl.Types.Vector");
+		if (this.current_module_name != 'Runtime'){
+			res ~= this.s("use Runtime\\rtl;");
+			res ~= this.s("use Runtime\\Map;");
+			res ~= this.s("use Runtime\\Vector;");
+			this.modules.set("rtl", "Runtime.rtl");
+			this.modules.set("Map", "Runtime.Map");
+			this.modules.set("Vector", "Runtime.Vector");
 		}
 		return res;
 	}
@@ -1314,7 +1314,7 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 		}
 		
-		if (this.current_module_name != 'BayrellRtl' and this.current_class_name != 'CoreObject'){
+		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
 			/* If has cloneable variables */
 			if (has_cloneable){
 				res ~= this.s("function assign($obj){");

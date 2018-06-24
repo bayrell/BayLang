@@ -18,7 +18,7 @@
 
 namespace BayrellLang.LangBay;
 
-use BayrellRtl.Lib.rs;
+use Runtime.rs;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -1561,7 +1561,7 @@ export class ParserBay extends CommonParser{
 	/**
 	 * Read class body
 	 */
-	BaseOpCode readClassBody(OpClassDeclare res){
+	void readClassBody(OpClassDeclare res){
 		
 		if (this.findNextToken(";")){
 			this.matchNextToken(';');
@@ -1584,6 +1584,17 @@ export class ParserBay extends CommonParser{
 		
 		/* Read flags */
 		flags = this.readFlags();
+		this.readClassBodyContent(res, flags);
+	}
+	
+	
+	
+	/**
+	 * Read class body content
+	 */
+	void readClassBodyContent(OpClassDeclare res, OpFlags flags){
+		
+		BaseOpCode op_code = null;
 		bool is_declare_function = false;
 		if (flags != null and flags.p_declare or this.is_interface) is_declare_function = true;
 		
@@ -1594,7 +1605,6 @@ export class ParserBay extends CommonParser{
 			res.childs.push( op_code );
 			return ;
 		}
-		
 		
 		/* Read declare variable */
 		op_code = this.readOperatorAssign();

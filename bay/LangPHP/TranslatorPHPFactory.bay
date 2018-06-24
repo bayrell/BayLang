@@ -18,10 +18,10 @@
 
 namespace BayrellLang.LangPHP;
 
-use BayrellRtl.CoreObject;
-use BayrellRtl.ContextObject;
-use BayrellRtl.Interfaces.ContextInterface;
-use BayrellRtl.Interfaces.FactoryInterface;
+use Runtime.CoreObject;
+use Runtime.ContextObject;
+use Runtime.Interfaces.ContextInterface;
+use Runtime.Interfaces.FactoryInterface;
 use BayrellLang.LangPHP.TranslatorPHP;
 
 
