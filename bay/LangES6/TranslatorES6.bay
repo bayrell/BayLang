@@ -92,7 +92,7 @@ export class TranslatorES6 extends CommonTranslator {
 	string current_class_name = "";
 	Vector<string> current_function_name = null;
 	string current_module_name = "";
-	
+	bool is_interface = false;
 	
 	
 	/**
@@ -625,6 +625,15 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Clone
 	 */
 	string OpMethod(OpMethod op_code){
+		
+		if (op_code.value instanceof OpDynamic){
+			string name = op_code.value.name;
+			string obj = this.translateRun(op_code.value.value);
+			if (obj == 'this')
+				return obj ~ "." ~ name ~ ".bind(this)";
+			return obj ~ "." ~ name;
+		}
+		
 		return this.translateRun(op_code.value);
 	}
 	
@@ -1194,6 +1203,11 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		
+		if (not this.is_interface){
+		res ~= this.s("getClassName(){" ~
+			"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ ";}"
+		);
+		}
 		
 		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
 			
@@ -1395,7 +1409,10 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Interface declare
 	 */
 	string OpInterfaceDeclare(OpInterfaceDeclare op_code){
-		return this.OpClassDeclare(op_code);
+		this.is_interface = true;
+		string res = this.OpClassDeclare(op_code);
+		this.is_interface = false;
+		return res;
 	}
 	
 	

@@ -18,6 +18,7 @@
 
 namespace BayrellLang.Exceptions;
 
+use Runtime.Utils;
 use BayrellParser.Exceptions.ParserError;
 use BayrellLang.LangConstant;
 
@@ -27,7 +28,7 @@ class HexNumberExpected extends ParserError{
 	void constructor(ContextInterface context, int line, int col, Object prev = null){	
 		
 		if (context == null)
-			context = rtl::globalContext();
+			context = Utils::globalContext();
 			
 		parent(
 			context, 
@@ -38,6 +39,7 @@ class HexNumberExpected extends ParserError{
 		
 		this.line = line;
 		this.pos = col;
+		this.buildMessage();
 	}
 	
 }

@@ -1303,6 +1303,11 @@ export class TranslatorPHP extends CommonTranslator {
 		bool has_serializable = false;
 		bool has_cloneable = false;
 		
+		if (not this.is_interface){
+			res ~= this.s("public function getClassName(){" ~
+				"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ ";}"
+			);
+		}
 		
 		for (int i=0; i<class_variables.count(); i++){
 			OpAssignDeclare variable = class_variables.item(i);
@@ -1317,7 +1322,7 @@ export class TranslatorPHP extends CommonTranslator {
 		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
 			/* If has cloneable variables */
 			if (has_cloneable){
-				res ~= this.s("function assign($obj){");
+				res ~= this.s("public function assign($obj){");
 				this.levelInc();
 				res ~= this.s("if ($obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
@@ -1339,17 +1344,20 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			/* If has serializable variables */
 			if (has_serializable){
+				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
-				res ~= this.s("function assignValue($variable_name, $value){");
+				res ~= this.s("public function assignValue($variable_name, $value){");
 				this.levelInc();
+				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable")){
 						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"$this->" ~ variable.name ~ " = $value;";
-						if (i == 0) res ~= this.s(take_value_s);
+						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
 						else res ~= this.s("else " ~ take_value_s);
+						class_variables_serializable_count++;
 					}
 				}
 				res ~= this.s("else parent::assignValue($variable_name, $value);");
@@ -1358,15 +1366,17 @@ export class TranslatorPHP extends CommonTranslator {
 				
 				
 				/* takeValue function */
-				res ~= this.s("function takeValue($variable_name, $default_value = null){");
+				res ~= this.s("public function takeValue($variable_name, $default_value = null){");
 				this.levelInc();
+				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable")){
 						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"return $this->" ~ variable.name ~ ";";
-						if (i == 0) res ~= this.s(take_value_s);
+						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
 						else res ~= this.s("else " ~ take_value_s);
+						class_variables_serializable_count++;
 					}
 				}
 				res ~= this.s("return parent::takeValue($variable_name, $default_value);");
@@ -1375,7 +1385,7 @@ export class TranslatorPHP extends CommonTranslator {
 
 
 				/* getVariablesNames function */
-				res ~= this.s("function getVariablesNames($names){");
+				res ~= this.s("public function getVariablesNames($names){");
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
