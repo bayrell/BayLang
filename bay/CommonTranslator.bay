@@ -35,6 +35,7 @@ use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpCallAwait;
 use BayrellLang.OpCodes.OpChilds;
 use BayrellLang.OpCodes.OpClassDeclare;
+use BayrellLang.OpCodes.OpClassName;
 use BayrellLang.OpCodes.OpClone;
 use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
@@ -237,6 +238,7 @@ export class CommonTranslator extends ContextObject{
 	string OpBreak(OpBreak op_code){  return ""; }
 	string OpCall(OpCall op_code){  return ""; }
 	string OpClassDeclare(OpClassDeclare op_code){  return ""; }
+	string OpClassName(OpClassName op_code){  return ""; }
 	string OpClone(OpClone op_code){  return ""; }
 	string OpComment(OpCompare op_code){  return ""; }
 	string OpCompare(OpCompare op_code){  return ""; }
@@ -364,6 +366,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpClassDeclare){
 			return this.OpClassDeclare(op_code);
+		}
+		else if (op_code instanceof OpClassName){
+			return this.OpClassName(op_code);
 		}
 		else if (op_code instanceof OpClone){
 			return this.OpClone(op_code);

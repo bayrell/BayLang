@@ -35,6 +35,7 @@ use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpCallAwait;
 use BayrellLang.OpCodes.OpChilds;
 use BayrellLang.OpCodes.OpClassDeclare;
+use BayrellLang.OpCodes.OpClassName;
 use BayrellLang.OpCodes.OpClone;
 use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
@@ -664,6 +665,16 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		return this.translateRun(op_code.value);
 	}
+	
+	
+	
+	/**
+	 * Class name
+	 */
+	string OpClassName(OpClassName op_code){
+		return this.convertString(this.modules.get(op_code.value, ""));
+	}
+	
 	
 	
 	/** ============================ Operators ============================ */
@@ -1387,6 +1398,7 @@ export class TranslatorPHP extends CommonTranslator {
 				/* getVariablesNames function */
 				res ~= this.s("public function getVariablesNames($names){");
 				this.levelInc();
+				res ~= this.s("parent::getVariablesNames($names);");
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable"))

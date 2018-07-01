@@ -58,6 +58,7 @@ module.exports = {
 		'OpCallAwait': require("./OpCodes/OpCallAwait.js"),
 		'OpChilds': require("./OpCodes/OpChilds.js"),
 		'OpClassDeclare': require("./OpCodes/OpClassDeclare.js"),
+		'OpClassName': require("./OpCodes/OpClassName.js"),
 		'OpClone': require("./OpCodes/OpClone.js"),
 		'OpComment': require("./OpCodes/OpComment.js"),
 		'OpCompare': require("./OpCodes/OpCompare.js"),

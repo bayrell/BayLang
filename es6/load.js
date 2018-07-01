@@ -55,6 +55,7 @@ $load.subscribe(["Runtime_loaded", "BayrellParser_loaded"], function(){
 		"/assets/BayrellLang/OpCodes/OpCall.js",
 		"/assets/BayrellLang/OpCodes/OpCallAwait.js",
 		"/assets/BayrellLang/OpCodes/OpClassDeclare.js",
+		"/assets/BayrellLang/OpCodes/OpClassName.js",
 		"/assets/BayrellLang/OpCodes/OpClone.js",
 		"/assets/BayrellLang/OpCodes/OpComment.js",
 		"/assets/BayrellLang/OpCodes/OpCompare.js",

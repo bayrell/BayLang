@@ -34,6 +34,7 @@ use BayrellLang.OpCodes.OpCall;
 use BayrellLang.OpCodes.OpCallAwait;
 use BayrellLang.OpCodes.OpChilds;
 use BayrellLang.OpCodes.OpClassDeclare;
+use BayrellLang.OpCodes.OpClassName;
 use BayrellLang.OpCodes.OpClone;
 use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
@@ -329,6 +330,27 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read get class name
+	 */
+	BaseOpCode readClassName(){
+		if (this.findNextToken('class')){			
+			this.matchNextToken("class");
+			this.matchNextToken("of");
+			BaseOpCode value = this.readIdentifierName();
+			return new OpClassName(value);
+		}
+		if (this.findNextToken('classof')){
+			this.matchNextToken("classof");
+			BaseOpCode value = this.readIdentifierName();
+			return new OpClassName(value);		
+		}
+		return null;
+	
+	}
+	
+	
+	
+	/**
 	 * Read call dynamic
 	 * @return BaseOpCode
 	 */
@@ -468,6 +490,12 @@ export class ParserBay extends CommonParser{
 		}
 		else if (this.findNextToken('clone')){
 			return this.readClone();
+		}
+		else if (this.findNextToken('class')){
+			return this.readClassName();
+		}
+		else if (this.findNextToken('classof')){
+			return this.readClassName();
 		}
 		else if (this.findNextToken('method')){
 			return this.readMethod();
