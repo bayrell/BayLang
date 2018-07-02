@@ -1652,6 +1652,20 @@ export class ParserBay extends CommonParser{
 		if (this.findNextToken("extends")){
 			this.matchNextToken("extends");
 			res.class_extends = this.readIdentifier();
+			
+			if (this.findNextToken("<")){
+				this.matchNextToken("<");
+				while (true){
+					this.readCallDynamic(true, false, false, false);
+					if (this.findNextToken(",")){
+						this.matchNextToken(",");
+						continue;
+					}
+					break;
+				}
+				this.matchNextToken(">");
+			}
+			
 		}
 		
 		if (this.findNextToken("implements")){
