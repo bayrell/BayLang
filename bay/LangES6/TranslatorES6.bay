@@ -1191,8 +1191,15 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Class init functions
 	 */
-	string OpClassInit(Vector<OpAssignDeclare> class_variables, Vector<string> class_implements,
-	string class_extends = ""){
+	string OpClassInit(OpClassDeclare op_code){
+		
+		Vector<OpAssignDeclare> class_variables = op_code.class_variables;
+		Vector<string> class_implements = op_code.class_implements;
+		string class_extends = "";
+		
+		if (op_code.class_extends){
+			class_extends = this.getName(op_code.class_extends.value);
+		}
 		
 		string s = "";
 		string res = "";
@@ -1214,9 +1221,16 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		if (not this.is_interface){
-		res ~= this.s("getClassName(){" ~
-			"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ ";}"
-		);
+			res ~= this.s(
+				"getClassName(){" ~
+					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
+				";}"
+			);
+			res ~= this.s(
+				"static getParentClassName(){" ~
+					"return " ~ this.convertString(class_extends) ~ 
+				";}"
+			);
 		}
 		
 		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
@@ -1398,7 +1412,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Header */
 		res ~= this.OpClassDeclareHeader(op_code);
-		res ~= this.OpClassInit(op_code.class_variables, op_code.class_implements, op_code.class_extends);
+		res ~= this.OpClassInit(op_code);
 		
 		/* Body */
 		res ~= this.OpClassBody(op_code);

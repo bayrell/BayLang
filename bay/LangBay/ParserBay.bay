@@ -94,7 +94,8 @@ use BayrellParser.Exceptions.ParserError;
 
 export class ParserBay extends CommonParser{
 	
-	
+	string current_namespace = "";
+	string current_class_name = "";
 	bool is_interface = false;
 	
 	
@@ -1376,6 +1377,7 @@ export class ParserBay extends CommonParser{
 	BaseOpCode readOperatorNamespace(){
 		this.matchNextToken("namespace");
 		string name = this.readDynamicName();
+		this.current_namespace = name;
 		this.matchNextToken(";");		
 		return new OpNamespace(name);
 	}
@@ -1633,6 +1635,7 @@ export class ParserBay extends CommonParser{
 	OpClassDeclare readClassHead(OpClassDeclare res){
 		
 		res.class_name = this.readIdentifierName();
+		this.current_class_name = res.class_name;
 		
 		if (this.findNextToken("<")){
 			this.matchNextToken("<");

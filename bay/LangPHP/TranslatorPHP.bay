@@ -1308,15 +1308,36 @@ export class TranslatorPHP extends CommonTranslator {
 	/**
 	 * Class init functions
 	 */
-	string OpClassInit(Vector<OpAssignDeclare> class_variables){
+	string OpClassInit(OpClassDeclare op_code){
+		
+		Vector<OpAssignDeclare> class_variables = op_code.class_variables;
+		Vector<string> class_implements = op_code.class_implements;
+		string class_extends = "";
+		
+		if (op_code.class_extends){
+			string name = op_code.class_extends.value;
+			if (this.modules.has(name)){
+				class_extends = this.modules.item(name);
+			}
+			else{
+				class_extends = name;
+			}
+		}
 		
 		string res = "";
 		bool has_serializable = false;
 		bool has_cloneable = false;
 		
 		if (not this.is_interface){
-			res ~= this.s("public function getClassName(){" ~
-				"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ ";}"
+			res ~= this.s(
+				"public function getClassName(){" ~
+					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
+				";}"
+			);
+			res ~= this.s(
+				"public static function getParentClassName(){" ~
+					"return " ~ this.convertString(class_extends) ~ 
+				";}"
 			);
 		}
 		
@@ -1436,7 +1457,7 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		/* Variables */
 		res ~= this.OpClassDeclareVariables(op_code);
-		res ~= this.OpClassInit(op_code.class_variables);
+		res ~= this.OpClassInit(op_code);
 		
 		
 		/* Class functions */
