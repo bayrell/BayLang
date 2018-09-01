@@ -1345,8 +1345,6 @@ export class TranslatorPHP extends CommonTranslator {
 			OpAssignDeclare variable = class_variables.item(i);
 			if (variable.isFlag("serializable")){
 				has_serializable = true;
-			}
-			if (variable.isFlag("cloneable")){
 				has_cloneable = true;
 			}
 		}
@@ -1354,13 +1352,13 @@ export class TranslatorPHP extends CommonTranslator {
 		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
 			/* If has cloneable variables */
 			if (has_cloneable){
-				res ~= this.s("public function assign($obj){");
+				res ~= this.s("public function assignObject($obj){");
 				this.levelInc();
 				res ~= this.s("if ($obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("cloneable")){
+					if (variable.isFlag("serializable")){
 						res ~= this.s("$this->" ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "::_clone(" ~
 							"$obj->" ~ variable.name ~ ");"

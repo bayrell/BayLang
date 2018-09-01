@@ -1183,6 +1183,17 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		
+		/* Static implements */
+		Vector<string> class_implements = op_code.class_implements;
+		if (class_implements != null and class_implements.count() > 0){
+			string name = this.current_namespace ~ "." ~ op_code.class_name;
+			res ~= this.s( name ~ ".__static_implements__ = [];" );
+			for (int i=0; i<class_implements.count(); i++){
+				string value = class_implements.item(i);
+				res ~= this.s( name ~ ".__static_implements__.push(" ~ this.getName(value) ~ ")" );
+			}
+		}
+		
 		return res;
 	}
 	
@@ -1213,8 +1224,6 @@ export class TranslatorES6 extends CommonTranslator {
 				OpAssignDeclare variable = class_variables.item(i);
 				if (variable.isFlag("serializable")){
 					has_serializable = true;
-				}
-				if (variable.isFlag("cloneable")){
 					has_cloneable = true;
 				}
 			}
@@ -1276,13 +1285,13 @@ export class TranslatorES6 extends CommonTranslator {
 			
 			/* If has cloneable variables */
 			if (has_cloneable){
-				res ~= this.s("assign(obj){");
+				res ~= this.s("assignObject(obj){");
 				this.levelInc();
 				res ~= this.s("if (obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("cloneable")){
+					if (variable.isFlag("serializable")){
 						res ~= this.s("this." ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "._clone(" ~
 							"obj." ~ variable.name ~ ");"

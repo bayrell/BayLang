@@ -166,6 +166,18 @@ export class TranslatorNodeJS extends TranslatorES6 {
 			}
 		}
 		
+		
+		/* Static implements */
+		Vector<string> class_implements = op_code.class_implements;
+		if (class_implements != null and class_implements.count() > 0){
+			string name = op_code.class_name;
+			res ~= this.s( name ~ ".__static_implements__ = [];" );
+			for (int i=0; i<class_implements.count(); i++){
+				string value = class_implements.item(i);
+				res ~= this.s( name ~ ".__static_implements__.push(" ~ this.getName(value) ~ ")" );
+			}
+		}
+		
 		res ~= this.s("module.exports = "~op_code.class_name~";");
 		
 		return res;
