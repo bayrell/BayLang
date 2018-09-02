@@ -542,7 +542,10 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 		}
 		if (f){
+			bool old_is_operation = this.is_operation;
+			this.is_operation = true;
 			s ~= this.translateRun(op_code.value);
+			this.is_operation = old_is_operation;
 		}
 		
 		/* Call arguments */
@@ -714,7 +717,7 @@ export class TranslatorPHP extends CommonTranslator {
 	/**
 	 * Assign declare
 	 */
-	string OpAssignDeclare(OpAssignDeclare op_code){
+	string OpAssignDeclare(OpAssignDeclare op_code, bool output_value = true){
 		
 		string res = "";
 		bool old_is_operation = this.beginOperation();
@@ -722,7 +725,7 @@ export class TranslatorPHP extends CommonTranslator {
 		string ch_var = "$";
 		if (op_code.isFlag("const")) ch_var = "";
 		
-		if (op_code.value == null){
+		if (op_code.value == null or (not output_value and not op_code.isFlag('static'))){
 			this.pushOneLine(true);
 			res = ch_var ~ op_code.name;
 			this.popOneLine();
@@ -1292,7 +1295,7 @@ export class TranslatorPHP extends CommonTranslator {
 						s ~= "public ";
 					}
 				}
-				s ~= this.OpAssignDeclare(variable);
+				s ~= this.OpAssignDeclare(variable, false);
 				s ~= ";";
 				
 				this.endOperation(old_is_operation);
@@ -1325,6 +1328,7 @@ export class TranslatorPHP extends CommonTranslator {
 		}
 		
 		string res = "";
+		bool has_variables = false;
 		bool has_serializable = false;
 		bool has_cloneable = false;
 		
@@ -1347,9 +1351,40 @@ export class TranslatorPHP extends CommonTranslator {
 				has_serializable = true;
 				has_cloneable = true;
 			}
+			if (not variable.isFlag('static')){
+				has_variables = true;
+			}
 		}
 		
 		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
+			
+			/* Init function */
+			if (has_variables){
+				res ~= this.s("protected function _init(){");
+				this.levelInc();
+				
+				/* super init */
+				if (class_extends != ""){
+					res ~= this.s("parent::_init();");
+				}
+				
+				/* Output variables */
+				if (class_variables != null){
+					for (int i=0; i<class_variables.count(); i++){
+						OpAssignDeclare variable = class_variables.item(i);
+						if (!variable.isFlag('static')){
+							this.beginOperation();
+							string s = "$this->" ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							this.endOperation();
+							res ~= this.s(s);
+						}
+					}
+				}
+				
+				this.levelDec();
+				res ~= this.s("}");
+			}
+			
 			/* If has cloneable variables */
 			if (has_cloneable){
 				res ~= this.s("public function assignObject($obj){");

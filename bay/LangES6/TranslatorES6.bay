@@ -517,7 +517,10 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		if (f){
+			bool old_is_operation = this.is_operation;
+			this.is_operation = true;
 			s ~= this.translateRun(op_code.value);
+			this.is_operation = old_is_operation;
 		}
 		
 		/* Call arguments */
