@@ -947,21 +947,17 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			if (tp == '$var') tp = '\\Exception';
 			
-			/* catch childs */			
-			if (tp != '\\Exception' or try_catch_childs_sz > 1){
-				this.levelInc();
-				s ~= this.s(is_else ~ "if ($_the_exception instanceof " ~ tp ~ "){");
-			}
+			/* catch childs */
+			this.levelInc();
+			s ~= this.s(is_else ~ "if ($_the_exception instanceof " ~ tp ~ "){");
 			this.levelInc();
 			s ~= this.s(name ~ " = $_the_exception;");
 			for (int j=0; j<try_catch.childs.count(); j++){
 				s ~= this.s(this.translateRun(try_catch.childs.item(j)));
 			}
 			this.levelDec();
-			if (tp != '\\Exception' or try_catch_childs_sz > 1){
-				s ~= this.s("}");
-				this.levelDec();
-			}
+			s ~= this.s("}");
+			this.levelDec();
 			
 			is_else = "else"; 
 		}

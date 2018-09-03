@@ -97,6 +97,8 @@ export class ParserBay extends CommonParser{
 	string current_namespace = "";
 	string current_class_name = "";
 	bool is_interface = false;
+	Map<string, string> modules = null;
+	
 	
 	
 	/**
@@ -105,6 +107,18 @@ export class ParserBay extends CommonParser{
 	 */
 	BayrellParserToken createToken(){
 		return new ParserBayToken(this.context(), this);
+	}
+	
+	
+	
+	/**
+	 * Get module name
+	 */
+	string getModuleName(string name){
+		if (this.modules.has(name)){
+			return this.modules.item(name);
+		}
+		return name;
 	}
 	
 	
@@ -1399,6 +1413,7 @@ export class ParserBay extends CommonParser{
 		}
 		this.matchNextToken(";");
 		
+		this.modules.set(name, alias_name);
 		return new OpUse(name, alias_name);
 	}
 	
@@ -1829,6 +1844,16 @@ export class ParserBay extends CommonParser{
 		}
 		
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Reset parser to default settings
+	 */
+	void resetParser(){
+		parent::resetParser();
+		this.modules = new Map<string, string>();
 	}
 	
 	
