@@ -1191,7 +1191,7 @@ export class TranslatorES6 extends CommonTranslator {
 		/* Static variables */
 		for (int i=0; i<op_code.class_variables.count(); i++){
 			OpAssignDeclare variable = op_code.class_variables.item(i);
-			if (variable.flags != null and variable.flags.p_static == true){
+			if (variable.flags != null and (variable.isFlag('static') or variable.isFlag('const'))){
 				this.beginOperation();
 				string s = this.current_namespace ~ "." ~ op_code.class_name ~ "." ~ variable.name ~ " = " ~
 					this.translateRun(variable.value) ~ ";";
@@ -1291,18 +1291,22 @@ export class TranslatorES6 extends CommonTranslator {
 		string res = "";
 		bool has_serializable = false;
 		bool has_cloneable = false;
-		bool has_variables = class_variables != null and class_variables.count() > 0;
+		bool has_variables = false;
 		bool has_implements = class_implements != null and class_implements.count() > 0;
 		
-		if (has_variables){
-			for (int i=0; i<class_variables.count(); i++){
-				OpAssignDeclare variable = class_variables.item(i);
-				if (variable.isFlag("serializable")){
-					has_serializable = true;
-					has_cloneable = true;
-				}
+		for (int i=0; i<class_variables.count(); i++){
+			OpAssignDeclare variable = class_variables.item(i);
+			if (variable.isFlag("serializable")){
+				has_serializable = true;
+			}
+			if (variable.isFlag("cloneable")){
+				has_cloneable = true;
+			}
+			if (not variable.isFlag('static') and not variable.isFlag('const')){
+				has_variables = true;
 			}
 		}
+		
 		
 		if (not this.is_interface){
 			res ~= this.s(
@@ -1333,7 +1337,7 @@ export class TranslatorES6 extends CommonTranslator {
 				if (class_variables != null){
 					for (int i=0; i<class_variables.count(); i++){
 						OpAssignDeclare variable = class_variables.item(i);
-						if (!variable.isFlag('static')){
+						if (not variable.isFlag('static') and not variable.isFlag('const')){
 							this.beginOperation();
 							s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 							this.endOperation();
@@ -1361,11 +1365,13 @@ export class TranslatorES6 extends CommonTranslator {
 			/* If has cloneable variables */
 			if (has_cloneable){
 				
+				/*
 				res ~= this.s("createNewInstance(){");
 				this.levelInc();
 				res ~= this.s("return " ~ this.getName("rtl") ~ ".newInstance( this.getClassName() );");
 				this.levelDec();
 				res ~= this.s("}");
+				*/
 				
 				res ~= this.s("assignObject(obj){");
 				this.levelInc();
@@ -1373,7 +1379,7 @@ export class TranslatorES6 extends CommonTranslator {
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable")){
+					if (variable.isFlag("cloneable")){
 						res ~= this.s("this." ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "._clone(" ~
 							"obj." ~ variable.name ~ ");"

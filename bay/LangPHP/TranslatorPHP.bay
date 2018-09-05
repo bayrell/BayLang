@@ -739,7 +739,7 @@ export class TranslatorPHP extends CommonTranslator {
 		string ch_var = "$";
 		if (op_code.isFlag("const")) ch_var = "";
 		
-		if (op_code.value == null or (not output_value and not op_code.isFlag('static'))){
+		if (op_code.value == null or (not output_value and not op_code.isFlag('static') and not op_code.isFlag('const'))){
 			this.pushOneLine(true);
 			res = ch_var ~ op_code.name;
 			this.popOneLine();
@@ -1417,9 +1417,11 @@ export class TranslatorPHP extends CommonTranslator {
 			OpAssignDeclare variable = class_variables.item(i);
 			if (variable.isFlag("serializable")){
 				has_serializable = true;
+			}
+			if (variable.isFlag("cloneable")){
 				has_cloneable = true;
 			}
-			if (not variable.isFlag('static')){
+			if (not variable.isFlag('static') and not variable.isFlag('const')){
 				has_variables = true;
 			}
 		}
@@ -1440,7 +1442,7 @@ export class TranslatorPHP extends CommonTranslator {
 				if (class_variables != null){
 					for (int i=0; i<class_variables.count(); i++){
 						OpAssignDeclare variable = class_variables.item(i);
-						if (!variable.isFlag('static')){
+						if (not variable.isFlag('static') and not variable.isFlag('const')){
 							this.beginOperation();
 							string s = "$this->" ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 							this.endOperation();
@@ -1456,11 +1458,13 @@ export class TranslatorPHP extends CommonTranslator {
 			/* If has cloneable variables */
 			if (has_cloneable){
 			
+				/*
 				res ~= this.s("public function createNewInstance(){");
 				this.levelInc();
 				res ~= this.s("return new " ~ this.current_class_name ~ "();");
 				this.levelDec();
 				res ~= this.s("}");
+				*/
 				
 				res ~= this.s("public function assignObject($obj){");
 				this.levelInc();
@@ -1468,7 +1472,7 @@ export class TranslatorPHP extends CommonTranslator {
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable")){
+					if (variable.isFlag("cloneable")){
 						res ~= this.s("$this->" ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "::_clone(" ~
 							"$obj->" ~ variable.name ~ ");"
