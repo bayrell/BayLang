@@ -126,6 +126,20 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
+	 * Get module name
+	 * @param string name
+	 * @return string
+	 */
+	string getModuleName(string name){
+		if (this.modules.has(name)){
+			return this.modules.item(name);
+		}
+		return name;
+	}
+	
+	
+	
+	/**
 	 * Constructor
 	 */
 	void constructor (ContextInterface context = null){
@@ -1305,6 +1319,64 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
+	 * Returns declare type
+	 * @return string
+	 */
+	string getTypeValue(BaseOpCode tp){
+		string res = "";
+		while (tp != null){
+			
+			if (tp instanceof OpIdentifier){
+				if (res != "") res = "." ~ res;
+				res = this.getModuleName(tp.value) ~ res;
+				tp = null;
+			}
+			else if (tp instanceof OpDynamic){
+				if (res != "") res = "." ~ res;
+				res = tp.name ~ res;
+				tp = tp.value;			
+			}
+			else if (tp instanceof OpTemplateIdentifier){
+				tp = tp.t;
+			}
+			else {
+				tp = null;
+			}
+		}
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Returns declare type
+	 * @return string
+	 */
+	string getAssignDeclareTypeValue(OpAssignDeclare variable){
+		return this.getTypeValue(variable.tp);
+	}	
+	
+	
+	
+	/**
+	 * Returns declare type
+	 * @return string
+	 */
+	string getAssignDeclareTypeTemplate(OpAssignDeclare variable){
+		
+		if (variable.tp instanceof OpTemplateIdentifier){
+			if (variable.tp.childs != null){
+				BaseOpCode code = variable.tp.childs.get(0);
+				return this.getTypeValue(code);
+			}
+		}
+		
+		return "";
+	}
+	
+	
+	
+	/**
 	 * Class init functions
 	 */
 	string OpClassInit(OpClassDeclare op_code){
@@ -1383,6 +1455,13 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			/* If has cloneable variables */
 			if (has_cloneable){
+			
+				res ~= this.s("public function createNewInstance(){");
+				this.levelInc();
+				res ~= this.s("return new " ~ this.current_class_name ~ "();");
+				this.levelDec();
+				res ~= this.s("}");
+				
 				res ~= this.s("public function assignObject($obj){");
 				this.levelInc();
 				res ~= this.s("if ($obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
@@ -1414,10 +1493,20 @@ export class TranslatorPHP extends CommonTranslator {
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
 					if (variable.isFlag("serializable")){
-						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
-							"$this->" ~ variable.name ~ " = $value;";
-						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
-						else res ~= this.s("else " ~ take_value_s);
+						
+						string type_value = this.getAssignDeclareTypeValue(variable);
+						string type_template = this.getAssignDeclareTypeTemplate(variable);
+						string def_val = "null";
+						if (variable.value != null){
+							def_val = this.translateRun(variable.value);
+						}
+						
+						string s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") ";
+						s ~= "$this->" ~ variable.name ~ " = ";
+						s ~= "rtl::correct($value, \""~type_value~"\", "~def_val~", \""~type_template~"\");";
+						
+						if (class_variables_serializable_count == 0) res ~= this.s(s);
+						else res ~= this.s("else " ~ s);
 						class_variables_serializable_count++;
 					}
 				}

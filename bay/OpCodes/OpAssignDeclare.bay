@@ -19,7 +19,11 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpDynamic;
 use BayrellLang.OpCodes.OpFlags;
+use BayrellLang.OpCodes.OpIdentifier;
+use BayrellLang.OpCodes.OpTemplateIdentifier;
+
 
 export class OpAssignDeclare extends BaseOpCode{
 	
