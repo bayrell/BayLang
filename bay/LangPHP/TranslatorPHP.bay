@@ -1426,7 +1426,7 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 		}
 		
-		if (this.current_module_name != 'Runtime' and this.current_class_name != 'CoreObject'){
+		if (this.current_module_name != 'Runtime' or this.current_class_name != 'CoreObject'){
 			
 			/* Init function */
 			if (has_variables){
