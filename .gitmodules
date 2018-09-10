@@ -4,3 +4,6 @@
 [submodule "es6"]
 	path = es6
 	url = https://github.com/bayrell/lang_es6
+[submodule "php"]
+	path = php
+	url = https://github.com/bayrell/lang_php

@@ -66,35 +66,6 @@ export class TranslatorNodeJS extends TranslatorES6 {
 	
 	
 	/**
-	 * Convert module name to node js package
-	 */
-	string convertModuleName(string name){
-		string arr = "qazwsxedcrfvtgbyhnujmikolp0123456789";
-		string res = "";
-		int sz = rs::strlen(name);
-		bool previsbig = false;
-		for (int i=0; i<sz; i++){
-			string ch = name[i];
-			string ch2 = rs::strtoupper(ch);
-			string ch3 = rs::strtolower(ch);
-			bool isAlphaNum = rs::strpos(arr, ch3) != -1;
-			
-			if (i > 0 and ch == ch2 and not previsbig and isAlphaNum){
-				res ~= "-";
-			}			
-			res ~= ch3;
-			
-			if (ch == ch2 and isAlphaNum) previsbig = true;
-			else previsbig = false;
-			if (not isAlphaNum) previsbig = true;
-		}
-		res ~= "-nodejs";
-		return res;
-	}
-	
-	
-	
-	/**
 	 * Use
 	 */
 	string OpUse(OpUse op_code){
@@ -151,7 +122,7 @@ export class TranslatorNodeJS extends TranslatorES6 {
 			string module_name = arr1.shift();
 			string module_path = rs::implode(".", arr1);
 			if (module_name == 'Runtime') module_name = 'BayrellRuntime';
-			module_name = this.convertModuleName(module_name);
+			module_name = rtl::convertNodeJSModuleName(module_name);
 			res = "var " ~ class_name ~ " = require('" ~ module_name ~ "')." ~ module_path ~ ";";
 		}
 		
