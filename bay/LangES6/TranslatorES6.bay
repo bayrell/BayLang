@@ -841,7 +841,71 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Assign
 	 */
+	string OpAssignAwait(BaseOpCode op_code){
+		string res = "";
+		string s = "";
+		
+		bool old_is_operation = this.beginOperation();
+		this.current_opcode_level = 0;
+		this.levelInc();
+		s = this.s(this.translateRun(op_code.value));
+		this.levelDec();
+		this.endOperation(old_is_operation);
+		
+		string jump_pos_next = this.asyncJumpNext();
+		res ~= this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_next) ~ ");";
+		res ~= this.s("return " ~ s ~ ";");
+		
+		this.levelDec();
+		res ~= this.s("}");
+		res ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_next) ~ "){");
+		this.levelInc();
+		
+		bool old_is_operation = this.beginOperation();
+		this.pushOneLine(true);
+		
+		if (op_code instanceof OpAssign){
+			s = this.translateRun(op_code.ident);
+			if (op_code.op_name == "=") s ~= " = ";
+			else if (op_code.op_name == "~=") s ~= " += ";
+			else if (op_code.op_name == "+=") s ~= " += ";
+			else if (op_code.op_name == "-=") s ~= " -= ";		
+		}
+		else if (op_code instanceof OpAssignDeclare){
+			s = op_code.name ~ " = ";
+		}
+		
+		s ~= this.asyncContextName() ~ ".result();";
+		this.popOneLine();
+		this.endOperation(old_is_operation);
+		this.asyncJumpAdd();
+		
+		res ~= this.s(s);
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Assign
+	 */
 	string OpAssign(OpAssign op_code){
+		
+		bool is_async = false;
+		if (this.isAsync()){
+			if (op_code.value instanceof OpCall){
+				if (op_code.value.is_await){
+					is_async = true;
+				}
+			}
+		}
+		
+		
+		if (is_async){
+			return this.OpAssignAwait(op_code);
+		}
+		
 		
 		bool old_is_operation = this.beginOperation();
 		
@@ -873,6 +937,21 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Assign declare
 	 */
 	string OpAssignDeclare(OpAssignDeclare op_code){
+		
+		bool is_async = false;
+		if (this.isAsync()){
+			if (op_code.value != null and op_code.value instanceof OpCall){
+				if (op_code.value.is_await){
+					is_async = true;
+				}
+			}
+		}
+		
+		
+		if (is_async){
+			return this.OpAssignAwait(op_code);
+		}
+		
 		
 		string res = "";
 		bool old_is_operation = this.beginOperation();
@@ -1074,8 +1153,6 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpIf(OpIf op_code){
 		string s = "";
-		
-		
 		bool old_is_return = this.is_return;
 		
 		string jump_pos_true = "";
@@ -1104,6 +1181,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* If true */
 		this.is_return = false;
+		jump_pos_true = this.asyncJumpAdd();
 		if (not this.isAsync()) this.levelInc();
 		for (int i=0; i<op_code.if_true.count(); i++){
 			op_code_true ~= this.s(this.translateRun(op_code.if_true.item(i)));
@@ -1111,7 +1189,6 @@ export class TranslatorES6 extends CommonTranslator {
 		if (not this.isAsync()) this.levelDec();
 		if (this.isAsync()){
 			is_return_true = this.is_return;
-			jump_pos_true = this.asyncJumpAdd();
 			this.levelInc();
 			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_true) ~ ");");
 			this.levelDec();
@@ -1133,6 +1210,7 @@ export class TranslatorES6 extends CommonTranslator {
 			s ~= this.s(res);
 			
 			this.is_return = false;
+			string jump_pos = this.asyncJumpAdd();
 			string code_else = "";
 			if (not this.isAsync()) this.levelInc();
 			for (int j=0; j<if_else.if_true.count(); j++){
@@ -1142,7 +1220,6 @@ export class TranslatorES6 extends CommonTranslator {
 			
 			if (this.isAsync()){
 				bool is_return = this.is_return;
-				string jump_pos = this.asyncJumpAdd();
 				op_code_else.push({
 					'jump_pos': jump_pos,
 					'is_return': is_return,
@@ -1164,6 +1241,7 @@ export class TranslatorES6 extends CommonTranslator {
 		/* If false */
 		if (op_code.if_false != null){
 			this.is_return = false;
+			jump_pos_false = this.asyncJumpAdd();
 			s ~= this.s("else {");
 			if (not this.isAsync()) this.levelInc();
 			for (int i=0; i<op_code.if_false.count(); i++){
@@ -1172,7 +1250,6 @@ export class TranslatorES6 extends CommonTranslator {
 			if (not this.isAsync()) this.levelDec();
 			if (this.isAsync()){
 				is_return_false = this.is_return;
-				jump_pos_false = this.asyncJumpAdd();
 				this.levelInc();
 				s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_false) ~ ");");
 				this.levelDec();

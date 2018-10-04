@@ -500,9 +500,6 @@ export class ParserBay extends CommonParser{
 		if (this.findNextToken('new')){
 			return this.readNewInstance();
 		}
-		else if (this.findNextToken('await')){
-			return this.readCallAwait();
-		}
 		else if (this.findNextToken('clone')){
 			return this.readClone();
 		}
@@ -945,7 +942,14 @@ export class ParserBay extends CommonParser{
 			int pos = this.findNextTokenVector(v);
 			string op_name = v.item(pos);
 			this.matchNextToken(op_name);
-			op_exp = this.readExpression();
+			
+			if (this.findNextToken('await')){
+				op_exp = this.readCallAwait();
+			}
+			else{
+				op_exp = this.readExpression();
+			}
+			
 			delete v;
 			return new OpAssign(op_ident, op_exp, op_name);
 		}
@@ -972,7 +976,12 @@ export class ParserBay extends CommonParser{
 			this.popToken();
 			if (this.findNextToken("=")){
 				this.matchNextToken("=");
-				op_exp = this.readExpression();
+				if (this.findNextToken('await')){
+					op_exp = this.readCallAwait();
+				}
+				else{
+					op_exp = this.readExpression();
+				}
 			}
 			return new OpAssignDeclare(op_type, op_ident_name, op_exp);
 		}
