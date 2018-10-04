@@ -18,6 +18,7 @@
 
 namespace BayrellLang.LangES6;
 
+use Runtime.rs;
 use Runtime.CoreObject;
 
 
@@ -27,6 +28,120 @@ class FunctionStack extends CoreObject{
 	bool is_async = false;
 	string async_ctx = '';
 	string async_jump = '';
-	int async_jump_pos = 0;
+	Vector<int> async_jump_pos = new Vector<int>();
+	Vector<Map> async_stop_pos = new Vector<Map>();
+	
+	
+	/**
+	 * Returns jump string from arr
+	 * @param Vector<int> arr
+	 * @return string
+	 */
+	static string getJumpString(Vector<int> arr1){
+		Vector<string> arr2 = arr1.map(string (int item){ return rtl::toString(item); });
+		return rs::implode(".", arr2);
+	}
+	
+	
+	
+	/**
+	 * Returns jump position
+	 * @return string
+	 */
+	string getJumpPos(){
+		return self::getJumpString( this.async_jump_pos );
+	}
+	
+	
+	
+	/**
+	 * Returns next jump position
+	 * @return string
+	 */
+	string getJumpNext(){
+		Vector<int> arr = this.async_jump_pos.copy();
+		int sz = arr.count();
+		int item = arr.item(sz - 1);
+		arr.set(sz - 1, item + 1);
+		return self::getJumpString( arr );
+	}
+	
+	
+	
+	/**
+	 * Increments jump position
+	 */
+	void jumpAdd(){
+		int sz = this.async_jump_pos.count();
+		if (sz == 0) 
+			return;
+		
+		int item = this.async_jump_pos.item(sz - 1);
+		this.async_jump_pos.set(sz - 1, item + 1);
+	}
+	
+	
+	
+	/**
+	 * Increment jump position's level
+	 */
+	void jumpPush(){
+		this.async_jump_pos.push(0);
+	}
+	
+	
+	
+	/**
+	 * Decrement jump position's level
+	 */
+	void jumpPop(){
+		this.async_jump_pos.pop();
+	}
+	
+	
+	
+	/**
+	 * Push stop
+	 */
+	void stopPush(string begin_pos, string end_pos){
+		this.async_stop_pos.push({
+			'begin': begin_pos,
+			'end': end_pos,
+		});
+	}
+	
+	
+	/**
+	 * Pop stop
+	 */
+	void stopPop(){
+		this.async_stop_pos.pop();
+	}
+	
+	
+	
+	/**
+	 * Returns begin async position
+	 * @return string
+	 */
+	string getAsyncBeginPos(){
+		int sz = this.async_stop_pos.count();
+		if (sz == 0){ return ""; }
+		Map obj = this.async_stop_pos.item(sz - 1);
+		return obj.get('begin', "", "string");
+	}
+	
+	
+	
+	/**
+	 * Returns end async position
+	 * @return string
+	 */
+	string getAsyncEndPos(){
+		int sz = this.async_stop_pos.count();
+		if (sz == 0){ return ""; }
+		Map obj = this.async_stop_pos.item(sz - 1);
+		return obj.get('end', "", "string");
+	}
 	
 }
