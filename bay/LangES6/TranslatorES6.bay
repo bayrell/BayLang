@@ -96,6 +96,34 @@ export class TranslatorES6 extends CommonTranslator {
 	string current_module_name = "";
 	bool is_interface = false;
 	bool is_return = false;
+	bool is_async_opcode = false;
+	
+	
+	
+	/**
+	 * Returns true if function is async
+	 * @return bool
+	 */
+	void checkAwaitOpCode(BaseOpCode op_code){
+		if (this.detectIsAwait(op_code)){
+			this.is_async_opcode = true;
+		}
+		else{
+			this.is_async_opcode = false;
+		}
+	}
+	
+	
+	
+	/**
+	 * Returns true if function is async
+	 * @return bool
+	 */
+	bool isAsyncF(){
+		if (this.function_stack.count() == 0) return false;
+		return this.function_stack.last().is_async;
+	}
+	
 	
 	
 	/**
@@ -103,8 +131,8 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @return bool
 	 */
 	bool isAsync(){
-		if (this.function_stack.count() == 0) return false;
-		return this.function_stack.last().is_async;
+		if (not this.isAsyncF()) return false;
+		return this.is_async_opcode;
 	}
 	
 	
@@ -114,7 +142,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @return string
 	 */
 	string asyncContextName(){
-		if (not this.isAsync()) return "";
+		if (not this.isAsyncF()) return "";
 		return this.function_stack.last().async_ctx;
 	}
 	
@@ -125,7 +153,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @return string
 	 */
 	string asyncJumpName(){
-		if (not this.isAsync()) return "";
+		if (not this.isAsyncF()) return "";
 		return this.function_stack.last().async_jump;
 	}
 	
@@ -136,7 +164,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @return string
 	 */
 	string asyncJumpCurrent(){
-		if (not this.isAsync()) return "";
+		if (not this.isAsyncF()) return "";
 		FunctionStack obj = this.function_stack.last();
 		return obj.getJumpPos();
 	}
@@ -938,7 +966,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpAssignDeclare(OpAssignDeclare op_code){
 		
-		bool is_async_f = this.isAsync();
+		bool is_async_f = this.isAsyncF();
 		bool is_async = false;
 		if (this.isAsync()){
 			if (op_code.value != null and op_code.value instanceof OpCall){
@@ -958,8 +986,12 @@ export class TranslatorES6 extends CommonTranslator {
 		bool old_is_operation = this.beginOperation();
 		
 		if (op_code.value == null){
+			if (is_async_f){
+				this.endOperation(old_is_operation);
+				return "";
+			}
 			this.pushOneLine(true);
-			res = ((not is_async_f) ? "var " : "") ~ op_code.name;
+			res = "var " ~ op_code.name;
 			this.popOneLine();
 		}
 		else{
@@ -1051,6 +1083,10 @@ export class TranslatorES6 extends CommonTranslator {
 		string jump_pos_begin = "";
 		string jump_pos_end = "";
 		string jump_pos_childs = "";
+		
+		
+		/* Check await op_code*/
+		this.checkAwaitOpCode(op_code);
 		
 		
 		/* Async start */
@@ -1167,6 +1203,8 @@ export class TranslatorES6 extends CommonTranslator {
 		string op_code_false = "";
 		Vector<Map> op_code_else = new Vector<Map>();
 		
+		/* Check await op_code*/
+		this.checkAwaitOpCode(op_code);
 		
 		/* Condition */
 		this.beginOperation();
@@ -1347,7 +1385,7 @@ export class TranslatorES6 extends CommonTranslator {
 		string s = this.s( this.translateRun(op_code.value) );
 		this.levelDec();
 		
-		if (this.isAsync()){
+		if (this.isAsyncF()){
 			s = "return " ~ this.asyncContextName() ~ ".resolve(" ~ s ~ ");";
 			this.is_return = true;
 		}
@@ -1442,6 +1480,9 @@ export class TranslatorES6 extends CommonTranslator {
 		string jump_pos_begin = "";
 		string jump_pos_end = "";
 		string jump_pos_childs = "";
+		
+		/* Check await op_code*/
+		this.checkAwaitOpCode(op_code);
 		
 		jump_pos_begin = this.asyncJumpCurrent();
 		jump_pos_end = this.asyncJumpNext();
@@ -1588,8 +1629,10 @@ export class TranslatorES6 extends CommonTranslator {
 					this.detectAsyncDeclareVariables( item.if_true.item(i), variables );
 				}
 			}
-			for (int i=0; i<op_code.if_false.count(); i++){
-				this.detectAsyncDeclareVariables( op_code.if_true.item(i), variables );
+			if (op_code.if_false != null){
+				for (int i=0; i<op_code.if_false.count(); i++){
+					this.detectAsyncDeclareVariables( op_code.if_true.item(i), variables );
+				}
 			}
 		}
 		else if (op_code instanceof OpTryCatch){
@@ -1605,6 +1648,84 @@ export class TranslatorES6 extends CommonTranslator {
 		
 	}
 	
+	
+	
+	/**
+	 * Returns true if op_code contains await opCall
+	 * @param BaseOpCode op_code
+	 * @return bool
+	 */
+	bool detectIsAwait(BaseOpCode op_code){
+		
+		if (op_code instanceof OpAssign){
+			if (op_code.value != null and op_code.value instanceof OpCall){
+				if (op_code.value.is_await){
+					return true;
+				}
+			}
+			return false;
+		}
+		else if (op_code instanceof OpAssignDeclare){
+			if (op_code.value != null and op_code.value instanceof OpCall){
+				if (op_code.value.is_await){
+					return true;
+				}
+			}
+			return false;
+		}
+		else if (op_code instanceof OpFunctionDeclare){
+			for (int i=0; i<op_code.childs.count(); i++){
+				if (this.detectIsAwait( op_code.childs.item(i) )){
+					return true;
+				}
+			}
+		}
+		else if (op_code instanceof OpFor){
+			for (int i=0; i<op_code.childs.count(); i++){
+				if (this.detectIsAwait( op_code.childs.item(i) )){
+					return true;
+				}
+			}
+		}
+		else if (op_code instanceof OpIf){
+			for (int i=0; i<op_code.if_true.count(); i++){
+				if (this.detectIsAwait( op_code.if_true.item(i) )){
+					return true;
+				}
+			}
+			for (int i=0; i<op_code.if_else.count(); i++){
+				OpIfElse item = op_code.if_else.item(i);
+				for (int j=0; j<item.if_true.count(); j++){
+					if (this.detectIsAwait( item.if_true.item(i) )){
+						return true;
+					}
+				}
+			}
+			if (op_code.if_false != null){
+				for (int i=0; i<op_code.if_false.count(); i++){
+					if (this.detectIsAwait( op_code.if_true.item(i) )){
+						return true;
+					}
+				}
+			}
+		}
+		else if (op_code instanceof OpTryCatch){
+			for (int i=0; i<op_code.childs.count(); i++){
+				if (this.detectIsAwait( op_code.childs.item(i) )){
+					return true;
+				}
+			}
+		}
+		else if (op_code instanceof OpWhile){
+			for (int i=0; i<op_code.childs.count(); i++){
+				if (this.detectIsAwait( op_code.childs.item(i) )){
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
 	
 	
 	
