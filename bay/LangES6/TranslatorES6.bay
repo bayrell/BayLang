@@ -938,6 +938,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpAssignDeclare(OpAssignDeclare op_code){
 		
+		bool is_async_f = this.isAsync();
 		bool is_async = false;
 		if (this.isAsync()){
 			if (op_code.value != null and op_code.value instanceof OpCall){
@@ -958,13 +959,13 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		if (op_code.value == null){
 			this.pushOneLine(true);
-			res = "var " ~ op_code.name;
+			res = ((not is_async_f) ? "var " : "") ~ op_code.name;
 			this.popOneLine();
 		}
 		else{
 			/* one line */
 			this.pushOneLine(true);
-			res = "var " ~ op_code.name ~ ' = ';
+			res = ((not is_async_f) ? "var " : "") ~ op_code.name ~ ' = ';
 			this.popOneLine();
 			
 			/* result */
@@ -1556,6 +1557,57 @@ export class TranslatorES6 extends CommonTranslator {
 	/** ============================= Classes ============================= */
 	
 	
+	
+	/**
+	 * Returns all declare variables for async function
+	 * @param BaseOpCode op_code
+	 * @param Vector<string> variables
+	 */
+	void detectAsyncDeclareVariables(BaseOpCode op_code, Vector<string> variables){
+		
+		if (op_code instanceof OpAssignDeclare){
+			variables.push(op_code.name);
+		}
+		else if (op_code instanceof OpFunctionDeclare){
+			for (int i=0; i<op_code.childs.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+			}
+		}
+		else if (op_code instanceof OpFor){
+			for (int i=0; i<op_code.childs.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+			}
+		}
+		else if (op_code instanceof OpIf){
+			for (int i=0; i<op_code.if_true.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.if_true.item(i), variables );
+			}
+			for (int i=0; i<op_code.if_else.count(); i++){
+				OpIfElse item = op_code.if_else.item(i);
+				for (int j=0; j<item.if_true.count(); j++){
+					this.detectAsyncDeclareVariables( item.if_true.item(i), variables );
+				}
+			}
+			for (int i=0; i<op_code.if_false.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.if_true.item(i), variables );
+			}
+		}
+		else if (op_code instanceof OpTryCatch){
+			for (int i=0; i<op_code.childs.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+			}
+		}
+		else if (op_code instanceof OpWhile){
+			for (int i=0; i<op_code.childs.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+			}
+		}
+		
+	}
+	
+	
+	
+	
 	/**
 	 * Function header
 	 */
@@ -1637,6 +1689,7 @@ export class TranslatorES6 extends CommonTranslator {
 			return "";
 		}
 		
+		
 		/* Function Header */
 		this.functionPush(op_code.name, op_code.isFlag("async"));
 		res ~= this.OpFunctionDeclareHeader(op_code);
@@ -1645,8 +1698,17 @@ export class TranslatorES6 extends CommonTranslator {
 		this.pushOneLine(false);
 		this.levelInc();
 		
+		
 		/* Async function */
 		if (op_code.isFlag("async")){
+			
+			/* Detect async declare variables */
+			Vector<string> variables = new Vector<string>();
+			this.detectAsyncDeclareVariables(op_code, variables);
+			res ~= this.s("var " ~ rs::implode(", ", variables) ~ ";");
+			delete variables;
+			
+			/* Detect async return function */
 			res ~= this.s("return (" ~ this.asyncContextName() ~ ") => {");
 			this.levelInc();
 			res ~= this.s("var " ~ this.asyncJumpName() ~ " = " ~ this.asyncContextName() ~ ".current();");
