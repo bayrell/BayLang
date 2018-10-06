@@ -1449,18 +1449,48 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpTryCatch(OpTryCatch op_code){
 		string s = "";
 		
-		s ~= "try{";
-		this.levelInc();
-		for (int i=0; i<op_code.op_try.count(); i++){
-			s ~= this.s(this.translateRun(op_code.op_try.item(i)));
-		}
-		this.levelDec();
-		s ~= this.s("}");
+		/* Check await op_code*/
+		this.checkAwaitOpCode(op_code);
 		
+		string jump_pos_catch = "";
+		string jump_pos_end = "";
+		if ( this.isAsync() ){}
+		else{
+			s ~= "try{"; 
+			this.levelInc();
+		}
+		
+		string op_code_try = "";
+		for (int i=0; i<op_code.op_try.count(); i++){
+			op_code_try ~= this.s(this.translateRun(op_code.op_try.item(i)));
+		}
+		jump_pos_catch = this.asyncJumpNext();
+		this.asyncJumpAdd();
+		jump_pos_end = this.asyncJumpNext();
+		
+		if ( this.isAsync() ){ 
+			s ~= this.asyncContextName() ~ ".catchPush(" ~ this.convertString(jump_pos_catch) ~ ");";
+			s ~= op_code_try;
+			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_end) ~ ");");
+			this.levelDec();
+			s ~= this.s("}");
+			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_catch) ~ "){");
+			this.levelInc();
+			this.asyncJumpAdd();
+		}
+		else{
+			s ~= op_code_try;
+			this.levelDec();
+			s ~= this.s("}"); 
+		}
 		
 		string is_else = "";
 		int try_catch_childs_sz = op_code.childs.count();
-		s ~= "catch(_the_exception){";
+		if ( not this.isAsync() ) s ~= "catch(_the_exception){";
+		else {
+			s ~= this.s(this.asyncContextName() ~ ".catchPop();");
+			s ~= this.s("var _the_exception = " ~ this.asyncContextName() ~ ".getError();");
+		}
 		for (int i=0; i<try_catch_childs_sz; i++){
 			OpTryCatchChilds try_catch = op_code.childs.item(i);
 			
@@ -1472,7 +1502,7 @@ export class TranslatorES6 extends CommonTranslator {
 			if (tp == 'var') tp = 'Error';
 			
 			/* catch childs */
-			this.levelInc();
+			if ( not this.isAsync() ) this.levelInc();
 			s ~= this.s(is_else ~ "if (_the_exception instanceof " ~ tp ~ "){");
 			this.levelInc();
 			s ~= this.s("var " ~ name ~ " = _the_exception;");
@@ -1481,17 +1511,31 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			this.levelDec();
 			s ~= this.s("}");
-			this.levelDec();
+			if ( not this.isAsync() ) this.levelDec();
 			
 			is_else = "else"; 
 		}
 		if (try_catch_childs_sz > 0){
-			this.levelInc();
-			s ~= this.s("else { throw _the_exception; }");
-			this.levelDec();
+			if ( this.isAsync() ){
+				s ~= this.s("else {  return " ~ this.asyncContextName() ~ ".error( _the_exception );  }");
+			}
+			else{
+				this.levelInc();
+				s ~= this.s("else { throw _the_exception; }");
+				this.levelDec();
+			}
 		}
-		s ~= this.s("}");
-		
+		if ( this.isAsync() ){
+			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_end) ~ ");");
+			this.levelDec();
+			s ~= this.s("}");
+			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_end) ~ "){");
+			this.levelInc();
+			this.asyncJumpAdd();
+		}
+		else {
+			s ~= this.s("}");
+		}
 		
 		return s;
 	}
@@ -1662,8 +1706,8 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		else if (op_code instanceof OpTryCatch){
-			for (int i=0; i<op_code.childs.count(); i++){
-				this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+			for (int i=0; i<op_code.op_try.count(); i++){
+				this.detectAsyncDeclareVariables( op_code.op_try.item(i), variables );
 			}
 		}
 		else if (op_code instanceof OpWhile){
@@ -1742,8 +1786,8 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		else if (op_code instanceof OpTryCatch){
-			for (int i=0; i<op_code.childs.count(); i++){
-				if (this.detectIsAwait( op_code.childs.item(i) )){
+			for (int i=0; i<op_code.op_try.count(); i++){
+				if (this.detectIsAwait( op_code.op_try.item(i) )){
 					return true;
 				}
 			}
@@ -1858,7 +1902,9 @@ export class TranslatorES6 extends CommonTranslator {
 			/* Detect async declare variables */
 			Vector<string> variables = new Vector<string>();
 			this.detectAsyncDeclareVariables(op_code, variables);
-			res ~= this.s("var " ~ rs::implode(", ", variables) ~ ";");
+			if (variables.count() > 0){
+				res ~= this.s("var " ~ rs::implode(", ", variables) ~ ";");
+			}
 			delete variables;
 			
 			/* Detect async return function */
