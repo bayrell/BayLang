@@ -1696,7 +1696,7 @@ export class TranslatorES6 extends CommonTranslator {
 			for (int i=0; i<op_code.if_else.count(); i++){
 				OpIfElse item = op_code.if_else.item(i);
 				for (int j=0; j<item.if_true.count(); j++){
-					this.detectAsyncDeclareVariables( item.if_true.item(i), variables );
+					this.detectAsyncDeclareVariables( item.if_true.item(j), variables );
 				}
 			}
 			if (op_code.if_false != null){
@@ -1772,7 +1772,7 @@ export class TranslatorES6 extends CommonTranslator {
 			for (int i=0; i<op_code.if_else.count(); i++){
 				OpIfElse item = op_code.if_else.item(i);
 				for (int j=0; j<item.if_true.count(); j++){
-					if (this.detectIsAwait( item.if_true.item(i) )){
+					if (this.detectIsAwait( item.if_true.item(j) )){
 						return true;
 					}
 				}
