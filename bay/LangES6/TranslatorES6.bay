@@ -175,8 +175,8 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Returns async jump position
 	 * @return string
 	 */
-	string asyncJumpAdd(){
-		if (not this.isAsync()) return "";
+	string asyncJumpAdd(bool force = false){
+		if (not this.isAsync() and not force) return "";
 		FunctionStack obj = this.function_stack.last();
 		obj.jumpAdd();
 		return obj.getJumpPos();
@@ -188,8 +188,8 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Returns next jump position
 	 * @return string
 	 */
-	string asyncJumpNext(){
-		if (not this.isAsync()) return "";
+	string asyncJumpNext(bool force = false){
+		if (not this.isAsync() and not force) return "";
 		FunctionStack obj = this.function_stack.last();
 		return this.function_stack.last().getJumpNext();
 	}
@@ -199,8 +199,8 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Increment jump position's level 
 	 */
-	void asyncJumpPush(){
-		if (not this.isAsync()) return ;
+	void asyncJumpPush(bool force = false){
+		if (not this.isAsync() and not force) return ;
 		FunctionStack obj = this.function_stack.last();
 		this.function_stack.last().jumpPush();
 	}
@@ -210,8 +210,8 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Decrement jump position's level
 	 */
-	void asyncJumpPop(){
-		if (not this.isAsync()) return ;
+	void asyncJumpPop(bool force = false){
+		if (not this.isAsync() and not force) return ;
 		FunctionStack obj = this.function_stack.last();
 		this.function_stack.last().jumpPop();
 	}
@@ -904,7 +904,7 @@ export class TranslatorES6 extends CommonTranslator {
 		this.levelDec();
 		this.endOperation(old_is_operation);
 		
-		string jump_pos_next = this.asyncJumpNext();
+		string jump_pos_next = this.asyncJumpNext(true);
 		res ~= this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_next) ~ ");";
 		res ~= this.s("return " ~ s ~ ";");
 		
@@ -930,7 +930,7 @@ export class TranslatorES6 extends CommonTranslator {
 		s ~= this.asyncContextName() ~ ".result();";
 		this.popOneLine();
 		this.endOperation(old_is_operation);
-		this.asyncJumpAdd();
+		this.asyncJumpAdd(true);
 		
 		res ~= this.s(s);
 		
@@ -946,8 +946,9 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpAssign(OpAssign op_code){
 		
+		bool is_async_f = this.isAsyncF();
 		bool is_async = false;
-		if (this.isAsync()){
+		if (is_async_f){
 			if (op_code.value instanceof OpCall){
 				if (op_code.value.is_await){
 					is_async = true;
@@ -994,7 +995,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		bool is_async_f = this.isAsyncF();
 		bool is_async = false;
-		if (this.isAsync()){
+		if (is_async_f){
 			if (op_code.value != null and op_code.value instanceof OpCall){
 				if (op_code.value.is_await){
 					is_async = true;
