@@ -18,22 +18,22 @@
 
 namespace BayrellLang.Exceptions;
 
-use Runtime.Utils;
+use Runtime.RuntimeUtils;
 use BayrellParser.Exceptions.ParserError;
 use BayrellLang.LangConstant;
 
 
 class TwiceDeclareElseError extends ParserError{
 	
-	void constructor(ContextInterface context, int line, int col, Object prev = null){	
+	void constructor(int line, int col, ContextInterface context, Object prev = null){
 		
 		if (context == null)
-			context = Utils::globalContext();
+			context = RuntimeUtils::globalContext();
 			
 		parent(
-			context, 
-			context.translate("ERROR_TWICE_DECLARE_ERROR"), 
-			LangConstant::ERROR_TWICE_DECLARE_ERROR, 
+			context.translate("ERROR_TWICE_DECLARE_ERROR"),
+			LangConstant::ERROR_TWICE_DECLARE_ERROR,
+			context,
 			prev
 		);
 		
