@@ -1422,7 +1422,15 @@ export class ParserBay extends CommonParser{
 		}
 		this.matchNextToken(";");
 		
-		this.modules.set(name, alias_name);
+		if (alias_name != ""){
+			this.modules.set(alias_name, name);
+		}
+		else{
+			Vector<string> arr = rs::explode(".", name);
+			string last_name = arr.pop();
+			this.modules.set(last_name, name);
+		}
+		
 		return new OpUse(name, alias_name);
 	}
 	
