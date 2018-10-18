@@ -2208,7 +2208,7 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				this.levelDec();
 				res ~= this.s("}");
-				res ~= this.s("super.assign(obj);");
+				res ~= this.s("super.assignObject(obj);");
 				this.levelDec();
 				res ~= this.s("}");
 			}
