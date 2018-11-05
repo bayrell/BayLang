@@ -1527,6 +1527,7 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		if ( this.isAsync() ){
+			s ~= this.s(this.asyncContextName() ~ ".clearError();");
 			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_end) ~ ");");
 			this.levelDec();
 			s ~= this.s("}");
@@ -1950,7 +1951,7 @@ export class TranslatorES6 extends CommonTranslator {
 			res ~= this.s("return " ~ this.asyncContextName() ~ ".next();");
 			this.levelDec();	
 			res ~= this.s("}");
-			res ~= this.s("return " ~ this.asyncContextName() ~ ".forward();");
+			res ~= this.s("return " ~ this.asyncContextName() ~ ".end();");
 			this.levelDec();
 			res ~= this.s("}");
 		}
