@@ -26,12 +26,4 @@ export class OpNamespace extends OpValueString{
 	public serializable string op = "op_namespace";
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpNamespace";
-	}
-	
 }

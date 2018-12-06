@@ -75,6 +75,7 @@ use BayrellLang.OpCodes.OpShiftLeft;
 use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
+use BayrellLang.OpCodes.OpStructDeclare;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -95,9 +96,11 @@ export class TranslatorES6 extends CommonTranslator {
 	Vector<string> function_stack = null;
 	string current_module_name = "";
 	bool is_interface = false;
+	bool is_struct = false;
 	bool is_return = false;
 	bool is_async_opcode = false;
 	bool is_async_await_op_call = false;
+	bool struct_read_only = false;
 	
 	
 	/**
@@ -2128,6 +2131,10 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		
+		if (this.is_struct){
+			has_serializable = true;
+			has_cloneable = true;
+		}
 		
 		if (not this.is_interface){
 			res ~= this.s(
@@ -2200,7 +2207,8 @@ export class TranslatorES6 extends CommonTranslator {
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("cloneable")){
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("cloneable") or is_struct){
 						res ~= this.s("this." ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "._clone(" ~
 							"obj." ~ variable.name ~ ");"
@@ -2224,7 +2232,8 @@ export class TranslatorES6 extends CommonTranslator {
 				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable")){
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("serializable") or is_struct){
 						
 						string type_value = this.getAssignDeclareTypeValue(variable);
 						string type_template = this.getAssignDeclareTypeTemplate(variable);
@@ -2255,7 +2264,8 @@ export class TranslatorES6 extends CommonTranslator {
 				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable")){
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("serializable") or is_struct){
 						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"return this." ~ variable.name ~ ";";
 						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
@@ -2274,7 +2284,8 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("super.getVariablesNames(names);");
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable"))
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("serializable") or is_struct)
 						res ~= this.s("names.push(" ~ this.convertString(variable.name) ~ ");");
 				}
 				this.levelDec();
@@ -2369,6 +2380,18 @@ export class TranslatorES6 extends CommonTranslator {
 		return res;
 	}
 	
+	
+	
+	/**
+	 * Struct declare
+	 */
+	string OpStructDeclare(OpStructDeclare op_code){
+		this.is_struct = true;
+		this.struct_read_only = op_code.is_readonly;
+		string res = this.OpClassDeclare(op_code);
+		this.is_struct = false;
+		return res;
+	}
 	
 	
 	/** =========================== Preprocessor ========================== */

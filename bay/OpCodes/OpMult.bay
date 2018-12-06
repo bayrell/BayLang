@@ -26,12 +26,4 @@ export class OpMult extends OpValue2{
 	public serializable string op = "op_mult";
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpMult";
-	}
-	
 }

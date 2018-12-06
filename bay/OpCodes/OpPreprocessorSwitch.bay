@@ -26,12 +26,4 @@ export class OpPreprocessorSwitch extends OpChilds{
 	public serializable string op = "op_preprocessor_switch";
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpPreprocessorSwitch";
-	}
-	
 }

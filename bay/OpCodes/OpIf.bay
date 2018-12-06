@@ -31,14 +31,6 @@ export class OpIf extends BaseOpCode{
 	public serializable Vector<OpIfElse> if_else = null;
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpIf";
-	}
-	
 	
 	
 	/**

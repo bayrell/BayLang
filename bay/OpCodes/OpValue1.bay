@@ -27,15 +27,6 @@ export class OpValue1 extends BaseOpCode{
 	public serializable BaseOpCode value = null;
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpValue";
-	}
-	
-	
 	
 	/**
 	 * Constructor

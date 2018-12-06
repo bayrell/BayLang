@@ -29,15 +29,6 @@ export class OpTryCatch extends BaseOpCode{
 	public serializable Vector<OpTryCatchChilds> childs = null;
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpTryCatch";
-	}
-	
-	
 	
 	/**
 	 * Constructor

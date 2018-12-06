@@ -74,6 +74,7 @@ use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
 use BayrellLang.OpCodes.OpStringItem;
+use BayrellLang.OpCodes.OpStructDeclare;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -95,7 +96,8 @@ export class TranslatorPHP extends CommonTranslator {
 	string current_module_name = "";
 	bool is_static = false;
 	bool is_interface = false;
-	
+	bool is_struct = false;
+	bool struct_read_only = false;
 	
 	
 	/**
@@ -739,15 +741,20 @@ export class TranslatorPHP extends CommonTranslator {
 		string ch_var = "$";
 		if (op_code.isFlag("const")) ch_var = "";
 		
+		string var_prefix = "";
+		if (this.struct_read_only and this.is_struct and op_code.isFlag("public") and not op_code.isFlag("static")){
+			var_prefix = "__";
+		}
+		
 		if (op_code.value == null or (not output_value and not op_code.isFlag('static') and not op_code.isFlag('const'))){
 			this.pushOneLine(true);
-			res = ch_var ~ op_code.name;
+			res = ch_var ~ var_prefix ~ op_code.name;
 			this.popOneLine();
 		}
 		else{
 			/* one line */
 			this.pushOneLine(true);
-			res = ch_var ~ op_code.name ~ ' = ';
+			res = ch_var ~ var_prefix ~ op_code.name ~ ' = ';
 			this.popOneLine();
 			
 			/* result */
@@ -1301,6 +1308,10 @@ export class TranslatorPHP extends CommonTranslator {
 					if (variable.isFlag("protected")){
 						s ~= "protected ";
 					}
+					else if (this.struct_read_only and this.is_struct and 
+						variable.isFlag("public") and not variable.isFlag("static")){
+						s ~= "protected ";
+					}
 					else {
 						s ~= "public ";
 					}
@@ -1413,6 +1424,11 @@ export class TranslatorPHP extends CommonTranslator {
 			);
 		}
 		
+		if (this.is_struct){
+			has_serializable = true;
+			has_cloneable = true;
+		}
+		
 		for (int i=0; i<class_variables.count(); i++){
 			OpAssignDeclare variable = class_variables.item(i);
 			if (variable.isFlag("serializable")){
@@ -1424,6 +1440,11 @@ export class TranslatorPHP extends CommonTranslator {
 			if (not variable.isFlag('static') and not variable.isFlag('const')){
 				has_variables = true;
 			}
+		}
+		
+		string var_prefix = "";
+		if (this.struct_read_only and this.is_struct){
+			var_prefix = "__";
 		}
 		
 		if (this.current_module_name != 'Runtime' or this.current_class_name != 'CoreObject'){
@@ -1444,7 +1465,8 @@ export class TranslatorPHP extends CommonTranslator {
 						OpAssignDeclare variable = class_variables.item(i);
 						if (not variable.isFlag('static') and not variable.isFlag('const')){
 							this.beginOperation();
-							string s = "$this->" ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							string s = "$this->" ~ var_prefix ~ variable.name ~ " = " ~ 
+								this.translateRun(variable.value) ~ ";";
 							this.endOperation();
 							res ~= this.s(s);
 						}
@@ -1466,16 +1488,19 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("}");
 				*/
 				
-				res ~= this.s("public function assignObject($obj){");
+				string s1 = "public";
+				if (this.struct_read_only) s1 = "protected";
+				res ~= this.s(s1 ~ " function assignObject($obj){");
 				this.levelInc();
 				res ~= this.s("if ($obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("cloneable")){
-						res ~= this.s("$this->" ~ variable.name ~ " = " ~
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("cloneable") or is_struct){
+						res ~= this.s("$this->" ~ var_prefix ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "::_clone(" ~
-							"$obj->" ~ variable.name ~ ");"
+							"$obj->" ~ var_prefix ~ variable.name ~ ");"
 						);
 					}
 				}
@@ -1491,12 +1516,15 @@ export class TranslatorPHP extends CommonTranslator {
 				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
-				res ~= this.s("public function assignValue($variable_name, $value){");
+				string s1 = "public";
+				if (this.struct_read_only) s1 = "protected";
+				res ~= this.s(s1 ~ " function assignValue($variable_name, $value){");
 				this.levelInc();
 				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable")){
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("serializable") or is_struct){
 						
 						string type_value = this.getAssignDeclareTypeValue(variable);
 						string type_template = this.getAssignDeclareTypeTemplate(variable);
@@ -1506,7 +1534,7 @@ export class TranslatorPHP extends CommonTranslator {
 						}
 						
 						string s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") ";
-						s ~= "$this->" ~ variable.name ~ " = ";
+						s ~= "$this->" ~ var_prefix ~ variable.name ~ " = ";
 						s ~= "rtl::correct($value, \""~type_value~"\", "~def_val~", \""~type_template~"\");";
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);
@@ -1525,9 +1553,10 @@ export class TranslatorPHP extends CommonTranslator {
 				class_variables_serializable_count = 0;
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable")){
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("serializable") or is_struct){
 						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
-							"return $this->" ~ variable.name ~ ";";
+							"return $this->" ~ var_prefix ~ variable.name ~ ";";
 						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
 						else res ~= this.s("else " ~ take_value_s);
 						class_variables_serializable_count++;
@@ -1544,12 +1573,18 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("parent::getVariablesNames($names);");
 				for (int i=0; i<class_variables.count(); i++){
 					OpAssignDeclare variable = class_variables.item(i);
-					if (variable.isFlag("serializable"))
+					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
+					if (variable.isFlag("serializable") or is_struct)
 						res ~= this.s("$names->push(" ~ this.convertString(variable.name) ~ ");");
 				}
 				this.levelDec();
 				res ~= this.s("}");
-			}		
+			}
+			
+			if (this.struct_read_only and this.is_struct){				
+				res ~= this.s("public function __get($key){ return $this->takeValue($key); }");
+				res ~= this.s("public function __set($key, $value){}");
+			}
 		}
 		
 		return res;
@@ -1620,6 +1655,18 @@ export class TranslatorPHP extends CommonTranslator {
 		return res;
 	}
 	
+	
+	
+	/**
+	 * Struct declare
+	 */
+	string OpStructDeclare(OpStructDeclare op_code){
+		this.is_struct = true;
+		this.struct_read_only = op_code.is_readonly;
+		string res = this.OpClassDeclare(op_code);
+		this.is_struct = false;
+		return res;
+	}
 	
 	
 	/** =========================== Preprocessor ========================== */

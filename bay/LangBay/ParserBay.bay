@@ -75,6 +75,7 @@ use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
 use BayrellLang.OpCodes.OpStringItem;
+use BayrellLang.OpCodes.OpStructDeclare;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -1726,7 +1727,7 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read operator namespace
+	 * Read class
 	 * @return BaseOpCode
 	 */
 	OpClassDeclare readDeclareClass(OpFlags class_flags){
@@ -1740,7 +1741,7 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
-	 * Read operator namespace
+	 * Read interface
 	 * @return BaseOpCode
 	 */
 	OpInterfaceDeclare readDeclareInterface(OpFlags class_flags){
@@ -1749,6 +1750,24 @@ export class ParserBay extends CommonParser{
 		this.is_interface = true;
 		this.readClassHead(res);
 		this.is_interface = false;
+		res.flags = class_flags;
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Read struct
+	 * @return BaseOpCode
+	 */
+	OpStructDeclare readDeclareStruct(OpFlags class_flags){
+		OpStructDeclare res = new OpStructDeclare();
+		this.matchNextToken("struct");
+		if (this.findNextToken("readonly")){
+			this.matchNextToken("readonly");
+			res.is_readonly = true;
+		}
+		this.readClassHead(res);
 		res.flags = class_flags;
 		return res;
 	}
@@ -1854,6 +1873,9 @@ export class ParserBay extends CommonParser{
 			}
 			else if (this.findNextToken("interface")){
 				res.push(this.readDeclareInterface(flags));
+			}
+			else if (this.findNextToken("struct")){
+				res.push(this.readDeclareStruct(flags));
 			}
 			else {
 				throw this.parserError("Unknown token " ~ this.lookNextToken());

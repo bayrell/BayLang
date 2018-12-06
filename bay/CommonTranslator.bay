@@ -75,6 +75,7 @@ use BayrellLang.OpCodes.OpShiftRight;
 use BayrellLang.OpCodes.OpStatic;
 use BayrellLang.OpCodes.OpString;
 use BayrellLang.OpCodes.OpStringItem;
+use BayrellLang.OpCodes.OpStructDeclare;
 use BayrellLang.OpCodes.OpSub;
 use BayrellLang.OpCodes.OpTemplateIdentifier;
 use BayrellLang.OpCodes.OpTernary;
@@ -276,6 +277,7 @@ export class CommonTranslator extends ContextObject{
 	string OpStatic(OpStatic op_code){  return ""; }
 	string OpString(OpString op_code){  return ""; }
 	string OpStringItem(OpString op_code){  return ""; }
+	string OpStructDeclare(OpString op_code){  return ""; }
 	string OpSub(OpSub op_code){  return ""; }
 	string OpTemplateIdentifier(OpTemplateIdentifier op_code){  return ""; }
 	string OpTernary(OpTernary op_code){  return ""; }
@@ -331,6 +333,9 @@ export class CommonTranslator extends ContextObject{
 		/* Inherited functions */
 		else if (op_code instanceof OpInterfaceDeclare){
 			return this.OpInterfaceDeclare(op_code);
+		}
+		else if (op_code instanceof OpStructDeclare){
+			return this.OpStructDeclare(op_code);
 		}
 		
 		/* Other functions */

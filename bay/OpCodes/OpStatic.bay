@@ -28,15 +28,6 @@ export class OpStatic extends BaseOpCode{
 	public serializable string name = null;
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpStatic";
-	}
-	
-	
 	
 	/**
 	 * Constructor

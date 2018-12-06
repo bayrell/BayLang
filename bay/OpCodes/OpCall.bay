@@ -31,16 +31,6 @@ export class OpCall extends BaseOpCode{
 	
 	
 	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpCall";
-	}
-	
-	
-	
-	/**
 	 * Constructor
 	 */
 	void constructor(BaseOpCode value = null, Vector<BaseOpCode> args = null){

@@ -25,13 +25,4 @@ export class OpContinue extends BaseOpCode{
 	
 	public serializable string op = "op_continue";
 	
-	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpContinue";
-	}
-	
 }

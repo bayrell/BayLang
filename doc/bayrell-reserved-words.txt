@@ -79,3 +79,5 @@ implementsof
 not
 serializable
 cloneable
+struct
+readonly

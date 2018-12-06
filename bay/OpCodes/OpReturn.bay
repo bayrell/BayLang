@@ -26,12 +26,4 @@ export class OpReturn extends OpValue1{
 	public serializable string op = "op_return";
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpReturn";
-	}
-	
 }

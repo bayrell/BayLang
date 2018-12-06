@@ -19,31 +19,13 @@
 namespace BayrellLang.OpCodes;
 
 use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpClassDeclare;
 
 
-export class OpValueString extends BaseOpCode{
+export class OpStructDeclare extends OpClassDeclare{
 	
-	public serializable string op = "op_value";
-	public serializable string value = "";
-	
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(string value = ""){
-		parent();
-		this.value = value;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
+	public serializable string op = "op_struct";
+	public serializable bool is_readonly = false;	
 	
 	
 }

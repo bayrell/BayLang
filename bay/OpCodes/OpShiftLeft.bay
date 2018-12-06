@@ -25,13 +25,4 @@ export class OpShiftLeft extends OpValue2{
 	
 	public serializable string op = "op_shift_left";
 	
-	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpShiftLeft";
-	}
-	
 }

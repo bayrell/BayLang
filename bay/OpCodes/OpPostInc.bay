@@ -26,12 +26,4 @@ export class OpPostInc extends OpValue1{
 	public serializable string op = "op_post_inc";
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpPostInc";
-	}
-	
 }
