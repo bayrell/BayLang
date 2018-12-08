@@ -23,6 +23,7 @@ use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
+use BayrellLang.OpCodes.OpAnnotation;
 use BayrellLang.OpCodes.OpAssign;
 use BayrellLang.OpCodes.OpAssignDeclare;
 use BayrellLang.OpCodes.OpBitAnd;
@@ -99,7 +100,7 @@ export class ParserBay extends CommonParser{
 	string current_class_name = "";
 	bool is_interface = false;
 	Map<string, string> modules = null;
-	
+	Vector<OpAnnotation> annotations = null;
 	
 	
 	/**
@@ -1463,6 +1464,20 @@ export class ParserBay extends CommonParser{
 	
 	
 	/**
+	 * Read annotation
+	 */
+	void readAnnotation(){
+		this.matchNextToken("@");
+		OpAnnotation op_annotation = new OpAnnotation();
+		op_annotation.kind = this.readTemplateIdentifier();
+		op_annotation.options = this.readMap();
+		if (this.annotations == null) this.annotations = new Vector<OpAnnotation>();
+		this.annotations.push( op_annotation );
+	}
+	
+	
+	
+	/**
 	 * Read declare class arguments
 	 * @return BaseOpCode
 	 */
@@ -1636,11 +1651,19 @@ export class ParserBay extends CommonParser{
 		bool is_declare_function = false;
 		if (flags != null and flags.p_declare or this.is_interface) is_declare_function = true;
 		
+		/* Read annotation */
+		if (this.findNextToken("@")){
+			this.readAnnotation();
+			return ;
+		}
+		
 		/* Read function */
 		op_code = this.readDeclareArrowFunction(true, is_declare_function);
-		if (op_code){
+		if (op_code and op_code instanceof OpFunctionDeclare){
+			op_code.annotations = this.annotations;
 			op_code.flags = flags;
 			res.childs.push( op_code );
+			this.annotations = null;
 			return ;
 		}
 		
@@ -1650,9 +1673,11 @@ export class ParserBay extends CommonParser{
 			throw this.parserError("Assign are not alowed here");
 		}
 		else if (op_code instanceof OpAssignDeclare){
+			op_code.annotations = this.annotations;
 			op_code.flags = flags;
-			res.class_variables.push(op_code);
+			res.childs.push(op_code);
 			this.matchNextToken(";");
+			this.annotations = null;
 			return ;
 		}
 		
@@ -1869,12 +1894,15 @@ export class ParserBay extends CommonParser{
 			
 			OpFlags flags = this.readFlags();
 			if (this.findNextToken("class")){
+				this.annotations = null;
 				res.push(this.readDeclareClass(flags));
 			}
 			else if (this.findNextToken("interface")){
+				this.annotations = null;
 				res.push(this.readDeclareInterface(flags));
 			}
 			else if (this.findNextToken("struct")){
+				this.annotations = null;
 				res.push(this.readDeclareStruct(flags));
 			}
 			else {

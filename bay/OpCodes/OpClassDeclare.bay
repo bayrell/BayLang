@@ -28,7 +28,7 @@ export class OpClassDeclare extends BaseOpCode{
 	public serializable string class_name = "";
 	public serializable BaseOpCode class_extends = "";
 	public serializable Vector<string> class_implements = null;
-	public serializable Vector<OpAssignDeclare> class_variables = null;
+	/*public serializable Vector<OpAssignDeclare> class_variables = null;*/
 	public serializable Vector<BaseOpCode> childs = null;
 	public serializable Vector<BaseOpCode> class_template = null;
 	public serializable OpFlags flags = null;
