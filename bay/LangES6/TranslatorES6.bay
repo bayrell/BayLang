@@ -2120,19 +2120,33 @@ export class TranslatorES6 extends CommonTranslator {
 		bool has_cloneable = false;
 		bool has_variables = false;
 		bool has_implements = class_implements != null and class_implements.count() > 0;
+		bool has_methods_annotations = false;
+		bool has_fields_annotations = false;
 		
 		for (int i=0; i<childs.count(); i++){
 			BaseOpCode variable = childs.item(i);
-			if (not (variable instanceof OpAssignDeclare))
-				continue;
-			if (variable.isFlag("serializable")){
-				has_serializable = true;
+			if (variable instanceof OpAssignDeclare){
+				if (variable.isFlag("serializable")){
+					has_serializable = true;
+					has_cloneable = true;
+				}
+				if (variable.isFlag("cloneable")){
+					has_cloneable = true;
+				}
+				if (variable.isFlag("assignable")){
+					has_serializable = true;
+				}
+				if (not variable.isFlag('static') and not variable.isFlag('const')){
+					has_variables = true;
+				}
+				if (variable.hasAnnotations()){
+					has_methods_annotations = true;
+				}
 			}
-			if (variable.isFlag("cloneable")){
-				has_cloneable = true;
-			}
-			if (not variable.isFlag('static') and not variable.isFlag('const')){
-				has_variables = true;
+			if (variable instanceof OpFunctionDeclare){
+				if (variable.hasAnnotations()){
+					has_fields_annotations = true;
+				}
 			}
 		}
 		
@@ -2140,6 +2154,8 @@ export class TranslatorES6 extends CommonTranslator {
 			has_serializable = true;
 			has_cloneable = true;
 		}
+		
+		res ~= this.s("/* ======================= Class Init Functions ======================= */");
 		
 		if (not this.is_interface){
 			res ~= this.s(
@@ -2218,7 +2234,9 @@ export class TranslatorES6 extends CommonTranslator {
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
-					if (variable.isFlag("cloneable") or is_struct){
+					if (variable.isFlag("public") and (variable.isFlag("cloneable") or 
+						variable.isFlag("serializable") or is_struct))
+					{
 						res ~= this.s("this." ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "._clone(" ~
 							"obj." ~ variable.name ~ ");"
@@ -2236,7 +2254,6 @@ export class TranslatorES6 extends CommonTranslator {
 			if (has_serializable){
 				int class_variables_serializable_count = 0;
 				
-				
 				/* assignValue function */
 				res ~= this.s("assignValue(variable_name, value){");
 				this.levelInc();
@@ -2247,7 +2264,9 @@ export class TranslatorES6 extends CommonTranslator {
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
-					if (variable.isFlag("serializable") or is_struct){
+					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
+						variable.isFlag("assignable") or is_struct))
+					{
 						
 						string type_value = this.getAssignDeclareTypeValue(variable);
 						string type_template = this.getAssignDeclareTypeTemplate(variable);
@@ -2271,7 +2290,6 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("}");
 				
 				
-				
 				/* takeValue function */
 				res ~= this.s("takeValue(variable_name, default_value){");
 				this.levelInc();
@@ -2283,7 +2301,9 @@ export class TranslatorES6 extends CommonTranslator {
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
-					if (variable.isFlag("serializable") or is_struct){
+					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
+						variable.isFlag("assignable") or is_struct))
+					{
 						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"return this." ~ variable.name ~ ";";
 						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
@@ -2294,9 +2314,11 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("return super.takeValue(variable_name, default_value);");
 				this.levelDec();
 				res ~= this.s("}");		
+			}
 				
 				
-
+			if (has_serializable or has_fields_annotations){
+				
 				/* getFieldsList function */
 				res ~= this.s("static getFieldsList(names){");
 				this.levelInc();
@@ -2306,12 +2328,14 @@ export class TranslatorES6 extends CommonTranslator {
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
-					if (variable.isFlag("serializable") or is_struct)
+					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
+						variable.isFlag("assignable") or is_struct))
+					{
 						res ~= this.s("names.push(" ~ this.convertString(variable.name) ~ ");");
+					}
 				}
 				this.levelDec();
 				res ~= this.s("}");
-				
 				
 				
 				/* getFieldInfoByName function */
@@ -2321,10 +2345,8 @@ export class TranslatorES6 extends CommonTranslator {
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
-					bool is_struct = this.is_struct and not variable.isFlag("static") and 
-						not variable.isFlag("const");
 						
-					if (variable.isFlag("serializable") or is_struct){
+					if (variable.isFlag("public") and variable.hasAnnotations()){
 						res ~= this.s("if (field_name == " ~ this.convertString(variable.name) ~ "){");
 						this.levelInc();
 						res ~= this.s("return new " ~ this.getName("IntrospectionInfo") ~ "(");
@@ -2333,24 +2355,21 @@ export class TranslatorES6 extends CommonTranslator {
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s(".set(\"kind\", \"field\")");
 						res ~= this.s(".set(\"name\", " ~ this.convertString(variable.name) ~ ")");
-						
-						if (variable.hasAnnotations()){
-							res ~= this.s(".set(\"annotations\", ");
-							this.levelInc();
-							res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
-							for (int j=0; j<variable.annotations.count(); j++){
-								OpAnnotation annotation = variable.annotations.item(j);
-								
-								this.pushOneLine(true);
-								string s_kind = this.translateRun(annotation.kind);
-								string s_options = this.translateRun(annotation.options);
-								this.popOneLine();
-								
-								res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
-							}
-							this.levelDec();
-							res ~= this.s(")");
+						res ~= this.s(".set(\"annotations\", ");
+						this.levelInc();
+						res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
+						for (int j=0; j<variable.annotations.count(); j++){
+							OpAnnotation annotation = variable.annotations.item(j);
+							
+							this.pushOneLine(true);
+							string s_kind = this.translateRun(annotation.kind);
+							string s_options = this.translateRun(annotation.options);
+							this.popOneLine();
+							
+							res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
 						}
+						this.levelDec();
+						res ~= this.s(")");
 						
 						this.levelDec();
 						res ~= this.s(");");
@@ -2362,8 +2381,11 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("return null;");
 				this.levelDec();
 				res ~= this.s("}");
-				
-				
+			}	
+			
+			
+			
+			if (has_methods_annotations){	
 				
 				/* getMethodsList function */
 				res ~= this.s("static getMethodsList(names){");
@@ -2377,7 +2399,6 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				this.levelDec();
 				res ~= this.s("}");
-				
 				
 				
 				/* getMethodInfoByName function */
@@ -2397,23 +2418,21 @@ export class TranslatorES6 extends CommonTranslator {
 						res ~= this.s(".set(\"kind\", \"method\")");
 						res ~= this.s(".set(\"name\", " ~ this.convertString(variable.name) ~ ")");
 						
-						if (variable.hasAnnotations()){
-							res ~= this.s(".set(\"annotations\", ");
-							this.levelInc();
-							res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
-							for (int j=0; j<variable.annotations.count(); j++){
-								OpAnnotation annotation = variable.annotations.item(j);
-								
-								this.pushOneLine(true);
-								string s_kind = this.translateRun(annotation.kind);
-								string s_options = this.translateRun(annotation.options);
-								this.popOneLine();
-								
-								res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
-							}
-							this.levelDec();
-							res ~= this.s(")");
+						res ~= this.s(".set(\"annotations\", ");
+						this.levelInc();
+						res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
+						for (int j=0; j<variable.annotations.count(); j++){
+							OpAnnotation annotation = variable.annotations.item(j);
+							
+							this.pushOneLine(true);
+							string s_kind = this.translateRun(annotation.kind);
+							string s_options = this.translateRun(annotation.options);
+							this.popOneLine();
+							
+							res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
 						}
+						this.levelDec();
+						res ~= this.s(")");
 						
 						this.levelDec();
 						res ~= this.s(");");
@@ -2486,10 +2505,12 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		/* Header */
 		res ~= this.OpClassDeclareHeader(op_code);
-		res ~= this.OpClassInit(op_code);
 		
 		/* Body */
 		res ~= this.OpClassBody(op_code);
+		
+		/* Class Init */
+		res ~= this.OpClassInit(op_code);
 		
 		/* Footer class */
 		this.levelDec();

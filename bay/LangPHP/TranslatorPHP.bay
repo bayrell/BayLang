@@ -1288,46 +1288,63 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
-	 * Class declare footer
+	 * Class declare variables
 	 */
 	string OpClassDeclareVariables(OpClassDeclare op_code){
-		string  res = "";
+		string res = "";
 		
 		for (int i=0; i<op_code.childs.count(); i++){
 			BaseOpCode variable = op_code.childs.item(i);
 			if (not (variable instanceof OpAssignDeclare))
 				continue;
-			if (variable.flags != null){
-				bool old_is_operation = this.beginOperation();
-				
-				string s = "";
-				if (variable.isFlag("const")){
-					s ~= "const ";
-				}
-				else{
-					if (variable.isFlag("static")){
-						s ~= "static ";
-					}
-					if (variable.isFlag("protected")){
-						s ~= "protected ";
-					}
-					else if (this.struct_read_only and this.is_struct and 
-						variable.isFlag("public") and not variable.isFlag("static")){
-						s ~= "protected ";
-					}
-					else {
-						s ~= "public ";
-					}
-				}
-				s ~= this.OpAssignDeclare(variable, false);
-				s ~= ";";
-				
-				this.endOperation(old_is_operation);
-				res ~= this.s(s);
+			
+			string s = this.OpClassDeclareVariable(variable);
+			if (s != ""){
+				res ~= this.s( this.OpClassDeclareVariable(variable) );
 			}
 		}
 		
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Class declare variable
+	 */
+	string OpClassDeclareVariable(OpClassDeclare op_code){
+		
+		if (op_code.flags != null){
+			bool old_is_operation = this.beginOperation();
+			
+			string s = "";
+			if (op_code.isFlag("const")){
+				s ~= "const ";
+			}
+			else{
+				if (op_code.isFlag("static")){
+					s ~= "static ";
+				}
+				if (op_code.isFlag("protected")){
+					s ~= "protected ";
+				}
+				else if (this.struct_read_only and this.is_struct and 
+					op_code.isFlag("public") and not op_code.isFlag("static")){
+					s ~= "protected ";
+				}
+				else {
+					s ~= "public ";
+				}
+			}
+			s ~= this.OpAssignDeclare(op_code, false);
+			s ~= ";";
+			
+			this.endOperation(old_is_operation);
+			
+			return s;
+		}
+		
+		return "";
 	}
 	
 	
@@ -1413,6 +1430,10 @@ export class TranslatorPHP extends CommonTranslator {
 		bool has_variables = false;
 		bool has_serializable = false;
 		bool has_cloneable = false;
+		bool has_methods_annotations = false;
+		bool has_fields_annotations = false;
+		
+		res ~= this.s("/* ======================= Class Init Functions ======================= */");
 		
 		if (not this.is_interface){
 			res ~= this.s(
@@ -1434,16 +1455,28 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		for (int i=0; i<childs.count(); i++){
 			BaseOpCode variable = childs.item(i);
-			if (not (variable instanceof OpAssignDeclare))
-				continue;
-			if (variable.isFlag("serializable")){
-				has_serializable = true;
+			if (variable instanceof OpAssignDeclare){
+				if (variable.isFlag("serializable")){
+					has_serializable = true;
+					has_cloneable = true;
+				}
+				if (variable.isFlag("cloneable")){
+					has_cloneable = true;
+				}
+				if (variable.isFlag("assignable")){
+					has_serializable = true;
+				}
+				if (not variable.isFlag('static') and not variable.isFlag('const')){
+					has_variables = true;
+				}
+				if (variable.hasAnnotations()){
+					has_methods_annotations = true;
+				}
 			}
-			if (variable.isFlag("cloneable")){
-				has_cloneable = true;
-			}
-			if (not variable.isFlag('static') and not variable.isFlag('const')){
-				has_variables = true;
+			if (variable instanceof OpFunctionDeclare){
+				if (variable.hasAnnotations()){
+					has_fields_annotations = true;
+				}
 			}
 		}
 		
@@ -1506,7 +1539,9 @@ export class TranslatorPHP extends CommonTranslator {
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
-					if (variable.isFlag("cloneable") or is_struct){
+					if (variable.isFlag("public") and (variable.isFlag("cloneable") or 
+						variable.isFlag("serializable") or is_struct))
+					{
 						res ~= this.s("$this->" ~ var_prefix ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "::_clone(" ~
 							"$obj->" ~ var_prefix ~ variable.name ~ ");"
@@ -1520,10 +1555,10 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("}");
 			}
 			
+			
 			/* If has serializable variables */
 			if (has_serializable){
 				int class_variables_serializable_count = 0;
-				
 				
 				/* assignValue function */
 				string s1 = "public";
@@ -1536,8 +1571,9 @@ export class TranslatorPHP extends CommonTranslator {
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
-					if (variable.isFlag("serializable") or is_struct){
-						
+					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
+						variable.isFlag("assignable") or is_struct))
+					{
 						string type_value = this.getAssignDeclareTypeValue(variable);
 						string type_template = this.getAssignDeclareTypeTemplate(variable);
 						string def_val = "null";
@@ -1559,7 +1595,6 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("}");
 				
 				
-				
 				/* takeValue function */
 				res ~= this.s("public function takeValue($variable_name, $default_value = null){");
 				this.levelInc();
@@ -1569,7 +1604,9 @@ export class TranslatorPHP extends CommonTranslator {
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
-					if (variable.isFlag("serializable") or is_struct){
+					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
+						variable.isFlag("assignable") or is_struct))
+					{
 						string take_value_s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
 							"return $this->" ~ var_prefix ~ variable.name ~ ";";
 						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
@@ -1580,8 +1617,10 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("return parent::takeValue($variable_name, $default_value);");
 				this.levelDec();
 				res ~= this.s("}");		
-				
-				
+			}
+			
+			
+			if (has_serializable or has_fields_annotations){
 				
 				/* getFieldsList function */
 				res ~= this.s("public static function getFieldsList($names){");
@@ -1591,12 +1630,14 @@ export class TranslatorPHP extends CommonTranslator {
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and not variable.isFlag("const");
-					if (variable.isFlag("serializable") or is_struct)
+					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
+						variable.isFlag("assignable") or is_struct or variable.hasAnnotations()))
+					{
 						res ~= this.s("$names->push(" ~ this.convertString(variable.name) ~ ");");
+					}
 				}
 				this.levelDec();
 				res ~= this.s("}");
-				
 				
 				
 				/* getFieldInfoByName function */
@@ -1609,7 +1650,7 @@ export class TranslatorPHP extends CommonTranslator {
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
 						
-					if (variable.isFlag("serializable") or is_struct){
+					if (variable.isFlag("public") and variable.hasAnnotations()){
 						res ~= this.s("if ($field_name == " ~ this.convertString(variable.name) ~ "){");
 						this.levelInc();
 						res ~= this.s("return new " ~ this.getName("IntrospectionInfo") ~ "(");
@@ -1618,24 +1659,21 @@ export class TranslatorPHP extends CommonTranslator {
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s("->set(\"kind\", \"field\")");
 						res ~= this.s("->set(\"name\", " ~ this.convertString(variable.name) ~ ")");
-						
-						if (variable.hasAnnotations()){
-							res ~= this.s("->set(\"annotations\", ");
-							this.levelInc();
-							res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
-							for (int j=0; j<variable.annotations.count(); j++){
-								OpAnnotation annotation = variable.annotations.item(j);
-								
-								this.pushOneLine(true);
-								string s_kind = this.translateRun(annotation.kind);
-								string s_options = this.translateRun(annotation.options);
-								this.popOneLine();
-								
-								res ~= this.s("->push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
-							}
-							this.levelDec();
-							res ~= this.s(")");
+						res ~= this.s("->set(\"annotations\", ");
+						this.levelInc();
+						res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
+						for (int j=0; j<variable.annotations.count(); j++){
+							OpAnnotation annotation = variable.annotations.item(j);
+							
+							this.pushOneLine(true);
+							string s_kind = this.translateRun(annotation.kind);
+							string s_options = this.translateRun(annotation.options);
+							this.popOneLine();
+							
+							res ~= this.s("->push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
 						}
+						this.levelDec();
+						res ~= this.s(")");
 						
 						this.levelDec();
 						res ~= this.s(");");
@@ -1647,8 +1685,10 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("return null;");
 				this.levelDec();
 				res ~= this.s("}");
-				
-				
+			}	
+			
+			
+			if (has_methods_annotations){
 				
 				/* getMethodsList function */
 				res ~= this.s("public static function getMethodsList($names){");
@@ -1662,7 +1702,6 @@ export class TranslatorPHP extends CommonTranslator {
 				}
 				this.levelDec();
 				res ~= this.s("}");
-				
 				
 				
 				/* getMethodInfoByName function */
@@ -1681,24 +1720,21 @@ export class TranslatorPHP extends CommonTranslator {
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s("->set(\"kind\", \"method\")");
 						res ~= this.s("->set(\"name\", " ~ this.convertString(variable.name) ~ ")");
-						
-						if (variable.hasAnnotations()){
-							res ~= this.s("->set(\"annotations\", ");
-							this.levelInc();
-							res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
-							for (int j=0; j<variable.annotations.count(); j++){
-								OpAnnotation annotation = variable.annotations.item(j);
-								
-								this.pushOneLine(true);
-								string s_kind = this.translateRun(annotation.kind);
-								string s_options = this.translateRun(annotation.options);
-								this.popOneLine();
-								
-								res ~= this.s("->push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
-							}
-							this.levelDec();
-							res ~= this.s(")");
+						res ~= this.s("->set(\"annotations\", ");
+						this.levelInc();
+						res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
+						for (int j=0; j<variable.annotations.count(); j++){
+							OpAnnotation annotation = variable.annotations.item(j);
+							
+							this.pushOneLine(true);
+							string s_kind = this.translateRun(annotation.kind);
+							string s_options = this.translateRun(annotation.options);
+							this.popOneLine();
+							
+							res ~= this.s("->push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
 						}
+						this.levelDec();
+						res ~= this.s(")");
 						
 						this.levelDec();
 						res ~= this.s(");");
@@ -1709,7 +1745,6 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("return null;");
 				this.levelDec();
 				res ~= this.s("}");
-				
 				
 			}
 			
@@ -1745,14 +1780,19 @@ export class TranslatorPHP extends CommonTranslator {
 		res ~= this.OpClassDeclareHeader(op_code);
 		
 		/* Variables */
-		res ~= this.OpClassDeclareVariables(op_code);
-		res ~= this.OpClassInit(op_code);
+		/*res ~= this.OpClassDeclareVariables(op_code);*/
 		
-		
-		/* Class functions */
+		/* Class body */
 		for (int i=0; i<op_code.childs.count(); i++){
 			BaseOpCode op_code2 = op_code.childs.item(i);
-			if (op_code2 instanceof OpFunctionArrowDeclare){
+			
+			if (op_code2 instanceof OpAssignDeclare){
+				string s_assign_variable = this.OpClassDeclareVariable(op_code2);
+				if (s_assign_variable){
+					res ~= this.s(s_assign_variable);
+				}
+			}
+			else if (op_code2 instanceof OpFunctionArrowDeclare){
 				res ~= this.s(this.OpFunctionArrowDeclare(op_code2));
 			}
 			else if (op_code2 instanceof OpFunctionDeclare){
@@ -1766,6 +1806,8 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 		}
 		
+		/* Class Init */
+		res ~= this.OpClassInit(op_code);
 		
 		/* Footer class */
 		this.levelDec();

@@ -207,7 +207,7 @@ export class CommonTranslator extends ContextObject{
 	 * Output string
 	 */
 	string s(string s){
-		if (s == "") return "";
+		/*if (s == "") return "";*/
 		if (this.isOneLine()) return s;
 		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level) ~ s;
 	}

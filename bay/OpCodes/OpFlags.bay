@@ -34,6 +34,7 @@ export class OpFlags extends BaseOpCode{
 	public bool p_declare = false;
 	public bool p_serializable = false;
 	public bool p_cloneable = false;
+	public bool p_assignable = false;
 	
 	
 	
@@ -54,6 +55,7 @@ export class OpFlags extends BaseOpCode{
 		names.push("protected");
 		names.push("serializable");
 		names.push("cloneable");
+		names.push("assignable");
 	}
 	
 	
@@ -74,6 +76,7 @@ export class OpFlags extends BaseOpCode{
 		else if (variable_name == 'protected') return this.p_protected;
 		else if (variable_name == 'serializable') return this.p_serializable;
 		else if (variable_name == 'cloneable') return this.p_cloneable;
+		else if (variable_name == 'assignable') return this.p_assignable;
 		return parent::takeValue(variable_name, default_value);
 	}
 	
@@ -95,6 +98,7 @@ export class OpFlags extends BaseOpCode{
 		else if (variable_name == 'protected') this.p_protected = value;
 		else if (variable_name == 'serializable') this.p_serializable = value;
 		else if (variable_name == 'cloneable') this.p_cloneable = value;
+		else if (variable_name == 'assignable') this.p_assignable = value;
 		else parent::assignValue(variable_name, value);
 	}
 	
@@ -128,6 +132,7 @@ export class OpFlags extends BaseOpCode{
 			.push("protected")
 			.push("serializable")
 			.push("cloneable")
+			.push("assignable")
 		;
 	}
 	
@@ -147,7 +152,8 @@ export class OpFlags extends BaseOpCode{
 			flag_name == "declare" or
 			flag_name == "protected" or
 			flag_name == "serializable" or
-			flag_name == "cloneable"
+			flag_name == "cloneable" or
+			flag_name == "assignable"
 		){
 			return true;
 		}
