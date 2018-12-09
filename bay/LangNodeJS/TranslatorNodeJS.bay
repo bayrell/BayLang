@@ -135,10 +135,46 @@ export class TranslatorNodeJS extends TranslatorES6 {
 	}
 	
 	
+	
 	/**
 	 * Class declare header
 	 */
 	string OpClassDeclareHeader(OpClassDeclare op_code){
+		
+		string s = "";
+		string res = "";
+		string name = "";
+		string ch = "";
+		Vector<string> v = rs::explode(".", this.current_namespace);
+		
+		res ~= "if (typeof ModulesExports == 'undefined') ModulesExports = {};";
+		
+		for (int i=0; i<v.count(); i++){
+			name ~= ch ~ v.item(i);
+			s = "if (typeof "~name~" == 'undefined') ModulesExports."~name~" = {};";
+			res ~= this.s(s);
+			ch = ".";
+		}
+		
+		this.beginOperation();
+		s = "ModulesExports." ~ this.current_namespace ~ "." ~ op_code.class_name ~ " = class";
+		if (op_code.class_extends != ""){
+			s ~= " extends " ~ this.translateRun(op_code.class_extends);
+		}
+		s ~= "{";
+		this.endOperation();
+		res ~= this.s(s);
+		this.levelInc();
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Class declare header
+	 */
+	string OpClassDeclareHeaderOld(OpClassDeclare op_code){
 		string res = "";
 		
 		this.beginOperation();
@@ -184,7 +220,7 @@ export class TranslatorNodeJS extends TranslatorES6 {
 			}
 		}
 		
-		res ~= this.s("module.exports = "~op_code.class_name~";");
+		res ~= this.s("module.exports = ModulesExports;");
 		
 		return res;
 	}
