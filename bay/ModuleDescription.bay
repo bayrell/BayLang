@@ -40,7 +40,7 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * @return string
 	 */
 	public static string getModuleVersion(){
-		return "0.5.2";
+		return "0.6.0";
 	}
 	
 	

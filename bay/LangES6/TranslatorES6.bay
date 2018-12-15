@@ -2155,7 +2155,7 @@ export class TranslatorES6 extends CommonTranslator {
 			has_cloneable = true;
 		}
 		
-		res ~= this.s("/* ======================= Class Init Functions ======================= */");
+		/*res ~= this.s(" ======================= Class Init Functions ======================= ");*/
 		
 		if (not this.is_interface){
 			res ~= this.s(
@@ -2285,7 +2285,12 @@ export class TranslatorES6 extends CommonTranslator {
 						class_variables_serializable_count++;
 					}
 				}
-				res ~= this.s("else super.assignValue(variable_name, value);");
+				if (class_variables_serializable_count == 0){
+					res ~= this.s("super.assignValue(variable_name, value);");
+				}
+				else{
+					res ~= this.s("else super.assignValue(variable_name, value);");
+				}
 				this.levelDec();
 				res ~= this.s("}");
 				

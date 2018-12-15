@@ -1590,7 +1590,12 @@ export class TranslatorPHP extends CommonTranslator {
 						class_variables_serializable_count++;
 					}
 				}
-				res ~= this.s("else parent::assignValue($variable_name, $value);");
+				if (class_variables_serializable_count == 0){
+					res ~= this.s("parent::assignValue($variable_name, $value);");
+				}
+				else{
+					res ~= this.s("else parent::assignValue($variable_name, $value);");
+				}
 				this.levelDec();
 				res ~= this.s("}");
 				
