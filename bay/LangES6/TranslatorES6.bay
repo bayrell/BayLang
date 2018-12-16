@@ -2155,7 +2155,7 @@ export class TranslatorES6 extends CommonTranslator {
 			has_cloneable = true;
 		}
 		
-		/*res ~= this.s(" ======================= Class Init Functions ======================= ");*/
+		res ~= this.s("/* ======================= Class Init Functions ======================= */");
 		
 		if (not this.is_interface){
 			res ~= this.s(
