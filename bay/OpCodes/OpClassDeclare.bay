@@ -32,7 +32,7 @@ export class OpClassDeclare extends BaseOpCode{
 	public serializable Vector<BaseOpCode> childs = null;
 	public serializable Vector<BaseOpCode> class_template = null;
 	public serializable OpFlags flags = null;
-	
+	public serializable Vector<OpAnnotation> annotations = null;
 	
 	
 	/**
@@ -44,6 +44,15 @@ export class OpClassDeclare extends BaseOpCode{
 		if (not OpFlags::hasFlag(name))
 			return false;
 		return this.flags.takeValue(name);
+	}
+	
+	
+	
+	/**
+	 * Has Annotations
+	 */
+	public boolean hasAnnotations(){
+		return this.annotations != null and this.annotations.count() > 0;
 	}
 	
 	

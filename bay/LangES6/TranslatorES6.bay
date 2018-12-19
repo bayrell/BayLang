@@ -104,6 +104,17 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
+	 * Returns full class name
+	 * @return string
+	 */
+	string getCurrentClassName()
+	{
+		return this.current_namespace ~ "." ~ this.current_class_name;
+	}
+	
+	
+	
+	/**
 	 * Returns true if function is async
 	 * @return bool
 	 */
@@ -1971,7 +1982,6 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	
-	
 	/**
 	 * Class declare header
 	 */
@@ -2140,12 +2150,12 @@ export class TranslatorES6 extends CommonTranslator {
 					has_variables = true;
 				}
 				if (variable.hasAnnotations()){
-					has_methods_annotations = true;
+					has_fields_annotations = true;
 				}
 			}
 			if (variable instanceof OpFunctionDeclare){
 				if (variable.hasAnnotations()){
-					has_fields_annotations = true;
+					has_methods_annotations = true;
 				}
 			}
 		}
@@ -2334,7 +2344,7 @@ export class TranslatorES6 extends CommonTranslator {
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
 					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
-						variable.isFlag("assignable") or is_struct))
+						is_struct or variable.hasAnnotations()))
 					{
 						res ~= this.s("names.push(" ~ this.convertString(variable.name) ~ ");");
 					}
@@ -2359,6 +2369,8 @@ export class TranslatorES6 extends CommonTranslator {
 						
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s(".set(\"kind\", \"field\")");
+						res ~= this.s(".set(\"class_name\", " ~ 
+							this.convertString(this.getCurrentClassName()) ~  ")");
 						res ~= this.s(".set(\"name\", " ~ this.convertString(variable.name) ~ ")");
 						res ~= this.s(".set(\"annotations\", ");
 						this.levelInc();
@@ -2421,6 +2433,8 @@ export class TranslatorES6 extends CommonTranslator {
 						
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s(".set(\"kind\", \"method\")");
+						res ~= this.s(".set(\"class_name\", " ~ 
+							this.convertString(this.getCurrentClassName()) ~  ")");
 						res ~= this.s(".set(\"name\", " ~ this.convertString(variable.name) ~ ")");
 						
 						res ~= this.s(".set(\"annotations\", ");
@@ -2451,6 +2465,42 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			
 		}
+		
+		/* Output classes annotations */
+		if (op_code.hasAnnotations()){
+			res ~= this.s("static getClassInfo(){");
+			this.levelInc();
+			
+			res ~= this.s("return new " ~ this.getName("IntrospectionInfo") ~ "(");
+			this.levelInc();
+			
+			res ~= this.s("(new " ~ this.getName("Map") ~ "())");
+			res ~= this.s(".set(\"kind\", \"class\")");
+			res ~= this.s(".set(\"class_name\", " ~ this.convertString(this.getCurrentClassName()) ~  ")");
+			
+			res ~= this.s(".set(\"annotations\", ");
+			this.levelInc();
+			res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
+			for (int j=0; j<op_code.annotations.count(); j++){
+				OpAnnotation annotation = op_code.annotations.item(j);
+				
+				this.pushOneLine(true);
+				string s_kind = this.translateRun(annotation.kind);
+				string s_options = this.translateRun(annotation.options);
+				this.popOneLine();
+				
+				res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
+			}
+			this.levelDec();
+			res ~= this.s(")");
+			
+			this.levelDec();
+			res ~= this.s(");");
+			
+			this.levelDec();
+			res ~= this.s("}");
+		}
+		
 		
 		return res;
 	}
