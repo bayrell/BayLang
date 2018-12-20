@@ -187,7 +187,7 @@ export class ParserBayToken extends ParserToken{
 	 */
 	public void skipComments(){
 		string look = this.lookString(2);
-		while (look == "/*"){ /* */
+		while (look == "/*" and not this.isEOF()){ /* */
 			this.readComment(look);
 			this.skipSystemChar();
 			look = this.lookString(2);

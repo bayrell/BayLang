@@ -60,16 +60,6 @@ export class OpAssignDeclare extends BaseOpCode{
 	
 	
 	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpAssignDeclare";
-	}
-	
-	
-	
-	/**
 	 * Constructor
 	 */ 
 	void constructor(BaseOpCode tp = null, string name = null, BaseOpCode value = null){

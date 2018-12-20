@@ -31,7 +31,7 @@ class ParserBayFactory extends ContextObject implements FactoryInterface{
 	/**
 	 * Returns new Instance
 	 */
-	public CoreObject newInstance(ContextInterface context){
+	public CoreObject newInstance(ContextInterface context = null){
 		return new ParserBay(context);
 	}
 	

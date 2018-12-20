@@ -80,7 +80,7 @@ class Utils extends ContextObject{
 	 * @string string source
 	 * @return string
 	 */
-	public static string translate(
+	public static string translateSource(
 		ContextInterface context,
 		FactoryInterface parser_factory, 
 		FactoryInterface translator_factory, 
@@ -155,7 +155,7 @@ class Utils extends ContextObject{
 		FileSystemInterface file_system = context.createProvider("default:fs");
 		string content = file_system.readFile(src_file_name);
 		
-		string res = self::translate(
+		string res = self::translateSource(
 			context,
 			parser_factory,
 			translator_factory,

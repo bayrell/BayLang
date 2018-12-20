@@ -29,16 +29,6 @@ export class OpMap extends BaseOpCode{
 	
 	
 	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.OpMap";
-	}
-	
-	
-	
-	/**
 	 * Constructor
 	 */
 	void constructor(){

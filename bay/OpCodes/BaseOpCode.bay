@@ -27,21 +27,5 @@ export class BaseOpCode extends CoreObject implements SerializeInterface{
 	public serializable string op = "";
 	
 	
-	/**
-	 * Constructor
-	 */
-	void constructor(){
-		parent(null);
-	}
-	
-	
-	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellLang.OpCodes.BaseOpCode";
-	}
 	
 }
