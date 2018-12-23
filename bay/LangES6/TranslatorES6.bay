@@ -2126,6 +2126,7 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		string s = "";
 		string res = "";
+		bool has_assignable = false;
 		bool has_serializable = false;
 		bool has_cloneable = false;
 		bool has_variables = false;
@@ -2144,7 +2145,7 @@ export class TranslatorES6 extends CommonTranslator {
 					has_cloneable = true;
 				}
 				if (variable.isFlag("assignable")){
-					has_serializable = true;
+					has_assignable = true;
 				}
 				if (not variable.isFlag('static') and not variable.isFlag('const')){
 					has_variables = true;
@@ -2224,7 +2225,7 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			
 			/* If has cloneable variables */
-			if (has_cloneable){
+			if (has_cloneable or has_assignable){
 				
 				/*
 				res ~= this.s("createNewInstance(){");
@@ -2261,7 +2262,7 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			
 			/* If has serializable variables */
-			if (has_serializable){
+			if (has_serializable or has_assignable){
 				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
@@ -2332,7 +2333,7 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 				
 				
-			if (has_serializable or has_fields_annotations){
+			if (has_serializable or has_assignable or has_fields_annotations){
 				
 				/* getFieldsList function */
 				res ~= this.s("static getFieldsList(names){");
@@ -2344,7 +2345,7 @@ export class TranslatorES6 extends CommonTranslator {
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
 					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
-						is_struct or variable.hasAnnotations()))
+						variable.isFlag("assignable") or is_struct or variable.hasAnnotations()))
 					{
 						res ~= this.s("names.push(" ~ this.convertString(variable.name) ~ ");");
 					}
