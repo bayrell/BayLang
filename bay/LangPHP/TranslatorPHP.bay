@@ -1666,20 +1666,63 @@ export class TranslatorPHP extends CommonTranslator {
 			if (has_serializable or has_assignable or has_fields_annotations){
 				
 				/* getFieldsList function */
-				res ~= this.s("public static function getFieldsList($names){");
+				res ~= this.s("public static function getFieldsList($names, $flag=0){");
 				this.levelInc();
+				
+				Map<Vector> vars = new Map();
+				
 				for (int i=0; i<childs.count(); i++){
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
+					if (not variable.isFlag("public"))
+						continue;
+					
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
-					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
-						variable.isFlag("assignable") or is_struct or variable.hasAnnotations()))
-					{
-						res ~= this.s("$names->push(" ~ this.convertString(variable.name) ~ ");");
+					
+					bool is_static = variable.isFlag("static");
+					bool is_serializable = variable.isFlag("serializable");
+					bool is_assignable = variable.isFlag("assignable");
+					bool has_annotation = variable.hasAnnotations();
+					
+					if (is_struct){
+						is_serializable = true;
+						is_assignable = true;
 					}
+					if (is_serializable){
+						is_assignable = true;
+					}
+					
+					int flag = 0;
+					if (is_serializable) flag = flag | 1;
+					if (is_assignable) flag = flag | 2;
+					if (has_annotation) flag = flag | 4;
+					
+					if (flag != 0){
+						if (not vars.has(flag)) vars.set(flag, new Vector<string>());
+						Vector<string> v = vars.item(flag);
+						v.push(variable.name);
+					}
+					
 				}
+				
+				vars.each(
+					void (string flag, Vector<string> v) use (res)
+					{
+						res ~= this.s("if (($flag | "~flag~")=="~flag~"){");
+						this.levelInc();
+						v.each(
+							void (string varname) use (res)
+							{
+								res ~= this.s("$names->push(" ~ this.convertString(varname) ~ ");");
+							}
+						);
+						this.levelDec();
+						res ~= this.s("}");
+					}
+				);
+				
 				this.levelDec();
 				res ~= this.s("}");
 				
