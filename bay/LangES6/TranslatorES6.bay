@@ -2286,10 +2286,11 @@ export class TranslatorES6 extends CommonTranslator {
 							def_val = this.translateRun(variable.value);
 						}
 						
-						string s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") ";
+						string s = "if (variable_name == " ~ this.convertString(variable.name) ~ "){";
 						s ~= "this." ~ variable.name ~ " = ";
 						s ~= this.getName("rtl") ~ 
-							".correct(value, \""~type_value~"\", "~def_val~", \""~type_template~"\");";
+							".correct(value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
+						s ~= "this.assignValueAfter(" ~ this.convertString(variable.name) ~ ",value);}";
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);
 						else res ~= this.s("else " ~ s);
