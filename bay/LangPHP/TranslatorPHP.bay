@@ -266,6 +266,18 @@ export class TranslatorPHP extends CommonTranslator {
 	 * Static load
 	 */
 	string OpStatic(OpStatic op_code){
+		
+		BaseOpCode op_code_last = this.op_code_stack.last(null, -2);
+		if (
+			op_code_last instanceof OpAssign or 
+			op_code_last instanceof OpAssignDeclare or 
+			op_code_last instanceof OpDynamic
+		){
+			if (op_code.name != rs::strtoupper(op_code.name))
+			{
+				return this.translateRun(op_code.value) ~ '::$' ~ op_code.name;
+			}
+		}
 		return this.translateRun(op_code.value) ~ '::' ~ op_code.name;
 	}
 	
