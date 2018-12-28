@@ -2266,7 +2266,7 @@ export class TranslatorES6 extends CommonTranslator {
 				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
-				res ~= this.s("assignValue(variable_name, value){");
+				res ~= this.s("assignValue(variable_name, value, sender){if(sender==undefined)sender=null;");
 				this.levelInc();
 				class_variables_serializable_count = 0;
 				for (int i=0; i<childs.count(); i++){
@@ -2290,7 +2290,7 @@ export class TranslatorES6 extends CommonTranslator {
 						s ~= "this." ~ variable.name ~ " = ";
 						s ~= this.getName("rtl") ~ 
 							".correct(value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
-						s ~= "this.assignValueAfter(" ~ this.convertString(variable.name) ~ ",value);}";
+						s ~= "this.assignValueAfter(" ~ this.convertString(variable.name) ~ ",value,sender);}";
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);
 						else res ~= this.s("else " ~ s);
@@ -2298,10 +2298,10 @@ export class TranslatorES6 extends CommonTranslator {
 					}
 				}
 				if (class_variables_serializable_count == 0){
-					res ~= this.s("super.assignValue(variable_name, value);");
+					res ~= this.s("super.assignValue(variable_name, value, sender);");
 				}
 				else{
-					res ~= this.s("else super.assignValue(variable_name, value);");
+					res ~= this.s("else super.assignValue(variable_name, value, sender);");
 				}
 				this.levelDec();
 				res ~= this.s("}");
