@@ -1442,15 +1442,19 @@ export class ParserBay extends CommonParser{
 	 * Read flags
 	 * @return OpFlags
 	 */
-	OpFlags readFlags(){
+	OpFlags readFlags()
+	{
 		
 		OpFlags flags = null;
 		Vector<string> flags_vector = OpFlags::getFlags();
 		
-		if (this.findNextTokenVector(flags_vector) != -1){
+		if (this.findNextTokenVector(flags_vector) != -1)
+		{
 			flags = new OpFlags();
-			while (this.findNextTokenVector(flags_vector) != -1){
-				if (not flags.assignFlag(this.lookNextToken())){
+			while (this.findNextTokenVector(flags_vector) != -1)
+			{
+				if (not flags.assignFlag(this.lookNextToken()))
+				{
 					throw this.parserError("Unknown flag '" ~ this.lookNextToken() ~ "'");
 				}
 				this.readNextToken();
@@ -1652,9 +1656,24 @@ export class ParserBay extends CommonParser{
 		if (flags != null and flags.p_declare or this.is_interface) is_declare_function = true;
 		
 		/* Read annotation */
-		if (this.findNextToken("@")){
+		if (this.findNextToken("@"))
+		{
 			this.readAnnotation();
 			return ;
+		}
+		
+		/* Assign public flag */
+		if (flags == null)
+		{
+			flags = new OpFlags();
+			flags.assignValue('public', true);
+		}
+		else
+		{
+			if (not flags.isFlag('protected') and not flags.isFlag('private'))
+			{
+				flags.assignValue('public', true);
+			}
 		}
 		
 		/* Read function */
@@ -1669,10 +1688,12 @@ export class ParserBay extends CommonParser{
 		
 		/* Read declare variable */
 		op_code = this.readOperatorAssign();
-		if (op_code instanceof OpAssign){
+		if (op_code instanceof OpAssign)
+		{
 			throw this.parserError("Assign are not alowed here");
 		}
-		else if (op_code instanceof OpAssignDeclare){
+		else if (op_code instanceof OpAssignDeclare)
+		{
 			op_code.annotations = this.annotations;
 			op_code.flags = flags;
 			res.childs.push(op_code);
@@ -1788,10 +1809,6 @@ export class ParserBay extends CommonParser{
 	OpStructDeclare readDeclareStruct(OpFlags class_flags){
 		OpStructDeclare res = new OpStructDeclare();
 		this.matchNextToken("struct");
-		if (this.findNextToken("readonly")){
-			this.matchNextToken("readonly");
-			res.is_readonly = true;
-		}
 		this.readClassHead(res);
 		res.flags = class_flags;
 		return res;

@@ -100,7 +100,6 @@ export class TranslatorES6 extends CommonTranslator {
 	bool is_return = false;
 	bool is_async_opcode = false;
 	bool is_async_await_op_call = false;
-	bool struct_read_only = false;
 	
 	
 	/**
@@ -2194,24 +2193,42 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				
 				/* Output variables */
-				if (childs != null){
-					for (int i=0; i<childs.count(); i++){
+				if (childs != null)
+				{
+					for (int i=0; i<childs.count(); i++)
+					{
 						BaseOpCode variable = childs.item(i);
 						if (not (variable instanceof OpAssignDeclare))
 							continue;
+						
+						string var_prefix = "";
+						if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
+						{
+							var_prefix = "__";
+						}
+						
 						if (not variable.isFlag('static') and not variable.isFlag('const')){
 							this.beginOperation();
-							s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							s = "this." ~ var_prefix ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 							this.endOperation();
 							res ~= this.s(s);
+							res ~= this.s(  
+								"Object.defineProperty(this, " ~ this.convertString(variable.name) ~ 
+								", { get: function() { return this.__"~ variable.name ~
+								"; }, set: function(value) { throw new Runtime.Exceptions.AssignStructValueError("~
+								this.convertString(variable.name)~") }});"
+							);
+							
 						}
 					}
 				}
 				
 				/* Implements */
-				if (class_implements != null and class_implements.count() > 0){
+				if (class_implements != null and class_implements.count() > 0)
+				{
 					res ~= this.s("if (this.__implements__ == undefined){this.__implements__ = [];}");
-					for (int i=0; i<class_implements.count(); i++){
+					for (int i=0; i<class_implements.count(); i++)
+					{
 						string name = class_implements.item(i);
 						this.beginOperation();
 						s = "this.__implements__.push(" ~ this.getName(name) ~ ");";
@@ -2225,7 +2242,8 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			
 			/* If has cloneable variables */
-			if (has_cloneable or has_assignable){
+			if (has_cloneable or has_assignable)
+			{
 				
 				/*
 				res ~= this.s("createNewInstance(){");
@@ -2239,16 +2257,22 @@ export class TranslatorES6 extends CommonTranslator {
 				this.levelInc();
 				res ~= this.s("if (obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
+					string var_prefix = "";
+					if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
+					{
+						var_prefix = "__";
+					}	
 					if (variable.isFlag("public") and (variable.isFlag("cloneable") or 
 						variable.isFlag("serializable") or is_struct))
 					{
-						res ~= this.s("this." ~ variable.name ~ " = " ~
+						res ~= this.s("this." ~ var_prefix ~ variable.name ~ " = " ~
 							this.getName("rtl") ~ "._clone(" ~
 							"obj." ~ variable.name ~ ");"
 						);
@@ -2262,7 +2286,8 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			
 			/* If has serializable variables */
-			if (has_serializable or has_assignable){
+			if (has_serializable or has_assignable)
+			{
 				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
@@ -2275,6 +2300,11 @@ export class TranslatorES6 extends CommonTranslator {
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
+					string var_prefix = "";
+					if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
+					{
+						var_prefix = "__";
+					}
 					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
 						variable.isFlag("assignable") or is_struct))
 					{
@@ -2282,15 +2312,16 @@ export class TranslatorES6 extends CommonTranslator {
 						string type_value = this.getAssignDeclareTypeValue(variable);
 						string type_template = this.getAssignDeclareTypeTemplate(variable);
 						string def_val = "null";
-						if (variable.value != null){
+						if (variable.value != null)
+						{
 							def_val = this.translateRun(variable.value);
 						}
 						
-						string s = "if (variable_name == " ~ this.convertString(variable.name) ~ "){";
-						s ~= "this." ~ variable.name ~ " = ";
+						string s = "if (variable_name == " ~ this.convertString(variable.name) ~ ")";
+						s ~= "this." ~ var_prefix ~ variable.name ~ " = ";
 						s ~= this.getName("rtl") ~ 
 							".correct(value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
-						s ~= "this.assignValueAfter(" ~ this.convertString(variable.name) ~ ",value,sender);}";
+						/*s ~= "this.assignValueAfter(" ~ this.convertString(variable.name) ~ ",value,sender);}";*/
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);
 						else res ~= this.s("else " ~ s);
@@ -2312,17 +2343,23 @@ export class TranslatorES6 extends CommonTranslator {
 				this.levelInc();
 				res ~= this.s("if (default_value == undefined) default_value = null;");
 				class_variables_serializable_count = 0;
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					bool is_struct = this.is_struct and not variable.isFlag("static") and 
 						not variable.isFlag("const");
+					string var_prefix = "";
+					if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
+					{
+						var_prefix = "__";
+					}	
 					if (variable.isFlag("public") and (variable.isFlag("serializable") or 
 						variable.isFlag("assignable") or is_struct))
 					{
 						string take_value_s = "if (variable_name == " ~ this.convertString(variable.name) ~ ") " ~ 
-							"return this." ~ variable.name ~ ";";
+							"return this." ~ var_prefix ~ variable.name ~ ";";
 						if (class_variables_serializable_count == 0) res ~= this.s(take_value_s);
 						else res ~= this.s("else " ~ take_value_s);
 						class_variables_serializable_count++;
@@ -2643,7 +2680,6 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpStructDeclare(OpStructDeclare op_code){
 		this.is_struct = true;
-		this.struct_read_only = op_code.is_readonly;
 		string res = this.OpClassDeclare(op_code);
 		this.is_struct = false;
 		return res;

@@ -15,16 +15,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
-use BayrellLang.OpCodes.OpClassDeclare;
+namespace BayrellLang.LangBay;
+
+use Runtime.CoreObject;
+use Runtime.ContextObject;
+use Runtime.Interfaces.ContextInterface;
+use Runtime.Interfaces.FactoryInterface;
+use BayrellLang.LangBay.TranslatorBay;
 
 
-export class OpStructDeclare extends OpClassDeclare{
+class TranslatorBayFactory extends ContextObject implements FactoryInterface
+{
 	
-	public serializable string op = "op_struct";
 	
+	/**
+	 * Returns new Instance
+	 */
+	public CoreObject newInstance(ContextInterface context)
+	{
+		return new TranslatorBay(context);
+	}
 	
 }

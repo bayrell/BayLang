@@ -97,7 +97,6 @@ export class TranslatorPHP extends CommonTranslator {
 	bool is_static = false;
 	bool is_interface = false;
 	bool is_struct = false;
-	bool struct_read_only = false;
 	
 	
 	/**
@@ -765,8 +764,7 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.isFlag("const")) ch_var = "";
 		
 		string var_prefix = "";
-		if (this.struct_read_only and this.is_struct and 
-			op_code.isFlag("public") and not op_code.isFlag("static"))
+		if (this.is_struct and op_code.isFlag("public") and not op_code.isFlag("static"))
 		{
 			var_prefix = "__";
 		}
@@ -1347,17 +1345,20 @@ export class TranslatorPHP extends CommonTranslator {
 				s ~= "const ";
 			}
 			else{
-				if (op_code.isFlag("static")){
+				if (op_code.isFlag("static"))
+				{
 					s ~= "static ";
 				}
-				if (op_code.isFlag("protected")){
+				if (op_code.isFlag("protected"))
+				{
 					s ~= "protected ";
 				}
-				else if (this.struct_read_only and this.is_struct and 
-					op_code.isFlag("public") and not op_code.isFlag("static")){
+				else if (this.is_struct and op_code.isFlag("public") and not op_code.isFlag("static"))
+				{
 					s ~= "protected ";
 				}
-				else {
+				else 
+				{
 					s ~= "public ";
 				}
 			}
@@ -1435,7 +1436,8 @@ export class TranslatorPHP extends CommonTranslator {
 	/**
 	 * Class init functions
 	 */
-	string OpClassInit(OpClassDeclare op_code){
+	string OpClassInit(OpClassDeclare op_code)
+	{
 		
 		Vector<BaseOpCode> childs = op_code.childs;
 		Vector<string> class_implements = op_code.class_implements;
@@ -1526,8 +1528,7 @@ export class TranslatorPHP extends CommonTranslator {
 						if (not (variable instanceof OpAssignDeclare))
 							continue;
 						string var_prefix = "";
-						if (this.struct_read_only and this.is_struct and 
-							variable.isFlag("public") and not variable.isFlag("static"))
+						if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 						{
 							var_prefix = "__";
 						}	
@@ -1567,8 +1568,7 @@ export class TranslatorPHP extends CommonTranslator {
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
 					string var_prefix = "";
-					if (this.struct_read_only and this.is_struct and 
-						variable.isFlag("public") and not variable.isFlag("static"))
+					if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 					{
 						var_prefix = "__";
 					}	
@@ -1606,8 +1606,7 @@ export class TranslatorPHP extends CommonTranslator {
 						continue;
 					
 					string var_prefix = "";
-					if (this.struct_read_only and this.is_struct and 
-						variable.isFlag("public") and not variable.isFlag("static"))
+					if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 					{
 						var_prefix = "__";
 					}
@@ -1623,10 +1622,10 @@ export class TranslatorPHP extends CommonTranslator {
 							def_val = this.translateRun(variable.value);
 						}
 						
-						string s = "if ($variable_name == " ~ this.convertString(variable.name) ~ "){";
+						string s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ")";
 						s ~= "$this->" ~ var_prefix ~ variable.name ~ " = ";
 						s ~= "rtl::correct($value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
-						s ~= "$this->assignValueAfter(" ~ this.convertString(variable.name) ~ ",$value,$sender);}";
+						/*s ~= "$this->assignValueAfter(" ~ this.convertString(variable.name) ~ ",$value,$sender);}";*/
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);
 						else res ~= this.s("else " ~ s);
@@ -1653,8 +1652,7 @@ export class TranslatorPHP extends CommonTranslator {
 						continue;
 
 					string var_prefix = "";
-					if (this.struct_read_only and this.is_struct and 
-						variable.isFlag("public") and not variable.isFlag("static"))
+					if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 					{
 						var_prefix = "__";
 					}
@@ -1852,9 +1850,11 @@ export class TranslatorPHP extends CommonTranslator {
 				
 			}
 			
-			if (this.struct_read_only and this.is_struct){				
+			if (this.is_struct)
+			{				
 				res ~= this.s("public function __get($key){ return $this->takeValue($key); }");
-				res ~= this.s("public function __set($key, $value){}");
+				res ~= this.s("public function __set($key, $value){" ~ 
+					"throw new \\Runtime\\Exceptions\\AssignStructValueError($key);" ~ "}");
 			}
 		}
 		
@@ -1975,7 +1975,6 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpStructDeclare(OpStructDeclare op_code){
 		this.is_struct = true;
-		this.struct_read_only = op_code.is_readonly;
 		string res = this.OpClassDeclare(op_code);
 		this.is_struct = false;
 		return res;
