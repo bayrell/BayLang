@@ -383,6 +383,24 @@ export class ParserBay extends CommonParser
 	BaseOpCode readMethod()
 	{
 		this.matchNextToken("method");
+		
+		if (this.findNextToken('('))
+		{
+			this.matchNextToken("(");
+			BaseOpCode class_name = this.readExpression();
+			this.matchNextToken(",");
+			BaseOpCode method_name = this.readExpression();
+			this.matchNextToken(")");
+			
+			return new OpCall( 
+				new OpStatic( new OpIdentifier("rtl"), "method" ), 
+				[
+					class_name,
+					method_name
+				]
+			);
+		}
+		
 		BaseOpCode value = this.readCallDynamic(true, false, true, false);
 		return new OpMethod(value);
 	}
