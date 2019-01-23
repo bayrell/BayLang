@@ -49,6 +49,14 @@ use BayrellLang.OpCodes.OpFor;
 use BayrellLang.OpCodes.OpFunctionArrowDeclare;
 use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
+use BayrellLang.OpCodes.OpHtmlAttribute;
+use BayrellLang.OpCodes.OpHtmlComment;
+use BayrellLang.OpCodes.OpHtmlEscape;
+use BayrellLang.OpCodes.OpHtmlJson;
+use BayrellLang.OpCodes.OpHtmlRaw;
+use BayrellLang.OpCodes.OpHtmlTag;
+use BayrellLang.OpCodes.OpHtmlText;
+use BayrellLang.OpCodes.OpHtmlView;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
@@ -1056,14 +1064,18 @@ export class TranslatorPHP extends CommonTranslator {
 		this.modules.clear();
 		string res = "namespace " ~ rs::implode("\\", arr) ~ ";";
 		if (this.current_module_name != 'Runtime'){
+			res ~= this.s("use Runtime\\rs;");
 			res ~= this.s("use Runtime\\rtl;");
 			res ~= this.s("use Runtime\\Map;");
 			res ~= this.s("use Runtime\\Vector;");
 			res ~= this.s("use Runtime\\IntrospectionInfo;");
+			res ~= this.s("use Runtime\\UIStruct;");
+			this.modules.set("rs", "Runtime.rs");
 			this.modules.set("rtl", "Runtime.rtl");
 			this.modules.set("Map", "Runtime.Map");
 			this.modules.set("Vector", "Runtime.Vector");
 			this.modules.set("IntrospectionInfo", "Runtime.IntrospectionInfo");
+			this.modules.set("UIStruct", "Runtime.UIStruct");
 		}
 		return res;
 	}
@@ -1979,6 +1991,202 @@ export class TranslatorPHP extends CommonTranslator {
 		this.is_struct = false;
 		return res;
 	}
+	
+	
+	
+	/** ========================== HTML OP Codes ========================== */
+	
+	
+	/**
+	 * Check if name is component
+	 * @param string name
+	 * @return bool
+	 */
+	bool isComponent(string name){
+		string ch = rs::charAt(name, 0);
+		return rs::strtoupper(ch) == ch and ch != "";
+	}
+	
+	
+	
+	/**
+	 * OpHtmlJson
+	 */
+	string OpHtmlJson(OpHtmlJson op_code){
+		string value = "rs::json_encode(" ~ this.translateRun(op_code.value) ~ ")";
+		string res = "";
+		res = "new UIStruct(";
+		res ~= this.s('(new '~this.getName("Map")~'())');
+		res ~= this.s('->set("name", "span")');
+		res ~= this.s('->set("props", (new ' ~ this.getName("Map") ~ '())');
+		res ~= this.s("->set(" ~ this.convertString("dangerouslySetInnerHTML") ~ ", " ~ value ~ ")");
+		res ~= this.s(")");		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * OpHtmlRaw
+	 */
+	string OpHtmlRaw(OpHtmlRaw op_code){
+		string value = this.translateRun(op_code.value);
+		string res = "";
+		res = "new UIStruct(";
+		res ~= this.s('(new '~this.getName("Map")~'())');
+		res ~= this.s('->set("name", "span")');
+		res ~= this.s('->set("props", (new ' ~ this.getName("Map") ~ '())');
+		res ~= this.s("->set(" ~ this.convertString("dangerouslySetInnerHTML") ~ ", " ~ value ~ ")");
+		res ~= this.s(")");		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Html tag
+	 */
+	string OpHtmlTag(OpHtmlTag op_code){
+		
+		bool is_component = false;
+		string res = "";
+		
+		this.pushOneLine(false);
+		this.levelInc();
+		
+		/* isComponent */
+		if (this.modules.has(op_code.tag_name)){
+			res = "new UIStruct(";
+			res ~= this.s('(new '~this.getName("Map")~'())');
+			res ~= this.s('->set("kind", "component")');
+			res ~= this.s('->set("name", '~this.convertString(this.modules.item(op_code.tag_name))~')');
+			is_component = true;
+		}
+		else{
+			res = "new UIStruct(";
+			res ~= this.s('(new '~this.getName("Map")~'())');
+			res ~= this.s('->set("name", '~this.convertString(op_code.tag_name)~')');
+		}
+		
+		
+		/* Check contains single raw item */
+		BaseOpCode raw_item = null;
+		if (not op_code.is_plain and op_code.childs != null and op_code.childs.count() == 1){
+			BaseOpCode item = op_code.childs.item(0);
+			if (item instanceof OpHtmlJson){
+				raw_item = item;
+			}
+			else if (item instanceof OpHtmlRaw){
+				raw_item = item;
+			}
+		}
+		
+		
+		/* Attributes */
+		if (is_component) res ~= this.s('->set("props", $this->getElementAttrs()');
+		else res ~= this.s('->set("props", (new ' ~ this.getName("Map") ~ '())');
+		if (op_code.attributes != null and op_code.attributes.count() > 0){
+			op_code.attributes.each(void (OpHtmlAttribute item) use (res){
+				this.pushOneLine(true);
+				string value = this.translateRun(item.value);
+				this.popOneLine();
+				res ~= this.s("->set(" ~ this.convertString(item.key) ~ ", " ~ value ~ ")");
+			});
+		}
+		if (op_code.spreads != null and op_code.spreads.count() > 0){
+			op_code.spreads.each(void (string item) use (res){
+				res ~= this.s("->addMap($" ~ item ~ ")");
+			});
+		}
+		
+		/* Plain HTML tag script, pre, textarea */
+		if (op_code.is_plain){
+			if (op_code.childs != null){
+				string value = op_code.childs.reduce(
+					void (string res, BaseOpCode item){
+						string value = "";
+						if (item instanceof OpHtmlJson){
+							value = "rs::json_encode(" ~ this.translateRun(item.value) ~ ")";
+							value = "rtl::toString(" ~ value ~ ")";
+						}
+						else if (item instanceof OpHtmlRaw){
+							value = this.translateRun(item.value);
+							value = "rtl::toString(" ~ value ~ ")";
+						}
+						else if ( 
+							(item instanceof OpConcat) or 
+							(item instanceof OpString) or 
+							(item instanceof OpHtmlText) 
+						){
+							value = this.translateRun(item);
+						}
+						else if (item instanceof OpHtmlEscape) {
+							value = this.translateRun(item);
+							value = "rs::htmlEscape(" ~ value ~ ")";
+						}
+						else {
+							value = this.translateRun(item);
+							value = "rtl::toString(" ~ value ~ ")";
+						}
+						
+						if (res == "") return value;
+						return res ~ "." ~ value;
+					},
+					""
+				);
+				res ~= this.s("->set(" ~ this.convertString("dangerouslySetInnerHTML") ~ ", " ~ value ~ ")");
+			}
+		}
+		
+		/* Single raw item */
+		else if (raw_item != null){
+			if (raw_item instanceof OpHtmlJson){
+				string value = "rs::json_encode(" ~ this.translateRun(raw_item.value) ~ ")";
+				res ~= this.s("->set(" ~ this.convertString("dangerouslySetInnerHTML") ~ ", " ~ value ~ ")");
+			}
+			else if (raw_item instanceof OpHtmlRaw){
+				string value = this.translateRun(raw_item.value);
+				res ~= this.s("->set(" ~ this.convertString("dangerouslySetInnerHTML") ~ ", " ~ value ~ ")");
+			}
+		}
+		
+		res ~= this.s(")");
+		
+		/* Childs */
+		if (raw_item == null and not op_code.is_plain){
+			if (op_code.childs != null and op_code.childs.count() > 0){
+				res ~= this.s('->set("children", (new ' ~ this.getName("Vector") ~ '())');
+				op_code.childs.each(void (BaseOpCode item) use (res){
+					if (item instanceof OpComment){ return; }
+					res ~= this.s("->push(" ~ this.translateRun(item) ~ ")");
+				});
+				res ~= this.s(")");
+			}		
+		}
+		
+		this.levelDec();
+		res ~= this.s(")");
+		this.popOneLine();
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Html tag
+	 */
+	string OpHtmlView(OpHtmlView op_code){
+		this.pushOneLine(false);
+		string res = "(new Vector())";
+		op_code.childs.each(void (BaseOpCode item) use (res){
+			res ~= this.s("->push(" ~ this.translateRun(item) ~ ")");
+		});
+		this.popOneLine();
+		return res;
+	}
+	
+	
 	
 	
 	/** =========================== Preprocessor ========================== */

@@ -18,12 +18,16 @@
  
 namespace BayrellLang.OpCodes;
 
+use Runtime.Vector;
+use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpValueString;
+use BayrellLang.OpCodes.OpHtmlAttribute;
 
 
-export class OpHexNumber extends OpValueString
+export class OpHtmlText extends OpValueString
 {
+
+	public serializable string op = "op_html_text";
 	
-	public serializable string op = "op_hex_number";
 	
 }

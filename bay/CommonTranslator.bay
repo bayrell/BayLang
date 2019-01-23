@@ -49,6 +49,14 @@ use BayrellLang.OpCodes.OpFor;
 use BayrellLang.OpCodes.OpFunctionArrowDeclare;
 use BayrellLang.OpCodes.OpFunctionDeclare;
 use BayrellLang.OpCodes.OpHexNumber;
+use BayrellLang.OpCodes.OpHtmlAttribute;
+use BayrellLang.OpCodes.OpHtmlComment;
+use BayrellLang.OpCodes.OpHtmlEscape;
+use BayrellLang.OpCodes.OpHtmlJson;
+use BayrellLang.OpCodes.OpHtmlRaw;
+use BayrellLang.OpCodes.OpHtmlTag;
+use BayrellLang.OpCodes.OpHtmlText;
+use BayrellLang.OpCodes.OpHtmlView;
 use BayrellLang.OpCodes.OpIdentifier;
 use BayrellLang.OpCodes.OpIf;
 use BayrellLang.OpCodes.OpIfElse;
@@ -287,6 +295,14 @@ export class CommonTranslator extends ContextObject{
 	string OpWhile(OpWhile op_code){  return ""; }
 	
 	
+	/* =========================== HTML OP Codes ========================== */
+	
+	string OpHtmlJson(OpWhile op_code){  return ""; }
+	string OpHtmlRaw(OpWhile op_code){  return ""; }
+	string OpHtmlTag(OpWhile op_code){  return ""; }
+	string OpHtmlView(OpWhile op_code){  return ""; }
+	
+	
 	
 	/**
 	 * Translate to language
@@ -511,6 +527,25 @@ export class CommonTranslator extends ContextObject{
 		else if (op_code instanceof OpWhile){
 			return this.OpWhile(op_code);
 		}
+		
+		
+		/* HTML Template codes */
+		else if (op_code instanceof OpHtmlJson){
+			return this.OpHtmlJson(op_code);
+		}
+		else if (op_code instanceof OpHtmlRaw){
+			return this.OpHtmlRaw(op_code);
+		}
+		else if (op_code instanceof OpHtmlTag){
+			return this.OpHtmlTag(op_code);
+		}
+		else if (op_code instanceof OpHtmlText){
+			return this.OpString(op_code);
+		}
+		else if (op_code instanceof OpHtmlView){
+			return this.OpHtmlView(op_code);
+		}
+		
 		
 		return "";
 	}

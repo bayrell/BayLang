@@ -18,12 +18,38 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+
+use Runtime.Vector;
+use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpHtmlAttribute;
 
 
-export class OpHexNumber extends OpValueString
-{
+export class OpHtmlTag extends BaseOpCode{
 	
-	public serializable string op = "op_hex_number";
+	public serializable string op = "op_html_tag";
+	public serializable string tag_name = "";
+	public serializable Vector<OpHtmlAttribute> attributes = null;
+	public serializable Vector<mixed> spreads = null;
+	public serializable Vector<BaseOpCode> childs = null;
+	public serializable bool is_plain = false;
+	
+	
+	
+	/**
+	 * Constructor
+	 */ 
+	void constructor(){
+		parent();
+		this.childs = new Vector<BaseOpCode>();
+	}
+	
+	
+	
+	/**
+	 * Destructor
+	 */ 
+	void destructor(){
+		parent();
+	}
 	
 }

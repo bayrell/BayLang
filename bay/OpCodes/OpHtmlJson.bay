@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Template Engine
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -18,12 +18,14 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+use Runtime.Vector;
+use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpValue1;
 
+export class OpHtmlJson extends OpValue1{
 
-export class OpHexNumber extends OpValueString
-{
+	public serializable string op = "op_html_json";
 	
-	public serializable string op = "op_hex_number";
+	
 	
 }

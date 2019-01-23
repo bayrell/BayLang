@@ -18,12 +18,14 @@
  
 namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+use Runtime.Vector;
+use BayrellLang.OpCodes.BaseOpCode;
+use BayrellLang.OpCodes.OpValue1;
 
-
-export class OpHexNumber extends OpValueString
+export class OpHtmlEscape extends OpValue1
 {
+
+	public serializable string op = "op_html_escape";
 	
-	public serializable string op = "op_hex_number";
 	
 }

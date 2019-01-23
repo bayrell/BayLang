@@ -38,6 +38,7 @@ macros
 method
 lambda
 curry
+pipe
 and
 or
 not
