@@ -578,54 +578,6 @@ export class ParserBay extends CommonParser
 	/* ============== HTML Template Parser ============== */
 	
 	
-	/**
-	 * Read class body content
-	 */
-	void readClassBodyContent(OpClassDeclare res, OpFlags flags){
-		
-		BaseOpCode op_code = null;
-		bool is_declare_function = false;
-		if (flags != null and flags.p_declare or this.is_interface) is_declare_function = true;
-		
-		/* Read annotation */
-		if (this.findNextToken("@")){
-			this.readAnnotation();
-			return ;
-		}
-		
-		/* Read function */
-		op_code = this.readDeclareArrowFunction(true, is_declare_function);
-		if (op_code and op_code instanceof OpFunctionDeclare){
-			op_code.annotations = this.annotations;
-			op_code.flags = flags;
-			res.childs.push( op_code );
-			this.annotations = null;
-			return ;
-		}
-		
-		/* Read declare variable */
-		op_code = this.readOperatorAssign();
-		if (op_code instanceof OpAssign){
-			throw this.parserError("Assign are not alowed here");
-		}
-		else if (op_code instanceof OpAssignDeclare){
-			if (flags == null) flags = new OpFlags();
-			if (not flags.takeValue("protected") and not flags.takeValue("private")){
-				flags.assignFlag("assignable", true);
-			}
-			op_code.annotations = this.annotations;
-			op_code.flags = flags;
-			res.childs.push(op_code);
-			this.matchNextToken(";");
-			this.annotations = null;
-			return ;
-		}
-		
-		throw this.parserError("Unknown operator");
-	}
-	
-	
-	
 	
 	/**
 	 * Read Html Comment
@@ -1633,7 +1585,7 @@ export class ParserBay extends CommonParser
 		this.pushToken();
 		
 		BaseOpCode res = null;
-		res = this.readDeclareArrowFunction(false);
+		res = this.readDeclareFunction(false);
 		if (res != null)
 		{
 			this.popToken();
@@ -2349,47 +2301,28 @@ export class ParserBay extends CommonParser
 	
 	
 	
-	/**
-	 * Read declare class arrow function
-	 * @return BaseOpCode
-	 */
-	OpFunctionDeclare readDeclareArrowFunction(bool read_name = true, bool is_declare_function = false)
-	{
-		
-		BaseOpCode op_code = null;
-		
-		/* Read arrow function */
-		if (this.findNextToken("func"))
-		{
-			this.matchNextToken("func");
-			op_code = new OpFunctionArrowDeclare();
-			if (read_name)
-			{
-				op_code.name = this.readIdentifierName();
-			}
-			op_code.args = this.readFunctionsArguments();
-			this.matchNextToken("=>");
-			op_code.return_function = this.readDeclareFunction(false, false);
-			return op_code;
-		}
-		
-		
-		/* Read function */
-		op_code = this.readDeclareFunction(read_name, is_declare_function);
-		return op_code;
-	}
-	
-	
 	
 	/**
 	 * Read declare class function
 	 * @return BaseOpCode
 	 */
-	OpFunctionDeclare readDeclareFunction(bool read_name = true, bool is_declare_function = false)
-	{
+	OpFunctionDeclare readDeclareFunction
+	(
+		bool read_name = true, 
+		bool is_declare_function = false, 
+		bool is_lambda = false
+	){
 		OpFunctionDeclare res = new OpFunctionDeclare();
 		
 		this.pushToken();
+		if (this.lookNextToken() == "lambda")
+		{
+			is_lambda = true;
+			this.matchNextToken("lambda");
+		}
+		
+		res.is_lambda = is_lambda;
+		
 		try
 		{
 			res.result_type = this.readTemplateIdentifier();
@@ -2447,20 +2380,82 @@ export class ParserBay extends CommonParser
 		
 		
 		/* Read body of the function */
-		if (is_declare_function)
+		if (this.lookNextToken() == "=>")
+		{
+			this.matchNextToken("=>");
+			this.popToken();
+			
+			if (is_lambda)
+			{
+				this.pushToken();
+				try
+				{
+					OpFlags flags = null;
+					flags = this.readFlags();
+					res.return_function = this.readDeclareFunction(false, is_declare_function, is_lambda);
+					if (res.return_function != null)
+					{	
+						res.return_function.flags = flags;
+					}
+				}
+				catch (ParserError ex)
+				{
+					res.return_function = null;
+				}
+				
+				if (res.return_function == null)
+				{
+					this.popRollbackToken();
+				}
+				else
+				{
+					this.popToken();
+				}
+				
+				if (res.return_function == null)
+				{
+					BaseOpCode op_item;
+					try
+					{
+						op_item = this.readExpression();
+					}
+					catch (ParserError ex)
+					{
+						op_item = null;
+					}
+					
+					if (op_item != null)
+					{
+						res.childs = [ op_item ];
+					}
+				}
+				
+				if (res.return_function == null and res.childs == null)
+				{
+					this.matchNextToken(";");
+				}
+			}
+			else
+			{
+				res.return_function = this.readDeclareFunction(false, is_declare_function, is_lambda);
+			}
+			
+			return res;
+		}
+		else if (is_declare_function)
 		{
 			this.matchNextToken(";");
 		}
-		else
+		else if (this.lookNextToken() == "{")
 		{
-			if (this.lookNextToken() != "{")
-			{
-				this.popRollbackToken();
-				return null;
-			}
 			this.matchNextToken("{");
 			res.childs = this.readOperatorsBlock();
 			this.matchNextToken("}");
+		}
+		else
+		{
+			this.popRollbackToken();
+			return null;
 		}
 		
 		this.popToken();
@@ -2536,11 +2531,19 @@ export class ParserBay extends CommonParser
 		}
 		
 		/* Read function */
-		op_code = this.readDeclareArrowFunction(true, is_declare_function);
+		op_code = this.readDeclareFunction(true, is_declare_function);
 		if (op_code and op_code instanceof OpFunctionDeclare)
 		{
 			op_code.annotations = this.annotations;
 			op_code.flags = flags;
+			if (op_code.is_lambda)
+			{
+				flags.assignValue('static', true);
+			}
+			if (op_code.isFlag('pure'))
+			{
+				flags.assignValue('static', true);
+			}
 			res.childs.push( op_code );
 			this.annotations = null;
 			return ;

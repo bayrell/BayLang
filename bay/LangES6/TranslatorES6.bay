@@ -1706,8 +1706,11 @@ export class TranslatorES6 extends CommonTranslator {
 			variables.push(op_code.name);
 		}
 		else if (op_code instanceof OpFunctionDeclare){
-			for (int i=0; i<op_code.childs.count(); i++){
-				this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+			if (op_code.childs != null)
+			{
+				for (int i=0; i<op_code.childs.count(); i++){
+					this.detectAsyncDeclareVariables( op_code.childs.item(i), variables );
+				}
 			}
 		}
 		else if (op_code instanceof OpFor){
@@ -1866,40 +1869,6 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
-	 * Function arrow declare
-	 */
-	string OpFunctionArrowDeclare(OpFunctionArrowDeclare op_code){
-	
-		string res = "";
-		
-		/* Skip if declare function */
-		if (op_code.isFlag("declare")){
-			return "";
-		}
-		
-		/* Function Header */
-		this.functionPush(op_code.name, false);
-		this.beginOperation();
-		res ~= this.OpFunctionDeclareHeader(op_code);
-		res ~= "{";
-		this.endOperation();
-		this.levelInc();
-		this.pushOneLine(false);
-		
-		res ~= this.s("return ");
-		res ~= this.OpFunctionDeclare(op_code.return_function);
-		
-		this.popOneLine(false);
-		this.levelDec();
-		res ~= this.s("}");
-		this.functionPop();
-		
-		return res;
-	}
-	
-	
-	
-	/**
 	 * Function declare
 	 */
 	string OpFunctionDeclare(OpFunctionDeclare op_code){
@@ -1953,12 +1922,33 @@ export class TranslatorES6 extends CommonTranslator {
 			res ~= this.s(s);
 		}
 		
+		
 		/* Childs */
-		if (op_code.childs != null){
-			for (int i=0; i<op_code.childs.count(); i++){
-				res ~= this.s(this.translateRun(op_code.childs.item(i)));
+		if (op_code.childs != null)
+		{
+			if (op_code.is_lambda)
+			{
+				if (op_code.childs.count() > 0)
+				{
+					res ~= this.s("return " ~ this.translateRun(op_code.childs.item(0)));
+				}
+			}
+			else
+			{
+				for (int i=0; i<op_code.childs.count(); i++)
+				{
+					res ~= this.s(this.translateRun(op_code.childs.item(i)));
+				}
 			}
 		}
+		
+		
+		/* Childs */
+		else if (op_code.return_function != null)
+		{
+			res ~= this.s("return " ~ this.translateItem( op_code.return_function ));
+		}
+		
 		
 		
 		/* Async function */

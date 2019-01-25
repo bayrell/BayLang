@@ -1107,72 +1107,6 @@ export class TranslatorPHP extends CommonTranslator {
 	/** ============================= Classes ============================= */
 	
 	
-	
-	/**
-	 * Function arrow declare
-	 */
-	string OpFunctionArrowDeclare(OpFunctionArrowDeclare op_code){
-	
-		string res = "";
-		string ch = "";
-		Vector<string> use_vars = new Vector();
-		
-		/* Skip if declare function */
-		if (op_code.isFlag("declare")){
-			return "";
-		}
-		
-		/* Static function */
-		if (op_code.isFlag("static")){
-			res ~= "static function ";
-			if (this.current_function_name.count() == 0){
-				this.current_function_is_static = true;
-			}
-		}
-		else{
-			res ~= "function ";
-			if (this.current_function_name.count() == 0){
-				this.current_function_is_static = false;
-			}	
-			/*
-			if (!this.current_function_is_static and this.current_function_name.count() > 0){
-				use_vars.push("$this");
-			}*/
-		}
-		
-		/* Function Header */
-		this.current_function_name.push(op_code.name);
-		res ~= op_code.name;
-		res ~= "(";
-		for (int i=0; i<op_code.args.count(); i++){
-			OpAssignDeclare variable = op_code.args.item(i);
-			this.pushOneLine(true);
-			res ~= ch ~ "$" ~ variable.name;
-			if (variable.value != null){
-				res ~= " = " ~ this.translateRun(variable.value);
-			}
-			this.popOneLine();
-			use_vars.push(variable.name);
-			ch = ", ";
-		}
-		res ~= ")";
-		res ~= "{";
-		this.setOperation(false);
-		this.pushOneLine(false);
-		this.levelInc();
-		
-		res ~= this.s("return ");
-		res ~= this.OpFunctionDeclare(op_code.return_function, true, use_vars);
-		this.levelDec();
-		res ~= this.s("}");
-		this.popOneLine();
-		this.current_function_name.pop();
-		
-		return res;
-	}
-	
-	
-	
 	/**
 	 * Function declare
 	 */
@@ -1267,10 +1201,27 @@ export class TranslatorPHP extends CommonTranslator {
 			this.levelInc();
 			
 			/* Childs */
-			if (op_code.childs != null){
-				for (int i=0; i<op_code.childs.count(); i++){
-					res ~= this.s(this.translateRun(op_code.childs.item(i)));
+			if (op_code.childs != null)
+			{
+				if (op_code.is_lambda)
+				{
+					if (op_code.childs.count() > 0)
+					{
+						res ~= this.s("return " ~ this.translateRun(op_code.childs.item(0)));
+					}
 				}
+				else
+				{
+					for (int i=0; i<op_code.childs.count(); i++)
+					{
+						res ~= this.s(this.translateRun(op_code.childs.item(i)));
+					}
+				}
+			}
+			
+			else if (op_code.return_function != null)
+			{
+				res ~= this.s("return " ~ this.translateItem( op_code.return_function ));
 			}
 			
 			this.levelDec();

@@ -20,6 +20,7 @@ declare
 var
 fun
 static
+pure
 const
 string
 return
@@ -39,6 +40,7 @@ method
 lambda
 curry
 pipe
+memorize
 and
 or
 not
@@ -47,6 +49,7 @@ true
 new
 public
 protected
+published
 continue
 clone
 instanceof
