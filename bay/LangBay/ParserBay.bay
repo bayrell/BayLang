@@ -42,6 +42,7 @@ use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
 use BayrellLang.OpCodes.OpConcat;
 use BayrellLang.OpCodes.OpContinue;
+use BayrellLang.OpCodes.OpCopyStruct;
 use BayrellLang.OpCodes.OpDelete;
 use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
@@ -1584,6 +1585,8 @@ export class ParserBay extends CommonParser
 		
 		this.pushToken();
 		
+		
+		/* Read function declare */
 		BaseOpCode res = null;
 		res = this.readDeclareFunction(false);
 		if (res != null)
@@ -1593,6 +1596,23 @@ export class ParserBay extends CommonParser
 		}
 		
 		
+		/* Try to read op code struct */
+		try
+		{
+			res = this.readOpCopyStruct();
+		}
+		catch (ParserError ex)
+		{
+			res = null;
+		}
+		if (res != null)
+		{
+			this.popToken();
+			return res;
+		}
+		
+		
+		/* Read expression */
 		this.popRollbackToken();
 		
 		bool old_skip_comments = this.skip_comments;
@@ -1602,6 +1622,21 @@ export class ParserBay extends CommonParser
 		return res;
 	}
 	
+	
+	
+	/**
+	 * Read copy struct
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readOpCopyStruct()
+	{
+		string name = this.readIdentifierName();
+		this.matchNextToken('<=');
+		
+		BaseOpCode item = this.readExpression();
+		
+		return new OpCopyStruct({ "name": name, "item": item });
+	}
 	
 	
 	
@@ -1627,6 +1662,7 @@ export class ParserBay extends CommonParser
 			.push("~=")
 			.push("+=")
 			.push("-=")
+			.push("<=")
 		;
 		
 		/* Read assign */
@@ -1654,10 +1690,18 @@ export class ParserBay extends CommonParser
 		}
 		if (success)
 		{
-			this.popToken();
+			
 			int pos = this.findNextTokenVector(v);
 			string op_name = v.item(pos);
 			this.matchNextToken(op_name);
+			
+			if (op_name == "<=")
+			{
+				this.popRollbackToken();
+				return this.readOpCopyStruct();
+			}
+			
+			this.popToken();
 			
 			if (this.findNextToken('await'))
 			{

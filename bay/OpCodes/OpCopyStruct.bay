@@ -18,16 +18,14 @@
  
 namespace BayrellLang.OpCodes;
 
-use Runtime.CoreObject;
-use Runtime.CoreStruct;
-use Runtime.Interfaces.SerializeInterface;
+use BayrellLang.OpCodes.BaseOpCode;
 
 
-class BaseOpCode extends CoreStruct implements SerializeInterface
+class OpCopyStruct extends BaseOpCode
 {
 	
-	public serializable string op = "";
-	
-	
+	public serializable string op = "op_copy_struct";
+	public serializable string name = "";
+	public serializable BaseOpCode item = null;
 	
 }

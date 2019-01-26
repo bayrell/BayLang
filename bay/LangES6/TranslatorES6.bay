@@ -41,6 +41,7 @@ use BayrellLang.OpCodes.OpComment;
 use BayrellLang.OpCodes.OpCompare;
 use BayrellLang.OpCodes.OpConcat;
 use BayrellLang.OpCodes.OpContinue;
+use BayrellLang.OpCodes.OpCopyStruct;
 use BayrellLang.OpCodes.OpDelete;
 use BayrellLang.OpCodes.OpDiv;
 use BayrellLang.OpCodes.OpDynamic;
@@ -831,6 +832,45 @@ export class TranslatorES6 extends CommonTranslator {
 		;
 		this.current_opcode_level = 4;
 		return res;
+	}
+	
+	
+	
+	/**
+	 * Copy struct
+	 */
+	string copyStruct(OpCopyStruct op_code, Vector<string> names)
+	{
+		
+		if (op_code.item instanceof OpCopyStruct)
+		{
+			
+			names.push(op_code.name);
+			string name = rs::implode(".", names);
+			
+			return name ~ ".copy( new " ~ this.getName("Map") ~ "({ " ~ 
+				this.convertString(op_code.item.name) ~ 
+				": " ~ 
+				this.copyStruct( op_code.item, names ) ~ 
+			" })  )";
+			
+		}
+		
+		return this.translateItem( op_code.item );
+	}
+	
+	
+	
+	/**
+	 * Copy struct
+	 */
+	string OpCopyStruct(OpCopyStruct op_code)
+	{		
+		if (this.is_operation){
+			return this.copyStruct(op_code, []);
+		}
+		
+		return op_code.name ~ " = " ~ this.copyStruct(op_code, []) ~ ";";
 	}
 	
 	
@@ -1930,7 +1970,10 @@ export class TranslatorES6 extends CommonTranslator {
 			{
 				if (op_code.childs.count() > 0)
 				{
-					res ~= this.s("return " ~ this.translateRun(op_code.childs.item(0)));
+					bool old_is_operation = this.beginOperation(true);
+					string lambda_res = this.translateRun(op_code.childs.item(0));
+					this.endOperation(old_is_operation);
+					res ~= this.s("return " ~ lambda_res ~ ";");
 				}
 			}
 			else
