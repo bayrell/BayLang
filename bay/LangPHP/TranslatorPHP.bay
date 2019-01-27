@@ -127,6 +127,9 @@ export class TranslatorPHP extends CommonTranslator {
 			return "parent";
 		}
 		else if (name == 'self'){
+			return "self";
+		}
+		else if (name == 'static'){
 			return "static";
 		}
 		else if (this.modules.has(name)){
@@ -1537,8 +1540,11 @@ export class TranslatorPHP extends CommonTranslator {
 						if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 						{
 							var_prefix = "__";
-						}	
-						if (not variable.isFlag('static') and not variable.isFlag('const')){
+						}
+						bool is_struct = this.is_struct and not variable.isFlag("static") and 
+							not variable.isFlag("const");
+						if (is_struct)
+						{
 							this.beginOperation();
 							string s = "$this->" ~ var_prefix ~ variable.name ~ " = " ~ 
 								this.translateRun(variable.value) ~ ";";

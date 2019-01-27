@@ -16,14 +16,15 @@
  *  limitations under the License.
  */
  
-namespace BayrellTemplate.OpCodes;
+namespace BayrellLang.OpCodes;
 
 
 use Runtime.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpComponent extends BaseOpCode{
+class OpComponent extends BaseOpCode
+{
 	
 	public serializable string op = "op_component";
 	public serializable BaseOpCode name = "";

@@ -325,6 +325,10 @@ export class TranslatorES6 extends CommonTranslator {
 		else if (name == 'self'){
 			return this.current_namespace ~ "." ~ this.current_class_name;
 		}
+		else if (name == 'static'){
+			return "this";
+			/*return this.current_namespace ~ "." ~ this.current_class_name;*/
+		}
 		else if (this.modules.has(name)){
 			return this.modules.item(name);
 		}
@@ -2249,19 +2253,23 @@ export class TranslatorES6 extends CommonTranslator {
 						{
 							var_prefix = "__";
 						}
-						
-						if (not variable.isFlag('static') and not variable.isFlag('const')){
-							this.beginOperation();
-							s = "this." ~ var_prefix ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
-							this.endOperation();
-							res ~= this.s(s);
+						bool is_struct = this.is_struct and not variable.isFlag("static") and 
+							not variable.isFlag("const");
+						if (is_struct)
+						{
 							res ~= this.s(  
 								"Object.defineProperty(this, " ~ this.convertString(variable.name) ~ 
 								", { get: function() { return this.__"~ variable.name ~
 								"; }, set: function(value) { throw new Runtime.Exceptions.AssignStructValueError("~
 								this.convertString(variable.name)~") }});"
 							);
-							
+						}
+						else
+						{
+							this.beginOperation();
+							s = "this." ~ var_prefix ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							this.endOperation();
+							res ~= this.s(s);
 						}
 					}
 				}

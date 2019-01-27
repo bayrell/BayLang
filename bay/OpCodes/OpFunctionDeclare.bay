@@ -27,7 +27,7 @@ export class OpFunctionDeclare extends BaseOpCode{
 	
 	public serializable string op = "op_function";
 	public serializable string name = "";
-	public serializable bool is_lambda = false
+	public serializable bool is_lambda = false;
 	public serializable BaseOpCode result_type = null;
 	public serializable Vector<OpAssignDeclare> args = null;
 	public serializable Vector<BaseOpCode> childs = null;

@@ -21,7 +21,8 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.OpChilds;
 
 
-export class OpHtmlView extends OpChilds{
+class OpHtmlView extends OpChilds
+{
 	
 	public serializable string op = "op_html_view";
 	public serializable string variable = "";
