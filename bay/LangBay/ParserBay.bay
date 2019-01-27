@@ -73,6 +73,7 @@ use BayrellLang.OpCodes.OpNope;
 use BayrellLang.OpCodes.OpNot;
 use BayrellLang.OpCodes.OpNumber;
 use BayrellLang.OpCodes.OpOr;
+use BayrellLang.OpCodes.OpPipe;
 use BayrellLang.OpCodes.OpPostDec;
 use BayrellLang.OpCodes.OpPostInc;
 use BayrellLang.OpCodes.OpPow;
@@ -105,7 +106,7 @@ use BayrellParser.Exceptions.ParserError;
 
 
 
-export class ParserBay extends CommonParser
+class ParserBay extends CommonParser
 {
 	
 	string current_namespace = "";
@@ -404,6 +405,50 @@ export class ParserBay extends CommonParser
 		
 		BaseOpCode value = this.readCallDynamic(true, false, true, false);
 		return new OpMethod(value);
+	}
+	
+	
+	
+	/**
+	 * Read pipe
+	 * @return BaseOpCode
+	 */
+	BaseOpCode readPipe()
+	{
+		BaseOpCode item = null;
+		Vector<BaseOpCode> items = new Vector();
+		bool is_return_value = false;
+		
+		this.matchNextToken("pipe");
+		this.matchNextToken("(");
+		BaseOpCode value = this.readExpression();
+		this.matchNextToken(")");
+		
+		while (this.findNextToken(">>"))
+		{
+			this.matchNextToken(">>");
+			if (this.findNextToken("method"))
+			{
+				item = this.readMethod();
+			}
+			else if (this.findNextToken("value"))
+			{
+				break;
+			}
+			else
+			{
+				item = this.readCallDynamic(true, true, true, true);
+			}
+			items.push(item);
+		}
+		
+		if (this.findNextToken("value"))
+		{
+			this.matchNextToken("value");
+			is_return_value = true;
+		}
+		
+		return new OpPipe({ "value": value, "items": items, "is_return_value": is_return_value });
 	}
 	
 	
@@ -1167,6 +1212,10 @@ export class ParserBay extends CommonParser
 		else if (this.findNextToken('method'))
 		{
 			return this.readMethod();
+		}
+		else if (this.findNextToken('pipe'))
+		{
+			return this.readPipe();
 		}
 		else if (this.findNextToken('['))
 		{

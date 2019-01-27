@@ -72,6 +72,7 @@ use BayrellLang.OpCodes.OpNope;
 use BayrellLang.OpCodes.OpNot;
 use BayrellLang.OpCodes.OpNumber;
 use BayrellLang.OpCodes.OpOr;
+use BayrellLang.OpCodes.OpPipe;
 use BayrellLang.OpCodes.OpPostDec;
 use BayrellLang.OpCodes.OpPostInc;
 use BayrellLang.OpCodes.OpPow;
@@ -877,6 +878,29 @@ export class TranslatorES6 extends CommonTranslator {
 		return op_code.name ~ " = " ~ this.copyStruct(op_code, []) ~ ";";
 	}
 	
+	
+	
+	/**
+	 * Pipe
+	 */
+	string OpPipe(OpPipe op_code)
+	{
+		string res = "";
+		
+		res = this.getName("Maybe") ~ ".of(" ~ this.translateItem(op_code.value) ~ ")";
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			BaseOpCode op_item = op_code.items.item(i);
+			res ~= this.s( ".map(" ~ this.translateItem(op_item) ~ ")" );
+		}
+		
+		if (op_code.is_return_value)
+		{
+			res ~= this.s( ".value()" );
+		}
+		
+		return res;
+	}
 	
 	
 	/** ========================== Vector and Map ========================= */
@@ -2257,6 +2281,10 @@ export class TranslatorES6 extends CommonTranslator {
 							not variable.isFlag("const");
 						if (is_struct)
 						{
+							this.beginOperation();
+							s = "this." ~ var_prefix ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							this.endOperation();
+							res ~= this.s(s);
 							res ~= this.s(  
 								"Object.defineProperty(this, " ~ this.convertString(variable.name) ~ 
 								", { get: function() { return this.__"~ variable.name ~
@@ -2267,7 +2295,7 @@ export class TranslatorES6 extends CommonTranslator {
 						else
 						{
 							this.beginOperation();
-							s = "this." ~ var_prefix ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
+							s = "this." ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 							this.endOperation();
 							res ~= this.s(s);
 						}

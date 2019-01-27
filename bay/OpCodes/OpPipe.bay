@@ -21,24 +21,12 @@ namespace BayrellLang.OpCodes;
 use BayrellLang.OpCodes.BaseOpCode;
 
 
-class OpCall extends BaseOpCode
+struct OpPipe extends BaseOpCode
 {
 	
-	public serializable string op = "op_call";
-	public serializable BaseOpCode value = null;
-	public serializable Vector<BaseOpCode> args = null;
-	public serializable bool is_await = false;
-	
-	
-	
-	/**
-	 * Constructor
-	 */
-	void constructor(BaseOpCode value = null, Vector<BaseOpCode> args = null)
-	{
-		parent();
-		this.value = value;
-		this.args = args;
-	}
+	string op = "op_pipe";
+	BaseOpCode value = null;
+	Vector<BaseOpCode> items = null;
+	bool is_return_value = false;
 	
 }

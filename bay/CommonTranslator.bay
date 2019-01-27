@@ -72,6 +72,7 @@ use BayrellLang.OpCodes.OpNope;
 use BayrellLang.OpCodes.OpNot;
 use BayrellLang.OpCodes.OpNumber;
 use BayrellLang.OpCodes.OpOr;
+use BayrellLang.OpCodes.OpPipe;
 use BayrellLang.OpCodes.OpPostDec;
 use BayrellLang.OpCodes.OpPostInc;
 use BayrellLang.OpCodes.OpPow;
@@ -275,6 +276,7 @@ export class CommonTranslator extends ContextObject{
 	string OpNot(OpNot op_code){  return ""; }
 	string OpNumber(OpNumber op_code){  return ""; }
 	string OpOr(OpOr op_code){  return ""; }
+	string OpPipe(OpPostDec op_code){  return ""; }
 	string OpPostDec(OpPostDec op_code){  return ""; }
 	string OpPostInc(OpPostInc op_code){  return ""; }
 	string OpPow(OpPow op_code){  return ""; }
@@ -471,6 +473,9 @@ export class CommonTranslator extends ContextObject{
 		}
 		else if (op_code instanceof OpOr){
 			return this.OpOr(op_code);
+		}
+		else if (op_code instanceof OpPipe){
+			return this.OpPipe(op_code);
 		}
 		else if (op_code instanceof OpPostDec){
 			return this.OpPostDec(op_code);
