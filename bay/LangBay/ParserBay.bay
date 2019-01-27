@@ -1783,7 +1783,7 @@ export class ParserBay extends CommonParser
 		this.matchNextToken(")");
 		
 		/* Read if true operators block */
-		if (this.lookNextToken() == '{')
+		if (this.findNextToken("{"))
 		{
 			this.matchNextToken("{");
 			if_true = this.readOperatorsBlock();
@@ -1815,7 +1815,7 @@ export class ParserBay extends CommonParser
 					this.matchNextToken(")");
 					
 					/* Read operators block */
-					if (this.lookNextToken() == '{')
+					if (this.findNextToken("{"))
 					{
 						this.matchNextToken("{");
 						op_if_else.if_true = this.readOperatorsBlock();
@@ -1832,7 +1832,7 @@ export class ParserBay extends CommonParser
 				/* Read false operators block */
 				else
 				{
-					if (this.lookNextToken() == '{')
+					if (this.findNextToken("{"))
 					{
 						this.matchNextToken("{");
 						if_false = this.readOperatorsBlock();
@@ -1859,7 +1859,7 @@ export class ParserBay extends CommonParser
 				this.matchNextToken(")");
 				
 				/* Read operators block */
-				if (this.lookNextToken() == '{')
+				if (this.findNextToken("{"))
 				{
 					this.matchNextToken("{");
 					op_if_else.if_true = this.readOperatorsBlock();
@@ -2359,7 +2359,7 @@ export class ParserBay extends CommonParser
 		OpFunctionDeclare res = new OpFunctionDeclare();
 		
 		this.pushToken();
-		if (this.lookNextToken() == "lambda")
+		if (this.findNextToken("lambda"))
 		{
 			is_lambda = true;
 			this.matchNextToken("lambda");
@@ -2382,7 +2382,7 @@ export class ParserBay extends CommonParser
 		}
 		
 		/* If not function */
-		if (this.lookNextToken() != "(")
+		if (not this.findNextToken("("))
 		{
 			this.popRollbackToken();
 			return null;
@@ -2402,15 +2402,15 @@ export class ParserBay extends CommonParser
 		
 		
 		/* Read use variables*/
-		if (this.lookNextToken() == "use")
+		if (this.findNextToken("use"))
 		{
 			this.matchNextToken("use");
 			this.matchNextToken("(");
-			while (this.lookNextToken() != ")" and not this.isEOF())
+			while (not this.findNextToken(")") and not this.isEOF())
 			{
 				string name = this.readIdentifierName();
 				res.use_variables.push(name);
-				if (this.lookNextToken() == ",")
+				if (this.findNextToken(","))
 				{
 					this.matchNextToken(",");
 				}
@@ -2424,7 +2424,7 @@ export class ParserBay extends CommonParser
 		
 		
 		/* Read body of the function */
-		if (this.lookNextToken() == "=>")
+		if (this.findNextToken("=>"))
 		{
 			this.matchNextToken("=>");
 			this.popToken();
@@ -2490,7 +2490,7 @@ export class ParserBay extends CommonParser
 		{
 			this.matchNextToken(";");
 		}
-		else if (this.lookNextToken() == "{")
+		else if (this.findNextToken("{"))
 		{
 			this.matchNextToken("{");
 			res.childs = this.readOperatorsBlock();
