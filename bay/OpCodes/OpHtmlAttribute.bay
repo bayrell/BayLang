@@ -22,30 +22,12 @@ use Runtime.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class OpHtmlAttribute extends BaseOpCode
+class OpHtmlAttribute extends BaseOpCode
 {
 	
 	public serializable string op = "op_html_attribute";
 	public serializable string key = "";
-	public serializable BaseOpCode value = null;	
-	
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(){
-		parent();
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
+	public serializable mixed value = null;	
 	
 	
 }

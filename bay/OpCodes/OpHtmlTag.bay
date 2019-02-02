@@ -24,7 +24,7 @@ use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpHtmlAttribute;
 
 
-export class OpHtmlTag extends BaseOpCode{
+class OpHtmlTag extends BaseOpCode{
 	
 	public serializable string op = "op_html_tag";
 	public serializable string tag_name = "";
@@ -36,20 +36,61 @@ export class OpHtmlTag extends BaseOpCode{
 	
 	
 	/**
-	 * Constructor
-	 */ 
-	void constructor(){
-		parent();
-		this.childs = new Vector<BaseOpCode>();
+	 * Find attribute by attr_name
+	 * @param string attr_name
+	 * @return OpHtmlAttribute
+	 */
+	OpHtmlAttribute findAttribute(string attr_name)
+	{
+		if (this.attributes == null) return null;
+		
+		for (int i=0; i<this.attributes.count(); i++)
+		{
+			OpHtmlAttribute item = this.attributes.item(i);
+			if (item.key == attr_name)
+				return item;
+		}
+		
+		return null;
 	}
 	
 	
 	
 	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
+	 * Remove attribute by attr_name
+	 * @param string attr_name
+	 */
+	void removeAttribute(string attr_name)
+	{
+		this.attributes = this.attributes.filter(
+			bool (OpHtmlAttribute item) use (attr_name)
+			{
+				return item.key != attr_name;
+			}
+		);
 	}
 	
+	
+	
+	/**
+	 * Set attribute by attr_name
+	 * @param string attr_name
+	 * @param mixed value
+	 */
+	void setAttribute(string attr_name, mixed value)
+	{
+		if (this.attributes == null) return;
+		
+		for (int i=0; i<this.attributes.count(); i++)
+		{
+			OpHtmlAttribute item = this.attributes.item(i);
+			if (item.key == attr_name)
+			{
+				item.value = value;
+				return ;
+			}
+		}
+		
+		this.attributes.push(new OpHtmlAttribute({"key":attr_name, "value":value}));
+	}
 }

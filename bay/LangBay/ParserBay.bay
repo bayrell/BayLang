@@ -699,22 +699,31 @@ class ParserBay extends CommonParser
 			if (this.findNextToken("@")){
 				spec_attr = true;
 				this.matchNextToken("@");
-				attr.key = this.readNextToken().token;
+				attr.key = "@" ~ this.readNextToken().token;
 			}
 			else{
 				attr.key = this.readNextToken().token;
 			}
 			
-			if (this.findNextToken("=")){
+			
+			if (attr.key == "@lambda")
+			{
+				attr.value = this.readFunctionsArguments();
+			}
+			
+			else if (this.findNextToken("="))
+			{
 				this.matchNextToken("=");
 				
 				/* Read attribute value */
-				if (this.findNextToken("'") or this.findNextToken('"')){
+				if (this.findNextToken("'") or this.findNextToken('"'))
+				{
 					this.pushToken( new ParserBayToken(this.context(), this) );
 					attr.value = new OpString(this.readAnyNextToken().token);
 					this.popRestoreToken();
 				}
-				else if (this.findNextToken("{")){
+				else if (this.findNextToken("{"))
+				{
 					
 					this.matchNextToken("{");
 					
@@ -726,7 +735,8 @@ class ParserBay extends CommonParser
 					this.popRestoreToken();
 					this.matchNextToken("}");
 				}
-				else {
+				else 
+				{
 					throw this.parserError("Unknown token " ~ this.next_token.token);
 				}
 				
@@ -736,7 +746,9 @@ class ParserBay extends CommonParser
 				attr.value = new OpString(attr.key);
 			}
 			
+			
 			/* spec attr for css */
+			/*
 			if (spec_attr and attr.key == 'class'){
 				attr.value = new OpCall(	
 					new OpDynamic(
@@ -748,6 +760,7 @@ class ParserBay extends CommonParser
 					]
 				);
 			}
+			*/
 			
 			this.addAttribute(attributes, attr);
 		}
@@ -878,30 +891,38 @@ class ParserBay extends CommonParser
 	 * Read Html tag
 	 * @return BaseOpCode
 	 */
-	BaseOpCode readHtmlTag(){
+	BaseOpCode readHtmlTag()
+	{
 		
-		if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT){
+		if (this.lookNextTokenType() == ParserBayToken::TOKEN_COMMENT)
+		{
 			return new OpComment(this.readAnyNextToken().token);
 		}
-		else if (this.findNextToken('<!--')){
+		else if (this.findNextToken('<!--'))
+		{
 			return this.readHtmlComment();
 		}
-		else if (this.findNextToken("<!")){
+		else if (this.findNextToken("<!"))
+		{
 			this.matchNextToken("<!");
 			
-			if (this.findNextString("DOCTYPE")){
+			if (this.findNextString("DOCTYPE"))
+			{
 				return this.readHtmlDOCTYPE();
 			}
 			
 		}
-		else if (this.findNextToken("<")){
+		else if (this.findNextToken("<"))
+		{
 			this.matchNextToken("<");
 			
 			/* Read HtmlView */
-			if (this.findNextToken(">")){
+			if (this.findNextToken(">"))
+			{
 				this.matchNextToken(">");
 				BaseOpCode res = new OpHtmlView(this.readHtmlBlock("</>"));
-				if (res.childs != null and res.childs.count() == 1){
+				if (res.childs != null and res.childs.count() == 1)
+				{
 					res = res.childs.item(0);
 				}
 				this.matchNextToken("</");
@@ -913,24 +934,43 @@ class ParserBay extends CommonParser
 			res.tag_name = this.readNextToken().token;
 			this.readHtmlAttributes(res);
 			
-			if (this.findNextToken("/>")){
+			if (this.findNextToken("/>"))
+			{
 				this.matchNextToken("/>");
 			}
-			else{
+			else
+			{
 				this.matchNextToken(">");
 				
 				string close_tag = "</"~res.tag_name~">";
-				if (res.tag_name == 'script' or res.tag_name == 'pre' or res.tag_name == 'textarea'){
+				if (res.tag_name == 'script' or res.tag_name == 'pre' or res.tag_name == 'textarea')
+				{
 					res.is_plain = true;
 					res.childs = this.readHtmlBlock("</" ~ res.tag_name ~ ">", true);
 				}
-				else{
+				else
+				{
 					res.childs = this.readHtmlBlock("</");
 				}
 				
 				this.matchNextToken("</");
 				this.matchNextToken(res.tag_name);
 				this.matchNextToken(">");
+			}
+			
+			
+			OpHtmlAttribute lambda_header = res.findAttribute("@lambda");
+			if (lambda_header != null)
+			{
+				if (res.childs != null)
+				{
+					OpFunctionDeclare op_code = new OpFunctionDeclare();
+					op_code.is_lambda = true;
+					op_code.args = lambda_header.value;
+					op_code.childs = res.childs.copy();
+					res.setAttribute("@lambda", op_code);
+				}
+				res.childs.clear();
 			}
 			
 			return res;

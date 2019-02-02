@@ -23,7 +23,8 @@ use BayrellLang.OpCodes.OpAnnotation;
 use BayrellLang.OpCodes.OpFlags;
 
 
-export class OpFunctionDeclare extends BaseOpCode{
+class OpFunctionDeclare extends BaseOpCode
+{
 	
 	public serializable string op = "op_function";
 	public serializable string name = "";
@@ -40,7 +41,8 @@ export class OpFunctionDeclare extends BaseOpCode{
 	/**
 	 * Read is Flag
 	 */
-	public boolean isFlag(string name){
+	public boolean isFlag(string name)
+	{
 		if (this.flags == null)
 			return false;
 		if (not OpFlags::hasFlag(name))
@@ -53,7 +55,8 @@ export class OpFunctionDeclare extends BaseOpCode{
 	/**
 	 * Has Annotations
 	 */
-	public boolean hasAnnotations(){
+	public boolean hasAnnotations()
+	{
 		return this.annotations != null and this.annotations.count() > 0;
 	}
 	
@@ -62,7 +65,8 @@ export class OpFunctionDeclare extends BaseOpCode{
 	/**
 	 * Constructor
 	 */ 
-	void constructor(){
+	void constructor()
+	{
 		parent();
 		this.args = new Vector<OpAssignDeclare>();
 		this.use_variables = new Vector<string>();
@@ -73,7 +77,8 @@ export class OpFunctionDeclare extends BaseOpCode{
 	/**
 	 * Destructor
 	 */ 
-	void destructor(){
+	void destructor()
+	{
 		parent();
 	}
 	
