@@ -343,8 +343,19 @@ class ParserBay extends CommonParser
 	{
 		this.matchNextToken("new");
 		BaseOpCode ident = this.readTemplateIdentifier();
-		Vector<BaseOpCode> v = this.readCallBody();
-		return new OpNew(ident, v);
+		
+		if (this.findNextToken("("))
+		{
+			Vector<BaseOpCode> v = this.readCallBody();
+			return new OpNew(ident, v);
+		}
+		else if (this.findNextToken("{"))
+		{
+			BaseOpCode v = this.readMap();
+			return new OpNew(ident, [v]);
+		}
+		
+		return new OpNew(ident);
 	}
 	
 	
