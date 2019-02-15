@@ -36,6 +36,7 @@ class OpFlags extends BaseOpCode{
 	public bool p_cloneable = false;
 	public bool p_assignable = false;
 	public bool p_memorize = false;
+	public bool p_lambda = false;
 	public bool p_pure = false;
 	
 	
@@ -71,6 +72,7 @@ class OpFlags extends BaseOpCode{
 		names.push("cloneable");
 		names.push("assignable");
 		names.push("memorize");
+		names.push("lambda");
 		names.push("pure");
 	}
 	
@@ -95,6 +97,7 @@ class OpFlags extends BaseOpCode{
 		else if (variable_name == 'cloneable') return this.p_cloneable;
 		else if (variable_name == 'assignable') return this.p_assignable;
 		else if (variable_name == 'memorize') return this.p_memorize;
+		else if (variable_name == 'lambda') return this.p_lambda;
 		else if (variable_name == 'pure') return this.p_pure;
 		return parent::takeValue(variable_name, default_value);
 	}
@@ -120,6 +123,7 @@ class OpFlags extends BaseOpCode{
 		else if (variable_name == 'cloneable') this.p_cloneable = value;
 		else if (variable_name == 'assignable') this.p_assignable = value;
 		else if (variable_name == 'memorize') this.p_memorize = value;
+		else if (variable_name == 'lambda') this.p_lambda = value;
 		else if (variable_name == 'pure') this.p_pure = value;
 		else parent::assignValue(variable_name, value);
 	}
@@ -159,6 +163,7 @@ class OpFlags extends BaseOpCode{
 			.push("cloneable")
 			.push("assignable")
 			.push("memorize")
+			.push("lambda")
 			.push("pure")
 		;
 	}
@@ -183,6 +188,7 @@ class OpFlags extends BaseOpCode{
 			flag_name == "cloneable" or
 			flag_name == "assignable" or
 			flag_name == "memorize" or
+			flag_name == "lambda" or
 			flag_name == "pure"
 		){
 			return true;

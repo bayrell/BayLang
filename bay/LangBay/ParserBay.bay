@@ -2481,12 +2481,6 @@ class ParserBay extends CommonParser
 		OpFunctionDeclare res = new OpFunctionDeclare();
 		
 		this.pushToken();
-		if (this.findNextToken("lambda"))
-		{
-			is_lambda = true;
-			this.matchNextToken("lambda");
-		}
-		
 		res.is_lambda = is_lambda;
 		
 		try
@@ -2549,6 +2543,7 @@ class ParserBay extends CommonParser
 		if (this.findNextToken("=>"))
 		{
 			this.matchNextToken("=>");
+			if (this.findNextToken("return")) this.matchNextToken("return");
 			this.popToken();
 			
 			if (is_lambda)
@@ -2696,8 +2691,14 @@ class ParserBay extends CommonParser
 			}
 		}
 		
+		bool is_lambda = false;
+		if (flags != null)
+		{
+			if (flags.isFlag('lambda')) is_lambda = true;
+		}
+		
 		/* Read function */
-		op_code = this.readDeclareFunction(true, is_declare_function);
+		op_code = this.readDeclareFunction(true, is_declare_function, is_lambda);
 		if (op_code and op_code instanceof OpFunctionDeclare)
 		{
 			op_code.annotations = this.annotations;

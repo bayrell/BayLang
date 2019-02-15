@@ -846,6 +846,8 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string copyStruct(OpCopyStruct op_code, Vector<string> names)
 	{
+		bool old_is_operation = this.beginOperation();
+		string res = "";
 		
 		if (op_code.item instanceof OpCopyStruct)
 		{
@@ -853,15 +855,20 @@ export class TranslatorES6 extends CommonTranslator {
 			names.push(op_code.name);
 			string name = rs::implode(".", names);
 			
-			return name ~ ".copy( new " ~ this.getName("Map") ~ "({ " ~ 
+			res = name ~ ".copy( new " ~ this.getName("Map") ~ "({ " ~ 
 				this.convertString(op_code.item.name) ~ 
 				": " ~ 
 				this.copyStruct( op_code.item, names ) ~ 
 			" })  )";
 			
 		}
+		else
+		{
+			res = this.translateItem( op_code.item );
+		}
 		
-		return this.translateItem( op_code.item );
+		this.endOperation(old_is_operation);
+		return res;
 	}
 	
 	
@@ -2191,7 +2198,8 @@ export class TranslatorES6 extends CommonTranslator {
 		string class_extends = "";
 		
 		if (op_code.class_extends){
-			class_extends = this.getName(op_code.class_extends.value);
+			/*class_extends = this.getName(op_code.class_extends.value);*/
+			class_extends = this.modules.get(op_code.class_extends.value);
 		}
 		
 		string s = "";
