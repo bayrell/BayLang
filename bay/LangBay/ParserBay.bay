@@ -429,10 +429,14 @@ class ParserBay extends CommonParser
 		BaseOpCode item = null;
 		Vector<BaseOpCode> items = new Vector();
 		bool is_return_value = false;
+		BaseOpCode value = null;
 		
 		this.matchNextToken("pipe");
 		this.matchNextToken("(");
-		BaseOpCode value = this.readExpression();
+		if ( !this.findNextToken(")") )
+		{
+			value = this.readExpression();
+		}
 		this.matchNextToken(")");
 		
 		while (this.findNextToken(">>"))
@@ -1705,12 +1709,22 @@ class ParserBay extends CommonParser
 		}
 		
 		
+		/* Read function declare */
 		this.pushToken();
 		
+		bool is_lambda = false;
+		if (this.findNextToken('lambda'))
+		{
+			is_lambda = true;
+			this.matchNextToken('lambda');
+		}
+		else if (this.findNextToken('pure'))
+		{
+			this.matchNextToken('pure');
+		}
 		
-		/* Read function declare */
 		BaseOpCode res = null;
-		res = this.readDeclareFunction(false);
+		res = this.readDeclareFunction(false, false, is_lambda);
 		if (res != null)
 		{
 			this.popToken();

@@ -894,13 +894,15 @@ export class TranslatorES6 extends CommonTranslator {
 	{
 		string res = "";
 		
-		res = this.getName("Maybe") ~ ".of(" ~ this.translateItem(op_code.value) ~ ")";
-		for (int i=0; i<op_code.items.count(); i++)
+		res = this.getName("Maybe") ~ ".of(" ~ this.translateItem(op_code.value) ~ ")";		
+		if (op_code.items != null)
 		{
-			BaseOpCode op_item = op_code.items.item(i);
-			res ~= this.s( ".map(" ~ this.translateItem(op_item) ~ ")" );
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				BaseOpCode op_item = op_code.items.item(i);
+				res ~= this.s( ".map(" ~ this.translateItem(op_item) ~ ")" );
+			}
 		}
-		
 		if (op_code.is_return_value)
 		{
 			res ~= this.s( ".value()" );
@@ -2198,8 +2200,14 @@ export class TranslatorES6 extends CommonTranslator {
 		string class_extends = "";
 		
 		if (op_code.class_extends){
-			/*class_extends = this.getName(op_code.class_extends.value);*/
-			class_extends = this.modules.get(op_code.class_extends.value);
+			if (this.modules.has(op_code.class_extends.value))
+			{
+				class_extends = this.modules.item(op_code.class_extends.value);
+			}
+			else
+			{
+				class_extends = op_code.class_extends.value;
+			}
 		}
 		
 		string s = "";
@@ -2277,9 +2285,8 @@ export class TranslatorES6 extends CommonTranslator {
 					for (int i=0; i<childs.count(); i++)
 					{
 						BaseOpCode variable = childs.item(i);
-						if (not (variable instanceof OpAssignDeclare))
-							continue;
-						
+						if (not (variable instanceof OpAssignDeclare)) continue;
+						if (variable.value == null) continue;
 						string var_prefix = "";
 						if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 						{

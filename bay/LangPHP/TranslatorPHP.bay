@@ -711,12 +711,14 @@ export class TranslatorPHP extends CommonTranslator {
 		string res = "";
 		
 		res = "Runtime\Maybe::of(" ~ this.translateItem(op_code.value) ~ ")";
-		for (int i=0; i<op_code.items.count(); i++)
+		if (op_code.items != null)
 		{
-			BaseOpCode op_item = op_code.items.item(i);
-			res ~= this.s( "->map(" ~ this.translateItem(op_item) ~ ")" );
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				BaseOpCode op_item = op_code.items.item(i);
+				res ~= this.s( "->map(" ~ this.translateItem(op_item) ~ ")" );
+			}
 		}
-		
 		if (op_code.is_return_value)
 		{
 			res ~= this.s( "->value()" );
@@ -1566,8 +1568,8 @@ export class TranslatorPHP extends CommonTranslator {
 				if (childs != null){
 					for (int i=0; i<childs.count(); i++){
 						BaseOpCode variable = childs.item(i);
-						if (not (variable instanceof OpAssignDeclare))
-							continue;
+						if (not (variable instanceof OpAssignDeclare)) continue;
+						if (variable.value == null) continue;	
 						string var_prefix = "";
 						if (this.is_struct and variable.isFlag("public") and not variable.isFlag("static"))
 						{
