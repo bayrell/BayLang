@@ -285,6 +285,16 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.name == rs::strtoupper(op_code.name)) is_flag = true;
 		if (op_code_last instanceof OpCall) is_flag = true;
 		
+		if (op_code.value instanceof OpIdentifier)
+		{
+			if (not this.modules.has(op_code.value.value))
+			{
+				return "(new \\Runtime\\Callback(" ~ 
+					"$" ~ op_code.value.value ~ "->getClassName(), " ~ 
+					this.convertString(op_code.name) ~ "))";
+			}
+		}
+		
 		if (is_flag)
 		{
 			return this.translateRun(op_code.value) ~ '::' ~ op_code.name;
@@ -778,13 +788,25 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpMethod(OpMethod op_code){
 		
-		if (op_code.value instanceof OpDynamic){
+		if (op_code.value instanceof OpDynamic)
+		{
 			string name = op_code.value.name;
 			string obj = this.translateRun(op_code.value.value);
 			return "new \\Runtime\\Callback("~obj~", "~this.convertString(name)~")";
 		}
-		else if (op_code.value instanceof OpStatic){
+		else if (op_code.value instanceof OpStatic)
+		{
 			string name = op_code.value.name;
+			if (op_code.value.value instanceof OpIdentifier)
+			{
+				if (not this.modules.has(op_code.value.value.value))
+				{
+					return "(new \\Runtime\\Callback(" ~ 
+						"$" ~ op_code.value.value.value ~ "->getClassName(), " ~ 
+						this.convertString(name) ~ "))";
+				}
+			}
+			
 			string obj = this.translateRun(op_code.value.value);
 			return "new \\Runtime\\Callback("~obj~"::class, "~this.convertString(name)~")";
 		}
@@ -1145,12 +1167,16 @@ export class TranslatorPHP extends CommonTranslator {
 			res ~= this.s("use Runtime\\rtl;");
 			res ~= this.s("use Runtime\\Map;");
 			res ~= this.s("use Runtime\\Vector;");
+			res ~= this.s("use Runtime\\Dict;");
+			res ~= this.s("use Runtime\\Collection;");
 			res ~= this.s("use Runtime\\IntrospectionInfo;");
 			res ~= this.s("use Runtime\\UIStruct;");
 			this.modules.set("rs", "Runtime.rs");
 			this.modules.set("rtl", "Runtime.rtl");
 			this.modules.set("Map", "Runtime.Map");
+			this.modules.set("Dict", "Runtime.Dict");
 			this.modules.set("Vector", "Runtime.Vector");
+			this.modules.set("Collection", "Runtime.Collection");
 			this.modules.set("IntrospectionInfo", "Runtime.IntrospectionInfo");
 			this.modules.set("UIStruct", "Runtime.UIStruct");
 		}

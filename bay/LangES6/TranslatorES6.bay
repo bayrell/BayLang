@@ -1740,7 +1740,9 @@ export class TranslatorES6 extends CommonTranslator {
 			this.modules.set("rtl", "Runtime.rtl");
 			this.modules.set("rs", "Runtime.rs");
 			this.modules.set("Map", "Runtime.Map");
+			this.modules.set("Dict", "Runtime.Dict");
 			this.modules.set("Vector", "Runtime.Vector");
+			this.modules.set("Collection", "Runtime.Collection");
 			this.modules.set("IntrospectionInfo", "Runtime.IntrospectionInfo");
 			this.modules.set("UIStruct", "Runtime.UIStruct");
 		}
