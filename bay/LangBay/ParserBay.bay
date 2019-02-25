@@ -804,6 +804,7 @@ class ParserBay extends CommonParser
 		special_tokens.removeValue("@{");
 		special_tokens.removeValue("@raw{");
 		special_tokens.removeValue("@json{");
+		special_tokens.removeValue("@code{");
 		special_tokens.removeValue("<!--");
 		int bracket_level = 0;
 		string s = "";
@@ -832,6 +833,7 @@ class ParserBay extends CommonParser
 				if (this.current_token.findString("{") and not is_plain or 
 					this.current_token.findString("@{") or 
 					this.current_token.findString("@raw{") or 
+					this.current_token.findString("@code{") or 
 					this.current_token.findString("@json{"))
 				{
 					if (not is_plain){
@@ -842,6 +844,7 @@ class ParserBay extends CommonParser
 					
 					bool is_raw = false;
 					bool is_json = false;
+					bool is_code = false;
 					
 					if (this.current_token.findString("@raw{")){
 						is_raw = true;
@@ -850,6 +853,10 @@ class ParserBay extends CommonParser
 					else if (this.current_token.findString("@json{")){
 						is_json = true;
 						this.current_token.match("@json{");
+					}
+					else if (this.current_token.findString("@code{")){
+						is_code = true;
+						this.current_token.match("@code{");
 					}
 					else if (this.current_token.findString("@{")){
 						this.current_token.match("@{");
@@ -866,6 +873,7 @@ class ParserBay extends CommonParser
 					res = this.readExpression();
 					if (is_raw) res = new OpHtmlRaw(res);
 					else if (is_json) res = new OpHtmlJson(res);
+					else if (is_code) {}
 					else res = new OpHtmlEscape(res);
 					
 					/* Restore tokens */
