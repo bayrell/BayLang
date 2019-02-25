@@ -284,7 +284,7 @@ export class TranslatorPHP extends CommonTranslator {
 		BaseOpCode op_code_last = this.op_code_stack.last(null, -2);
 		if (op_code.name == rs::strtoupper(op_code.name)) is_flag = true;
 		if (op_code_last instanceof OpCall) is_flag = true;
-		
+		/*
 		if (op_code.value instanceof OpIdentifier)
 		{
 			if (not this.modules.has(op_code.value.value))
@@ -294,7 +294,7 @@ export class TranslatorPHP extends CommonTranslator {
 					this.convertString(op_code.name) ~ "))";
 			}
 		}
-		
+		*/
 		if (is_flag)
 		{
 			return this.translateRun(op_code.value) ~ '::' ~ op_code.name;
@@ -786,7 +786,8 @@ export class TranslatorPHP extends CommonTranslator {
 	/**
 	 * Method
 	 */
-	string OpMethod(OpMethod op_code){
+	string OpMethod(OpMethod op_code)
+	{
 		
 		if (op_code.value instanceof OpDynamic)
 		{
@@ -799,7 +800,19 @@ export class TranslatorPHP extends CommonTranslator {
 			string name = op_code.value.name;
 			if (op_code.value.value instanceof OpIdentifier)
 			{
-				if (not this.modules.has(op_code.value.value.value))
+				if (op_code.value.value.value == "self")
+				{
+					return "(new \\Runtime\\Callback(" ~ 
+						"self::class, " ~ 
+						this.convertString(name) ~ "))";
+				}
+				else if (op_code.value.value.value == "static")
+				{
+					return "(new \\Runtime\\Callback(" ~ 
+						"static::class, " ~ 
+						this.convertString(name) ~ "))";
+				}
+				else if (not this.modules.has(op_code.value.value.value))
 				{
 					return "(new \\Runtime\\Callback(" ~ 
 						"$" ~ op_code.value.value.value ~ "->getClassName(), " ~ 
