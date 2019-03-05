@@ -284,7 +284,7 @@ export class TranslatorPHP extends CommonTranslator {
 		BaseOpCode op_code_last = this.op_code_stack.last(null, -2);
 		if (op_code.name == rs::strtoupper(op_code.name)) is_flag = true;
 		if (op_code_last instanceof OpCall) is_flag = true;
-		/*
+		
 		if (op_code.value instanceof OpIdentifier)
 		{
 			if (not this.modules.has(op_code.value.value))
@@ -294,7 +294,7 @@ export class TranslatorPHP extends CommonTranslator {
 					this.convertString(op_code.name) ~ "))";
 			}
 		}
-		*/
+		
 		if (is_flag)
 		{
 			return this.translateRun(op_code.value) ~ '::' ~ op_code.name;
@@ -690,7 +690,7 @@ export class TranslatorPHP extends CommonTranslator {
 		}
 		else
 		{
-			res = this.translateItem( op_code.item );
+			res = this.translateRun( op_code.item );
 		}
 		
 		this.endOperation(old_is_operation);
