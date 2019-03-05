@@ -285,9 +285,21 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.name == rs::strtoupper(op_code.name)) is_flag = true;
 		if (op_code_last instanceof OpCall) is_flag = true;
 		
-		if (op_code.value instanceof OpIdentifier)
+		if (op_code.value instanceof OpIdentifier and op_code_last instanceof OpCall)
 		{
-			if (not this.modules.has(op_code.value.value))
+			if (op_code.value.value == "self")
+			{
+				return "(new \\Runtime\\Callback(" ~ 
+					"self::class, " ~ 
+					this.convertString(op_code.name) ~ "))";
+			}
+			else if (op_code.value.value == "static")
+			{
+				return "(new \\Runtime\\Callback(" ~ 
+					"static::class, " ~ 
+					this.convertString(op_code.name) ~ "))";
+			}
+			else if (not this.modules.has(op_code.value.value))
 			{
 				return "(new \\Runtime\\Callback(" ~ 
 					"$" ~ op_code.value.value ~ "->getClassName(), " ~ 
@@ -884,7 +896,7 @@ export class TranslatorPHP extends CommonTranslator {
 		if (op_code.isFlag("const")) ch_var = "";
 		
 		string var_prefix = "";
-		if (this.is_struct and op_code.isFlag("public") and not op_code.isFlag("static"))
+		if (this.is_struct and op_code.isFlag("public") and not op_code.isFlag("static") and not op_code.isFlag("const"))
 		{
 			var_prefix = "__";
 		}
