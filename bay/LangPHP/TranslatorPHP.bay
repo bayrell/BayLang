@@ -2280,13 +2280,15 @@ export class TranslatorPHP extends CommonTranslator {
 			{
 				res ~= this.s('"children" => new ' ~ this.getName("Vector") ~ '([');
 				this.levelInc();
-				op_code.childs.each(
-					void (BaseOpCode item) use (res)
-					{
-						if (item instanceof OpComment){ return; }
-						res ~= this.s(this.translateRun(item) ~ ",");
-					}
-				);
+				
+				int childs_sz = op_code.childs.count();
+				for (int i=0; i<childs_sz; i++)
+				{
+					if (item instanceof OpComment){ continue; }
+					BaseOpCode item =  op_code.childs.item(i);
+					res ~= this.s(this.translateRun(item) ~ ( (i+1 == childs_sz) ? "" : "," ));
+				}
+				
 				this.levelDec();
 				res ~= this.s("])");
 			}		
@@ -2307,14 +2309,15 @@ export class TranslatorPHP extends CommonTranslator {
 	{
 		string res = "new Vector([";
 		this.pushOneLine(false);
-		op_code.childs.each(
-			void (BaseOpCode item) use (res)
-			{
-				res ~= this.s( this.translateRun(item) ~ "," );
-			}
-		);
+		int childs_sz = op_code.childs.count();
+		for (int i=0; i<childs_sz; i++)
+		{
+			if (item instanceof OpComment){ continue; }
+			BaseOpCode item =  op_code.childs.item(i);
+			res ~= this.s(this.translateRun(item) ~ ( (i+1 == childs_sz) ? "" : "," ));
+		}
 		this.popOneLine();
-		res ~= this.s("]");
+		res ~= this.s("])");
 		return res;
 	}
 	
