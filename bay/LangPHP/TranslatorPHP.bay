@@ -1673,10 +1673,21 @@ export class TranslatorPHP extends CommonTranslator {
 					if (variable.isFlag("public") and (variable.isFlag("cloneable") or 
 						variable.isFlag("serializable") or is_struct))
 					{
-						res ~= this.s("$this->" ~ var_prefix ~ variable.name ~ " = " ~
-							this.getName("rtl") ~ "::_clone(" ~
-							"$obj->" ~ var_prefix ~ variable.name ~ ");"
-						);
+						if (this.is_struct)
+						{
+							res ~= this.s(
+								"$this->" ~ var_prefix ~ variable.name ~ " = " ~
+								"$obj->" ~ var_prefix ~ variable.name ~ ";"
+							);
+						}
+						else
+						{
+							res ~= this.s(
+								"$this->" ~ var_prefix ~ variable.name ~ " = " ~
+								this.getName("rtl") ~ "::_clone(" ~
+								"$obj->" ~ var_prefix ~ variable.name ~ ");"
+							);
+						}
 					}
 				}
 				this.levelDec();
