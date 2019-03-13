@@ -2101,7 +2101,7 @@ export class TranslatorPHP extends CommonTranslator {
 	string OpHtmlEscape(OpHtmlEscape op_code)
 	{
 		string value = this.translateRun(op_code.value);
-		return "rtl::normalizeUI(rs::htmlEscape(" ~ value ~ "))";
+		return "rs::htmlEscape(" ~ value ~ ")";
 	}
 	
 	
@@ -2112,7 +2112,7 @@ export class TranslatorPHP extends CommonTranslator {
 	string OpHtmlJson(OpHtmlJson op_code)
 	{
 		string value = "rs::json_encode(" ~ this.translateRun(op_code.value) ~ ")";
-		return "rtl::normalizeUI(rs::json_encode(" ~ this.translateRun(op_code.value) ~ "))";
+		return "rs::json_encode(" ~ this.translateRun(op_code.value) ~ ")";
 		string res = "";
 		res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 		res ~= this.s('"name"=>"span",');
@@ -2130,7 +2130,7 @@ export class TranslatorPHP extends CommonTranslator {
 	string OpHtmlRaw(OpHtmlRaw op_code)
 	{
 		string value = this.translateRun(op_code.value);
-		return "rtl::normalizeUI(" ~ this.translateRun(op_code.value) ~ ")";
+		return this.translateRun(op_code.value);
 		string res = "";
 		res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 		res ~= this.s('"name"=>"span",');
@@ -2147,7 +2147,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpHtmlText(OpHtmlText op_code)
 	{
-		return "rtl::normalizeUI(" ~ this.convertString(op_code.value) ~ ")";
+		return this.convertString(op_code.value);
 	}
 	
 	
@@ -2166,14 +2166,14 @@ export class TranslatorPHP extends CommonTranslator {
 		/* isComponent */
 		if (this.modules.has(op_code.tag_name))
 		{
-			res = "rtl::normalizeUI(new UIStruct(new " ~ this.getName("Map") ~ "([";
+			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 			res ~= this.s('"kind"=>"component",');
 			res ~= this.s('"name"=>'~this.convertString(this.modules.item(op_code.tag_name)) ~ ',');
 			is_component = true;
 		}
 		else
 		{
-			res = "rtl::normalizeUI(new UIStruct(new " ~ this.getName("Map") ~ "([";
+			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 			res ~= this.s('"name"=>'~this.convertString(op_code.tag_name)~',');
 		}
 		
@@ -2303,7 +2303,7 @@ export class TranslatorPHP extends CommonTranslator {
 		{
 			if (op_code.childs != null and op_code.childs.count() > 0)
 			{
-				res ~= this.s('"children" => new ' ~ this.getName("Vector") ~ '([');
+				res ~= this.s('"children" => rtl::normalizeUIVector(new ' ~ this.getName("Vector") ~ '([');
 				this.levelInc();
 				
 				int childs_sz = op_code.childs.count();
@@ -2315,11 +2315,11 @@ export class TranslatorPHP extends CommonTranslator {
 				}
 				
 				this.levelDec();
-				res ~= this.s("])");
+				res ~= this.s("]))");
 			}		
 		}
 		
-		res ~= this.s("])))");
+		res ~= this.s("]))");
 		this.popOneLine();
 		
 		return res;
@@ -2332,7 +2332,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpHtmlView(OpHtmlView op_code)
 	{
-		string res = "new Vector([";
+		string res = "rtl::normalizeUIVector(new Vector([";
 		this.pushOneLine(false);
 		int childs_sz = op_code.childs.count();
 		for (int i=0; i<childs_sz; i++)
@@ -2342,7 +2342,7 @@ export class TranslatorPHP extends CommonTranslator {
 			res ~= this.s(this.translateRun(item) ~ ( (i+1 == childs_sz) ? "" : "," ));
 		}
 		this.popOneLine();
-		res ~= this.s("])");
+		res ~= this.s("]))");
 		return res;
 	}
 	

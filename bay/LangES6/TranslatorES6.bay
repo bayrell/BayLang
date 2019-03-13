@@ -2807,7 +2807,7 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpHtmlEscape(OpHtmlEscape op_code)
 	{
 		string value = this.translateRun(op_code.value);
-		return this.getName("rtl") ~".normalizeUI(" ~ this.getName("rs") ~ ".htmlEscape(" ~ value ~ "))";
+		return this.getName("rs") ~ ".htmlEscape(" ~ value ~ ")";
 	}
 	
 	
@@ -2817,7 +2817,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpHtmlJson(OpHtmlJson op_code)
 	{
-		string value = this.getName("rs") ~ ".json_encode(" ~ this.translateRun(op_code.value) ~ ")";
+		return this.getName("rs") ~ ".json_encode(" ~ this.translateRun(op_code.value) ~ ")";
 		string res = "";
 		res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
 		res ~= this.s('"name":"span",');
@@ -2834,7 +2834,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpHtmlRaw(OpHtmlRaw op_code)
 	{
-		string value = this.translateRun(op_code.value);
+		return this.translateRun(op_code.value);
 		string res = "";
 		res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
 		res ~= this.s('"name":"span",');
@@ -2851,6 +2851,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpHtmlText(OpHtmlText op_code)
 	{
+		return this.convertString(op_code.value);
 		return this.getName("rtl") ~".normalizeUI(" ~ this.convertString(op_code.value) ~ ")";
 	}
 	
@@ -2870,14 +2871,14 @@ export class TranslatorES6 extends CommonTranslator {
 		/* isComponent */
 		if (this.modules.has(op_code.tag_name))
 		{
-			res = this.getName("rtl") ~ ".normalizeUI(new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
+			res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
 			res ~= this.s('"kind":"component",');
 			res ~= this.s('"name":'~this.convertString(this.modules.item(op_code.tag_name))~',');
 			is_component = true;
 		}
 		else
 		{
-			res = this.getName("rtl") ~ ".normalizeUI(new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
+			res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
 			res ~= this.s('"name":'~this.convertString(op_code.tag_name)~',');
 		}
 		
@@ -3010,7 +3011,8 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 			else
 			{
-				res ~= this.s('"children": new ' ~ this.getName("Vector") ~ '([');
+				res ~= this.s('"children": ' ~ this.getName("rtl") ~ 
+					'.normalizeUIVector(new ' ~ this.getName("Vector") ~ '([');
 				this.levelInc();
 				op_code.childs.each(
 					void (BaseOpCode item) use (res)
@@ -3020,11 +3022,11 @@ export class TranslatorES6 extends CommonTranslator {
 					}
 				);
 				this.levelDec();
-				res ~= this.s("])");
+				res ~= this.s("]))");
 			}
 		}
 		
-		res ~= this.s("})))");
+		res ~= this.s("}))");
 		this.popOneLine();
 		
 		return res;
@@ -3037,7 +3039,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpHtmlView(OpHtmlView op_code)
 	{
-		string res = "(new " ~ this.getName("Vector") ~ "())";
+		string res = this.getName("rtl") ~ ".normalizeUIVector((new " ~ this.getName("Vector") ~ "())";
 		this.pushOneLine(false);
 		op_code.childs.each(
 			void (BaseOpCode item) use (res)
@@ -3046,6 +3048,7 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		);
 		this.popOneLine();
+		res ~= this.s(")");
 		return res;
 	}
 	
