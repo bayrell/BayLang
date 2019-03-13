@@ -305,6 +305,7 @@ export class CommonTranslator extends ContextObject{
 	string OpHtmlJson(OpHtmlJson op_code){  return ""; }
 	string OpHtmlRaw(OpHtmlRaw op_code){  return ""; }
 	string OpHtmlTag(OpHtmlTag op_code){  return ""; }
+	string OpHtmlText(OpHtmlText op_code){  return ""; }
 	string OpHtmlView(OpHtmlView op_code){  return ""; }
 	
 	
@@ -554,7 +555,7 @@ export class CommonTranslator extends ContextObject{
 			return this.OpHtmlTag(op_code);
 		}
 		else if (op_code instanceof OpHtmlText){
-			return this.OpString(op_code);
+			return this.OpHtmlText(op_code);
 		}
 		else if (op_code instanceof OpHtmlView){
 			return this.OpHtmlView(op_code);

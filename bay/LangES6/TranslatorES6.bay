@@ -2807,7 +2807,7 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpHtmlEscape(OpHtmlEscape op_code)
 	{
 		string value = this.translateRun(op_code.value);
-		return this.getName("rs") ~ ".htmlEscape(" ~ value ~ ")";
+		return this.getName("rtl") ~".normalizeUI(" ~ this.getName("rs") ~ ".htmlEscape(" ~ value ~ "))";
 	}
 	
 	
@@ -2847,6 +2847,16 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
+	 * Html Text
+	 */
+	string OpHtmlText(OpHtmlText op_code)
+	{
+		return this.getName("rtl") ~".normalizeUI(" ~ this.convertString(op_code.value) ~ ")";
+	}
+	
+	
+	
+	/**
 	 * Html tag
 	 */
 	string OpHtmlTag(OpHtmlTag op_code)
@@ -2873,6 +2883,8 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		
 		/* Check contains single raw item */
+		
+		/*
 		BaseOpCode raw_item = null;
 		if (not op_code.is_plain  and op_code.childs != null and op_code.childs.count() == 1)
 		{
@@ -2886,7 +2898,7 @@ export class TranslatorES6 extends CommonTranslator {
 				raw_item = item;
 			}
 		}
-		
+		*/
 		
 		/* Attributes */
 		if (is_component) res ~= this.s('"props": this.getElementAttrs()');
@@ -2937,8 +2949,7 @@ export class TranslatorES6 extends CommonTranslator {
 						}
 						else if ( 
 							(item instanceof OpConcat) or 
-							(item instanceof OpString) or 
-							(item instanceof OpHtmlText) 
+							(item instanceof OpString)
 						){
 							value = this.translateRun(item);
 						}
@@ -2946,6 +2957,10 @@ export class TranslatorES6 extends CommonTranslator {
 						{
 							value = this.translateRun(item);
 							value = this.getName("rs") ~ ".htmlEscape(" ~ value ~ ")";
+						}
+						else if (item instanceof OpHtmlText)
+						{
+							value = this.convertString(item.value);
 						}
 						else
 						{
@@ -2958,11 +2973,18 @@ export class TranslatorES6 extends CommonTranslator {
 					},
 					""
 				);
-				res ~= this.s('"rawHTML":' ~ value ~ ',');
+				res ~= this.s('"children": new ' ~ this.getName("Vector") ~ '([');
+				this.levelInc();
+				res ~= this.getName("rtl") ~".normalizeUI(" ~ value ~ ")";
+				/* res ~= this.s('"rawHTML":' ~ value ~ ','); */
+				this.levelDec();
+				res ~= this.s("])");
 			}
 		}
 		
 		/* Single raw item */
+		
+		/*
 		else if (raw_item != null)
 		{
 			if (raw_item instanceof OpHtmlJson)
@@ -2976,11 +2998,12 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s('"rawHTML":' ~ value ~ ',');
 			}
 		}
+		*/
 		this.levelDec();
 		res ~= this.s(",");
 		
 		/* Childs */
-		if (raw_item == null and not op_code.is_plain)
+		if (/*raw_item == null and*/ not op_code.is_plain)
 		{
 			if (op_code.childs == null or op_code.childs.count() == 0)
 			{
