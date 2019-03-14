@@ -100,6 +100,7 @@ use BayrellLang.LangES6.FunctionStack;
 
 export class TranslatorES6 extends CommonTranslator {
 	
+	Vector<string> ui_struct_class_name = null;
 	Map<string> modules = null;
 	string current_namespace = "";
 	string current_class_name = "";
@@ -119,6 +120,17 @@ export class TranslatorES6 extends CommonTranslator {
 	string getCurrentClassName()
 	{
 		return this.current_namespace ~ "." ~ this.current_class_name;
+	}
+	
+	
+	
+	/**
+	 * Returns UI struct class name
+	 * @return string
+	 */
+	string getUIStructClassName()
+	{
+		return this.ui_struct_class_name.last();
 	}
 	
 	
@@ -2074,6 +2086,7 @@ export class TranslatorES6 extends CommonTranslator {
 		string name = "";
 		string ch = "";
 		Vector<string> v = rs::explode(".", this.current_namespace);
+		this.ui_struct_class_name.push( this.current_namespace ~ "." ~ this.current_class_name );
 		
 		for (int i=0; i<v.count(); i++){
 			name ~= ch ~ v.item(i);
@@ -2828,7 +2841,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpHtmlJson(OpHtmlJson op_code)
 	{
-		return this.getName("rs") ~ ".json_encode(" ~ this.translateRun(op_code.value) ~ ")";
+		return this.getName("rtl") ~ ".json_encode(" ~ this.translateRun(op_code.value) ~ ")";
 		string res = "";
 		res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
 		res ~= this.s('"name":"span",');
@@ -2890,6 +2903,7 @@ export class TranslatorES6 extends CommonTranslator {
 		else
 		{
 			res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
+			res ~= this.s('"class_name": '~this.convertString( this.getUIStructClassName() )~',');
 			res ~= this.s('"name":'~this.convertString(op_code.tag_name)~',');
 		}
 		
@@ -2940,6 +2954,9 @@ export class TranslatorES6 extends CommonTranslator {
 			);
 		}
 		
+		this.levelDec();
+		res ~= this.s(",");
+		
 		/* Plain HTML tag script, pre, textarea */
 		if (op_code.is_plain)
 		{
@@ -2951,7 +2968,7 @@ export class TranslatorES6 extends CommonTranslator {
 						string value = "";
 						if (item instanceof OpHtmlJson)
 						{
-							value = this.getName("rs") ~ ".json_encode(" ~ this.translateRun(item.value) ~ ")";
+							value = this.getName("rtl") ~ ".json_encode(" ~ this.translateRun(item.value) ~ ")";
 							value = this.getName("rtl") ~ ".toString(" ~ value ~ ")";
 						}
 						else if (item instanceof OpHtmlRaw)
@@ -2985,12 +3002,20 @@ export class TranslatorES6 extends CommonTranslator {
 					},
 					""
 				);
-				res ~= this.s('"children": new ' ~ this.getName("Vector") ~ '([');
+				
+				bool old_operation = this.beginOperation(true);
+				this.pushOneLine(true);
+				
+				res ~= this.s('"children": new ' ~ this.getName("Vector") ~ '(');
 				this.levelInc();
 				res ~= this.getName("rtl") ~".normalizeUI(" ~ value ~ ")";
 				/* res ~= this.s('"rawHTML":' ~ value ~ ','); */
 				this.levelDec();
-				res ~= this.s("])");
+				res ~= this.s(")");
+				
+				this.popOneLine();
+				this.endOperation(old_operation);
+				
 			}
 		}
 		
@@ -3011,11 +3036,10 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 		}
 		*/
-		this.levelDec();
-		res ~= this.s(",");
+		
 		
 		/* Childs */
-		if (/*raw_item == null and*/ not op_code.is_plain)
+		else 
 		{
 			if (op_code.childs == null or op_code.childs.count() == 0)
 			{
@@ -3023,17 +3047,19 @@ export class TranslatorES6 extends CommonTranslator {
 			else
 			{
 				res ~= this.s('"children": ' ~ this.getName("rtl") ~ 
-					'.normalizeUIVector(new ' ~ this.getName("Vector") ~ '([');
+					'.normalizeUIVector(new ' ~ this.getName("Vector") ~ '(');
 				this.levelInc();
+				string ch = "";
 				op_code.childs.each(
-					void (BaseOpCode item) use (res)
+					void (BaseOpCode item) use (res, ch)
 					{
 						if (item instanceof OpComment){ return; }
-						res ~= this.s( this.translateRun(item) ~ ",");
+						res ~= ch ~ this.s( this.translateRun(item) );
+						ch = ",";
 					}
 				);
 				this.levelDec();
-				res ~= this.s("]))");
+				res ~= this.s("))");
 			}
 		}
 		
@@ -3106,6 +3132,7 @@ export class TranslatorES6 extends CommonTranslator {
 	void resetTranslator(){
 		parent();
 		this.function_stack = new Vector<FunctionStack>();
+		this.ui_struct_class_name = new Vector<string>();
 	}
 	
 	

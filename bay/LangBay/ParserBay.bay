@@ -737,10 +737,10 @@ class ParserBay extends CommonParser
 					attr.value = new OpString(this.readAnyNextToken().token);
 					this.popRestoreToken();
 				}
-				else if (this.findNextToken("{"))
+				else if (this.findNextToken("@{"))
 				{
 					
-					this.matchNextToken("{");
+					this.matchNextToken("@{");
 					
 					/* Push new token */
 					this.pushToken( new ParserBayToken(this.context(), this) );					
@@ -808,30 +808,33 @@ class ParserBay extends CommonParser
 		special_tokens.removeValue("<!--");
 		int bracket_level = 0;
 		string s = "";
+		bool is_next_html_token = false;
+		bool is_next_special_token = false;
+		bool is_prev_special_token = false;
 		
 		/* Main loop */
 		while (look_str != "" and not this.current_token.isEOF() and
 			(look_str != match_str or look_str == "}" and bracket_level > 0) 
 		){
 			
+			is_next_html_token = this.current_token.findString("<");
+			is_next_special_token = this.current_token.findVector(special_tokens) != -1;
+			
 			BaseOpCode res = null;
 			if (not is_plain){
-				bool is_next_html_token = this.current_token.findString("<");
-				bool is_next_special_token = this.current_token.findVector(special_tokens) != -1;
-				
 				if (is_next_special_token or is_next_html_token){
-					s = rs::trim(s, "\\t\\r\\n");
+					if (is_next_special_token or is_prev_special_token) s = rs::trim(s, "\\t\\r\\n");
+					else s = rs::trim(s, "\\t\\r\\n");
 					if (s != "") childs.push(new OpHtmlText(s));
 					s = "";
 					this.assignCurrentToken(this.current_token);
 					res = this.readHtmlTag();
+					is_prev_special_token = false;
 				}
 			}
 			
-			
 			if (res == null){
-				if (this.current_token.findString("{") and not is_plain or 
-					this.current_token.findString("@{") or 
+				if (this.current_token.findString("@{") or 
 					this.current_token.findString("@raw{") or 
 					/*this.current_token.findString("@code{") or */
 					this.current_token.findString("@json{"))
@@ -879,9 +882,10 @@ class ParserBay extends CommonParser
 					/* Restore tokens */
 					this.popRestoreToken();
 					this.matchNextToken("}");
+					
+					is_prev_special_token = true;
 				}
 			}
-			
 			
 			/* Push result or read char */
 			if (res != null){
@@ -899,7 +903,11 @@ class ParserBay extends CommonParser
 		}
 		delete special_tokens;
 		
-		if (not is_plain) s = rs::trim(s, "\\t\\r\\n");
+		if (not is_plain)
+		{
+			if (is_prev_special_token) s = rs::trim(s, "\\t\\r\\n");
+			else s = rs::trim(s, "\\t\\r\\n");
+		}
 		if (s != ""){
 			childs.push(new OpHtmlText(s));
 		}
