@@ -476,7 +476,30 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Static load
 	 */
-	string OpStatic(OpStatic op_code){
+	string OpStatic(OpStatic op_code)
+	{
+		BaseOpCode op_code_last = this.op_code_stack.last(null, -2);
+		
+		if (op_code.value instanceof OpIdentifier and op_code_last instanceof OpCall)
+		{
+			if (op_code.value.value == "self")
+			{
+				return "(" ~ this.getName("rtl") ~ ".method(" ~ 
+					this.getCurrentClassName() ~ ", " ~ 
+					this.convertString(op_code.name) ~ "))";
+			}
+			else if (op_code.value.value == "static")
+			{
+				return 'this.' ~ op_code.name;
+			}
+			else if (not this.modules.has(op_code.value.value))
+			{
+				return "(" ~ this.getName("rtl") ~ ".method(" ~ 
+					op_code.value.value ~ ".getClassName(), " ~ 
+					this.convertString(op_code.name) ~ "))";
+			}
+		}
+		
 		return this.translateRun(op_code.value) ~ '.' ~ op_code.name;
 	}
 	
@@ -2882,6 +2905,17 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
+	 * Returns true if key is props
+	 */
+	bool isOpHtmlTagProps(string key)
+	{
+		if (key == "@key" or key == "@control") return false;
+		return true;
+	}
+	
+	
+	
+	/**
 	 * Html tag
 	 */
 	string OpHtmlTag(OpHtmlTag op_code)
@@ -2927,35 +2961,66 @@ export class TranslatorES6 extends CommonTranslator {
 		*/
 		
 		/* Attributes */
-		if (is_component) res ~= this.s('"props": this.getElementAttrs()');
-		else res ~= this.s('"props": (new ' ~ this.getName("Map") ~ '())');
-		this.levelInc();
+		bool is_props = false;
+		bool is_spreads = op_code.spreads != null and op_code.spreads.count() > 0;
 		if (op_code.attributes != null and op_code.attributes.count() > 0)
 		{
 			op_code.attributes.each(
-				void (OpHtmlAttribute item) use (res)
+				void (OpHtmlAttribute item) use (res, is_props, is_events)
 				{
-					bool old_operation = this.beginOperation(true);
-					this.pushOneLine(true);
-					string value = this.translateRun(item.value);
-					this.popOneLine();
-					this.endOperation(old_operation);
-					res ~= this.s(".set(" ~ this.convertString(item.key) ~ ", " ~ value ~ ")");
-				}
-			);
-		}
-		if (op_code.spreads != null and op_code.spreads.count() > 0)
-		{
-			op_code.spreads.each(
-				void (string item) use (res)
-				{
-					res ~= this.s(".addMap(" ~ item ~ ")");
+					string key = item.key;
+					if (this.isOpHtmlTagProps(key))
+					{
+						is_props = true;
+					}
+					else if (key == "@key")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"key": ' ~ value ~ ',');
+					}
+					else if (key == "@control")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"controller": ' ~ value ~ ',');
+					}
 				}
 			);
 		}
 		
-		this.levelDec();
-		res ~= this.s(",");
+		
+		if (is_props or is_spreads)
+		{
+			res ~= this.s('"props": (new ' ~ this.getName("Map") ~ '())');
+			this.levelInc();
+			if (is_props)
+			{
+				op_code.attributes.each(
+					void (OpHtmlAttribute item) use (res)
+					{
+						if (this.isOpHtmlTagProps(item.key))
+						{
+							bool old_operation = this.beginOperation(true);
+							this.pushOneLine(true);
+							string value = this.translateRun(item.value);
+							this.popOneLine();
+							this.endOperation(old_operation);
+							res ~= this.s(".set(" ~ this.convertString(item.key) ~ ", " ~ value ~ ")");
+						}
+					}
+				);
+			}
+			if (is_spreads)
+			{
+				op_code.spreads.each(
+					void (string item) use (res)
+					{
+						res ~= this.s(".addMap(" ~ item ~ ")");
+					}
+				);
+			}
+			this.levelDec();
+			res ~= this.s(",");
+		}
 		
 		/* Plain HTML tag script, pre, textarea */
 		if (op_code.is_plain)
