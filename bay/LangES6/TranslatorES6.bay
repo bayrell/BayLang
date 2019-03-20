@@ -2311,6 +2311,7 @@ export class TranslatorES6 extends CommonTranslator {
 			/* Init function */
 			if (has_variables or has_implements){
 				res ~= this.s("_init(){");
+				this.functionPush("_init", false);
 				this.levelInc();
 				
 				/* super init */
@@ -2371,6 +2372,7 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 			}
 			
@@ -2387,6 +2389,7 @@ export class TranslatorES6 extends CommonTranslator {
 				*/
 				
 				res ~= this.s("assignObject(obj){");
+				this.functionPush("assignObject", false);
 				this.levelInc();
 				res ~= this.s("if (obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
@@ -2426,6 +2429,7 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("}");
 				res ~= this.s("super.assignObject(obj);");
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 			}
 			
@@ -2436,6 +2440,7 @@ export class TranslatorES6 extends CommonTranslator {
 				
 				/* assignValue function */
 				res ~= this.s("assignValue(variable_name, value, sender){if(sender==undefined)sender=null;");
+				this.functionPush("assignValue", false);
 				this.levelInc();
 				class_variables_serializable_count = 0;
 				for (int i=0; i<childs.count(); i++){
@@ -2479,11 +2484,13 @@ export class TranslatorES6 extends CommonTranslator {
 					res ~= this.s("else super.assignValue(variable_name, value, sender);");
 				}
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 				
 				
 				/* takeValue function */
 				res ~= this.s("takeValue(variable_name, default_value){");
+				this.functionPush("takeValue", false);
 				this.levelInc();
 				res ~= this.s("if (default_value == undefined) default_value = null;");
 				class_variables_serializable_count = 0;
@@ -2511,6 +2518,7 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				res ~= this.s("return super.takeValue(variable_name, default_value);");
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");		
 			}
 				
@@ -2519,6 +2527,7 @@ export class TranslatorES6 extends CommonTranslator {
 				
 				/* getFieldsList function */
 				res ~= this.s("static getFieldsList(names, flag){");
+				this.functionPush("getFieldsList", false);
 				this.levelInc();
 				res ~= this.s("if (flag==undefined)flag=0;");
 				
@@ -2577,11 +2586,13 @@ export class TranslatorES6 extends CommonTranslator {
 				);
 				
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 				
 				
 				/* getFieldInfoByName function */
 				res ~= this.s("static getFieldInfoByName(field_name){");
+				this.functionPush("getFieldInfoByName", false);
 				this.levelInc();
 				for (int i=0; i<childs.count(); i++){
 					BaseOpCode variable = childs.item(i);
@@ -2606,8 +2617,10 @@ export class TranslatorES6 extends CommonTranslator {
 							OpAnnotation annotation = variable.annotations.item(j);
 							
 							this.pushOneLine(true);
+							bool old_is_operation = this.beginOperation();
 							string s_kind = this.translateRun(annotation.kind);
 							string s_options = this.translateRun(annotation.options);
+							this.endOperation(old_is_operation);
 							this.popOneLine();
 							
 							res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
@@ -2624,6 +2637,7 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				res ~= this.s("return null;");
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 			}	
 			
@@ -2633,6 +2647,7 @@ export class TranslatorES6 extends CommonTranslator {
 				
 				/* getMethodsList function */
 				res ~= this.s("static getMethodsList(names){");
+				this.functionPush("getMethodsList", false);
 				this.levelInc();
 				for (int i=0; i<childs.count(); i++){
 					BaseOpCode variable = childs.item(i);
@@ -2642,11 +2657,13 @@ export class TranslatorES6 extends CommonTranslator {
 						res ~= this.s("names.push(" ~ this.convertString(variable.name) ~ ");");
 				}
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 				
 				
 				/* getMethodInfoByName function */
 				res ~= this.s("static getMethodInfoByName(method_name){");
+				this.functionPush("getMethodInfoByName", false);
 				this.levelInc();
 				for (int i=0; i<childs.count(); i++){
 					BaseOpCode variable = childs.item(i);
@@ -2671,8 +2688,10 @@ export class TranslatorES6 extends CommonTranslator {
 							OpAnnotation annotation = variable.annotations.item(j);
 							
 							this.pushOneLine(true);
+							bool old_is_operation = this.beginOperation();
 							string s_kind = this.translateRun(annotation.kind);
 							string s_options = this.translateRun(annotation.options);
+							this.endOperation(old_is_operation);
 							this.popOneLine();
 							
 							res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
@@ -2688,6 +2707,7 @@ export class TranslatorES6 extends CommonTranslator {
 				}
 				res ~= this.s("return null;");
 				this.levelDec();
+				this.functionPop();
 				res ~= this.s("}");
 			}
 			
@@ -2696,6 +2716,7 @@ export class TranslatorES6 extends CommonTranslator {
 		/* Output classes annotations */
 		if (op_code.hasAnnotations()){
 			res ~= this.s("static getClassInfo(){");
+			this.functionPush("getClassInfo", false);
 			this.levelInc();
 			
 			res ~= this.s("return new " ~ this.getName("IntrospectionInfo") ~ "(");
@@ -2712,8 +2733,10 @@ export class TranslatorES6 extends CommonTranslator {
 				OpAnnotation annotation = op_code.annotations.item(j);
 				
 				this.pushOneLine(true);
+				bool old_is_operation = this.beginOperation();
 				string s_kind = this.translateRun(annotation.kind);
 				string s_options = this.translateRun(annotation.options);
+				this.endOperation(old_is_operation);
 				this.popOneLine();
 				
 				res ~= this.s(".push(new " ~ s_kind ~ "(" ~ s_options ~ "))");
@@ -2725,6 +2748,7 @@ export class TranslatorES6 extends CommonTranslator {
 			res ~= this.s(");");
 			
 			this.levelDec();
+			this.functionPop();
 			res ~= this.s("}");
 		}
 		
