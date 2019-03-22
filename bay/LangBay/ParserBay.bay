@@ -723,7 +723,7 @@ class ParserBay extends CommonParser
 			
 			if (attr.key == "@lambda")
 			{
-				attr.value = this.readFunctionsArguments();
+				attr.value = this.readDeclareFunctionHeader( new OpFunctionDeclare() );
 			}
 			
 			else if (this.findNextToken("="))
@@ -1010,6 +1010,18 @@ class ParserBay extends CommonParser
 			}
 			else
 			{
+				OpHtmlAttribute op_code = res.findAttribute("@lambda");
+				if (op_code != null and op_code.value instanceof OpFunctionDeclare)
+				{
+					op_code.value.is_lambda = true;
+					if (res.childs != null)
+					{
+						op_code.value.childs = res.childs.copy();
+						res.childs.clear();
+					}
+				}
+				
+				/*
 				OpHtmlAttribute lambda_header = res.findAttribute("@lambda");
 				if (lambda_header != null)
 				{
@@ -1023,6 +1035,7 @@ class ParserBay extends CommonParser
 					}
 					res.childs.clear();
 				}
+				*/
 			}
 			return res;
 		}
@@ -2492,6 +2505,39 @@ class ParserBay extends CommonParser
 		return args;
 	}
 	
+	
+	
+	/**
+	 * Read declare class function
+	 * @return BaseOpCode
+	 */
+	OpFunctionDeclare readDeclareFunctionHeader(OpFunctionDeclare res)
+	{
+		res.args = this.readFunctionsArguments();
+		
+		/* Read use variables*/
+		if (this.findNextToken("use"))
+		{
+			this.matchNextToken("use");
+			this.matchNextToken("(");
+			while (not this.findNextToken(")") and not this.isEOF())
+			{
+				string name = this.readIdentifierName();
+				res.use_variables.push(name);
+				if (this.findNextToken(","))
+				{
+					this.matchNextToken(",");
+				}
+				else
+				{
+					break;
+				}
+			}
+			this.matchNextToken(")");
+		}
+		
+		return res;
+	}
 	
 	
 	

@@ -1573,6 +1573,11 @@ export class TranslatorPHP extends CommonTranslator {
 				";}"
 			);
 			res ~= this.s(
+				"public static function getCurrentClassName(){" ~
+					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
+				";}"
+			);
+			res ~= this.s(
 				"public static function getParentClassName(){" ~
 					"return " ~ this.convertString(class_extends) ~ 
 				";}"
@@ -2185,6 +2190,38 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
+	 * Retuns css hash 
+	 * @param string component class name
+	 * @return string hash
+	 */
+	string getCssHash(string s){
+		string arr = "1234567890abcdef";
+		int arr_sz = 16;
+		int arr_mod = 65536;
+		int sz = rs::strlen(s);
+		int hash = 0;
+		
+		for (int i=0; i<sz; i++){
+			int ch = rs::ord(s[i]);
+			hash = ((hash << 2) + (hash >> 14) + ch) & 65535;
+		}
+		
+		string res = "";
+		int pos = 0;
+		int c = 0;
+		while (hash != 0 or pos < 4){
+			c = hash & 15;
+			hash = hash >> 4;
+			res ~= arr[c];
+			pos++;
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
 	 * Html tag
 	 */
 	string OpHtmlTag(OpHtmlTag op_code)
@@ -2207,7 +2244,8 @@ export class TranslatorPHP extends CommonTranslator {
 		else
 		{
 			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
-			res ~= this.s('"class_name"=>'~this.convertString( this.getUIStructClassName() )~',');
+			res ~= this.s('"space"=>' ~ this.convertString( this.getCssHash(this.getUIStructClassName()) ) ~ ',');
+			res ~= this.s('"class_name"=>static::getCurrentClassName(),');
 			res ~= this.s('"name"=>'~this.convertString(op_code.tag_name)~',');
 		}
 		
@@ -2275,10 +2313,12 @@ export class TranslatorPHP extends CommonTranslator {
 						{
 							bool old_operation = this.beginOperation(true);
 							this.pushOneLine(true);
+							string key = item.key;
 							string value = this.translateRun(item.value);
+							if (key == "@lambda") key = "callback";
 							this.popOneLine();
 							this.endOperation(old_operation);
-							res ~= this.s("->set(" ~ this.convertString(item.key) ~ ", " ~ value ~ ")");
+							res ~= this.s("->set(" ~ this.convertString(key) ~ ", " ~ value ~ ")");
 						}
 					}
 				);
