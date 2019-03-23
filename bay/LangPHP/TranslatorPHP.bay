@@ -103,6 +103,7 @@ export class TranslatorPHP extends CommonTranslator {
 	string current_class_name = "";
 	Vector<string> current_function_name = null;
 	bool current_function_is_static = false;
+	bool current_function_is_memorize = false;
 	string current_module_name = "";
 	bool is_static = false;
 	bool is_interface = false;
@@ -116,6 +117,19 @@ export class TranslatorPHP extends CommonTranslator {
 	string getCurrentClassName()
 	{
 		return this.current_namespace ~ "." ~ this.current_class_name;
+	}
+	
+	
+	
+	/**
+	 * Returns full class name
+	 * @return string
+	 */
+	string getCurrentFunctionName()
+	{
+		int c = this.current_function_name.count();
+		string last_function_name = this.current_function_name.get( c - 1 );
+		return this.current_namespace ~ "." ~ this.current_class_name ~ "::" ~ last_function_name;
 	}
 	
 	
@@ -1070,11 +1084,19 @@ export class TranslatorPHP extends CommonTranslator {
 	/**
 	 * Return
 	 */
-	string OpReturn(OpReturn op_code){
+	string OpReturn(OpReturn op_code)
+	{
 		bool old_is_operation = this.beginOperation();
 		
 		/* result */
-		string s = "return ";
+		if (this.current_function_is_memorize)
+		{
+			string s = "$__memorize_value = ";
+		}
+		else
+		{
+			string s = "return ";
+		}
 		this.current_opcode_level = 0;
 		this.levelInc();
 		s ~= this.s(this.translateRun(op_code.value));
@@ -1082,7 +1104,18 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		s ~= this.s(";");
 		this.endOperation(old_is_operation);
-		return s;
+		
+		if (this.current_function_is_memorize)
+		{
+			s ~= this.s("rtl::_memorizeSave(" ~ 
+					this.convertString(this.getCurrentFunctionName()) ~ ", func_get_args(), $__memorize_value);");
+			s ~= this.s("return $__memorize_value;");
+			return s;
+		}
+		else
+		{
+			return s;
+		}
 	}
 	
 	
@@ -1247,7 +1280,13 @@ export class TranslatorPHP extends CommonTranslator {
 	/**
 	 * Function declare
 	 */
-	string OpFunctionDeclare(OpFunctionDeclare op_code, bool end_semicolon = false, Vector<string> use_vars = null){
+	string OpFunctionDeclare
+	(
+		OpFunctionDeclare op_code, 
+		bool end_semicolon = false, 
+		Vector<string> use_vars = null
+	)
+	{
 		
 		string res = "";
 		string ch = "";
@@ -1270,6 +1309,17 @@ export class TranslatorPHP extends CommonTranslator {
 			if (this.current_function_name.count() == 0){
 				this.current_function_is_static = false;
 			}
+		}
+		
+		/* Memorize function */
+		bool old_current_function_is_memorize = this.current_function_is_memorize;
+		this.current_function_is_memorize = false;
+		if (
+			op_code.isFlag("memorize") and op_code.isFlag("static") and 
+			not op_code.isFlag("async") and this.current_function_name.count() == 0
+		)
+		{
+			this.current_function_is_memorize = true;
 		}
 		
 		/* Header */
@@ -1337,6 +1387,13 @@ export class TranslatorPHP extends CommonTranslator {
 			this.pushOneLine(false);
 			this.levelInc();
 			
+			if (this.current_function_is_memorize)
+			{
+				res ~= this.s("$__memorize_value = rtl::_memorizeValue(" ~ 
+					this.convertString(this.getCurrentFunctionName()) ~ ", func_get_args());");
+				res ~= this.s("if ($__memorize_value != rtl::$_memorize_not_found) return $__memorize_value;");	
+			}
+			
 			/* Childs */
 			if (op_code.childs != null)
 			{
@@ -1347,7 +1404,19 @@ export class TranslatorPHP extends CommonTranslator {
 						bool old_is_operation = this.beginOperation(true);
 						string lambda_res = this.translateRun(op_code.childs.item(0));
 						this.endOperation(old_is_operation);
-						res ~= this.s("return " ~ lambda_res ~ ";");
+						
+						if (this.current_function_is_memorize)
+						{
+							res ~= this.s("$__memorize_value = " ~ lambda_res ~ ";");
+							res ~= this.s("rtl::_memorizeSave(" ~ 
+									this.convertString(this.getCurrentFunctionName()) ~ 
+									", func_get_args(), $__memorize_value);");
+							res ~= this.s("return $__memorize_value;");
+						}
+						else
+						{
+							res ~= this.s("return " ~ lambda_res ~ ";");
+						}
 					}
 				}
 				else
@@ -1371,6 +1440,7 @@ export class TranslatorPHP extends CommonTranslator {
 		
 		
 		this.current_function_name.pop();
+		this.current_function_is_memorize = old_current_function_is_memorize;
 		
 		return res;
 	}
@@ -1746,7 +1816,7 @@ export class TranslatorPHP extends CommonTranslator {
 						
 						string s = "if ($variable_name == " ~ this.convertString(variable.name) ~ ")";
 						s ~= "$this->" ~ var_prefix ~ variable.name ~ " = ";
-						s ~= "rtl::correct($value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
+						s ~= "rtl::convert($value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
 						/*s ~= "$this->assignValueAfter(" ~ this.convertString(variable.name) ~ ",$value,$sender);}";*/
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);

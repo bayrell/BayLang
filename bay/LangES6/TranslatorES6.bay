@@ -104,6 +104,8 @@ export class TranslatorES6 extends CommonTranslator {
 	Map<string> modules = null;
 	string current_namespace = "";
 	string current_class_name = "";
+	bool current_function_is_static = false;
+	bool current_function_is_memorize = false;
 	Vector<string> function_stack = null;
 	string current_module_name = "";
 	bool is_interface = false;
@@ -122,6 +124,18 @@ export class TranslatorES6 extends CommonTranslator {
 		return this.current_namespace ~ "." ~ this.current_class_name;
 	}
 	
+	
+	
+	/**
+	 * Returns full class name
+	 * @return string
+	 */
+	string getCurrentFunctionName()
+	{
+		int c = this.function_stack.count();
+		FunctionStack last_function = this.function_stack.get( c - 1 );
+		return this.current_namespace ~ "." ~ this.current_class_name ~ "::" ~ last_function.name;
+	}
 	
 	
 	/**
@@ -1538,6 +1552,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Return
 	 */
 	string OpReturn(OpReturn op_code){
+	
 		this.beginOperation();
 		
 		/* result */
@@ -1546,15 +1561,26 @@ export class TranslatorES6 extends CommonTranslator {
 		string s = this.s( this.translateRun(op_code.value) );
 		this.levelDec();
 		
+		this.endOperation();
+		
+		
 		if (this.isAsyncF()){
 			s = "return " ~ this.asyncContextName() ~ ".resolve(" ~ s ~ ");";
 			this.is_return = true;
 		}
-		else {
+		else if (this.current_function_is_memorize)
+		{
+			string res = "var __memorize_value = " ~ s ~ ";";
+			res ~= this.s(this.getName("rtl") ~ "._memorizeSave(" ~ 
+					this.convertString(this.getCurrentFunctionName()) ~ ", arguments, __memorize_value);");
+			res ~= this.s("return __memorize_value;");
+			return res;
+		}
+		else 
+		{
 			s = "return " ~ s ~ ";";
 		}
 		
-		this.endOperation();
 		return s;
 	}
 	
@@ -1997,6 +2023,18 @@ export class TranslatorES6 extends CommonTranslator {
 		}
 		
 		
+		/* Memorize function */
+		bool old_current_function_is_memorize = this.current_function_is_memorize;
+		this.current_function_is_memorize = false;
+		if (
+			op_code.isFlag("memorize") and op_code.isFlag("static") and 
+			not op_code.isFlag("async") and this.function_stack.count() == 0
+		)
+		{
+			this.current_function_is_memorize = true;
+		}
+		
+		
 		/* Function Header */
 		this.functionPush(op_code.name, op_code.isFlag("async"));
 		res ~= this.OpFunctionDeclareHeader(op_code);
@@ -2004,6 +2042,16 @@ export class TranslatorES6 extends CommonTranslator {
 		this.setOperation(false);
 		this.pushOneLine(false);
 		this.levelInc();
+		
+		
+		/* Memorize function */
+		if (this.current_function_is_memorize)
+		{
+			res ~= this.s("var __memorize_value = "~this.getName("rtl")~"._memorizeValue(" ~ 
+				this.convertString(this.getCurrentFunctionName()) ~ ", arguments);");
+			res ~= this.s("if (__memorize_value != "~this.getName("rtl")~
+				"._memorize_not_found) return __memorize_value;");	
+		}
 		
 		
 		/* Async function */
@@ -2048,7 +2096,18 @@ export class TranslatorES6 extends CommonTranslator {
 					bool old_is_operation = this.beginOperation(true);
 					string lambda_res = this.translateRun(op_code.childs.item(0));
 					this.endOperation(old_is_operation);
-					res ~= this.s("return " ~ lambda_res ~ ";");
+					
+					if (this.current_function_is_memorize)
+					{
+						res ~= this.s("var __memorize_value = " ~ lambda_res ~ ";");
+						res ~= this.s(this.getName("rtl") ~ "._memorizeSave(" ~ 
+								this.convertString(this.getCurrentFunctionName()) ~ ", arguments, __memorize_value);");
+						res ~= this.s("return __memorize_value;");
+					}
+					else 
+					{
+						res ~= this.s("return " ~ lambda_res ~ ";");
+					}
 				}
 			}
 			else
@@ -2093,6 +2152,7 @@ export class TranslatorES6 extends CommonTranslator {
 		res ~= this.s("}");
 		this.popOneLine();
 		this.functionPop();
+		this.current_function_is_memorize = old_current_function_is_memorize;
 		
 		return res;
 	}
@@ -2474,7 +2534,7 @@ export class TranslatorES6 extends CommonTranslator {
 						string s = "if (variable_name == " ~ this.convertString(variable.name) ~ ")";
 						s ~= "this." ~ var_prefix ~ variable.name ~ " = ";
 						s ~= this.getName("rtl") ~ 
-							".correct(value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
+							".convert(value,\""~type_value~"\","~def_val~",\""~type_template~"\");";
 						/*s ~= "this.assignValueAfter(" ~ this.convertString(variable.name) ~ ",value,sender);}";*/
 						
 						if (class_variables_serializable_count == 0) res ~= this.s(s);
