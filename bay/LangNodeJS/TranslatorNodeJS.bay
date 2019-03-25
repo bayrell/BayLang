@@ -145,9 +145,11 @@ export class TranslatorNodeJS extends TranslatorES6 {
 	/**
 	 * Class declare header
 	 */
-	string OpClassDeclareHeader(OpClassDeclare op_code){
+	string OpClassDeclareHeader(OpClassDeclare op_code)
+	{
 		string res = "";
 		
+		this.ui_struct_class_name.push( this.current_namespace ~ "." ~ this.current_class_name );
 		this.beginOperation();
 		res ~= "class " ~ op_code.class_name;
 		if (op_code.class_extends != ""){
