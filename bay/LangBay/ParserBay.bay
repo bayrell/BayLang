@@ -19,6 +19,7 @@
 namespace BayrellLang.LangBay;
 
 use Runtime.rs;
+use Runtime.RuntimeUtils;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -1089,38 +1090,6 @@ class ParserBay extends CommonParser
 	
 	
 	/**
-	 * Retuns css hash 
-	 * @param string component class name
-	 * @return string hash
-	 */
-	string getCssHash(string s){
-		string arr = "1234567890abcdef";
-		int arr_sz = 16;
-		int arr_mod = 65536;
-		int sz = rs::strlen(s);
-		int hash = 0;
-		
-		for (int i=0; i<sz; i++){
-			int ch = rs::ord(s[i]);
-			hash = ((hash << 2) + (hash >> 14) + ch) & 65535;
-		}
-		
-		string res = "";
-		int pos = 0;
-		int c = 0;
-		while (hash != 0 or pos < 4){
-			c = hash & 15;
-			hash = hash >> 4;
-			res ~= arr[c];
-			pos++;
-		}
-		
-		return res;
-	}
-	
-	
-	
-	/**
 	 * Read CSS Selector
 	 */
 	string readCssSelector(string look){
@@ -1164,7 +1133,7 @@ class ParserBay extends CommonParser
 		}
 		
 		/* Calc hash */
-		string hash = "-" ~ this.getCssHash(class_name);
+		string hash = "-" ~ RuntimeUtils::getCssHash(class_name);
 		return name ~ hash ~ postfix;
 	}
 	

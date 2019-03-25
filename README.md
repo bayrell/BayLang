@@ -5,6 +5,8 @@ Bayrell Common Language
 
 Versions:
 
+[25 Mar 2019] 0.7.1 - Add memorize, Dict, Collection, rtl::method, UIStruct normalization, DateTime as Struct
+
 [27 Jan 2019] 0.7.0-alpha - Combine Bayrell Template and Lang. Add lambda and pure functions
 
 [16 Dec 2018] 0.6.0 - Add structure and annotations

@@ -20,6 +20,7 @@ namespace BayrellLang.LangES6;
 
 use Runtime.re;
 use Runtime.rs;
+use Runtime.RuntimeUtils;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -498,15 +499,17 @@ export class TranslatorES6 extends CommonTranslator {
 		{
 			if (op_code.value.value == "self")
 			{
+				return this.getName("self") ~ '.' ~ op_code.name;
 				return "(" ~ this.getName("rtl") ~ ".method(" ~ 
-					this.getCurrentClassName() ~ ", " ~ 
+					this.getName("self") ~ ", " ~ 
 					this.convertString(op_code.name) ~ "))";
 			}
-			else if (op_code.value.value == "static")
-			{
-				return 'this.' ~ op_code.name;
-			}
-			else if (not this.modules.has(op_code.value.value))
+			else if (
+				not this.modules.has(op_code.value.value) and 
+				op_code.value.value != "rtl" and 
+				op_code.value.value != "parent" and 
+				op_code.value.value != "static" 
+			)
 			{
 				return "(" ~ this.getName("rtl") ~ ".method(" ~ 
 					op_code.value.value ~ ".getClassName(), " ~ 
@@ -1008,7 +1011,8 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Clone
 	 */
-	string OpMethod(OpMethod op_code){
+	string OpMethod(OpMethod op_code)
+	{
 		
 		if (op_code.value instanceof OpDynamic)
 		{
@@ -1017,6 +1021,25 @@ export class TranslatorES6 extends CommonTranslator {
 			if (obj == 'this')
 				return obj ~ "." ~ name ~ ".bind(this)";
 			return obj ~ "." ~ name;
+		}
+		else if (op_code.value instanceof OpStatic)
+		{
+			string name = op_code.value.name;
+			if (op_code.value.value.value == "self")
+			{
+				return this.getName("self") ~ '.' ~ name;
+			}
+			else if (
+				not this.modules.has(op_code.value.value.value) and
+				op_code.value.value.value != "rtl" and 
+				op_code.value.value.value != "parent" and 
+				op_code.value.value.value != "static"
+			)
+			{
+				return "(" ~ this.getName("rtl") ~ ".method(" ~ 
+					op_code.value.value.value ~ ".getClassName(), " ~ 
+					this.convertString(name) ~ "))";
+			}
 		}
 		
 		return this.translateRun(op_code.value);
@@ -3005,38 +3028,6 @@ export class TranslatorES6 extends CommonTranslator {
 	
 	
 	/**
-	 * Retuns css hash 
-	 * @param string component class name
-	 * @return string hash
-	 */
-	string getCssHash(string s){
-		string arr = "1234567890abcdef";
-		int arr_sz = 16;
-		int arr_mod = 65536;
-		int sz = rs::strlen(s);
-		int hash = 0;
-		
-		for (int i=0; i<sz; i++){
-			int ch = rs::ord(s[i]);
-			hash = ((hash << 2) + (hash >> 14) + ch) & 65535;
-		}
-		
-		string res = "";
-		int pos = 0;
-		int c = 0;
-		while (hash != 0 or pos < 4){
-			c = hash & 15;
-			hash = hash >> 4;
-			res ~= arr[c];
-			pos++;
-		}
-		
-		return res;
-	}
-	
-	
-	
-	/**
 	 * Html tag
 	 */
 	string OpHtmlTag(OpHtmlTag op_code)
@@ -3058,7 +3049,8 @@ export class TranslatorES6 extends CommonTranslator {
 		else
 		{
 			res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
-			res ~= this.s('"space":' ~ this.convertString( this.getCssHash(this.getUIStructClassName()) ) ~ ',');
+			res ~= this.s('"space":' ~ 
+				this.convertString( RuntimeUtils::getCssHash(this.getUIStructClassName()) ) ~ ',');
 			res ~= this.s('"class_name":this.getCurrentClassName(),');
 			res ~= this.s('"name":'~this.convertString(op_code.tag_name)~',');
 		}

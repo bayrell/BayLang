@@ -20,6 +20,7 @@ namespace BayrellLang.LangPHP;
 
 use Runtime.re;
 use Runtime.rs;
+use Runtime.RuntimeUtils;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -321,6 +322,10 @@ export class TranslatorPHP extends CommonTranslator {
 			else if (op_code.value.value == "static")
 			{
 				return 'static::' ~ op_code.name;
+			}
+			else if (op_code.value.value == "parent")
+			{
+				return 'parent::' ~ op_code.name;
 			}
 			else if (not this.modules.has(op_code.value.value))
 			{
@@ -846,6 +851,10 @@ export class TranslatorPHP extends CommonTranslator {
 					return "(new \\Runtime\\Callback(" ~ 
 						"static::class, " ~ 
 						this.convertString(name) ~ "))";
+				}
+				else if (op_code.value.value.value == "parent")
+				{
+					return this.translateRun(op_code.value);
 				}
 				else if (not this.modules.has(op_code.value.value.value))
 				{
@@ -2260,38 +2269,6 @@ export class TranslatorPHP extends CommonTranslator {
 	
 	
 	/**
-	 * Retuns css hash 
-	 * @param string component class name
-	 * @return string hash
-	 */
-	string getCssHash(string s){
-		string arr = "1234567890abcdef";
-		int arr_sz = 16;
-		int arr_mod = 65536;
-		int sz = rs::strlen(s);
-		int hash = 0;
-		
-		for (int i=0; i<sz; i++){
-			int ch = rs::ord(s[i]);
-			hash = ((hash << 2) + (hash >> 14) + ch) & 65535;
-		}
-		
-		string res = "";
-		int pos = 0;
-		int c = 0;
-		while (hash != 0 or pos < 4){
-			c = hash & 15;
-			hash = hash >> 4;
-			res ~= arr[c];
-			pos++;
-		}
-		
-		return res;
-	}
-	
-	
-	
-	/**
 	 * Html tag
 	 */
 	string OpHtmlTag(OpHtmlTag op_code)
@@ -2314,7 +2291,8 @@ export class TranslatorPHP extends CommonTranslator {
 		else
 		{
 			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
-			res ~= this.s('"space"=>' ~ this.convertString( this.getCssHash(this.getUIStructClassName()) ) ~ ',');
+			res ~= this.s('"space"=>' ~ 
+				this.convertString( RuntimeUtils::getCssHash(this.getUIStructClassName()) ) ~ ',');
 			res ~= this.s('"class_name"=>static::getCurrentClassName(),');
 			res ~= this.s('"name"=>'~this.convertString(op_code.tag_name)~',');
 		}
