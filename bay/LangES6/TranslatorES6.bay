@@ -3043,6 +3043,7 @@ export class TranslatorES6 extends CommonTranslator {
 		{
 			res = "new "~this.getName("UIStruct")~"(new "~this.getName("Map")~"({";
 			res ~= this.s('"kind":"component",');
+			res ~= this.s('"class_name":this.getCurrentClassName(),');
 			res ~= this.s('"name":'~this.convertString(this.modules.item(op_code.tag_name))~',');
 			is_component = true;
 		}
