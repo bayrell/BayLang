@@ -2262,7 +2262,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	bool isOpHtmlTagProps(string key)
 	{
-		if (key == "@key" or key == "@control") return false;
+		if (key == "@key" or key == "@control" or key == "@model") return false;
 		return true;
 	}
 	
@@ -2342,6 +2342,11 @@ export class TranslatorPHP extends CommonTranslator {
 					{
 						string value = this.translateRun(item.value);
 						res ~= this.s('"controller"=>' ~ value ~ ',');
+					}
+					else if (key == "@model")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"model"=>' ~ value ~ ',');
 					}
 				}
 			);
