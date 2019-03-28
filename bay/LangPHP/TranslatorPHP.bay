@@ -154,10 +154,10 @@ export class TranslatorPHP extends CommonTranslator {
 			return "parent";
 		}
 		else if (name == 'self'){
-			return "self";
+			return "self::class";
 		}
 		else if (name == 'static'){
-			return "static";
+			return "static::class";
 		}
 		else if (this.modules.has(name)){
 			return name;
@@ -250,6 +250,18 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpIdentifier(OpIdentifier op_code){
 		this.current_opcode_level = this.max_opcode_level;
+		
+		BaseOpCode op_code_last = this.op_code_stack.last(null, -2);
+		if (op_code_last instanceof OpStatic) 
+		{
+			if (op_code.value == 'self'){
+				return "self";
+			}
+			if (op_code.value == 'static'){
+				return "static";
+			}
+		}
+		
 		return this.getName(op_code.value);
 	}
 	
