@@ -2381,7 +2381,6 @@ export class TranslatorPHP extends CommonTranslator {
 							this.pushOneLine(true);
 							string key = item.key;
 							string value = this.translateRun(item.value);
-							if (key == "@lambda") key = "callback";
 							this.popOneLine();
 							this.endOperation(old_operation);
 							res ~= this.s("->set(" ~ this.convertString(key) ~ ", " ~ value ~ ")");
