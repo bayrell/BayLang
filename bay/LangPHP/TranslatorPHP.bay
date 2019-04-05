@@ -2406,7 +2406,8 @@ export class TranslatorPHP extends CommonTranslator {
 		/* Plain HTML tag script, pre, textarea */
 		if (op_code.is_plain)
 		{
-			if (op_code.childs != null){
+			if (op_code.childs != null and op_code.childs.count() > 0)
+			{
 				string value = op_code.childs.reduce(
 					void (string res, BaseOpCode item)
 					{

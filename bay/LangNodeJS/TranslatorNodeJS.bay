@@ -132,7 +132,7 @@ export class TranslatorNodeJS extends TranslatorES6 {
 			string module_name = arr1.shift();
 			string module_path = rs::implode(".", arr1);
 			if (module_name == 'Runtime') module_name = 'BayrellRuntime';
-			if (module_name == 'RuntimeUI') module_name = 'BayrellRuntimeUI';
+			if (module_name == 'Core') module_name = 'BayrellCore';
 			module_name = rtl::convertNodeJSModuleName(module_name);
 			res = "var " ~ class_name ~ " = require('" ~ module_name ~ "')." ~ module_path ~ ";";
 		}
