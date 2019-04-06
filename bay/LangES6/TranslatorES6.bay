@@ -113,6 +113,7 @@ export class TranslatorES6 extends CommonTranslator {
 	bool is_struct = false;
 	bool is_return = false;
 	bool is_async_opcode = false;
+	bool is_async_opcode_while = false;
 	bool is_async_await_op_call = false;
 	
 	
@@ -154,12 +155,22 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Returns true if function is async
 	 * @return bool
 	 */
-	void checkAwaitOpCode(BaseOpCode op_code){
+	bool checkAwaitOpCode(BaseOpCode op_code, string kind){
 		if (this.detectIsAwait(op_code)){
 			this.is_async_opcode = true;
+			if (kind == 'while' or kind == 'for')
+			{
+				this.is_async_opcode_while = true;
+			}
+			return true;
 		}
 		else{
 			this.is_async_opcode = false;
+			if (kind == 'while' or kind == 'for')
+			{
+				this.is_async_opcode_while = false;
+			}
+			return false;
 		}
 	}
 	
@@ -295,7 +306,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @return string
 	 */
 	string asyncBeginPos(){
-		if (not this.isAsync()) return ;
+		if (not this.isAsyncF()) return ;
 		FunctionStack obj = this.function_stack.last();
 		return obj.getAsyncBeginPos();
 	}
@@ -307,7 +318,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @return string
 	 */
 	string asyncEndPos(){
-		if (not this.isAsync()) return ;
+		if (not this.isAsyncF()) return "";
 		FunctionStack obj = this.function_stack.last();
 		return obj.getAsyncEndPos();
 	}
@@ -1218,7 +1229,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	string OpBreak(OpBreak op_code){
 		
-		if (this.isAsync()){
+		if (this.isAsyncF() and this.is_async_opcode_while){
 			this.is_return = true;
 			string pos = this.asyncEndPos();
 			return "return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(pos) ~ ");";
@@ -1254,7 +1265,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * Continue
 	 */
 	string OpContinue(OpContinue op_code){
-		if (this.isAsync()){
+		if (this.isAsyncF() and this.is_async_opcode_while){
 			this.is_return = true;
 			string pos = this.asyncBeginPos();
 			return "return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(pos) ~ ");";
@@ -1279,39 +1290,70 @@ export class TranslatorES6 extends CommonTranslator {
 	string OpFor(OpFor op_code){
 		string s = "";
 		string jump_pos_begin = "";
+		string jump_pos_first = "";
+		string jump_pos_start = "";
 		string jump_pos_end = "";
 		string jump_pos_childs = "";
 		
 		
 		/* Check await op_code*/
-		this.checkAwaitOpCode(op_code);
+		bool old_is_async_opcode = this.is_async_opcode;
+		bool old_is_async_opcode_while = this.is_async_opcode_while;
+		this.checkAwaitOpCode(op_code, "for");
 		
+		
+		/* OpFor async start */
+		/*
+		if (this.isAsync())
+		{
+			this.asyncJumpAdd();
+			jump_pos_end = this.asyncJumpCurrent();
+			
+			s ~= this.translateRun(op_code.loop_init);
+			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_end) ~ ");");
+			this.levelDec();
+			s ~= this.s("}");
+			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_end) ~ "){");
+			this.levelInc();
+		}
+		*/
 		
 		/* Async start */
-		jump_pos_begin = this.asyncJumpCurrent();
 		jump_pos_end = this.asyncJumpNext();
 		this.asyncJumpPush();
-		jump_pos_childs = this.asyncJumpCurrent();
+		jump_pos_begin = this.asyncJumpCurrent();
+		this.asyncJumpAdd();
+		jump_pos_start = this.asyncJumpCurrent();
 		
 		
 		/* Push stop jump positions for break and continue */
 		this.asyncPushStop(jump_pos_begin, jump_pos_end);
+		this.asyncJumpAdd();
+		jump_pos_childs = this.asyncJumpCurrent();
 		
 		
 		/* Header */
 		if (this.isAsync()){
-			s ~= this.translateRun(op_code.loop_init);
 			
-			/* for header */
-			this.asyncJumpAdd();
-			jump_pos_begin = this.asyncJumpCurrent();
-			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_begin) ~ ");");
+			/* Loop init */
+			s ~= this.translateRun(op_code.loop_init);
+			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_start) ~ ");");
 			this.levelDec();
 			s ~= this.s("}");
 			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_begin) ~ "){");
 			this.levelInc();
 			
-			/* for condition */
+			
+			/* Loop increment */
+			s ~= this.s(this.translateRun(op_code.loop_inc));
+			s ~= this.s("return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_start) ~ ");");
+			this.levelDec();
+			s ~= this.s("}");
+			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_start) ~ "){");
+			this.levelInc();
+			
+			
+			/* Loop condition */
 			this.beginOperation();
 			string s1 = "if (" ~ this.translateRun(op_code.loop_condition) ~ "){";
 			this.endOperation();
@@ -1334,7 +1376,6 @@ export class TranslatorES6 extends CommonTranslator {
 		for (int i=0; i<op_code.childs.count(); i++){
 			op_code_childs ~= this.s(this.translateRun(op_code.childs.item(i)));
 		}
-		if (this.isAsync()) op_code_childs ~= this.s(this.translateRun(op_code.loop_inc));
 		if (not this.isAsync()) this.levelDec();
 		if (this.isAsync()){
 			this.levelInc();
@@ -1371,7 +1412,9 @@ export class TranslatorES6 extends CommonTranslator {
 			
 		}
 		
-		
+		/* Return async flag */
+		this.is_async_opcode = old_is_async_opcode;
+		this.is_async_opcode_while = old_is_async_opcode_while;
 		
 		/* Pop stop jump positions */
 		this.asyncPopStop();
@@ -1402,7 +1445,9 @@ export class TranslatorES6 extends CommonTranslator {
 		Vector<Map> op_code_else = new Vector<Map>();
 		
 		/* Check await op_code*/
-		this.checkAwaitOpCode(op_code);
+		bool old_is_async_opcode = this.is_async_opcode;
+		bool old_is_async_opcode_while = this.is_async_opcode_while;
+		this.checkAwaitOpCode(op_code, "if");
 		
 		/* Condition */
 		this.beginOperation();
@@ -1559,6 +1604,9 @@ export class TranslatorES6 extends CommonTranslator {
 			this.levelInc();
 		}
 		
+		/* Return async flag */
+		this.is_async_opcode = old_is_async_opcode;
+		this.is_async_opcode_while = old_is_async_opcode_while;
 		
 		/* Decrease level */
 		this.asyncJumpPop();
@@ -1634,7 +1682,9 @@ export class TranslatorES6 extends CommonTranslator {
 		string s = "";
 		
 		/* Check await op_code*/
-		this.checkAwaitOpCode(op_code);
+		bool old_is_async_opcode = this.is_async_opcode;
+		bool old_is_async_opcode_while = this.is_async_opcode_while;
+		this.checkAwaitOpCode(op_code, "try_catch");
 		
 		string jump_pos_catch = "";
 		string jump_pos_end = "";
@@ -1722,6 +1772,10 @@ export class TranslatorES6 extends CommonTranslator {
 			s ~= this.s("}");
 		}
 		
+		/* Return async flag */
+		this.is_async_opcode = old_is_async_opcode;
+		this.is_async_opcode_while = old_is_async_opcode_while;
+		
 		return s;
 	}
 	
@@ -1737,11 +1791,31 @@ export class TranslatorES6 extends CommonTranslator {
 		string jump_pos_childs = "";
 		
 		/* Check await op_code*/
-		this.checkAwaitOpCode(op_code);
+		bool old_is_async_opcode = this.is_async_opcode;
+		bool old_is_async_opcode_while = this.is_async_opcode_while;
+		this.checkAwaitOpCode(op_code, "while");
 		
-		jump_pos_begin = this.asyncJumpCurrent();
+		
+		/* OpWhile async start */
+		/*
+		if (this.isAsync())
+		{
+			this.asyncJumpAdd();
+			jump_pos_end = this.asyncJumpCurrent();
+			
+			s ~= "return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_end) ~ ");";
+			this.levelDec();
+			s ~= this.s("}");
+			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_end) ~ "){");
+			this.levelInc();
+		}
+		*/
+		
+		/* Async start */
 		jump_pos_end = this.asyncJumpNext();
 		this.asyncJumpPush();
+		jump_pos_begin = this.asyncJumpCurrent();
+		this.asyncJumpAdd();
 		jump_pos_childs = this.asyncJumpCurrent();
 		
 		
@@ -1750,10 +1824,22 @@ export class TranslatorES6 extends CommonTranslator {
 		
 		
 		/* Condition */
-		this.beginOperation();
-		if (this.isAsync()) s ~= "if (" ~ this.translateRun(op_code.condition) ~ "){";
-		else s ~= "while (" ~ this.translateRun(op_code.condition) ~ "){";
-		this.endOperation();
+		if (this.isAsync())
+		{
+			s ~= "return " ~ this.asyncContextName() ~ ".jump(" ~ this.convertString(jump_pos_begin) ~ ");";
+			this.levelDec();
+			s ~= this.s("}");
+			s ~= this.s("else if (" ~ this.asyncJumpName() ~ " == " ~ this.convertString(jump_pos_begin) ~ "){");
+			this.levelInc();
+			
+			s ~= this.s("if (" ~ this.translateRun(op_code.condition) ~ "){");
+		}
+		else
+		{
+			this.beginOperation();
+			s ~= "while (" ~ this.translateRun(op_code.condition) ~ "){";
+			this.endOperation();
+		}
 		
 		
 		/* Childs */
@@ -1798,6 +1884,10 @@ export class TranslatorES6 extends CommonTranslator {
 			this.levelInc();
 			
 		}
+		
+		/* Return async flag */
+		this.is_async_opcode = old_is_async_opcode;
+		this.is_async_opcode_while = old_is_async_opcode_while;
 		
 		/* Pop stop jump positions */
 		this.asyncPopStop();
