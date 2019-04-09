@@ -1569,7 +1569,7 @@ export class TranslatorES6 extends CommonTranslator {
 				int op_code_else_sz = op_code_else.count();
 				for (int i=0; i<op_code_else_sz; i++){
 					Map item = op_code_else.item(i);
-					int jump_pos = item.get("jump_pos", -1, "int");
+					string jump_pos = item.get("jump_pos", "-1", "string");
 					bool is_return = item.get("is_return", false, "bool");
 					string op_code = item.get("op_code", "", "string");
 					
