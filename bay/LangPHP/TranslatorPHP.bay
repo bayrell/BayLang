@@ -2487,7 +2487,7 @@ export class TranslatorPHP extends CommonTranslator {
 		{
 			if (op_code.childs != null and op_code.childs.count() > 0)
 			{
-				res ~= this.s('"children" => rtl::normalizeUIVector(new ' ~ this.getName("Vector") ~ '([');
+				res ~= this.s('"children" => rtl::normalizeUIVector(new ' ~ this.getName("Vector") ~ '(');
 				this.levelInc();
 				
 				int childs_sz = op_code.childs.count();
@@ -2499,7 +2499,7 @@ export class TranslatorPHP extends CommonTranslator {
 				}
 				
 				this.levelDec();
-				res ~= this.s("]))");
+				res ~= this.s("))");
 			}		
 		}
 		
@@ -2521,7 +2521,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpHtmlView(OpHtmlView op_code)
 	{
-		string res = "rtl::normalizeUIVector(new Vector([";
+		string res = "rtl::normalizeUIVector(new Vector(";
 		this.pushOneLine(false);
 		int childs_sz = op_code.childs.count();
 		for (int i=0; i<childs_sz; i++)
@@ -2531,7 +2531,7 @@ export class TranslatorPHP extends CommonTranslator {
 			res ~= this.s(this.translateRun(item) ~ ( (i+1 == childs_sz) ? "" : "," ));
 		}
 		this.popOneLine();
-		res ~= this.s("]))");
+		res ~= this.s("))");
 		return res;
 	}
 	

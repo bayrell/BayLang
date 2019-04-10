@@ -2495,6 +2495,7 @@ export class TranslatorES6 extends CommonTranslator {
 				/* super init */
 				if (class_extends != ""){
 					res ~= this.s("super._init();");
+					res ~= this.s("var names = Object.getOwnPropertyNames(this);");
 				}
 				
 				/* Output variables */
@@ -2518,10 +2519,11 @@ export class TranslatorES6 extends CommonTranslator {
 							s = "this." ~ var_prefix ~ variable.name ~ " = " ~ this.translateRun(variable.value) ~ ";";
 							this.endOperation();
 							res ~= this.s(s);
-							res ~= this.s(  
-								"Object.defineProperty(this, " ~ this.convertString(variable.name) ~ 
+							res ~= this.s( 
+								"if (names.indexOf(" ~ this.convertString(variable.name) ~ ") == -1)" ~
+								"Object.defineProperty(this, " ~ this.convertString(variable.name) ~
 								", { get: function() { return this.__"~ variable.name ~
-								"; }, set: function(value) { throw new Runtime.Exceptions.AssignStructValueError("~
+								"; }, set: function(value) { throw new Runtime.Exceptions.AssignStructValueError(" ~
 								this.convertString(variable.name)~") }});"
 							);
 						}
