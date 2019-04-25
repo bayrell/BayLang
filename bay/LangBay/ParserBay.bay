@@ -1721,7 +1721,7 @@ class ParserBay extends CommonParser
 		}
 		
 		BaseOpCode res = null;
-		res = this.readDeclareFunction(false, false, is_lambda);
+		res = this.readDeclareFunction(false, false);
 		if (res != null)
 		{
 			this.popToken();
@@ -2519,14 +2519,12 @@ class ParserBay extends CommonParser
 	OpFunctionDeclare readDeclareFunction
 	(
 		bool read_name = true, 
-		bool is_declare_function = false, 
-		bool is_lambda = false
+		bool is_declare_function = false
 	){
 		OpFunctionDeclare res = new OpFunctionDeclare();
+		res.is_lambda = false;
 		
 		this.pushToken();
-		res.is_lambda = is_lambda;
-		
 		try
 		{
 			res.result_type = this.readTemplateIdentifier();
@@ -2586,69 +2584,56 @@ class ParserBay extends CommonParser
 		/* Read body of the function */
 		if (this.findNextToken("=>"))
 		{
+			res.is_lambda = true;
 			this.matchNextToken("=>");
 			if (this.findNextToken("return")) this.matchNextToken("return");
 			this.popToken();
-			
-			if (is_lambda)
-			{
-				this.pushToken();
-				try
-				{
-					OpFlags flags = null;
-					flags = this.readFlags();
-					res.return_function = this.readDeclareFunction(false, is_declare_function, is_lambda);
-					if (res.return_function != null)
-					{	
-						res.return_function.flags = flags;
-					}
-				}
-				catch (ParserError ex)
-				{
-					res.return_function = null;
-				}
-				
-				if (res.return_function == null)
-				{
-					this.popRollbackToken();
-				}
-				else
-				{
-					this.popToken();
-				}
-				
-				if (res.return_function == null)
-				{
-					BaseOpCode op_item;
-					try
-					{
-						op_item = this.readExpression();
-					}
-					catch (ParserError ex)
-					{
-						op_item = null;
-					}
-					
-					if (op_item != null)
-					{
-						res.childs = [ op_item ];
-					}
-				}
-				
-				if (res.return_function == null and res.childs == null)
-				{
-					this.matchNextToken(";");
-				}
-			}
-			else
+			this.pushToken();
+			try
 			{
 				OpFlags flags = null;
 				flags = this.readFlags();
-				res.return_function = this.readDeclareFunction(false, is_declare_function, is_lambda);
+				res.return_function = this.readDeclareFunction(false, is_declare_function);
 				if (res.return_function != null)
 				{
 					res.return_function.flags = flags;
 				}
+			}
+			catch (ParserError ex)
+			{
+				res.return_function = null;
+			}
+			
+			if (res.return_function == null)
+			{
+				this.popRollbackToken();
+			}
+			else
+			{
+				this.popToken();
+			}
+			
+			if (res.return_function == null)
+			{
+				BaseOpCode op_item;
+				try
+				{
+					op_item = this.readExpression();
+				}
+				catch (ParserError ex)
+				{
+					op_item = null;
+				}
+				
+				if (op_item != null)
+				{
+					res.childs = [ op_item ];
+				}
+			}
+			
+			if (res.return_function == null and res.childs == null)
+			{
+				this.matchNextToken(";");
 			}
 			
 			return res;
@@ -2748,12 +2733,12 @@ class ParserBay extends CommonParser
 		}
 		
 		/* Read function */
-		op_code = this.readDeclareFunction(true, is_declare_function, is_lambda);
+		op_code = this.readDeclareFunction(true, is_declare_function);
 		if (op_code and op_code instanceof OpFunctionDeclare)
 		{
 			op_code.annotations = this.annotations;
 			op_code.flags = flags;
-			if (op_code.is_lambda)
+			if (is_lambda)
 			{
 				flags.assignValue('static', true);
 			}

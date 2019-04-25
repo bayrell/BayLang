@@ -1637,12 +1637,15 @@ export class TranslatorPHP extends CommonTranslator {
 		Vector<string> class_implements = op_code.class_implements;
 		string class_extends = "";
 		
-		if (op_code.class_extends){
+		if (op_code.class_extends)
+		{
 			string name = op_code.class_extends.value;
-			if (this.modules.has(name)){
+			if (this.modules.has(name))
+			{
 				class_extends = this.modules.item(name);
 			}
-			else{
+			else
+			{
 				class_extends = name;
 			}
 		}
@@ -1655,9 +1658,9 @@ export class TranslatorPHP extends CommonTranslator {
 		bool has_methods_annotations = false;
 		bool has_fields_annotations = false;
 		
-		res ~= this.s("/* ======================= Class Init Functions ======================= */");
-		
-		if (not this.is_interface){
+		if (not this.is_interface)
+		{
+			res ~= this.s("/* ======================= Class Init Functions ======================= */");
 			res ~= this.s(
 				"public function getClassName(){" ~
 					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
@@ -1675,43 +1678,55 @@ export class TranslatorPHP extends CommonTranslator {
 			);
 		}
 		
-		if (this.is_struct){
+		if (this.is_struct)
+		{
 			has_serializable = true;
 			has_cloneable = true;
 		}
 		
-		for (int i=0; i<childs.count(); i++){
+		for (int i=0; i<childs.count(); i++)
+		{
 			BaseOpCode variable = childs.item(i);
-			if (variable instanceof OpAssignDeclare){
-				if (variable.isFlag("serializable")){
+			if (variable instanceof OpAssignDeclare)
+			{
+				if (variable.isFlag("serializable"))
+				{
 					has_serializable = true;
 					has_cloneable = true;
 				}
-				if (variable.isFlag("cloneable")){
+				if (variable.isFlag("cloneable"))
+				{
 					has_cloneable = true;
 				}
-				if (variable.isFlag("assignable")){
+				if (variable.isFlag("assignable"))
+				{
 					has_assignable = true;
 				}
-				if (not variable.isFlag('static') and not variable.isFlag('const')){
+				if (not variable.isFlag('static') and not variable.isFlag('const'))
+				{
 					has_variables = true;
 				}
-				if (variable.hasAnnotations()){
+				if (variable.hasAnnotations())
+				{
 					has_fields_annotations = true;
 				}
 			}
-			if (variable instanceof OpFunctionDeclare){
-				if (variable.hasAnnotations()){
+			if (variable instanceof OpFunctionDeclare)
+			{
+				if (variable.hasAnnotations())
+				{
 					has_fields_annotations = true;
 					has_methods_annotations = true;
 				}
 			}
 		}
 		
-		if (this.current_module_name != 'Runtime' or this.current_class_name != 'CoreObject'){
+		if (this.current_module_name != 'Runtime' or this.current_class_name != 'CoreObject')
+		{
 			
 			/* Init function */
-			if (has_variables){
+			if (has_variables)
+			{
 				res ~= this.s("protected function _init(){");
 				this.levelInc();
 				
@@ -1721,8 +1736,10 @@ export class TranslatorPHP extends CommonTranslator {
 				}
 				
 				/* Output variables */
-				if (childs != null){
-					for (int i=0; i<childs.count(); i++){
+				if (childs != null)
+				{
+					for (int i=0; i<childs.count(); i++)
+					{
 						BaseOpCode variable = childs.item(i);
 						if (not (variable instanceof OpAssignDeclare)) continue;
 						if (variable.value == null) continue;	
@@ -1749,7 +1766,8 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 			
 			/* If has cloneable variables */
-			if (has_cloneable or has_assignable){
+			if (has_cloneable or has_assignable)
+			{
 			
 				/*
 				res ~= this.s("public function createNewInstance(){");
@@ -1765,7 +1783,8 @@ export class TranslatorPHP extends CommonTranslator {
 				this.levelInc();
 				res ~= this.s("if ($obj instanceof " ~ this.getName(this.current_class_name) ~ "){");
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -1804,7 +1823,8 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			
 			/* If has serializable variables */
-			if (has_serializable or has_assignable){
+			if (has_serializable or has_assignable)
+			{
 				int class_variables_serializable_count = 0;
 				
 				/* assignValue function */
@@ -1813,7 +1833,8 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s(s1 ~ " function assignValue($variable_name, $value, $sender = null){");
 				this.levelInc();
 				class_variables_serializable_count = 0;
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -1887,15 +1908,15 @@ export class TranslatorPHP extends CommonTranslator {
 			}
 			
 			
-			if (has_serializable or has_assignable or has_fields_annotations){
-				
+			if (not this.is_interface){
 				/* getFieldsList function */
 				res ~= this.s("public static function getFieldsList($names, $flag=0){");
 				this.levelInc();
 				
 				Map<Vector> vars = new Map();
 				
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -1954,7 +1975,8 @@ export class TranslatorPHP extends CommonTranslator {
 				/* getFieldInfoByName function */
 				res ~= this.s("public static function getFieldInfoByName($field_name){");
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -1998,15 +2020,13 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("return null;");
 				this.levelDec();
 				res ~= this.s("}");
-			}	
-			
-			
-			if (has_methods_annotations){
+				
 				
 				/* getMethodsList function */
 				res ~= this.s("public static function getMethodsList($names){");
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpFunctionDeclare))
 						continue;
@@ -2020,7 +2040,8 @@ export class TranslatorPHP extends CommonTranslator {
 				/* getMethodInfoByName function */
 				res ~= this.s("public static function getMethodInfoByName($method_name){");
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpFunctionDeclare))
 						continue;
@@ -2060,7 +2081,6 @@ export class TranslatorPHP extends CommonTranslator {
 				res ~= this.s("return null;");
 				this.levelDec();
 				res ~= this.s("}");
-				
 			}
 			
 			if (this.is_struct)

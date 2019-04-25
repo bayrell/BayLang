@@ -2405,13 +2405,15 @@ export class TranslatorES6 extends CommonTranslator {
 	/**
 	 * Class init functions
 	 */
-	string OpClassInit(OpClassDeclare op_code){
+	string OpClassInit(OpClassDeclare op_code)
+	{
 		
 		Vector<BaseOpCode> childs = op_code.childs;
 		Vector<string> class_implements = op_code.class_implements;
 		string class_extends = "";
 		
-		if (op_code.class_extends){
+		if (op_code.class_extends)
+		{
 			if (this.modules.has(op_code.class_extends.value))
 			{
 				class_extends = this.modules.item(op_code.class_extends.value);
@@ -2432,41 +2434,51 @@ export class TranslatorES6 extends CommonTranslator {
 		bool has_methods_annotations = false;
 		bool has_fields_annotations = false;
 		
-		for (int i=0; i<childs.count(); i++){
+		for (int i=0; i<childs.count(); i++)
+		{
 			BaseOpCode variable = childs.item(i);
-			if (variable instanceof OpAssignDeclare){
-				if (variable.isFlag("serializable")){
+			if (variable instanceof OpAssignDeclare)
+			{
+				if (variable.isFlag("serializable"))
+				{
 					has_serializable = true;
 					has_cloneable = true;
 				}
-				if (variable.isFlag("cloneable")){
+				if (variable.isFlag("cloneable"))
+				{
 					has_cloneable = true;
 				}
-				if (variable.isFlag("assignable")){
+				if (variable.isFlag("assignable"))
+				{
 					has_assignable = true;
 				}
-				if (not variable.isFlag('static') and not variable.isFlag('const')){
+				if (not variable.isFlag('static') and not variable.isFlag('const'))
+				{
 					has_variables = true;
 				}
-				if (variable.hasAnnotations()){
+				if (variable.hasAnnotations())
+				{
 					has_fields_annotations = true;
 				}
 			}
-			if (variable instanceof OpFunctionDeclare){
-				if (variable.hasAnnotations()){
+			if (variable instanceof OpFunctionDeclare)
+			{
+				if (variable.hasAnnotations())
+				{
 					has_methods_annotations = true;
 				}
 			}
 		}
 		
-		if (this.is_struct){
+		if (this.is_struct)
+		{
 			has_serializable = true;
 			has_cloneable = true;
 		}
 		
-		res ~= this.s("/* ======================= Class Init Functions ======================= */");
-		
-		if (not this.is_interface){
+		if (not this.is_interface)
+		{
+			res ~= this.s("/* ======================= Class Init Functions ======================= */");
 			res ~= this.s(
 				"getClassName(){" ~
 					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
@@ -2484,16 +2496,19 @@ export class TranslatorES6 extends CommonTranslator {
 			);
 		}
 		
-		if (this.current_module_name != 'Runtime' or this.current_class_name != 'CoreObject'){
+		if (this.current_module_name != 'Runtime' or this.current_class_name != 'CoreObject')
+		{
 			
 			/* Init function */
-			if (has_variables or has_implements){
+			if (has_variables or has_implements)
+			{
 				res ~= this.s("_init(){");
 				this.functionPush("_init", false);
 				this.levelInc();
 				
 				/* super init */
-				if (class_extends != ""){
+				if (class_extends != "")
+				{
 					res ~= this.s("super._init();");
 					res ~= this.s("var names = Object.getOwnPropertyNames(this);");
 				}
@@ -2623,7 +2638,8 @@ export class TranslatorES6 extends CommonTranslator {
 				this.functionPush("assignValue", false);
 				this.levelInc();
 				class_variables_serializable_count = 0;
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -2703,8 +2719,9 @@ export class TranslatorES6 extends CommonTranslator {
 			}
 				
 				
-			if (has_serializable or has_assignable or has_fields_annotations){
-				
+			
+			if (not this.is_interface)
+			{
 				/* getFieldsList function */
 				res ~= this.s("static getFieldsList(names, flag){");
 				this.functionPush("getFieldsList", false);
@@ -2713,7 +2730,8 @@ export class TranslatorES6 extends CommonTranslator {
 				
 				Map<Vector> vars = new Map();
 				
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -2774,7 +2792,8 @@ export class TranslatorES6 extends CommonTranslator {
 				res ~= this.s("static getFieldInfoByName(field_name){");
 				this.functionPush("getFieldInfoByName", false);
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpAssignDeclare))
 						continue;
@@ -2819,17 +2838,14 @@ export class TranslatorES6 extends CommonTranslator {
 				this.levelDec();
 				this.functionPop();
 				res ~= this.s("}");
-			}	
-			
-			
-			
-			if (has_methods_annotations){	
+				
 				
 				/* getMethodsList function */
 				res ~= this.s("static getMethodsList(names){");
 				this.functionPush("getMethodsList", false);
 				this.levelInc();
-				for (int i=0; i<childs.count(); i++){
+				for (int i=0; i<childs.count(); i++)
+				{
 					BaseOpCode variable = childs.item(i);
 					if (not (variable instanceof OpFunctionDeclare))
 						continue;
@@ -2864,7 +2880,8 @@ export class TranslatorES6 extends CommonTranslator {
 						res ~= this.s(".set(\"annotations\", ");
 						this.levelInc();
 						res ~= this.s("(new " ~ this.getName("Vector") ~ "())");
-						for (int j=0; j<variable.annotations.count(); j++){
+						for (int j=0; j<variable.annotations.count(); j++)
+						{
 							OpAnnotation annotation = variable.annotations.item(j);
 							
 							this.pushOneLine(true);
