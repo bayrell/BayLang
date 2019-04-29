@@ -5,6 +5,8 @@ Bayrell Common Language
 
 Versions:
 
+[29 Apr 2019] 0.7.2 - lambda, pure, async bugfix
+
 [25 Mar 2019] 0.7.1 - Add memorize, Dict, Collection, rtl::method, UIStruct normalization, DateTime as Struct
 
 [27 Jan 2019] 0.7.0-alpha - Combine Bayrell Template and Lang. Add lambda and pure functions
