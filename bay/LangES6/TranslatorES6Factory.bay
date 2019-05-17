@@ -25,13 +25,15 @@ use Runtime.Interfaces.FactoryInterface;
 use BayrellLang.LangES6.TranslatorES6;
 
 
-class TranslatorES6Factory extends ContextObject implements FactoryInterface{
+class TranslatorES6Factory extends ContextObject implements FactoryInterface
+{
 	
 	
 	/**
 	 * Returns new Instance
 	 */
-	public CoreObject newInstance(ContextInterface context){
+	public CoreObject newInstance(ContextInterface context = null, Map<mixed> params = null)
+	{
 		return new TranslatorES6(context);
 	}
 	

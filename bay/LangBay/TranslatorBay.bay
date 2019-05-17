@@ -18,7 +18,7 @@
 
 namespace BayrellLang.LangBay;
 
-use Runtime.rs;
+
 use Runtime.ContextObject;
 use BayrellLang.CoreTranslator;
 use BayrellLang.OpCodes.BaseOpCode;

@@ -1,0 +1,263 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayrellLang.Compile;
+
+use Runtime.RuntimeUtils;
+use BayrellParser.Exceptions.ParserError;
+use BayrellLang.Compile.CompileModule;
+use BayrellLang.Compile.CompileResult;
+use BayrellLang.LangBay.ParserBayFactory;
+use BayrellLang.LangPHP.TranslatorPHPFactory;
+use BayrellLang.LangES6.TranslatorES6Factory;
+use BayrellLang.LangNodeJS.TranslatorNodeJSFactory;
+use BayrellLang.Utils as BayrellLangUtils;
+
+
+class CompileProvider
+{
+	
+	/**
+	 * ReadModule
+	 */
+	lambda CompileModule readModule(ContextInterface context, string base_path, string json_path, string file_path)
+	{	
+		string file_json_path = base_path ~ "/" ~ json_path  ~ "/project.json";
+		FileSystemInterface fs = context.get("provider.default.fs");
+		if (not fs.isFile(file_json_path))
+		{
+			return null;
+		}
+		string content = fs.readFile(file_json_path);
+		mixed obj = RuntimeUtils::json_decode(content);
+		
+		if (obj == null)
+		{
+			return null;
+		}
+		
+		
+		if (obj instanceof Dict)
+		{
+			mixed modules = obj.get("modules", null, "Runtime.Collection");
+			if (modules != null)
+			{
+				for (int i=0; i<modules.count(); i++)
+				{
+					mixed module = modules.get(i, null, "Runtime.Dict");
+					if (modules != null)
+					{
+						string name = module.get("name", "", "string");
+						string path = module.get("path", "", "string");
+						Vector<string> lang = module.get("lang", "", "Runtime.Collection", "string");
+						
+						if (rs::strpos(file_path, json_path ~ path) == 0)
+						{
+							return new CompileModule
+							{
+								"name": name,
+								"path": json_path ~ path,
+								"lang": lang,
+							};
+						}
+						
+					}
+				}
+			}
+		}
+		
+		return null;
+	}
+	
+	
+	
+	/**
+	 * Find compile module
+	 */
+	lambda CompileModule findModule(ContextInterface context, string base_path, string file_path)
+	{
+		FileSystemInterface fs = context.get("provider.default.fs");
+		file_path = rs::normalize( file_path );
+		string module_path = rs::dirname(file_path);
+		Vector<string> arr = rs::explode("/", module_path);
+		while (arr.count() != 0)
+		{
+			string json_path = rs::implode("/", arr);
+			CompileModule module = static::readModule(context, base_path, json_path, file_path);
+			if (module != null)
+			{
+				return module;
+			}
+			arr.pop();
+		}
+		
+		return null;
+	}
+	
+	
+	
+	/**
+	 * Compile file
+	 */
+	lambda CompileResult compile
+	(
+		ContextInterface context, 
+		CompileModule module, 
+		string base_path, 
+		string file_path
+	)
+	{
+		string extname = rs::extname(file_path);
+		CompileResult res = null;
+		FileSystemInterface fs = context.get("provider.default.fs");
+		
+		if (extname == "bay" or extname == 'es6')
+		{
+			for (var i=0; i<module.lang.count(); i++)
+			{
+				string lang = module.lang.item(i);
+				res = static::compileFile(
+					context, module, 
+					base_path, file_path, 
+					extname, lang
+				);
+				
+				if (not res.success)
+				{
+					break;
+				}
+				
+				string dest_path = base_path ~ "/" ~ res.dest;
+				string dir_path = rs::dirname(dest_path);
+				fs.makeDir(dir_path);
+				fs.saveFile(dest_path, res.content);
+			}
+		}
+		
+		return res;
+	}
+	
+	
+	
+	/**
+	 * Compile file
+	 */
+	lambda CompileResult compileFile
+	(
+		ContextInterface context, CompileModule module, 
+		string base_path, string file_path,
+		string lang_from, string lang_to
+	)
+	{
+		string lib_path = module.path ~ "/bay";
+		string relative_path = rs::substr(file_path, rs::strlen(lib_path) + 1 );
+		string dir_path = rs::dirname(relative_path);
+		string filename = rs::filename(file_path);
+		string save_dir = "";
+		string save_ext = "";
+		string translator = null;
+		
+		
+		if (lang_from == "bay" and lang_to == "php")
+		{
+			save_dir = "php";
+			save_ext = ".php";
+			translator = new TranslatorPHPFactory(context);
+		}
+		if (lang_from == "bay" and lang_to == "es6")
+		{
+			save_dir = "es6";
+			save_ext = ".js";
+			translator = new TranslatorES6Factory(context);
+		}
+		if (lang_from == "bay" and lang_to == "nodejs")
+		{
+			save_dir = "nodejs";
+			save_ext = ".js";
+			translator = new TranslatorNodeJSFactory(context);
+		}
+		if (lang_from == "es6" and lang_to == "es6")
+		{
+			save_dir = "es6";
+			save_ext = ".js";
+			translator = null;
+		}
+		
+		
+		if (save_dir == "" or save_ext == "") return null;
+		var save_path = rs::normalize(module.path ~ "/" ~ save_dir ~ "/" ~ dir_path ~ "/" ~ filename ~ save_ext);
+		
+		
+		/* Compile */
+		FileSystemInterface fs = context.get("provider.default.fs");
+		string res = "";
+		string content = fs.readFile(base_path ~ "/" ~ file_path);
+		if (translator != null)
+		{
+			bool success = true;
+			string err = "";
+			
+			try
+			{
+				res = BayrellLangUtils::translateSource(
+					context, 
+					new ParserBayFactory(context), 
+					translator,
+					content
+				);
+			}
+			catch (ParserError e)
+			{
+				err = e.toString();
+				success = false;
+			}
+			
+			if (not success)
+			{
+				return new CompileResult
+				{ 
+					"src": file_path, 
+					"dest": save_path, 
+					"module": module, 
+					"error": err, 
+					"success": false, 
+					"lang_from": lang_from, 
+					"lang_to": lang_to 
+				};
+			}
+		}
+		else
+		{
+			res = content;
+		}
+		
+		
+		return new CompileResult
+		{ 
+			"src": file_path, 
+			"dest": save_path, 
+			"module": module, 
+			"content": res, 
+			"success": true, 
+			"lang_from": lang_from, 
+			"lang_to": lang_to 
+		};
+	}
+	
+	
+}

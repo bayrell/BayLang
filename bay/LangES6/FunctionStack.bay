@@ -18,7 +18,6 @@
 
 namespace BayrellLang.LangES6;
 
-use Runtime.rs;
 use Runtime.CoreObject;
 
 

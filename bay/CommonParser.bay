@@ -18,14 +18,14 @@
 
 namespace BayrellLang;
 
-use Runtime.rs;
 use BayrellParser.ParserToken;
 use BayrellParser.CoreParser;
 use BayrellLang.Exceptions.HexNumberExpected;
 use BayrellLang.OpCodes.BaseOpCode;
 
 
-export class CommonParser extends CoreParser{
+class CommonParser extends CoreParser
+{
 	
 	
 	protected BaseOpCode _result = null;

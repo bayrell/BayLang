@@ -28,12 +28,4 @@ class OpHtmlView extends OpChilds
 	public serializable string variable = "";
 	
 	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellTemplate.OpCodes.OpHtmlView";
-	}
-	
 }

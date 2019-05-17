@@ -19,7 +19,6 @@
 namespace BayrellLang.LangPHP;
 
 use Runtime.re;
-use Runtime.rs;
 use Runtime.RuntimeUtils;
 use BayrellLang.CommonTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
@@ -115,7 +114,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 * Returns full class name
 	 * @return string
 	 */
-	string getCurrentClassName()
+	string currentClassName()
 	{
 		return this.current_namespace ~ "." ~ this.current_class_name;
 	}
@@ -126,7 +125,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 * Returns full class name
 	 * @return string
 	 */
-	string getCurrentFunctionName()
+	string currentFunctionName()
 	{
 		int c = this.current_function_name.count();
 		string last_function_name = this.current_function_name.get( c - 1 );
@@ -1129,7 +1128,7 @@ export class TranslatorPHP extends CommonTranslator {
 		if (this.current_function_is_memorize)
 		{
 			s ~= this.s("rtl::_memorizeSave(" ~ 
-					this.convertString(this.getCurrentFunctionName()) ~ ", func_get_args(), $__memorize_value);");
+					this.convertString(this.currentFunctionName()) ~ ", func_get_args(), $__memorize_value);");
 			s ~= this.s("return $__memorize_value;");
 			return s;
 		}
@@ -1411,7 +1410,7 @@ export class TranslatorPHP extends CommonTranslator {
 			if (this.current_function_is_memorize)
 			{
 				res ~= this.s("$__memorize_value = rtl::_memorizeValue(" ~ 
-					this.convertString(this.getCurrentFunctionName()) ~ ", func_get_args());");
+					this.convertString(this.currentFunctionName()) ~ ", func_get_args());");
 				res ~= this.s("if ($__memorize_value != rtl::$_memorize_not_found) return $__memorize_value;");	
 			}
 			
@@ -1430,7 +1429,7 @@ export class TranslatorPHP extends CommonTranslator {
 						{
 							res ~= this.s("$__memorize_value = " ~ lambda_res ~ ";");
 							res ~= this.s("rtl::_memorizeSave(" ~ 
-									this.convertString(this.getCurrentFunctionName()) ~ 
+									this.convertString(this.currentFunctionName()) ~ 
 									", func_get_args(), $__memorize_value);");
 							res ~= this.s("return $__memorize_value;");
 						}
@@ -1992,7 +1991,7 @@ export class TranslatorPHP extends CommonTranslator {
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s("->set(\"kind\", \"field\")");
 						res ~= this.s("->set(\"class_name\", " ~ 
-							this.convertString(this.getCurrentClassName()) ~  ")");
+							this.convertString(this.currentClassName()) ~  ")");
 						res ~= this.s("->set(\"name\", " ~ this.convertString(variable.name) ~ ")");
 						res ~= this.s("->set(\"annotations\", ");
 						this.levelInc();
@@ -2054,7 +2053,7 @@ export class TranslatorPHP extends CommonTranslator {
 						res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 						res ~= this.s("->set(\"kind\", \"method\")");
 						res ~= this.s("->set(\"class_name\", " ~ 
-							this.convertString(this.getCurrentClassName()) ~  ")");
+							this.convertString(this.currentClassName()) ~  ")");
 						res ~= this.s("->set(\"name\", " ~ this.convertString(variable.name) ~ ")");
 						res ~= this.s("->set(\"annotations\", ");
 						this.levelInc();
@@ -2101,7 +2100,7 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			res ~= this.s("(new " ~ this.getName("Map") ~ "())");
 			res ~= this.s("->set(\"kind\", \"class\")");
-			res ~= this.s("->set(\"class_name\", " ~ this.convertString(this.getCurrentClassName()) ~  ")");
+			res ~= this.s("->set(\"class_name\", " ~ this.convertString(this.currentClassName()) ~  ")");
 			
 			res ~= this.s("->set(\"annotations\", ");
 			this.levelInc();
@@ -2316,7 +2315,7 @@ export class TranslatorPHP extends CommonTranslator {
 		{
 			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 			res ~= this.s('"kind"=>"component",');
-			res ~= this.s('"class_name"=>static::getCurrentClassName(),');
+			res ~= this.s('"class_name"=>static::currentClassName(),');
 			res ~= this.s('"name"=>'~this.convertString( this.modules.item(op_code.tag_name) ) ~ ',');
 			/*this.ui_struct_class_name.push( this.modules.item(op_code.tag_name) );*/
 			is_component = true;
@@ -2326,7 +2325,7 @@ export class TranslatorPHP extends CommonTranslator {
 			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 			res ~= this.s('"space"=>' ~ 
 				this.convertString( RuntimeUtils::getCssHash(this.getUIStructClassName()) ) ~ ',');
-			res ~= this.s('"class_name"=>static::getCurrentClassName(),');
+			res ~= this.s('"class_name"=>static::currentClassName(),');
 			res ~= this.s('"name"=>'~this.convertString(op_code.tag_name)~',');
 		}
 		

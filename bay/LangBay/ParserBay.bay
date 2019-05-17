@@ -18,7 +18,6 @@
 
 namespace BayrellLang.LangBay;
 
-use Runtime.rs;
 use Runtime.RuntimeUtils;
 use BayrellLang.CommonParser;
 use BayrellLang.OpCodes.BaseOpCode;

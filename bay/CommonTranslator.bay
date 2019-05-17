@@ -19,7 +19,6 @@
 namespace BayrellLang;
 
 
-use Runtime.rs;
 use Runtime.ContextObject;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
@@ -116,6 +115,13 @@ export class CommonTranslator extends ContextObject{
 	 */
 	void constructor (ContextInterface context = null){
 		parent(context);
+		this.is_operation = false;
+		this.current_opcode_level = 0;
+		this.max_opcode_level = 100;
+		this.indent_level = 0;
+		this.indent = "\t";
+		this.space = " ";
+		this.crlf = "\n";
 	}
 	
 	
