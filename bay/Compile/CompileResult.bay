@@ -19,17 +19,15 @@
 namespace BayrellLang.Compile;
 
 use Runtime.CoreStruct;
+use BayrellLang.Compile.CompileInfo;
 use BayrellLang.Compile.CompileModule;
 
 
 struct CompileResult extends CoreStruct
 {
 	string src = "";
-	string dest = "";
 	string error = "";
-	string content = "";
-	CompileModule module = null;
 	bool success = false;
-	string lang_from = "";
-	string lang_to = "";
+	Collection<CompileInfo> info = null;
+	CompileModule module = null;
 }

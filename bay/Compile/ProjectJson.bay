@@ -19,31 +19,40 @@
 namespace BayrellLang.Compile;
 
 use Runtime.CoreStruct;
+use Runtime.RuntimeUtils;
+use BayrellLang.Compile.CompileInfo;
 
 
-struct CompileModule extends CoreStruct
+struct ProjectJson extends CoreStruct
 {
+	string file_path = "";
+	string file_content = "";
 	string name = "";
-	string space = "";
-	string path = "";
 	Collection<string> lang = null;
-	Dict<string> lang_path = null;
-	bool is_editable = false;
 	
 	
-	pure CompileModule initLangPath(CompileModule module)
+	/**
+	 * Create object from file content
+	 * @param string file_path
+	 * @param string file_content
+	 * @return ProjectJson
+	 */
+	pure ProjectJson createFromContent(string file_path, string file_content)
 	{
-		if (module.lang == null or module.path == "") return module;
-		
-		Map<string> lang_path = new Map();
-		for (int i=0; i<module.lang.count(); i++)
+		ProjectJson obj = null;
+		mixed json = RuntimeUtils::json_decode(file_content);
+		if (json != null and json instanceof Dict)
 		{
-			string lang = module.lang.item(i);
-			lang_path.set(lang, rs::normalize(module.path ~ "/" ~ lang));
+			obj = new ProjectJson
+			{ 
+				"file_path": file_path, 
+				"file_content": file_content,
+				"name": json.get("name", "", "string"), 
+				"lang": json.get("lang", null, "Runtime.Collection", "string"), 
+			};
 		}
 		
-		module <= lang_path <= lang_path.toDict();
-		return module;
+		return obj;
 	}
 	
 }

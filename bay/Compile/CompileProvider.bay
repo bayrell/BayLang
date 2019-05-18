@@ -20,8 +20,11 @@ namespace BayrellLang.Compile;
 
 use Runtime.RuntimeUtils;
 use BayrellParser.Exceptions.ParserError;
+use BayrellLang.Compile.CompileInfo;
 use BayrellLang.Compile.CompileModule;
 use BayrellLang.Compile.CompileResult;
+use BayrellLang.Compile.ModuleJson;
+use BayrellLang.Compile.ProjectJson;
 use BayrellLang.LangBay.ParserBayFactory;
 use BayrellLang.LangPHP.TranslatorPHPFactory;
 use BayrellLang.LangES6.TranslatorES6Factory;
@@ -32,81 +35,80 @@ use BayrellLang.Utils as BayrellLangUtils;
 class CompileProvider
 {
 	
-	/**
-	 * ReadModule
-	 */
-	lambda CompileModule readModule(ContextInterface context, string base_path, string json_path, string file_path)
-	{	
-		string file_json_path = base_path ~ "/" ~ json_path  ~ "/project.json";
-		FileSystemInterface fs = context.get("provider.default.fs");
-		if (not fs.isFile(file_json_path))
-		{
-			return null;
-		}
-		string content = fs.readFile(file_json_path);
-		mixed obj = RuntimeUtils::json_decode(content);
-		
-		if (obj == null)
-		{
-			return null;
-		}
-		
-		
-		if (obj instanceof Dict)
-		{
-			mixed modules = obj.get("modules", null, "Runtime.Collection");
-			if (modules != null)
-			{
-				for (int i=0; i<modules.count(); i++)
-				{
-					mixed module = modules.get(i, null, "Runtime.Dict");
-					if (modules != null)
-					{
-						string name = module.get("name", "", "string");
-						string path = module.get("path", "", "string");
-						Vector<string> lang = module.get("lang", "", "Runtime.Collection", "string");
-						
-						if (rs::strpos(file_path, json_path ~ path) == 0)
-						{
-							return new CompileModule
-							{
-								"name": name,
-								"path": json_path ~ path,
-								"lang": lang,
-							};
-						}
-						
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
-	
-	
 	
 	/**
-	 * Find compile module
+	 * Find module by file path
 	 */
-	lambda CompileModule findModule(ContextInterface context, string base_path, string file_path)
+	lambda CompileModule findModuleByFile
+	(
+		ContextInterface context, 
+		string file_path,
+		string base_path = ""
+	)
 	{
 		FileSystemInterface fs = context.get("provider.default.fs");
 		file_path = rs::normalize( file_path );
-		string module_path = rs::dirname(file_path);
-		Vector<string> arr = rs::explode("/", module_path);
+		
+		ModuleJson module_json = null;
+		ProjectJson project_json = null;
+		
+		string json_file = "";
+		string json_file_path = "";
+		string folder_path = rs::dirname(file_path);
+		Vector<string> arr = rs::explode("/", folder_path);
+		
 		while (arr.count() != 0)
 		{
-			string json_path = rs::implode("/", arr);
-			CompileModule module = static::readModule(context, base_path, json_path, file_path);
-			if (module != null)
+			folder_path = rs::implode("/", arr);
+			
+			/* Find module.json */
+			json_file = folder_path ~ "/module.json";
+			json_file_path = base_path ~ "/" ~ json_file;
+			if (fs.isFile(json_file_path))
 			{
-				return module;
+				string content = fs.readFile(json_file_path);
+				module_json = ModuleJson::createFromContent(json_file, content);
+			}
+			
+			/* Find project.json */
+			json_file = folder_path ~ "/project.json";
+			json_file_path = base_path ~ "/" ~ json_file;
+			if (fs.isFile(json_file_path))
+			{
+				string content = fs.readFile(json_file_path);
+				project_json = ProjectJson::createFromContent(json_file, content);
+			}
+			
+			if (module_json != null and project_json != null)
+			{
+				break;
 			}
 			arr.pop();
 		}
 		
-		return null;
+		CompileModule module = null;
+		if (module_json != null and project_json != null)
+		{
+			string module_path = rs::dirname(module_json.file_path);
+			bool is_editable = false;
+			if (fs.isDir(base_path ~ "/" ~ module_path ~ "/bay"))
+			{
+				is_editable = true;
+			}
+			
+			module = new CompileModule
+			{
+				"name": module_json.name,
+				"space": module_json.space,
+				"path": module_path,
+				"lang": project_json.lang,
+				"is_editable": is_editable,
+			};
+			
+			module = CompileModule::initLangPath(module);
+		}
+		
+		return module;
 	}
 	
 	
@@ -116,38 +118,53 @@ class CompileProvider
 	 */
 	lambda CompileResult compile
 	(
-		ContextInterface context, 
-		CompileModule module, 
-		string base_path, 
-		string file_path
+		ContextInterface context,
+		string file_path,
+		string base_path = ""
 	)
 	{
-		string extname = rs::extname(file_path);
-		CompileResult res = null;
 		FileSystemInterface fs = context.get("provider.default.fs");
+		CompileResult res = new CompileResult{ "src": file_path, "success": false };
+		CompileModule module = static::findModuleByFile(context, file_path, base_path);
 		
+		if (module == null)
+		{
+			res <= error <= "module not found";
+			return res;
+		}
+		res <= module <= module;
+		
+		Vector<CompileInfo> info = new Vector();
+		string extname = rs::extname(file_path);		
 		if (extname == "bay" or extname == 'es6')
 		{
 			for (var i=0; i<module.lang.count(); i++)
 			{
 				string lang = module.lang.item(i);
-				res = static::compileFile(
+				CompileInfo compile_info = static::compileFile(
 					context, module, 
-					base_path, file_path, 
+					file_path, base_path,
 					extname, lang
 				);
 				
-				if (not res.success)
+				string content = compile_info.content;
+				compile_info <= content <= "";
+				info.push(compile_info);
+				if (not compile_info.success)
 				{
+					res <= error <= res.error;
 					break;
 				}
 				
-				string dest_path = base_path ~ "/" ~ res.dest;
+				/* Save file to dest */
+				string dest_path = base_path ~ "/" ~ compile_info.dest;
 				string dir_path = rs::dirname(dest_path);
 				fs.makeDir(dir_path);
-				fs.saveFile(dest_path, res.content);
+				fs.saveFile(dest_path, content);
 			}
 		}
+		
+		res <= info <= info.toCollection();
 		
 		return res;
 	}
@@ -157,10 +174,10 @@ class CompileProvider
 	/**
 	 * Compile file
 	 */
-	lambda CompileResult compileFile
+	lambda CompileInfo compileFile
 	(
 		ContextInterface context, CompileModule module, 
-		string base_path, string file_path,
+		string file_path, string base_path,
 		string lang_from, string lang_to
 	)
 	{
@@ -229,7 +246,7 @@ class CompileProvider
 			
 			if (not success)
 			{
-				return new CompileResult
+				return new CompileInfo
 				{ 
 					"src": file_path, 
 					"dest": save_path, 
@@ -247,7 +264,7 @@ class CompileProvider
 		}
 		
 		
-		return new CompileResult
+		return new CompileInfo
 		{ 
 			"src": file_path, 
 			"dest": save_path, 

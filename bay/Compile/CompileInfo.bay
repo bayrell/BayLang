@@ -19,31 +19,16 @@
 namespace BayrellLang.Compile;
 
 use Runtime.CoreStruct;
+use BayrellLang.Compile.CompileModule;
 
 
-struct CompileModule extends CoreStruct
+struct CompileInfo extends CoreStruct
 {
-	string name = "";
-	string space = "";
-	string path = "";
-	Collection<string> lang = null;
-	Dict<string> lang_path = null;
-	bool is_editable = false;
-	
-	
-	pure CompileModule initLangPath(CompileModule module)
-	{
-		if (module.lang == null or module.path == "") return module;
-		
-		Map<string> lang_path = new Map();
-		for (int i=0; i<module.lang.count(); i++)
-		{
-			string lang = module.lang.item(i);
-			lang_path.set(lang, rs::normalize(module.path ~ "/" ~ lang));
-		}
-		
-		module <= lang_path <= lang_path.toDict();
-		return module;
-	}
-	
+	string src = "";
+	string dest = "";
+	string error = "";
+	string content = "";
+	bool success = false;
+	string lang_from = "";
+	string lang_to = "";
 }
