@@ -30,10 +30,7 @@ class ModuleDescription implements ModuleDescriptionInterface
 	 * Returns module name
 	 * @return string
 	 */
-	public static string getName()
-	{
-		return "BayrellLang";
-	}
+	pure string getName() => "BayrellLang";
 	
 	
 	
@@ -41,10 +38,26 @@ class ModuleDescription implements ModuleDescriptionInterface
 	 * Returns module name
 	 * @return string
 	 */
-	public static string getModuleVersion()
+	pure string getModuleVersion() => "0.7.2";
+	
+	
+	
+	/**
+	 * Returns required modules
+	 * @return Map<string>
+	 */
+	pure Map<string> requiredModules() =>
 	{
-		return "0.7.2";
-	}
+		'Runtime': '>=0.2 <1.0',
+		'BayrellParser': '>=0.1 <1.0',
+	};
+	
+	
+	
+	/**
+	 * Returns enities
+	 */
+	pure Collection<Dict> entities() => null;
 	
 	
 	
@@ -77,20 +90,6 @@ class ModuleDescription implements ModuleDescriptionInterface
 		return [
 			'Runtime.Interfaces.ModuleDescriptionInterface',
 		];
-	}
-	
-	
-	
-	/**
-	 * Returns required modules
-	 * @return Map<string, string>
-	 */	
-	public static Map<string, string> getRequiredModules(ContextInterface context)
-	{
-		return {
-			'Runtime': '>=0.2 <1.0',
-			'BayrellParser': '>=0.1 <1.0',
-		};
 	}
 
 	
