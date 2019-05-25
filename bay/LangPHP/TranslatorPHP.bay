@@ -2315,7 +2315,7 @@ export class TranslatorPHP extends CommonTranslator {
 		{
 			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 			res ~= this.s('"kind"=>"component",');
-			res ~= this.s('"class_name"=>static::currentClassName(),');
+			res ~= this.s('"class_name"=>static::getCurrentClassName(),');
 			res ~= this.s('"name"=>'~this.convertString( this.modules.item(op_code.tag_name) ) ~ ',');
 			/*this.ui_struct_class_name.push( this.modules.item(op_code.tag_name) );*/
 			is_component = true;
@@ -2325,7 +2325,7 @@ export class TranslatorPHP extends CommonTranslator {
 			res = "new UIStruct(new " ~ this.getName("Map") ~ "([";
 			res ~= this.s('"space"=>' ~ 
 				this.convertString( RuntimeUtils::getCssHash(this.getUIStructClassName()) ) ~ ',');
-			res ~= this.s('"class_name"=>static::currentClassName(),');
+			res ~= this.s('"class_name"=>static::getCurrentClassName(),');
 			res ~= this.s('"name"=>'~this.convertString(op_code.tag_name)~',');
 		}
 		
