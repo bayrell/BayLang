@@ -2484,6 +2484,11 @@ export class TranslatorES6 extends CommonTranslator {
 				";}"
 			);
 			res ~= this.s(
+				"static getCurrentNamespace(){" ~
+					"return " ~ this.convertString(this.current_namespace) ~ 
+				";}"
+			);
+			res ~= this.s(
 				"static getCurrentClassName(){" ~
 					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
 				";}"

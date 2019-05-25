@@ -1666,6 +1666,11 @@ export class TranslatorPHP extends CommonTranslator {
 				";}"
 			);
 			res ~= this.s(
+				"public static function getCurrentNamespace(){" ~
+					"return " ~ this.convertString(this.current_namespace) ~ 
+				";}"
+			);
+			res ~= this.s(
 				"public static function getCurrentClassName(){" ~
 					"return " ~ this.convertString(this.current_namespace ~ "." ~ this.current_class_name) ~ 
 				";}"
