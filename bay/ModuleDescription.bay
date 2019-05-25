@@ -30,7 +30,7 @@ class ModuleDescription implements ModuleDescriptionInterface
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getName() => "BayrellLang";
+	lambda string getName() => "BayrellLang";
 	
 	
 	
@@ -38,7 +38,7 @@ class ModuleDescription implements ModuleDescriptionInterface
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleVersion() => "0.7.2";
+	lambda string getModuleVersion() => "0.7.2";
 	
 	
 	
@@ -46,7 +46,7 @@ class ModuleDescription implements ModuleDescriptionInterface
 	 * Returns required modules
 	 * @return Map<string>
 	 */
-	pure Map<string> requiredModules() =>
+	lambda Map<string> requiredModules() =>
 	{
 		'Runtime': '>=0.2 <1.0',
 		'BayrellParser': '>=0.1 <1.0',
@@ -55,9 +55,16 @@ class ModuleDescription implements ModuleDescriptionInterface
 	
 	
 	/**
+	 * Compatibility with older versions
+	 */
+	lambda Map<string> getRequiredModules() => static::requiredModules();
+	
+	
+	
+	/**
 	 * Returns enities
 	 */
-	pure Collection<Dict> entities() => null;
+	lambda Collection<Dict> entities() => null;
 	
 	
 	

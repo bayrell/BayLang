@@ -58,12 +58,24 @@ export class TranslatorNodeJS extends TranslatorES6 {
 		this.current_module_name = arr.item(0);
 		this.modules.clear();
 		if (this.current_module_name != 'Runtime'){
+			
+			this.modules.set("rtl", "Runtime.rtl");
+			this.modules.set("rs", "Runtime.rs");
+			this.modules.set("Map", "Runtime.Map");
+			this.modules.set("Dict", "Runtime.Dict");
+			this.modules.set("Vector", "Runtime.Vector");
+			this.modules.set("Collection", "Runtime.Collection");
+			this.modules.set("IntrospectionInfo", "Runtime.IntrospectionInfo");
+			this.modules.set("UIStruct", "Runtime.UIStruct");
+			
 			return "var rtl = require('bayrell-runtime-nodejs').rtl;" ~
+				this.s("var rs = require('bayrell-runtime-nodejs').rs;") ~
 				this.s("var Map = require('bayrell-runtime-nodejs').Map;") ~
 				this.s("var Dict = require('bayrell-runtime-nodejs').Dict;") ~
 				this.s("var Vector = require('bayrell-runtime-nodejs').Vector;") ~
 				this.s("var Collection = require('bayrell-runtime-nodejs').Collection;") ~
-				this.s("var IntrospectionInfo = require('bayrell-runtime-nodejs').IntrospectionInfo;")
+				this.s("var IntrospectionInfo = require('bayrell-runtime-nodejs').IntrospectionInfo;") ~
+				this.s("var UIStruct = require('bayrell-runtime-nodejs').UIStruct;")
 			;
 		}
 		return "";

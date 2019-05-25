@@ -37,7 +37,7 @@ struct ProjectJson extends CoreStruct
 	 * @param string file_content
 	 * @return ProjectJson
 	 */
-	pure ProjectJson createFromContent(string file_path, string file_content)
+	lambda ProjectJson createFromContent(string file_path, string file_content)
 	{
 		ProjectJson obj = null;
 		mixed json = RuntimeUtils::json_decode(file_content);

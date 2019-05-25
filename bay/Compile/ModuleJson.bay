@@ -37,7 +37,7 @@ struct ModuleJson extends CoreStruct
 	 * @param string file_content
 	 * @return ProjectJson
 	 */
-	pure ModuleJson createFromContent(string file_path, string file_content)
+	lambda ModuleJson createFromContent(string file_path, string file_content)
 	{
 		ModuleJson obj = null;
 		mixed json = RuntimeUtils::json_decode(file_content);

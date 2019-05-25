@@ -31,7 +31,7 @@ struct CompileModule extends CoreStruct
 	bool is_editable = false;
 	
 	
-	pure CompileModule initLangPath(CompileModule module)
+	lambda CompileModule initLangPath(CompileModule module)
 	{
 		if (module.lang == null or module.path == "") return module;
 		
