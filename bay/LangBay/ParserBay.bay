@@ -984,7 +984,7 @@ class ParserBay extends CommonParser
 					res.is_plain = true;
 					res.childs = this.readHtmlBlock("</" ~ res.tag_name ~ ">", true);
 				}
-				else if (this.findNextToken('lambda') or this.findNextToken('pure'))
+				else if (this.findNextToken('lambda'))
 				{
 					/* Push new token */
 					this.assignCurrentToken(this.current_token);
@@ -1708,16 +1708,9 @@ class ParserBay extends CommonParser
 		
 		/* Read function declare */
 		this.pushToken();
-		
-		bool is_lambda = false;
 		if (this.findNextToken('lambda'))
 		{
-			is_lambda = true;
 			this.matchNextToken('lambda');
-		}
-		else if (this.findNextToken('pure'))
-		{
-			this.matchNextToken('pure');
 		}
 		
 		BaseOpCode res = null;
@@ -2726,23 +2719,13 @@ class ParserBay extends CommonParser
 			}
 		}
 		
-		bool is_lambda = false;
-		if (flags != null)
-		{
-			if (flags.isFlag('lambda')) is_lambda = true;
-		}
-		
 		/* Read function */
 		op_code = this.readDeclareFunction(true, is_declare_function);
 		if (op_code and op_code instanceof OpFunctionDeclare)
 		{
 			op_code.annotations = this.annotations;
 			op_code.flags = flags;
-			if (is_lambda)
-			{
-				flags.assignValue('static', true);
-			}
-			if (op_code.isFlag('pure'))
+			if (op_code.isFlag('lambda'))
 			{
 				flags.assignValue('static', true);
 			}
