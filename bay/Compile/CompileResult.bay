@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
- *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,25 +16,18 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang.LangPHP;
+namespace BayrellLang.Compile;
 
-use Runtime.CoreObject;
-use Runtime.ContextObject;
-use Runtime.Interfaces.ContextInterface;
-use Runtime.Interfaces.FactoryInterface;
-use BayrellLang.LangPHP.TranslatorPHP;
+use Runtime.CoreStruct;
+use BayrellLang.Compile.CompileInfo;
+use BayrellLang.Compile.CompileModule;
 
 
-class TranslatorPHPFactory extends ContextObject implements FactoryInterface
+struct CompileResult extends CoreStruct
 {
-	
-	
-	/**
-	 * Returns new Instance
-	 */
-	public CoreObject newInstance(ContextInterface context = null, Map<mixed> params = null)
-	{
-		return new TranslatorPHP(context);
-	}
-	
+	string src = "";
+	string error = "";
+	bool success = false;
+	Collection<CompileInfo> info = null;
+	CompileModule module = null;
 }

@@ -19,7 +19,6 @@
 namespace BayrellLang.LangBay;
 
 
-use Runtime.rs;
 use BayrellParser.ParserToken;
 use BayrellParser.Exceptions.ParserEOF;
 use BayrellParser.Exceptions.ParserExpected;

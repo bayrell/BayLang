@@ -18,8 +18,6 @@
  
 namespace BayrellLang.OpCodes;
 
-
-use Runtime.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 
 
@@ -43,16 +41,6 @@ class OpComponent extends BaseOpCode
 			this.args = clone obj.args;
 		}
 		parent::assign(obj);
-	}
-	
-	
-	
-	/**
-	 * Returns classname of the object
-	 * @return string
-	 */
-	public string getClassName(){
-		return "BayrellTemplate.OpCodes.OpComponent";
 	}
 	
 	

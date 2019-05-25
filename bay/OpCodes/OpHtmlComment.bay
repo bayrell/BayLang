@@ -18,8 +18,6 @@
  
 namespace BayrellLang.OpCodes;
 
-
-use Runtime.Vector;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpValue1;
 use BayrellLang.OpCodes.OpHtmlAttribute;

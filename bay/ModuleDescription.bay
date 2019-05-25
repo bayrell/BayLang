@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Json Serializer
+ *  Bayrell Language
  *
- *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,16 +22,15 @@ use Runtime.Interfaces.ContextInterface;
 use Runtime.Interfaces.ModuleDescriptionInterface;
 
 
-class ModuleDescription implements ModuleDescriptionInterface{
+class ModuleDescription implements ModuleDescriptionInterface
+{
 
 	
 	/**
 	 * Returns module name
 	 * @return string
 	 */
-	public static string getModuleName(){
-		return "BayrellLang";
-	}
+	pure string getName() => "BayrellLang";
 	
 	
 	
@@ -39,9 +38,26 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * Returns module name
 	 * @return string
 	 */
-	public static string getModuleVersion(){
-		return "0.7.2";
-	}
+	pure string getModuleVersion() => "0.7.2";
+	
+	
+	
+	/**
+	 * Returns required modules
+	 * @return Map<string>
+	 */
+	pure Map<string> requiredModules() =>
+	{
+		'Runtime': '>=0.2 <1.0',
+		'BayrellParser': '>=0.1 <1.0',
+	};
+	
+	
+	
+	/**
+	 * Returns enities
+	 */
+	pure Collection<Dict> entities() => null;
 	
 	
 	
@@ -49,7 +65,8 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * Init context
 	 * @param ContextInterface context
 	 */
-	public static void initContext(ContextInterface context){
+	public static void initContext(ContextInterface context)
+	{
 	}
 	
 	
@@ -58,7 +75,8 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * Called then module registed in context
 	 * @param ContextInterface context
 	 */
-	public static void onRegister(ContextInterface context){
+	public static void onRegister(ContextInterface context)
+	{
 	}
 	
 	
@@ -67,23 +85,21 @@ class ModuleDescription implements ModuleDescriptionInterface{
 	 * Returns description interfaces of the current module
 	 * @return Vector<string>
 	 */	
-	public static Vector<string> getInterfaces(){
+	public static Vector<string> getInterfaces()
+	{
 		return [
 			'Runtime.Interfaces.ModuleDescriptionInterface',
 		];
 	}
-	
+
 	
 	
 	/**
-	 * Returns required modules
-	 * @return Map<string, string>
-	 */	
-	public static Map<string, string> getRequiredModules(ContextInterface context){
-		return {
-			'Runtime': '>=0.2 <1.0',
-			'BayrellParser': '>=0.1 <1.0',
-		};
+	 * Called then context read config
+	 * @param ContextInterface context
+	 * @param Map<mixed> config
+	 */
+	public static void onReadConfig(ContextInterface context, Map<mixed> config)
+	{
 	}
-
 }
