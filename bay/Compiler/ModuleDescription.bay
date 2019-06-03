@@ -1,0 +1,126 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayrellLang.Compiler;
+
+use Runtime.Interfaces.ContextInterface;
+use Runtime.Interfaces.ModuleDescriptionInterface;
+use BayrellLang.Compiler.ModuleSearchDriver;
+
+
+class ModuleDescription implements ModuleDescriptionInterface
+{
+
+	
+	/**
+	 * Returns module name
+	 * @return string
+	 */
+	lambda string getName() => "BayrellLang.Compiler";
+	
+	
+	
+	/**
+	 * Returns module name
+	 * @return string
+	 */
+	lambda string getModuleVersion() => "0.7.2";
+	
+	
+	
+	/**
+	 * Returns required modules
+	 * @return Map<string>
+	 */
+	lambda Map<string> requiredModules() =>
+	{
+		'Runtime': '*',
+		'BayrellLang': '*',
+	};
+	
+	
+	
+	/**
+	 * Compatibility with older versions
+	 */
+	lambda Map<string> getRequiredModules() => static::requiredModules();
+	
+	
+	
+	/**
+	 * Returns module files load order
+	 * @return Collection<string>
+	 */
+	lambda Collection<string> getModuleFiles() => 
+	[
+		"BayrellLang.Compiler.ModuleInfo",
+		"BayrellLang.Compiler.ModuleSearchDriver",
+	];
+	
+	
+	
+	/**
+	 * Returns enities
+	 */
+	lambda Collection<Dict> entities() => null;
+	
+	
+	
+	/**
+	 * Init context
+	 * @param ContextInterface context
+	 */
+	public static void initContext(ContextInterface context)
+	{
+	}
+	
+	
+	
+	/**
+	 * Called then module registed in context
+	 * @param ContextInterface context
+	 */
+	public static void onRegister(ContextInterface context)
+	{
+		context.registerDriver("BayrellLang.Compiler.ModuleSearchDriver", new ModuleSearchDriver(context));
+	}
+	
+	
+	
+	/**
+	 * Returns description interfaces of the current module
+	 * @return Vector<string>
+	 */	
+	public static Vector<string> getInterfaces()
+	{
+		return [
+			'Runtime.Interfaces.ModuleDescriptionInterface',
+		];
+	}
+
+	
+	
+	/**
+	 * Called then context read config
+	 * @param ContextInterface context
+	 * @param Map<mixed> config
+	 */
+	public static void onReadConfig(ContextInterface context, Map<mixed> config)
+	{
+	}
+}
