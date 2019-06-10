@@ -102,7 +102,7 @@ use BayrellLang.LangBay.ParserBayToken;
 use BayrellLang.LangBay.ParserBayNameToken;
 use BayrellLang.Exceptions.HexNumberExpected;
 use BayrellLang.Exceptions.TwiceDeclareElseError;
-use BayrellParser.Exceptions.ParserError;
+use BayrellLang.Parser.Exceptions.ParserError;
 
 
 
@@ -118,9 +118,9 @@ class ParserBay extends CommonParser
 	
 	/**
 	 * Tokens Fabric
-	 * @return BayrellParserToken
+	 * @return BayrellLang.ParserToken
 	 */
-	BayrellParserToken createToken()
+	BayrellLang.ParserToken createToken()
 	{
 		return new ParserBayToken(this.context(), this);
 	}

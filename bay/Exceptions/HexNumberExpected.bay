@@ -19,7 +19,7 @@
 namespace BayrellLang.Exceptions;
 
 use Runtime.RuntimeUtils;
-use BayrellParser.Exceptions.ParserError;
+use BayrellLang.Parser.Exceptions.ParserError;
 use BayrellLang.LangConstant;
 
 

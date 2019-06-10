@@ -30,7 +30,7 @@ class ModuleDescription implements ModuleDescriptionInterface
 	 * Returns module name
 	 * @return string
 	 */
-	lambda string getName() => "BayrellLang";
+	lambda string getModuleName() => "BayrellLang";
 	
 	
 	
@@ -49,7 +49,7 @@ class ModuleDescription implements ModuleDescriptionInterface
 	lambda Map<string> requiredModules() =>
 	{
 		'Runtime': '>=0.2 <1.0',
-		'BayrellParser': '>=0.1 <1.0',
+		'BayrellLang.Parser': '>=0.1 <1.0',
 	};
 	
 	
@@ -182,44 +182,25 @@ class ModuleDescription implements ModuleDescriptionInterface
 	
 	
 	/**
-	 * Init context
-	 * @param ContextInterface context
-	 */
-	public static void initContext(ContextInterface context)
-	{
-	}
-	
-	
-	
-	/**
 	 * Called then module registed in context
 	 * @param ContextInterface context
 	 */
-	public static void onRegister(ContextInterface context)
-	{
-	}
+	public static void onRegister(ContextInterface context){}
 	
-	
-	
-	/**
-	 * Returns description interfaces of the current module
-	 * @return Vector<string>
-	 */	
-	public static Vector<string> getInterfaces()
-	{
-		return [
-			'Runtime.Interfaces.ModuleDescriptionInterface',
-		];
-	}
-
 	
 	
 	/**
 	 * Called then context read config
-	 * @param ContextInterface context
 	 * @param Map<mixed> config
 	 */
-	public static void onReadConfig(ContextInterface context, Map<mixed> config)
-	{
-	}
+	public static void onReadConfig(ContextInterface context, Map<mixed> config){}
+	
+	
+	
+	/**
+	 * Init context
+	 * @param ContextInterface context
+	 */
+	public static void onInitContext(ContextInterface context){}
+	
 }

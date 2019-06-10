@@ -24,7 +24,7 @@ use BayrellLang.OpCodes.BaseOpCode;
 export class OpMap extends BaseOpCode{
 	
 	public serializable string op = "op_map";
-	public serializable Map<string, BaseOpCode> values = null;
+	public serializable Map<BaseOpCode> values = null;
 	
 	
 	

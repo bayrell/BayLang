@@ -27,7 +27,7 @@ class OpComponent extends BaseOpCode
 	public serializable string op = "op_component";
 	public serializable BaseOpCode name = "";
 	public serializable string alias = "";
-	public serializable Map<string, BaseOpCode> args = null;
+	public serializable Map<BaseOpCode> args = null;
 	
 	
 	/**

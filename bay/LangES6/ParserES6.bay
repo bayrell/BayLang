@@ -19,7 +19,8 @@
 namespace BayrellLang.LangES6;
 
 
-class BayrellParserES6{
+class ParserES6
+{
 	
 	
 	

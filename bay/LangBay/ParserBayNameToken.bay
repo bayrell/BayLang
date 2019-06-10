@@ -19,9 +19,9 @@
 namespace BayrellLang.LangBay;
 
 
-use BayrellParser.ParserToken;
-use BayrellParser.Exceptions.ParserEOF;
-use BayrellParser.Exceptions.ParserExpected;
+use BayrellLang.Parser.ParserToken;
+use BayrellLang.Parser.Exceptions.ParserEOF;
+use BayrellLang.Parser.Exceptions.ParserExpected;
 use BayrellLang.Exceptions.EndOfStringExpected;
 
 

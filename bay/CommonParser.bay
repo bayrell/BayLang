@@ -18,8 +18,8 @@
 
 namespace BayrellLang;
 
-use BayrellParser.ParserToken;
-use BayrellParser.CoreParser;
+use BayrellLang.Parser.ParserToken;
+use BayrellLang.Parser.CoreParser;
 use BayrellLang.Exceptions.HexNumberExpected;
 use BayrellLang.OpCodes.BaseOpCode;
 
