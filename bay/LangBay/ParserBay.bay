@@ -750,6 +750,15 @@ class ParserBay extends CommonParser
 					this.popRestoreToken();
 					this.matchNextToken("}");
 				}
+				else if (this.findNextToken("["))
+				{
+					/* Push new token */
+					this.pushToken( new ParserBayToken(this.context(), this) );					
+					attr.value = this.readVector();
+					
+					/* Restore tokens */
+					this.popRestoreToken();
+				}
 				else 
 				{
 					throw this.parserError("Unknown token " ~ this.next_token.token);
@@ -824,8 +833,8 @@ class ParserBay extends CommonParser
 			BaseOpCode res = null;
 			if (not is_plain){
 				if (is_next_special_token or is_next_html_token){
-					if (is_next_special_token or is_prev_special_token) s = rs::trim(s, "\\t\\r\\n");
-					else s = rs::trim(s, "\\t\\r\\n");
+					if (is_next_special_token or is_prev_special_token) s = rs::trim(s, "\t\r\n");
+					else s = rs::trim(s, "\t\r\n");
 					if (s != "") childs.push(new OpHtmlText(s));
 					s = "";
 					this.assignCurrentToken(this.current_token);
@@ -837,12 +846,11 @@ class ParserBay extends CommonParser
 			if (res == null){
 				if (this.current_token.findString("{") or 
 					this.current_token.findString("@{") or 
-					this.current_token.findString("@raw{") or 
-					/*this.current_token.findString("@code{") or */
+					this.current_token.findString("@raw{") or
 					this.current_token.findString("@json{"))
 				{
 					if (not is_plain){
-						s = rs::trim(s, "\\t\\r\\n");
+						s = rs::trim(s, "\t\r\n");
 					}
 					if (s != "") childs.push(new OpHtmlText(s));
 					s = "";
@@ -907,8 +915,8 @@ class ParserBay extends CommonParser
 		
 		if (not is_plain)
 		{
-			if (is_prev_special_token) s = rs::trim(s, "\\t\\r\\n");
-			else s = rs::trim(s, "\\t\\r\\n");
+			if (is_prev_special_token) s = rs::trim(s, "\t\r\n");
+			else s = rs::trim(s, "\t\r\n");
 		}
 		if (s != ""){
 			childs.push(new OpHtmlText(s));

@@ -2298,7 +2298,10 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	bool isOpHtmlTagProps(string key)
 	{
-		if (key == "@key" or key == "@control" or key == "@model") return false;
+		if (key == "@key" or key == "@control" or key == "@model" or key == "@bind" or key == "@events")
+		{
+			return false;
+		}
 		return true;
 	}
 	
@@ -2383,6 +2386,16 @@ export class TranslatorPHP extends CommonTranslator {
 					{
 						string value = this.translateRun(item.value);
 						res ~= this.s('"model"=>' ~ value ~ ',');
+					}
+					else if (key == "@bind")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"bind"=> ' ~ value ~ ',');
+					}
+					else if (key == "@events")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"events"=> ' ~ value ~ ',');
 					}
 				}
 			);
@@ -2550,8 +2563,8 @@ export class TranslatorPHP extends CommonTranslator {
 		int childs_sz = op_code.childs.count();
 		for (int i=0; i<childs_sz; i++)
 		{
+			BaseOpCode item = op_code.childs.item(i);
 			if (item instanceof OpComment){ continue; }
-			BaseOpCode item =  op_code.childs.item(i);
 			res ~= this.s(this.translateRun(item) ~ ( (i+1 == childs_sz) ? "" : "," ));
 		}
 		this.popOneLine();
@@ -2612,7 +2625,7 @@ export class TranslatorPHP extends CommonTranslator {
 	 * @param BaseOpCode op_code - Abstract syntax tree
 	 * @returns string - The result
 	 */
-	string translate(BaseOpCode op_code){
+	string translateOpCode(BaseOpCode op_code){
 		this.resetTranslator();
 		string s = "<?php" ~ this.crlf;
 		s ~= this.translateRun(op_code);

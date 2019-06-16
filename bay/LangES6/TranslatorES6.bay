@@ -3134,7 +3134,10 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	bool isOpHtmlTagProps(string key)
 	{
-		if (key == "@key" or key == "@control" or key == "@model") return false;
+		if (key == "@key" or key == "@control" or key == "@model" or key == "@bind" or key == "@events")
+		{
+			return false;
+		}
 		return true;
 	}
 	
@@ -3215,6 +3218,16 @@ export class TranslatorES6 extends CommonTranslator {
 					{
 						string value = this.translateRun(item.value);
 						res ~= this.s('"model": ' ~ value ~ ',');
+					}
+					else if (key == "@bind")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"bind": ' ~ value ~ ',');
+					}
+					else if (key == "@events")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"events": ' ~ value ~ ',');
 					}
 				}
 			);
@@ -3441,7 +3454,7 @@ export class TranslatorES6 extends CommonTranslator {
 	 * @param BaseOpCode op_code - Abstract syntax tree
 	 * @returns string - The result
 	 */
-	string translate(BaseOpCode op_code){
+	string translateOpCode(BaseOpCode op_code){
 		this.resetTranslator();
 		string s = '"use strict;"' ~ this.crlf;
 		s ~= this.translateRun(op_code);

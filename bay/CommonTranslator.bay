@@ -95,7 +95,8 @@ use BayrellLang.OpCodes.OpVector;
 use BayrellLang.OpCodes.OpWhile;
 
 
-export class CommonTranslator extends ContextObject{
+export class CommonTranslator extends ContextObject
+{
 	
 	public Vector<BaseOpCode> op_code_stack = null;
 	public Vector<boolean> one_lines = null;
@@ -606,7 +607,7 @@ export class CommonTranslator extends ContextObject{
 	 * @param BaseOpCode op_code - Abstract syntax tree
 	 * @returns string - The result
 	 */
-	string translate(BaseOpCode op_code){
+	string translateOpCode(BaseOpCode op_code){
 		this.resetTranslator();
 		return this.translateRun(op_code);
 	}

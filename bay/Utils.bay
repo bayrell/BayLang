@@ -66,7 +66,7 @@ class Utils extends ContextObject{
 		BaseOpCode code_tree
 	){		
 		CommonTranslator translator = translator_factory.newInstance(context);
-		string res = translator.translate(code_tree);
+		string res = translator.translateOpCode(code_tree);
 		delete translator;
 		return res;
 	}
@@ -92,7 +92,7 @@ class Utils extends ContextObject{
 		
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
-		string res = translator.translate(code_tree);
+		string res = translator.translateOpCode(code_tree);
 		
 		delete parser;
 		delete translator;
@@ -119,7 +119,7 @@ class Utils extends ContextObject{
 		
 		parser.parseString(source);
 		BaseOpCode code_tree = parser.getAST();
-		string res = translator.translate(code_tree);
+		string res = translator.translateOpCode(code_tree);
 		
 		delete parser;
 		delete translator;
