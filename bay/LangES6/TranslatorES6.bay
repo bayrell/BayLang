@@ -3134,7 +3134,10 @@ export class TranslatorES6 extends CommonTranslator {
 	 */
 	bool isOpHtmlTagProps(string key)
 	{
-		if (key == "@key" or key == "@control" or key == "@model" or key == "@bind" or key == "@events")
+		if (
+			key == "@key" or key == "@control" or key == "@model" or 
+			key == "@ref" or key == "@bind" or key == "@annotations"
+		)
 		{
 			return false;
 		}
@@ -3209,6 +3212,11 @@ export class TranslatorES6 extends CommonTranslator {
 						string value = this.translateRun(item.value);
 						res ~= this.s('"key": ' ~ value ~ ',');
 					}
+					else if (key == "@ref")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"reference": ' ~ value ~ ',');
+					}
 					else if (key == "@control")
 					{
 						string value = this.translateRun(item.value);
@@ -3224,10 +3232,10 @@ export class TranslatorES6 extends CommonTranslator {
 						string value = this.translateRun(item.value);
 						res ~= this.s('"bind": ' ~ value ~ ',');
 					}
-					else if (key == "@events")
+					else if (key == "@annotations")
 					{
 						string value = this.translateRun(item.value);
-						res ~= this.s('"events": ' ~ value ~ ',');
+						res ~= this.s('"annotations": ' ~ value ~ ',');
 					}
 				}
 			);

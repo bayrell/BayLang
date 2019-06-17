@@ -20,7 +20,6 @@ namespace BayrellLang;
 
 
 use Runtime.ContextObject;
-use BayrellLang.CoreTranslator;
 use BayrellLang.OpCodes.BaseOpCode;
 use BayrellLang.OpCodes.OpAdd;
 use BayrellLang.OpCodes.OpAnd;
@@ -86,7 +85,7 @@ use BayrellLang.OpCodes.OpVector;
 use BayrellLang.OpCodes.OpWhile;
 
 
-export class CoreTranslator extends ContextObject 
+class CoreTranslator extends ContextObject 
 {
 	
 	public Vector<int> is_operation_stack = null;

@@ -669,7 +669,7 @@ export class TranslatorPHP extends CommonTranslator {
 			string ch = "";
 			for (int i=0; i<op_code.args.count(); i++){
 				BaseOpCode op = op_code.args.item(i);
-				s ~= ch + this.s(this.translateRun(op));
+				s ~= ch ~ this.s(this.translateRun(op));
 				ch = ", ";
 			}
 		}
@@ -1302,12 +1302,10 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	string OpFunctionDeclare
 	(
-		OpFunctionDeclare op_code, 
-		bool end_semicolon = false, 
-		Vector<string> use_vars = null
+		OpFunctionDeclare op_code
 	)
 	{
-		
+		Vector<string> use_vars = null;
 		string res = "";
 		string ch = "";
 		string s = "";
@@ -1450,11 +1448,11 @@ export class TranslatorPHP extends CommonTranslator {
 			
 			else if (op_code.return_function != null)
 			{
-				res ~= this.s("return " ~ this.translateItem( op_code.return_function ));
+				res ~= this.s("return " ~ this.translateItem( op_code.return_function ) ~ ";");
 			}
 			
 			this.levelDec();
-			res ~= this.s("}" ~ (end_semicolon ? ";" : ""));
+			res ~= this.s("}");
 			this.popOneLine();
 		}
 		
@@ -2298,7 +2296,10 @@ export class TranslatorPHP extends CommonTranslator {
 	 */
 	bool isOpHtmlTagProps(string key)
 	{
-		if (key == "@key" or key == "@control" or key == "@model" or key == "@bind" or key == "@events")
+		if (
+			key == "@key" or key == "@control" or key == "@model" or 
+			key == "@ref" or key == "@bind" or key == "@annotations"
+		)
 		{
 			return false;
 		}
@@ -2377,6 +2378,11 @@ export class TranslatorPHP extends CommonTranslator {
 						string value = this.translateRun(item.value);
 						res ~= this.s('"key"=>' ~ value ~ ',');
 					}
+					else if (key == "@ref")
+					{
+						string value = this.translateRun(item.value);
+						res ~= this.s('"reference"=>' ~ value ~ ',');
+					}
 					else if (key == "@control")
 					{
 						string value = this.translateRun(item.value);
@@ -2392,10 +2398,10 @@ export class TranslatorPHP extends CommonTranslator {
 						string value = this.translateRun(item.value);
 						res ~= this.s('"bind"=> ' ~ value ~ ',');
 					}
-					else if (key == "@events")
+					else if (key == "@annotations")
 					{
 						string value = this.translateRun(item.value);
-						res ~= this.s('"events"=> ' ~ value ~ ',');
+						res ~= this.s('"annotations"=> ' ~ value ~ ',');
 					}
 				}
 			);
