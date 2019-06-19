@@ -21,7 +21,6 @@ namespace BayrellLang;
 use Runtime.CoreObject;
 use Runtime.ContextObject;
 use Runtime.Interfaces.FactoryInterface;
-use BayrellCommon.Utils as BayrellCommonUtils;
 use BayrellLang.LangBay.ParserBay;
 use BayrellLang.LangES6.TranslatorES6;
 use BayrellLang.CommonParser;
@@ -151,7 +150,7 @@ class Utils extends ContextObject{
 		var content = fsModule.readFileSync(src_file_name, {encoding : 'utf8'}).toString();
 		#endswitch
 		*/
-		
+		/*
 		FileSystemInterface file_system = context.createProvider("default:fs");
 		string content = file_system.readFile(src_file_name);
 		
@@ -161,12 +160,11 @@ class Utils extends ContextObject{
 			translator_factory,
 			content
 		);
-		string dir = BayrellCommonUtils::dirname(dest_file_name);
 		
 		
 		file_system.makeDir(dir);
 		file_system.saveFile(dest_file_name, res);
-		
+		*/
 		/*
 		#switch
 		#case ifcode NODEJS then
