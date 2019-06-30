@@ -18,11 +18,12 @@
 
 namespace BayrellLang;
 
+use Runtime.Interfaces.AssetsInterface;
 use Runtime.Interfaces.ContextInterface;
 use Runtime.Interfaces.ModuleDescriptionInterface;
 
 
-class ModuleDescription implements ModuleDescriptionInterface
+class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 {
 
 	
