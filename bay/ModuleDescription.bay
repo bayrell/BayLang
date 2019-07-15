@@ -183,6 +183,13 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	
 	
 	/**
+	 * Returns enities
+	 */
+	lambda Collection<Dict> resources() => null;
+	
+	
+	
+	/**
 	 * Called then module registed in context
 	 * @param ContextInterface context
 	 */

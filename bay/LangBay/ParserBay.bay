@@ -2389,7 +2389,7 @@ class ParserBay extends CommonParser
 		else
 		{
 			Vector<string> arr = rs::explode(".", name);
-			string last_name = arr.pop();
+			string last_name = arr.last();
 			this.modules.set(last_name, name);
 		}
 		

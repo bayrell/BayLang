@@ -510,9 +510,10 @@ export class TranslatorES6 extends CommonTranslator {
 			if (op_code.value.value == "self")
 			{
 				return this.getName("self") ~ '.' ~ op_code.name;
-				return "(" ~ this.getName("rtl") ~ ".method(" ~ 
-					this.getName("self") ~ ", " ~ 
-					this.convertString(op_code.name) ~ "))";
+			}
+			if (op_code.value.value == "static" and this.current_function_is_static == false)
+			{
+				return 'this.constructor.' ~ op_code.name;
 			}
 			else if (
 				not this.modules.has(op_code.value.value) and 
@@ -2134,6 +2135,11 @@ export class TranslatorES6 extends CommonTranslator {
 			return "";
 		}
 		
+		if (this.function_stack.count() == 0)
+		{
+			if (op_code.isFlag("static")) this.current_function_is_static = true;
+			else this.current_function_is_static = false;
+		}
 		
 		/* Memorize function */
 		bool old_current_function_is_memorize = this.current_function_is_memorize;
