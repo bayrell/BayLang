@@ -1256,7 +1256,7 @@ export class TranslatorPHP extends CommonTranslator {
 			res ~= this.s("use Runtime\\Vector;");
 			res ~= this.s("use Runtime\\Dict;");
 			res ~= this.s("use Runtime\\Collection;");
-			res ~= this.s("use Runtime\\IntrospectionInfo;");
+			res ~= this.s("use Runtime\\Annotations\\IntrospectionInfo;");
 			res ~= this.s("use Runtime\\UIStruct;");
 			this.modules.set("rs", "Runtime.rs");
 			this.modules.set("rtl", "Runtime.rtl");
@@ -1264,7 +1264,7 @@ export class TranslatorPHP extends CommonTranslator {
 			this.modules.set("Dict", "Runtime.Dict");
 			this.modules.set("Vector", "Runtime.Vector");
 			this.modules.set("Collection", "Runtime.Collection");
-			this.modules.set("IntrospectionInfo", "Runtime.IntrospectionInfo");
+			this.modules.set("IntrospectionInfo", "Runtime.Annotations.IntrospectionInfo");
 			this.modules.set("UIStruct", "Runtime.UIStruct");
 		}
 		return res;

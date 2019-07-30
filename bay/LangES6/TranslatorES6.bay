@@ -1918,7 +1918,7 @@ export class TranslatorES6 extends CommonTranslator {
 			this.modules.set("Dict", "Runtime.Dict");
 			this.modules.set("Vector", "Runtime.Vector");
 			this.modules.set("Collection", "Runtime.Collection");
-			this.modules.set("IntrospectionInfo", "Runtime.IntrospectionInfo");
+			this.modules.set("IntrospectionInfo", "Runtime.Annotations.IntrospectionInfo");
 			this.modules.set("UIStruct", "Runtime.UIStruct");
 		}
 		return "";
@@ -3141,8 +3141,8 @@ export class TranslatorES6 extends CommonTranslator {
 	bool isOpHtmlTagProps(string key)
 	{
 		if (
-			key == "@key" or key == "@control" or key == "@model" or 
-			key == "@ref" or key == "@bind" or key == "@annotations"
+			key == "@key" or key == "@model" or key == "@bind" or key == "@ref" or
+			key == "@annotations" or key == "@watch"
 		)
 		{
 			return false;
@@ -3205,46 +3205,73 @@ export class TranslatorES6 extends CommonTranslator {
 		bool is_spreads = op_code.spreads != null and op_code.spreads.count() > 0;
 		if (op_code.attributes != null and op_code.attributes.count() > 0)
 		{
-			op_code.attributes.each(
-				void (OpHtmlAttribute item) use (res, is_props, is_events)
+			int pos_key = op_code.attributes.find(RuntimeUtils::equalItemKey("key"), "@key");
+			int pos_ref = op_code.attributes.find(RuntimeUtils::equalItemKey("key"), "@ref");
+			int pos_model = op_code.attributes.find(RuntimeUtils::equalItemKey("key"), "@model");
+			int pos_watch = op_code.attributes.find(RuntimeUtils::equalItemKey("key"), "@watch");
+			bool is_key = pos_key != -1;
+			bool is_ref = pos_ref != -1;
+			BaseOpCode item_ref = op_code.attributes.get(pos_ref, null);
+			BaseOpCode item_model = op_code.attributes.get(pos_model, null);
+			BaseOpCode item_watch = op_code.attributes.get(pos_watch, null);
+			
+			for (int attr_index=0; attr_index<op_code.attributes.count(); attr_index++)
+			{
+				OpHtmlAttribute item = op_code.attributes.item(attr_index);
+				string key = item.key;
+				if (this.isOpHtmlTagProps(key))
 				{
-					string key = item.key;
-					if (this.isOpHtmlTagProps(key))
-					{
-						is_props = true;
-					}
-					else if (key == "@key")
-					{
-						string value = this.translateRun(item.value);
-						res ~= this.s('"key": ' ~ value ~ ',');
-					}
-					else if (key == "@ref")
-					{
-						string value = this.translateRun(item.value);
-						res ~= this.s('"reference": ' ~ value ~ ',');
-					}
-					else if (key == "@control")
-					{
-						string value = this.translateRun(item.value);
-						res ~= this.s('"controller": ' ~ value ~ ',');
-					}
-					else if (key == "@model")
-					{
-						string value = this.translateRun(item.value);
-						res ~= this.s('"model": ' ~ value ~ ',');
-					}
-					else if (key == "@bind")
-					{
-						string value = this.translateRun(item.value);
-						res ~= this.s('"bind": ' ~ value ~ ',');
-					}
-					else if (key == "@annotations")
-					{
-						string value = this.translateRun(item.value);
-						res ~= this.s('"annotations": ' ~ value ~ ',');
-					}
+					is_props = true;
 				}
-			);
+				else if (key == "@key")
+				{
+					string value = this.translateRun(item.value);
+					res ~= this.s('"key": ' ~ value ~ ',');
+				}
+				else if (key == "@ref")
+				{
+					string value = this.translateRun(item.value);
+					res ~= this.s('"reference": ' ~ value ~ ',');
+				}
+				else if (key == "@model")
+				{
+					string value = this.translateRun(item.value);
+					res ~= this.s('"model": ' ~ value ~ ',');
+				}
+				else if (key == "@bind")
+				{
+					string value = this.translateRun(item.value);
+					res ~= this.s('"bind": ' ~ value ~ ',');
+					if (not is_key) { res ~= this.s('"key": ' ~ value ~ ','); is_key = true; }
+					if (not is_ref) { res ~= this.s('"reference": ' ~ value ~ ','); is_ref = true; }
+				}
+				else if (key == "@annotations")
+				{
+					string value = this.translateRun(item.value);
+					res ~= this.s('"annotations": ' ~ value ~ ',');
+				}
+				else if (key == "@watch")
+				{
+					BaseOpCode item2 = item;
+					if (item_model != null)
+					{
+						item2 <= value <= values <= item2.value.values.pushIm(item_model.value);
+					}
+					string value = this.translateRun(item2.value);
+					res ~= this.s('"watch": ' ~ value ~ ',');
+				}
+			}
+			
+			if (item_model != null and item_watch == null)
+			{
+				res ~= this.s('"watch": new Runtime.Vector(' ~ this.translateRun(item_model.value) ~ '),');
+			}
+			
+			if (not is_key and item_ref != null)
+			{
+				res ~= this.s('"key": ' ~ this.translateRun(item_ref.value) ~ ',');
+			}
+			
 		}
 		
 		
