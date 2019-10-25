@@ -1,0 +1,9 @@
+[submodule "nodejs"]
+	path = nodejs
+	url = https://github.com/bayrell/bayrell-lang-nodejs
+[submodule "php"]
+	path = php
+	url = https://github.com/bayrell/bayrell-lang-php
+[submodule "es6"]
+	path = es6
+	url = https://github.com/bayrell/bayrell-lang-es6
