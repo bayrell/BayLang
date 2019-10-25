@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,37 +16,29 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAnnotation;
+use Bayrell.Lang.OpCodes.OpAssignValue;
+use Bayrell.Lang.OpCodes.OpComment;
+use Bayrell.Lang.OpCodes.OpFlags;
+use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 
 
-export class OpAssign extends BaseOpCode{
+struct OpAssign extends BaseOpCode
+{
+	static const string KIND_ASSIGN = "assign";
+	static const string KIND_DECLARE = "declare";
+	static const string KIND_STRUCT = "struct";
 	
-	public serializable string op = "op_assign";
-	public serializable BaseOpCode ident = null;
-	public serializable BaseOpCode value = null;
-	public serializable string op_name = "";
-	
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(BaseOpCode ident = null, BaseOpCode value = null, string op_name = ""){
-		parent();
-		this.ident = ident;
-		this.value = value;
-		this.op_name = op_name;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
-	
+	string kind = "";
+	string var_name = "";
+	OpFlags flags = null;
+	OpTypeIdentifier pattern = null;
+	Collection<OpAnnotation> annotations = null;
+	Collection<OpComment> comments = null;
+	Collection<OpAssignValue> values = null;
+	Collection<string> names = null;
+	BaseOpCode expression = null;
 }

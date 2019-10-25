@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,14 +16,13 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+use Runtime.CoreStruct;
 
 
-class OpFlags extends BaseOpCode{
-	
-	public string op = "op_flags";
+struct OpFlags extends CoreStruct
+{
 	public bool p_async = false;
 	public bool p_export = false;
 	public bool p_static = false;
@@ -39,104 +38,13 @@ class OpFlags extends BaseOpCode{
 	public bool p_lambda = false;
 	
 	
-	
-	
 	/**
 	 * Read is Flag
 	 */
-	public boolean isFlag(string name)
+	public bool isFlag(string name)
 	{
 		if (not OpFlags::hasFlag(name))	return false;
-		return this.takeValue(name);
-	}
-	
-	
-	
-	/**
-	 * Returns name of variables to serialization
-	 * @return Vector<string>
-	 */
-	public void getVariablesNames(Vector<string> names)
-	{
-		parent::getVariablesNames(names);
-		names.push("async");
-		names.push("export");
-		names.push("static");
-		names.push("const");
-		names.push("public");
-		names.push("private");
-		names.push("declare");
-		names.push("protected");
-		names.push("serializable");
-		names.push("cloneable");
-		names.push("assignable");
-		names.push("memorize");
-		names.push("lambda");
-	}
-	
-	
-	
-	/**
-	 * Returns instance of the value by variable name
-	 * @param string variable_name
-	 * @return var
-	 */
-	public var takeValue(string variable_name, var default_value = null)
-	{
-		if (variable_name == 'async') return this.p_async;
-		else if (variable_name == 'export') return this.p_export;
-		else if (variable_name == 'static') return this.p_static;
-		else if (variable_name == 'const') return this.p_const;
-		else if (variable_name == 'public') return this.p_public;
-		else if (variable_name == 'private') return this.p_private;
-		else if (variable_name == 'declare') return this.p_declare;
-		else if (variable_name == 'protected') return this.p_protected;
-		else if (variable_name == 'serializable') return this.p_serializable;
-		else if (variable_name == 'cloneable') return this.p_cloneable;
-		else if (variable_name == 'assignable') return this.p_assignable;
-		else if (variable_name == 'memorize') return this.p_memorize;
-		else if (variable_name == 'lambda') return this.p_lambda;
-		return parent::takeValue(variable_name, default_value);
-	}
-	
-	
-	
-	/**
-	 * Set new value instance by variable name
-	 * @param string variable_name
-	 * @param var value
-	 */
-	public void assignValue(string variable_name, var value)
-	{
-		if (variable_name == 'async') this.p_async = value;
-		else if (variable_name == 'export') this.p_export = value;
-		else if (variable_name == 'static') this.p_static = value;
-		else if (variable_name == 'const') this.p_const = value;
-		else if (variable_name == 'public') this.p_public = value;
-		else if (variable_name == 'private') this.p_private = value;
-		else if (variable_name == 'declare') this.p_declare = value;
-		else if (variable_name == 'protected') this.p_protected = value;
-		else if (variable_name == 'serializable') this.p_serializable = value;
-		else if (variable_name == 'cloneable') this.p_cloneable = value;
-		else if (variable_name == 'assignable') this.p_assignable = value;
-		else if (variable_name == 'memorize') this.p_memorize = value;
-		else if (variable_name == 'lambda') this.p_lambda = value;
-		else parent::assignValue(variable_name, value);
-	}
-	
-	
-	
-	/**
-	 * Assign flag
-	 */
-	public void assignFlag(string flag_name)
-	{
-		if (self::hasFlag(flag_name))
-		{
-			this.assignValue(flag_name, true);
-			return true;
-		}
-		return false;
+		return this.takeValue("p_"~name);
 	}
 	
 	
@@ -144,23 +52,24 @@ class OpFlags extends BaseOpCode{
 	/**
 	 * Get flags
 	 */
-	public static Vector<string> getFlags()
+	lambda Collection<string> getFlags()
 	{
-		return (new Vector<string>())
-			.push("async")
-			.push("export")
-			.push("static")
-			.push("const")
-			.push("public")
-			.push("private")
-			.push("declare")
-			.push("protected")
-			.push("serializable")
-			.push("cloneable")
-			.push("assignable")
-			.push("memorize")
-			.push("lambda")
-		;
+		return 
+		[
+			"async",
+			"export",
+			"static",
+			"const",
+			"public",
+			"private",
+			"declare",
+			"protected",
+			"serializable",
+			"cloneable",
+			"assignable",
+			"memorize",
+			"lambda",
+		];
 	}
 	
 	
@@ -168,7 +77,7 @@ class OpFlags extends BaseOpCode{
 	/**
 	 * Get flags
 	 */
-	public static boolean hasFlag(string flag_name)
+	lambda bool hasFlag(string flag_name)
 	{
 		if (
 			flag_name == "async" or

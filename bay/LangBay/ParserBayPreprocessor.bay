@@ -1,0 +1,136 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.LangBay;
+
+use Bayrell.Lang.Caret;
+use Bayrell.Lang.CoreToken;
+use Bayrell.Lang.LangBay.ParserBay;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
+
+
+static class ParserBayPreprocessor
+{
+	
+	/**
+	 * Read namespace
+	 */
+	lambda list<ParserBay, BaseOpCode> readPreprocessor(ParserBay parser)
+	{
+		ParserBay start = parser.clone();
+		ParserBay look = null;
+		CoreToken token = null;
+
+		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		if (token.content == "#switch")
+		{
+			return static::readPreprocessorSwitch(start);
+		}
+		
+		return null;
+	}
+	
+	
+	
+	/**
+	 * Read preprocessor switch
+	 */
+	lambda list<ParserBay, BaseOpCode> readPreprocessorSwitch(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		BaseOpCode op_code = null;
+		Vector<BaseOpCode> items = new Vector();
+		
+		/* Save vars */
+		Dict<bool> save_vars = parser.vars;
+		parser <= vars <= parser.vars.concat(
+			{
+				"ES6": true,
+				"NODEJS": true,
+				"JAVASCRIPT": true,
+				"PHP": true,
+				"PYTHON3": true,
+			}
+		);
+		
+		list res = parser.parser_base::matchToken(parser, "#switch"); parser = res[0]; token = res[1];
+		Caret caret_start = token.caret_start.clone();
+		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		
+		while (token.content == "#case")
+		{
+			parser = look.clone();
+			
+			/* Skip ifcode */
+			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			if (token.content == "ifcode")
+			{
+				parser = look.clone();
+			}
+			
+			/* Read condition */
+			BaseOpCode condition = null;
+			parser <= find_ident <= false;
+			list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
+			parser <= find_ident <= true;
+			
+			/* Read then */
+			list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+			
+			/* Read content */
+			string content = "";
+			Caret caret_content = parser.caret.clone();
+			list res = parser.parser_base::readUntilStringArr(parser, ["#case", "#endswitch"], false);
+			parser = res[0]; content = res[1];
+			
+			/* Look content */
+			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			
+			OpPreprocessorIfCode ifcode = new OpPreprocessorIfCode
+			{
+				"condition": condition,
+				"content": content,
+				"caret_start": caret_content,
+				"caret_end": parser.caret.clone(),
+			};
+			items.push(ifcode);
+		}
+		
+		/* Restore vars */
+		parser <= vars <= save_vars;
+		
+		/* read endswitch */
+		list res = parser.parser_base::matchToken(parser, "#endswitch"); parser = res[0];
+		
+		return 
+		[
+			parser,
+			new OpPreprocessorSwitch
+			{
+				"items": items.toCollection(),
+				"caret_start": caret_start,
+				"caret_end": parser.caret.clone(),
+			}
+		];
+	}
+	
+	
+}

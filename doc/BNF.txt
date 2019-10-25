@@ -1,43 +1,98 @@
 
-# Простые определения
-Digit = '0' | '1' | '2' | .. | '9';
-HexDigit = <Digit> | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'a' | 'b' | 'c' | 'd' | 'e' | 'f';
-Symbol = 'A' | .. | 'Z' | 'a' .. 'z';
-Digits = <Digit> { <Digit> };
-HexDigits = <HexDigit> { <HexDigit> };
-Number = ['+' | '-'] <Digits> ['.' <Digits>];
-HexNumber = ['+' | '-'] '0x' <HexDigits>;
-String = '"' {<Char>} '"'
-Fixed = <Number> | <HexNumber> | <String>;
-Identifier = <Symbol> { <Digit> | <Symbol> | '_' };
-TypeIdentifier = <Identifier> ['<' <DynamicIdentifier> {',' <DynamicIdentifier>} '>'];
+# Base
+
+Digit = '0' | '1' | '2' | .. | '9'
+SymbolUpCase = 'A' | .. | 'Z' | 'a' .. 'z'
+SymbolLoCase = 'A' | .. | 'Z' | 'a' .. 'z'
+Symbol = SymbolUpCase | SymbolLoCase
+Digits = Digit, { Digit }
+Number = ['+' | '-'], Digits, ['.' Digits]
+Identifier = Symbol | '_', { Symbol | Digit | '_' }
+Variable = <declared> Identifier
+EntityName = Identifier, { '.', Identifier }
+Fixed = Number | String | Json | Collection | Identifier
+NewInstance = 'new', TypeIdentifier, { CallBody }
+MethodIdentifier = 'method', EntityName, { '::', Identifier }
+
+JsonItem = Identifier, ':', Expression, { ',', Identifier, ':', Expression }
+Json = '{', { Empty | JsonItem } ,'}'
+CollectionItem = Expression, { ',', Expression}
+Collection = '[', { Empty | CollectionItem } ,']'
+
+CallArgs = Expression, { ",", Expression }
+CallBody = '(', { CallArgs }, ')'
+Dynamic = [ 'await' ], Fixed, { ( ( '.' | '::' ), Identifier ) | ('[', Expression ,']') | CallBody }
+Pipe = Dynamic, { ('->', Fixed | '|>', Dynamic ), CallBody }
+Inc = ( [ '++', '--' ], Dynamic ) | ( Dynamic, [ '++', '--' ] )
+BaseItem = ClassRef | ClassOf | NewInstance | MethodIdentifier | '(', Expression, ')' | 
+	[ '(', TypeIdentifier, ')' ] Dynamic
+
+TypeTemplate = '<', { TypeIdentifier } '>'
+TypeIdentifier = EntityName, [ TypeTemplate ]
+ClassOf = 'classof', Expression
+ClassRef = 'classref', Expression
 
 
-# Вызов функции
-CallArgs = <Expression> {"," <Expression>};
-CallBody = '(' { <CallArgs> } ')';
-CallDynamic = <Identifier> { '.' <Identifier> |  '::' <Identifier> |  <CallBody> }
 
-NewInstance = 'new' <TypeIdentifier> <CallBody>;
-CallAwait = 'await' <Identifier> { '.' <Identifier> |  '::' <Identifier> } <CallBody>;
+# Functions
 
-
-
-CompareOperators = '==' | '!=' | '<>' | '===' | '<' | '>' | '<=' | '>=' | 'instanceof' | 'implements';
+DeclareFunctionArgument = Type, Identifier, {",", Type, Identifier}
+DeclareFunctionArguments = '(', { DeclareFunctionArgument }, ')'
+DeclareFunctionBody = '=>', Expression | Operators
+DeclareFunction = [ 'async' ], Type, Identifier, DeclareFunctionArguments, DeclareFunctionBody
 
 
-# Выражения
-# https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
-ExpressionElement = ['!'] <Fixed> | <CallOperator> | '(' <Expression> ')';
-ExpressionDivide = <ExpressionElement> { ('%' | 'div', 'mod', '>>', '<<' ) <ExpressionElement> };
-ExpressionFactor = <ExpressionDivide> { ( '/' |'*' |'&' | 'xor' ) <ExpressionDivide> };
-ExpressionArithmetic = <ExpressionFactor> { ('+' | '-' | '|' ) <ExpressionFactor> };
-ExpressionConcat = <ExpressionArithmetic> { '~' <ExpressionArithmetic> };
-ExpressionCompare = <ExpressionConcat> { <CompareOperators> <ExpressionConcat> };
 
-ExpressionNot = ['not'] <ExpressionCompare>;
-ExpressionAnd = <ExpressionNot> { ( 'and' | '&&' ) <ExpressionNot> };
-ExpressionOr = <ExpressionAnd> { ( 'or' | '||' ) <ExpressionAnd> };
+# Expressions
 
-Expression = ['clone'] <ExpressionOr> | <NewInstance>;
-OperatorAssign = [<TypeIdentifier>] <Identifier> '=' <Expression> | (['clone'] <CallAwait>);
+CompareOperators = '==' | '!=' | '===' | '<' | '>' | '<=' | '>='
+IsOperators = is | 'implements' | 'instanceof'
+
+ExpressionBitNot = ['!'], { BaseItem }
+ExpressionBitShift = ExpressionBitNot, { ('>>' | '<<'), ExpressionBitNot }
+ExpressionBitAnd = ExpressionBitShift, { '&', ExpressionBitShift }
+ExpressionBitXor = ExpressionBitAnd, { ('xor'), ExpressionBitAnd }
+ExpressionBitOr = ExpressionBitXor, { ('|'), ExpressionBitXor }
+ExpressionFactor = ExpressionBitOr, { ( '/' | '*' | '%' | 'div' | 'mod' ), ExpressionBitOr }
+ExpressionArithmetic = ExpressionFactor, { ( '+' | '-' | '|' ), ExpressionFactor }
+ExpressionConcat = ExpressionArithmetic, { '~', ExpressionClassof }
+ExpressionCompare = ExpressionConcat, { ( CompareOperators, ExpressionConcat ) |, ( IsOperators, TypeIdentifier ) }
+ExpressionNot = ['not'], ExpressionCompare
+ExpressionAnd = ExpressionNot, { 'and', ExpressionNot }
+ExpressionOr = ExpressionAnd, { 'or', ExpressionAnd }
+ExpressionElement = DeclareFunction | ExpressionOr
+ExpressionTernary = ExpressionOr, '?', ExpressionElement, ':', ExpressionElement
+Expression = ExpressionTernary | ExpressionHTML
+
+
+
+# Operators
+
+OperatorAssign = [ TypeIdentifier ], Identifier, '=', Expression, ';'
+OperatorAssignStruct = Identifier, '<=', Identifier, { '<=', Identifier }, '<=', Expression, ';'
+OperatorReturn = 'return', Expression, ';'
+OperatorBreak = 'break', ';'
+OperatorContinue = 'continue', ';'
+OperatorThrow = 'thrown', Expression, ';'
+OperatorFor = 'for', '(', OperatorAssign, Expression, Expression ')', Operators
+OperatorWhile = 'while', Expression, ['do'], Operators
+OperatorIf = 'if', Expression, ['then'], Operators,
+	{ 'elseif', Expression, 'then', Operators },
+	[ 'else', Operators ]
+OperatorTryCatch = 'try', Operators, { 'catch', '(', TypeIdentifier, Identifier ')', Operators }
+Operator = OperatorAssign | OperatorIF | OperatorWhile | OperatorFor |
+	OperatorBreak | OperatorContinue |  OperatorReturn | OperatorThrow
+Operators = '{', { Operator }, '}'
+
+
+
+# Class
+
+Namespace = 'namespace', EntityName
+Use = 'use', EntityName
+Class = Flags, 'class', Identifier, ['extends', TypeIdentifier], 
+	['implements', TypeIdentifier, { ',', TypeIdentifier }], 
+	'{', ClassBody, '}'
+ClassBody = ClassVariable | ClassFunction
+ClassVariable = Flags, TypeIdentifier, Identifier, '=', Expression, ';'
+ClassFunction = Flags, DeclareFunction

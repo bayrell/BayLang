@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,14 +16,22 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-export class OpIdentifier extends OpValueString{
+struct OpIdentifier extends BaseOpCode
+{
+	static const string KIND_VARIABLE = "var";
+	static const string KIND_SYS_TYPE = "sys";
+	static const string KIND_FUNCTION = "fn";
+	static const string KIND_CONTEXT = "ctx";
+	static const string KIND_MODULE = "module";
+	static const string KIND_CONSTANT = "const";
+	static const string KIND_CLASSREF = "classref";
 	
-	public serializable string op = "op_identifier";
-	
-	
+	string op = "op_identifier";
+	string value = "";
+	string kind = "";
 }

@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang;
+namespace Bayrell.Lang;
 
 use Runtime.Interfaces.AssetsInterface;
 use Runtime.Interfaces.ContextInterface;
@@ -31,7 +31,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	 * Returns module name
 	 * @return string
 	 */
-	lambda string getModuleName() => "BayrellLang";
+	lambda string getModuleName() => "Bayrell.Lang";
 	
 	
 	
@@ -39,7 +39,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	 * Returns module name
 	 * @return string
 	 */
-	lambda string getModuleVersion() => "0.7.3";
+	lambda string getModuleVersion() => "0.8.0-alpha.9";
 	
 	
 	
@@ -50,15 +50,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	lambda Map<string> requiredModules() =>
 	{
 		'Runtime': '>=0.2 <1.0',
-		'BayrellLang.Parser': '>=0.1 <1.0',
 	};
-	
-	
-	
-	/**
-	 * Compatibility with older versions
-	 */
-	lambda Map<string> getRequiredModules() => static::requiredModules();
 	
 	
 	
@@ -66,112 +58,72 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	 * Returns module files load order
 	 * @return Collection<string>
 	 */
-	lambda Collection<string> getModuleFiles() => 
+	lambda Collection<string> assets() => 
 	[
-		"BayrellLang.CommonParser",
-		"BayrellLang.CommonTranslator",
-		"BayrellLang.CoreTranslator",
-		"BayrellLang.LangConstant",
-		"BayrellLang.ModuleDescription",
-		"BayrellLang.Utils",
-		"BayrellLang.OpCodes.BaseOpCode",
-		"BayrellLang.Exceptions.EndOfStringExpected",
-		"BayrellLang.Exceptions.HexNumberExpected",
-		"BayrellLang.Exceptions.TwiceDeclareElseError",
-		"BayrellLang.OpCodes.OpValue1",
-		"BayrellLang.OpCodes.OpValue2",
-		"BayrellLang.OpCodes.OpValueString",
-		"BayrellLang.OpCodes.OpChilds",
-		"BayrellLang.LangBay.HtmlToken",
-		"BayrellLang.LangBay.ParserBay",
-		"BayrellLang.LangBay.ParserBayFactory",
-		"BayrellLang.LangBay.ParserBayNameToken",
-		"BayrellLang.LangBay.ParserBayToken",
-		"BayrellLang.LangBay.TranslatorBay",
-		"BayrellLang.LangBay.TranslatorBayFactory",
-		"BayrellLang.LangES6.FunctionStack",
-		"BayrellLang.LangES6.TranslatorES6",
-		"BayrellLang.LangES6.TranslatorES6Factory",
-		"BayrellLang.OpCodes.OpAdd",
-		"BayrellLang.OpCodes.OpAnd",
-		"BayrellLang.OpCodes.OpAnnotation",
-		"BayrellLang.OpCodes.OpAssign",
-		"BayrellLang.OpCodes.OpAssignDeclare",
-		"BayrellLang.OpCodes.OpBitAnd",
-		"BayrellLang.OpCodes.OpBitNot",
-		"BayrellLang.OpCodes.OpBitOr",
-		"BayrellLang.OpCodes.OpBitXor",
-		"BayrellLang.OpCodes.OpBreak",
-		"BayrellLang.OpCodes.OpCall",
-		"BayrellLang.OpCodes.OpCallAwait",
-		"BayrellLang.OpCodes.OpClassDeclare",
-		"BayrellLang.OpCodes.OpClassName",
-		"BayrellLang.OpCodes.OpClone",
-		"BayrellLang.OpCodes.OpComponent",
-		"BayrellLang.OpCodes.OpComment",
-		"BayrellLang.OpCodes.OpCompare",
-		"BayrellLang.OpCodes.OpConcat",
-		"BayrellLang.OpCodes.OpContinue",
-		"BayrellLang.OpCodes.OpCopyStruct",
-		"BayrellLang.OpCodes.OpDelete",
-		"BayrellLang.OpCodes.OpDiv",
-		"BayrellLang.OpCodes.OpDynamic",
-		"BayrellLang.OpCodes.OpFlags",
-		"BayrellLang.OpCodes.OpFor",
-		"BayrellLang.OpCodes.OpFunctionDeclare",
-		"BayrellLang.OpCodes.OpHexNumber",
-		"BayrellLang.OpCodes.OpHtmlAttribute",
-		"BayrellLang.OpCodes.OpHtmlComment",
-		"BayrellLang.OpCodes.OpHtmlEscape",
-		"BayrellLang.OpCodes.OpHtmlJson",
-		"BayrellLang.OpCodes.OpHtmlRaw",
-		"BayrellLang.OpCodes.OpHtmlTag",
-		"BayrellLang.OpCodes.OpHtmlText",
-		"BayrellLang.OpCodes.OpHtmlView",
-		"BayrellLang.OpCodes.OpIdentifier",	
-		"BayrellLang.OpCodes.OpIf",
-		"BayrellLang.OpCodes.OpIfElse",
-		"BayrellLang.OpCodes.OpMap",
-		"BayrellLang.OpCodes.OpMethod",
-		"BayrellLang.OpCodes.OpMod",
-		"BayrellLang.OpCodes.OpMult",
-		"BayrellLang.OpCodes.OpNamespace",
-		"BayrellLang.OpCodes.OpNew",
-		"BayrellLang.OpCodes.OpNope",
-		"BayrellLang.OpCodes.OpNot",
-		"BayrellLang.OpCodes.OpNumber",
-		"BayrellLang.OpCodes.OpOr",
-		"BayrellLang.OpCodes.OpPipe",
-		"BayrellLang.OpCodes.OpPostDec",
-		"BayrellLang.OpCodes.OpPostInc",
-		"BayrellLang.OpCodes.OpPow",
-		"BayrellLang.OpCodes.OpPreDec",
-		"BayrellLang.OpCodes.OpPreInc",
-		"BayrellLang.OpCodes.OpPreprocessorCase",
-		"BayrellLang.OpCodes.OpPreprocessorSwitch",
-		"BayrellLang.OpCodes.OpReturn",
-		"BayrellLang.OpCodes.OpShiftLeft",
-		"BayrellLang.OpCodes.OpShiftRight",
-		"BayrellLang.OpCodes.OpStatic",
-		"BayrellLang.OpCodes.OpString",
-		"BayrellLang.OpCodes.OpStringItem",
-		"BayrellLang.OpCodes.OpSub",
-		"BayrellLang.OpCodes.OpTemplateIdentifier",
-		"BayrellLang.OpCodes.OpTernary",
-		"BayrellLang.OpCodes.OpThrow",
-		"BayrellLang.OpCodes.OpTryCatch",
-		"BayrellLang.OpCodes.OpTryCatchChilds",
-		"BayrellLang.OpCodes.OpUse",
-		"BayrellLang.OpCodes.OpVector",
-		"BayrellLang.OpCodes.OpWhile",
-		"BayrellLang.OpCodes.OpFunctionArrowDeclare",
-		"BayrellLang.OpCodes.OpInterfaceDeclare",
-		"BayrellLang.OpCodes.OpStructDeclare",
-		"BayrellLang.LangNodeJS.TranslatorNodeJS",
-		"BayrellLang.LangNodeJS.TranslatorNodeJSFactory",
-		"BayrellLang.LangPHP.TranslatorPHP",
-		"BayrellLang.LangPHP.TranslatorPHPFactory",
+		"Bayrell.Lang/Caret",
+		"Bayrell.Lang/CoreParser",
+		"Bayrell.Lang/CoreToken",
+		"Bayrell.Lang/CoreTranslator",
+		"Bayrell.Lang/LangConstant",
+		"Bayrell.Lang/LangUtils",
+		"Bayrell.Lang/SaveOpCode",
+		"Bayrell.Lang/ModuleDescription",
+		"Bayrell.Lang/Exceptions/ParserUnknownError",
+		"Bayrell.Lang/Exceptions/ParserError",
+		"Bayrell.Lang/Exceptions/ParserEOF",
+		"Bayrell.Lang/Exceptions/ParserExpected",
+		"Bayrell.Lang/LangBay/ParserBay",
+		"Bayrell.Lang/LangBay/ParserBayBase",
+		"Bayrell.Lang/LangBay/ParserBayExpression",
+		"Bayrell.Lang/LangBay/ParserBayOperator",
+		"Bayrell.Lang/LangBay/ParserBayPreprocessor",
+		"Bayrell.Lang/LangBay/ParserBayProgram",
+		"Bayrell.Lang/LangES6/TranslatorES6",
+		"Bayrell.Lang/LangES6/TranslatorES6Expression",
+		"Bayrell.Lang/LangES6/TranslatorES6Operator",
+		"Bayrell.Lang/LangES6/TranslatorES6Program",
+		"Bayrell.Lang/OpCodes/BaseOpCode",
+		"Bayrell.Lang/OpCodes/OpAnnotation",
+		"Bayrell.Lang/OpCodes/OpAssign",
+		"Bayrell.Lang/OpCodes/OpAssignValue",
+		"Bayrell.Lang/OpCodes/OpAttr",
+		"Bayrell.Lang/OpCodes/OpBreak",
+		"Bayrell.Lang/OpCodes/OpCall",
+		"Bayrell.Lang/OpCodes/OpClassOf",
+		"Bayrell.Lang/OpCodes/OpClassRef",
+		"Bayrell.Lang/OpCodes/OpCollection",
+		"Bayrell.Lang/OpCodes/OpComment",
+		"Bayrell.Lang/OpCodes/OpContinue",
+		"Bayrell.Lang/OpCodes/OpDeclareClass",
+		"Bayrell.Lang/OpCodes/OpDeclareFunction",
+		"Bayrell.Lang/OpCodes/OpDeclareFunctionArg",
+		"Bayrell.Lang/OpCodes/OpDict",
+		"Bayrell.Lang/OpCodes/OpEntityName",
+		"Bayrell.Lang/OpCodes/OpFlags",
+		"Bayrell.Lang/OpCodes/OpFor",
+		"Bayrell.Lang/OpCodes/OpIdentifier",
+		"Bayrell.Lang/OpCodes/OpIf",
+		"Bayrell.Lang/OpCodes/OpIfElse",
+		"Bayrell.Lang/OpCodes/OpInc",
+		"Bayrell.Lang/OpCodes/OpItems",
+		"Bayrell.Lang/OpCodes/OpMath",
+		"Bayrell.Lang/OpCodes/OpMethod",
+		"Bayrell.Lang/OpCodes/OpModule",
+		"Bayrell.Lang/OpCodes/OpNamespace",
+		"Bayrell.Lang/OpCodes/OpNew",
+		"Bayrell.Lang/OpCodes/OpNumber",
+		"Bayrell.Lang/OpCodes/OpPreprocessorIfCode",
+		"Bayrell.Lang/OpCodes/OpPreprocessorSwitch",
+		"Bayrell.Lang/OpCodes/OpReturn",
+		"Bayrell.Lang/OpCodes/OpString",
+		"Bayrell.Lang/OpCodes/OpTernary",
+		"Bayrell.Lang/OpCodes/OpThrow",
+		"Bayrell.Lang/OpCodes/OpTypeConvert",
+		"Bayrell.Lang/OpCodes/OpTypeIdentifier",
+		"Bayrell.Lang/OpCodes/OpUse",
+		"Bayrell.Lang/OpCodes/OpWhile",
 	];
+	lambda Collection<string> getAssetsFiles() => static::assets();
 	
 	
 	
@@ -187,28 +139,5 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	 */
 	lambda Collection<Dict> resources() => null;
 	
-	
-	
-	/**
-	 * Called then module registed in context
-	 * @param ContextInterface context
-	 */
-	public static void onRegister(ContextInterface context){}
-	
-	
-	
-	/**
-	 * Called then context read config
-	 * @param Map<mixed> config
-	 */
-	public static void onReadConfig(ContextInterface context, Map<mixed> config){}
-	
-	
-	
-	/**
-	 * Init context
-	 * @param ContextInterface context
-	 */
-	public static void onInitContext(ContextInterface context){}
 	
 }

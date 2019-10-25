@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
- *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,17 +16,22 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
 struct OpPipe extends BaseOpCode
 {
+	static const string KIND_METHOD = "method";
+	static const string KIND_LAMBDA = "lambda";
 	
 	string op = "op_pipe";
-	BaseOpCode value = null;
-	Vector<BaseOpCode> items = null;
-	bool is_return_value = false;
-	
+	string kind = "";
+	BaseOpCode class_name = "";
+	BaseOpCode method_name = "";
+	BaseOpCode obj = null;
+	Collection<BaseOpCode> args = null;
+	bool is_await = false;
+	bool is_context = true;
 }

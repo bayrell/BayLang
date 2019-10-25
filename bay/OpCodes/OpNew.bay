@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,36 +16,15 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 
-export class OpNew extends BaseOpCode{
-	
-	public serializable string op = "op_new";
-	public serializable BaseOpCode value = null;
-	public serializable Vector<BaseOpCode> args = null;
-	
-	
-	
-	/**
-	 * Constructor
-	 */
-	void constructor(BaseOpCode value = null, Vector<BaseOpCode> args = null){
-		parent();
-		this.value = value;
-		this.args = args;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */
-	void destructor(){
-		delete this.args;
-		parent();
-	}
-	
-	
+
+struct OpNew extends BaseOpCode
+{
+	string op = "op_new";
+	Collection<BaseOpCode> args = null;
+	OpTypeIdentifier value = null;
 }

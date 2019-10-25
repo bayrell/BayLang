@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,38 +16,15 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
-use BayrellLang.OpCodes.OpTryCatchChilds;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpTryCatchItem;
 
 
-export class OpTryCatch extends BaseOpCode{
-	
-	public serializable string op = "op_try_catch";
-	public serializable Vector<BaseOpCode> op_try = null;
-	public serializable Vector<OpTryCatchChilds> childs = null;
-	
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(Vector<BaseOpCode> op_try = null, Vector<OpTryCatchChilds> childs = null)
-	{
-		parent();
-		this.op_try = op_try;
-		this.childs = childs;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
-	
-	
+struct OpTryCatch extends BaseOpCode
+{
+	string op = "op_try_catch";
+	BaseOpCode op_try = null;
+	Collection<OpTryCatchItem> items = null;	
 }

@@ -16,16 +16,14 @@
  *  limitations under the License.
  */
 
-namespace BayrellLang;
+namespace Bayrell.Lang;
 
 use Runtime.RuntimeConstant;
 
 
-class LangConstant{
-	
-	
-	static const int ERROR_END_OF_THE_STRING_EXPECTED = RuntimeConstant::ERROR_MODULE_PARSER - 501;
-	static const int ERROR_PARSER_HEX_NUMBER_EXPECTED = RuntimeConstant::ERROR_MODULE_PARSER - 502;
-	static const int ERROR_TWICE_DECLARE_ERROR = RuntimeConstant::ERROR_MODULE_PARSER - 503;
-	
+static class LangConstant
+{
+	static const int ERROR_PARSER = -1000;
+	static const int ERROR_PARSER_EOF = -1001;
+	static const int ERROR_PARSER_EXPECTED = -1002;	
 }

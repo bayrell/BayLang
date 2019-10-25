@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,33 +16,14 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-export class OpUse extends OpValueString{
-	
-	public serializable string op = "op_use";
-	public serializable string alias_name = "";
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(string value = "", string alias_name = ""){
-		parent(value);
-		this.alias_name = alias_name;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
-	
-	
+struct OpUse extends BaseOpCode
+{
+	string op = "op_use";
+	string alias = "";
+	string name = "";
 }

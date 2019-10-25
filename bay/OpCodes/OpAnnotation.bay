@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,16 +16,15 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
-use BayrellLang.OpCodes.OpMap;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpDict;
 
 
-export class OpAnnotation extends BaseOpCode{
-	
-	public serializable string op = "op_annotation";
-	public serializable BaseOpCode kind = null;
-	public serializable OpMap options = null;
-	
+struct OpAnnotation extends BaseOpCode
+{
+	string op = "op_annotation";
+	BaseOpCode name = null;
+	OpDict params = null;
 }

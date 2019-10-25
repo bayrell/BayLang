@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
- *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,38 +15,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+namespace Bayrell.Lang.OpCodes;
+
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-export class OpWhile extends BaseOpCode{
-	
-	public string op = "op_while";
-	
-	public serializable BaseOpCode condition = null;
-	public serializable Vector<BaseOpCode> childs = null;
-	
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(BaseOpCode condition = null, Vector<BaseOpCode> childs = null)
-	{
-		parent();
-		this.condition = condition;
-		this.childs = childs;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
-	
+struct OpWhile extends BaseOpCode
+{	
+	public string op = "op_while";	
+	BaseOpCode condition = null;
+	BaseOpCode value = null;
 }

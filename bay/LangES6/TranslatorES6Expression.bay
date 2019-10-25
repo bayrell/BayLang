@@ -1,0 +1,741 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.LangES6;
+
+use Runtime.CoreStruct;
+use Runtime.re;
+use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.LangES6.TranslatorES6;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAttr;
+use Bayrell.Lang.OpCodes.OpCall;
+use Bayrell.Lang.OpCodes.OpClassOf;
+use Bayrell.Lang.OpCodes.OpClassRef;
+use Bayrell.Lang.OpCodes.OpCollection;
+use Bayrell.Lang.OpCodes.OpDeclareFunction;
+use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
+use Bayrell.Lang.OpCodes.OpDict;
+use Bayrell.Lang.OpCodes.OpHtmlItems;
+use Bayrell.Lang.OpCodes.OpHtmlTag;
+use Bayrell.Lang.OpCodes.OpHtmlValue;
+use Bayrell.Lang.OpCodes.OpIdentifier;
+use Bayrell.Lang.OpCodes.OpInc;
+use Bayrell.Lang.OpCodes.OpMath;
+use Bayrell.Lang.OpCodes.OpNew;
+use Bayrell.Lang.OpCodes.OpNumber;
+use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpString;
+use Bayrell.Lang.OpCodes.OpTernary;
+use Bayrell.Lang.OpCodes.OpTypeConvert;
+use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+
+
+struct TranslatorES6Expression extends CoreStruct
+{
+	
+	/**
+	 * Returns string
+	 */
+	lambda string toString(string s)
+	{
+		s = re::replace('\\\\', '\\\\', s);
+		s = re::replace('"', '\\\"', s);
+		s = re::replace('\n', '\\n', s);
+		s = re::replace('\r', '\\r', s);
+		s = re::replace('\t', '\\t', s);
+		return '"' ~ s ~ '"';
+	}
+	
+	
+	
+	/**
+	 * To pattern
+	 */
+	lambda string toPattern(TranslatorES6 t, OpTypeIdentifier pattern)
+	{
+		Collection names = static::findModuleNames(t, pattern.entity_name.names);
+		string e = rs::join(".", names);
+		Collection a = (pattern.template != null) ? 
+			pattern.template.map
+			(
+				string (OpTypeIdentifier pattern) use (t) => static::toPattern(t, pattern)
+			) : null
+		;
+		string b = (a != null) ? ",\"t\":[" ~ rs::join(",",a) ~ "]" : "";
+		return "{\"e\":" ~ static::toString(e) ~ b ~"}";
+	}
+	
+	
+	
+	/**
+	 * Returns string
+	 */
+	lambda string rtlToStr(TranslatorES6 t, string s)
+	{
+		string module_name = static::findModuleName(t, "rtl");
+		return module_name ~ ".toStr("~s~")";
+	}
+	
+	
+	
+	/**
+	 * Find module name
+	 */
+	lambda string findModuleName(TranslatorES6 t, string module_name)
+	{
+		if (module_name == "Collection") return "Runtime.Collection";
+		else if (module_name == "Dict") return "Runtime.Dict";
+		else if (module_name == "Map") return "Runtime.Map";
+		else if (module_name == "Vector") return "Runtime.Vector";
+		else if (module_name == "rs") return "Runtime.rs";
+		else if (module_name == "rtl") return "Runtime.rtl";
+		else if (module_name == "ArrayInterface") return "";
+		else if (t.modules.has(module_name)) return t.modules.item(module_name);
+		return module_name;
+	}
+	
+	
+	
+	/**
+	 * Returns module name
+	 */
+	lambda list<TranslatorES6, Collection> findModuleNames(TranslatorES6 t, Collection<string> names)
+	{
+		if (names.count() > 0)
+		{
+			string module_name = names.first();
+			module_name = static::findModuleName(t, module_name);
+			if (module_name != "") names = names.setIm(0, module_name);
+		}
+		return names;
+	}
+	
+	
+	
+	/**
+	 * Use module name
+	 */
+	lambda string useModuleName(TranslatorES6 t, string module_name)
+	{
+		module_name = static::findModuleName(t, module_name);
+		return module_name;
+	}
+	
+	
+	
+	/**
+	 * OpTypeIdentifier
+	 */
+	lambda list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
+	{
+		Collection<string> names = static::findModuleNames(t, op_code.entity_name.names);
+		string s = rs::join(".", names);
+		return [t, s];
+	}
+	
+	
+	
+	/**
+	 * OpIdentifier
+	 */
+	lambda list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
+	{
+		if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
+		{
+			return [t, "__ctx"];
+		}
+		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
+		{
+			return [t, "__ctx.translate"];
+		}
+		else if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
+		{
+			string module_name = op_code.value;
+			string new_module_name = static::findModuleName(t, module_name);
+			return [t, new_module_name];
+		}
+		string content = op_code.value;
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpNumber
+	 */
+	lambda list<TranslatorES6, string> OpNumber(TranslatorES6 t, OpNumber op_code)
+	{
+		string content = op_code.value;
+		if (op_code.negative)
+		{
+			content = "-" ~ content;
+			t <= opcode_level <= 15;
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpString
+	 */
+	lambda list<TranslatorES6, string> OpString(TranslatorES6 t, OpString op_code)
+	{
+		return [t, static::toString(op_code.value)];
+	}
+	
+	
+	
+	/**
+	 * OpCollection
+	 */
+	lambda list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
+	{
+		string content = "";
+		Collection<string> values = op_code.values.map
+		(
+			string (BaseOpCode op_code) use (t)
+			{
+				list res = static::Expression(t, op_code); t = res[0]; string s = res[1];
+				return s;
+			}
+		);
+		string module_name = static::findModuleName(t, "Collection");
+		content = module_name ~ ".from([" ~ rs::join(",", values) ~ "])";
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpDict
+	 */
+	lambda list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
+	{
+		string content = "";
+		Collection<string> values = op_code.values.transition
+		(
+			string (BaseOpCode op_code, string key) use (t)
+			{
+				list res = static::Expression(t, op_code); t = res[0]; string s = res[1];
+				return static::toString(key) ~ ":" ~ s;
+			}
+		);
+		string module_name = static::findModuleName(t, "Dict");
+		content = module_name ~ ".from({" ~ rs::join(",", values) ~ "})";
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * Dynamic
+	 */
+	lambda list<TranslatorES6, string> Dynamic(TranslatorES6 t, BaseOpCode op_code)
+	{
+		if (op_code instanceof OpIdentifier)
+		{
+			return static::OpIdentifier(t, op_code);
+		}
+		else if (op_code instanceof OpAttr)
+		{
+			Vector<BaseOpCode> attrs = new Vector();
+			OpAttr op_code_item = op_code;
+			BaseOpCode op_code_first = op_code;
+			string prev_kind = "";
+			string s = "";
+			
+			while (op_code_first instanceof OpAttr)
+			{
+				attrs.push(op_code_first);
+				op_code_item = op_code_first;
+				op_code_first = op_code_first.obj;
+			}
+			
+			attrs = attrs.reverseIm();
+			
+			if (op_code_first instanceof OpCall)
+			{
+				prev_kind = "var";
+				list res = static::OpCall(t, op_code_first); t = res[0]; s = res[1];
+			}
+			else if (op_code_first instanceof OpNew)
+			{
+				prev_kind = "var";
+				list res = static::OpNew(t, op_code_first); t = res[0]; s = "(" ~ res[1] ~ ")";
+			}
+			else if (op_code_first instanceof OpIdentifier)
+			{
+				if (t.modules.has(op_code_first.value) or op_code_first.kind == OpIdentifier::KIND_SYS_TYPE)
+				{
+					prev_kind = "static";
+					list res = static::OpIdentifier(t, op_code_first); t = res[0]; s = res[1];
+				}
+				else if (op_code_first.kind == OpIdentifier::KIND_CLASSREF)
+				{
+					if (op_code_first.value == "static")
+					{
+						s = "this" ~ (not t.is_static_function ? ".constructor" : "");
+						prev_kind = "static";
+					}
+					else if (op_code_first.value == "self")
+					{
+						prev_kind = "static";
+						s = t.current_class_full_name;
+					}
+					else if (op_code_first.value == "this")
+					{
+						prev_kind = "var";
+						s = "this";
+					}
+				}
+				else if (op_code_first.kind == OpIdentifier::KIND_CONTEXT and op_code_first.value == "@")
+				{
+					prev_kind = "var";
+					s = "__ctx";
+				}
+				else if (op_code_first.kind == OpIdentifier::KIND_CONTEXT and op_code_first.value == "_")
+				{
+					prev_kind = "var";
+					s = "__ctx.translate";
+				}
+				else
+				{
+					prev_kind = "var";
+					s = op_code_first.value;
+				}
+			}
+			
+			for (int i=0; i<attrs.count(); i++)
+			{
+				OpAttr attr = attrs.item(i);
+				
+				if (attr.kind == OpAttr::KIND_ATTR)
+				{
+					s ~= "." ~ attr.value.value;
+				}
+				else if (attr.kind == OpAttr::KIND_STATIC)
+				{
+					if (prev_kind == "var") s ~= ".constructor." ~ attr.value.value;
+					else s ~= "." ~ attr.value.value;
+					prev_kind = "static";
+				}
+				else if (attr.kind == OpAttr::KIND_DYNAMIC)
+				{
+					list res = static::Expression(t, attr.value);
+					t = res[0]; s ~= "[" ~ res[1] ~ "]";
+				}
+			}
+			
+			return [t, s];
+		}
+		else if (op_code instanceof OpCall)
+		{
+			return static::OpCall(t, op_code);
+		}
+		else if (op_code instanceof OpPipe)
+		{
+			return static::OpPipe(t, op_code);
+		}
+		return [t, ""];
+	}
+	
+	
+	
+	/**
+	 * OpInc
+	 */
+	lambda list<TranslatorES6, string> OpInc(TranslatorES6 t, OpInc op_code)
+	{
+		string content = "";
+		list res = static::Expression(t, op_code.value); t = res[0]; string s = res[1];
+		
+		if (op_code.kind == OpInc::KIND_PRE_INC) content = "++" ~ s;
+		else if (op_code.kind == OpInc::KIND_PRE_DEC) content = "--" ~ s;
+		else if (op_code.kind == OpInc::KIND_POST_INC) content = s ~ "++";
+		else if (op_code.kind == OpInc::KIND_POST_DEC) content = s ~ "--";
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpMath
+	 */
+	lambda list<TranslatorES6, string> OpMath(TranslatorES6 t, OpMath op_code)
+	{
+		list res = static::Expression(t, op_code.value1); t = res[0];
+		int opcode_level1 = res[0].opcode_level;
+		string s1 = res[1];
+		
+		string op = ""; string op_math = op_code.math;
+		int opcode_level = 0;
+		if (op_code.math == "!") { opcode_level = 16; op = "!"; }
+		if (op_code.math == ">>") { opcode_level = 12; op = ">>"; }
+		if (op_code.math == "<<") { opcode_level = 12; op = "<<"; }
+		if (op_code.math == "&") { opcode_level = 9; op = "&"; }
+		if (op_code.math == "xor") { opcode_level = 8; op = "^"; }
+		if (op_code.math == "|") { opcode_level = 7; op = "|"; }
+		if (op_code.math == "*") { opcode_level = 14; op = "*"; }
+		if (op_code.math == "/") { opcode_level = 14; op = "/"; }
+		if (op_code.math == "%") { opcode_level = 14; op = "%"; }
+		if (op_code.math == "div") { opcode_level = 14; op = "div"; }
+		if (op_code.math == "mod") { opcode_level = 14; op = "mod"; }
+		if (op_code.math == "+") { opcode_level = 13; op = "+"; }
+		if (op_code.math == "-") { opcode_level = 13; op = "-"; }
+		if (op_code.math == "~") { opcode_level = 13; op = "+"; }
+		if (op_code.math == "!") { opcode_level = 13; op = "!"; }
+		if (op_code.math == "===") { opcode_level = 10; op = "==="; }
+		if (op_code.math == "!==") { opcode_level = 10; op = "!=="; }
+		if (op_code.math == "==") { opcode_level = 10; op = "=="; }
+		if (op_code.math == "!=") { opcode_level = 10; op = "!="; }
+		if (op_code.math == ">=") { opcode_level = 10; op = ">="; }
+		if (op_code.math == "<=") { opcode_level = 10; op = "<="; }
+		if (op_code.math == ">") { opcode_level = 10; op = ">"; }
+		if (op_code.math == "<") { opcode_level = 10; op = "<"; }
+		if (op_code.math == "is") { opcode_level = 10; op = "instanceof"; }
+		if (op_code.math == "instanceof") { opcode_level = 10; op = "instanceof"; }
+		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
+		if (op_code.math == "not") { opcode_level = 16; op = "!"; }
+		if (op_code.math == "and") { opcode_level = 6; op = "&&"; }
+		if (op_code.math == "&&") { opcode_level = 6; op = "&&"; }
+		if (op_code.math == "or") { opcode_level = 5; op = "||"; }
+		if (op_code.math == "||") { opcode_level = 5; op = "||"; }
+		
+		string content = "";
+		if (op_code.math == "!" or op_code.math == "not")
+		{
+			content = op ~ t.o(s1, opcode_level1, opcode_level);
+		}
+		else
+		{
+			list res = static::Expression(t, op_code.value2); t = res[0];
+			int opcode_level2 = res[0].opcode_level;
+			string s2 = res[1];
+			string op1 = t.o(s1, opcode_level1, opcode_level);
+			string op2 = t.o(s2, opcode_level2, opcode_level);
+			
+			if (op_math == "~")
+			{
+				content = op1 ~ " " ~ op ~ " " ~ static::rtlToStr(t, op2);
+			}
+			else if (op_math == "implements")
+			{
+				string rtl_name = static::findModuleName(t, "rtl");
+				content = rtl_name ~ ".is_implements(" ~ op1 ~ ", " ~ op2 ~ ")";
+			}
+			else
+			{
+				content = op1 ~ " " ~ op ~ " " ~ op2;
+			}
+		}
+		
+		t <= opcode_level <= opcode_level;
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpNew
+	 */
+	lambda list<TranslatorES6, string> OpNew(TranslatorES6 t, OpInc op_code)
+	{
+		string content = "new ";
+		list res = static::OpTypeIdentifier(t, op_code.value); t = res[0]; content ~= res[1];
+		bool flag = false;
+		
+		content ~= "(";
+		if (t.current_function == null or t.current_function.is_context)
+		{
+			content ~= "__ctx";
+			flag = true;
+		}
+		for (int i=0; i<op_code.args.count(); i++)
+		{
+			BaseOpCode item = op_code.args.item(i);
+			list res = t.expression::Expression(t, item); t = res[0]; string s = res[1];
+			content ~= (flag ? ", " : "") ~ s;
+			flag = true;
+		}
+		content ~= ")";
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpCall
+	 */
+	lambda list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
+	{
+		if (t.current_function.isFlag("async") and op_code.is_await)
+		{
+			return t.async_await::OpCall(t, op_code, is_expression);
+		}
+		
+		string s = "";
+		bool flag = false;
+		list res = t.expression::Dynamic(t, op_code.obj); t = res[0]; s = res[1];
+		if (s == "parent")
+		{
+			s = static::useModuleName(t, t.current_class_extends_name);
+			if (t.current_function.name != "constructor") 
+			{
+				if (t.current_function.isStatic()) s ~= "." ~ t.current_function.name;
+				else s ~= ".prototype." ~ t.current_function.name;
+			}
+			s ~= ".call(this"; flag = true;
+		}
+		else s ~= "(";
+		
+		string content = s;
+		if (t.current_function.is_context and op_code.is_context)
+		{
+			content ~= (flag ? ", " : "") ~ "__ctx";
+			flag = true;
+		}
+		for (int i=0; i<op_code.args.count(); i++)
+		{
+			BaseOpCode item = op_code.args.item(i);
+			list res = t.expression::Expression(t, item); t = res[0]; string s = res[1];
+			content ~= (flag ? ", " : "") ~ s;
+			flag = true;
+		}
+		content ~= ")";
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpPipe
+	 */
+	lambda list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code, bool is_expression = true)
+	{
+		if (t.current_function.isFlag("async") and op_code.is_await)
+		{
+			return t.async_await::OpPipe(t, op_code, is_expression);
+		}
+		
+		list res = t.expression::Expression(t, op_code.obj); t = res[0];
+		string var_name = "";
+		string content = "";
+		if (op_code.obj instanceof OpIdentifier)
+		{
+			var_name = res[1];
+		}
+		else
+		{
+			list res = t::addSaveOpCode
+			(
+				t,
+				{
+					"op_code": op_code.obj,
+					"var_content": res[1],
+				}
+			);
+			t = res[0]; var_name = res[1];
+		}
+		if (op_code.kind == OpPipe::KIND_METHOD)
+		{
+			content = var_name ~ ".constructor." ~ op_code.method_name.value;
+		}
+		else
+		{
+			list res = static::OpTypeIdentifier(t, op_code.class_name); t = res[0];
+			content = res[1] ~ "." ~ op_code.method_name.value;
+		}
+		
+		bool flag = false;
+		content ~= "(";
+		if (t.current_function.is_context and op_code.is_context)
+		{
+			content ~= "__ctx";
+			flag = true;
+		}
+		for (int i=0; i<op_code.args.count(); i++)
+		{
+			BaseOpCode item = op_code.args.item(i);
+			list res = t.expression::Expression(t, item); t = res[0]; string s1 = res[1];
+			content ~= (flag ? ", " : "") ~ s1;
+			flag = true;
+		}
+		content ~= (flag ? ", " : "") ~ var_name;
+		content ~= ")";
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpClassOf
+	 */
+	lambda list<TranslatorES6, string> OpClassOf(TranslatorES6 t, OpClassOf op_code)
+	{
+		Collection<string> names = static::findModuleNames(t, op_code.entity_name.names);
+		string s = rs::join(".", names);
+		return [t, static::toString(s)];
+	}
+	
+	
+	
+	/**
+	 * OpTernary
+	 */
+	lambda list<TranslatorES6, string> OpTernary(TranslatorES6 t, OpTernary op_code)
+	{
+		string content = "";
+		
+		t <= opcode_level <= 100;
+		list res = t.expression::Expression(t, op_code.condition); t = res[0]; string condition = res[1];
+		list res = t.expression::Expression(t, op_code.if_true); t = res[0]; string if_true = res[1];
+		list res = t.expression::Expression(t, op_code.if_false); t = res[0]; string if_false = res[1];
+		
+		content ~= "(" ~ condition ~ ") ? " ~ if_true ~ " : " ~ if_false;
+		t <= opcode_level <= 11;
+		
+		/* OpTernary */
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpTypeConvert
+	 */
+	lambda list<TranslatorES6, string> OpTypeConvert(TranslatorES6 t, OpTypeConvert op_code)
+	{
+		string content = "";
+		list res = static::Expression(t, op_code.value); t = res[0]; string value = res[1];
+		content = static::useModuleName(t, "rtl") ~ 
+			".to(" ~ value ~ ", " ~ static::toPattern(t, op_code.pattern) ~ ")"
+		;
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpTernary
+	 */
+	lambda list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
+	{
+		string content = "";
+		
+		/* Set function name */
+		OpDeclareFunction save_f = t.current_function;
+		t <= current_function <= op_code;
+		
+		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
+		content ~= "(" ~ args ~ ") => ";
+		list res = t.operator::OpDeclareFunctionBody(t, op_code);
+		content ~= res[1];
+		
+		/* Restore function */
+		t <= current_function <= save_f;
+		
+		/* OpTernary */
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * Expression
+	 */
+	lambda list<TranslatorES6, string> Expression(TranslatorES6 t, BaseOpCode op_code)
+	{
+		string content = "";
+		t <= opcode_level <= 100;
+		
+		if (op_code instanceof OpIdentifier)
+		{
+			list res = static::OpIdentifier(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpTypeIdentifier)
+		{
+			list res = static::OpTypeIdentifier(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpNumber)
+		{
+			list res = static::OpNumber(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpString)
+		{
+			list res = static::OpString(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpCollection)
+		{
+			list res = static::OpCollection(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpDict)
+		{
+			list res = static::OpDict(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpInc)
+		{
+			t <= opcode_level <= 16;
+			list res = static::OpInc(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpMath)
+		{
+			list res = static::OpMath(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpNew)
+		{
+			list res = static::OpNew(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpAttr or op_code instanceof OpPipe)
+		{
+			list res = static::Dynamic(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpCall)
+		{
+			list res = static::OpCall(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpClassOf)
+		{
+			list res = static::OpClassOf(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpTernary)
+		{
+			list res = static::OpTernary(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpTypeConvert)
+		{
+			list res = static::OpTypeConvert(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpDeclareFunction)
+		{
+			list res = static::OpDeclareFunction(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpHtmlItems)
+		{
+			list res = t.html::OpHtmlItems(t, op_code); t = res[0]; content = res[1];
+		}
+		
+		return [t, content];
+	}
+	
+}

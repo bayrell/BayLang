@@ -54,3 +54,5 @@ continue
 clone
 instanceof
 implementsof
+list
+module

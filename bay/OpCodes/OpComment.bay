@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,14 +16,13 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.OpValueString;
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-export class OpComment extends OpValueString{
-	
-	public serializable string op = "op_comment";
-	
-	
+struct OpComment extends BaseOpCode
+{
+	string op = "op_comment";
+	string value = "";
 }

@@ -1,0 +1,172 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.LangNode;
+
+use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.LangES6.TranslatorES6;
+use Bayrell.Lang.LangES6.TranslatorES6Expression;
+use Bayrell.Lang.LangES6.TranslatorES6Operator;
+use Bayrell.Lang.LangES6.TranslatorES6Program;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpCollection;
+use Bayrell.Lang.OpCodes.OpDict;
+use Bayrell.Lang.OpCodes.OpIdentifier;
+use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+
+
+static class TranslatorNodeExpression extends TranslatorES6Expression
+{
+	
+	/**
+	 * Returns string
+	 */
+	lambda string rtlToStr(TranslatorES6 t, string s)
+	{
+		return "use(\"Runtime.rtl\").toStr("~s~")";
+	}
+	
+	
+	
+	/**
+	 * Use module name
+	 */
+	lambda string useModuleName(TranslatorES6 t, string module_name)
+	{
+		module_name = static::findModuleName(t, module_name);
+		return "use(" ~ static::toString(module_name) ~ ")";
+	}
+	
+	
+	
+	/**
+	 * OpIdentifier
+	 */
+	lambda list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
+	{
+		if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
+		{
+			return [t, "__ctx"];
+		}
+		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
+		{
+			return [t, "__ctx.translate"];
+		}
+		else if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
+		{
+			string module_name = op_code.value;
+			string new_module_name = static::findModuleName(t, module_name);
+			if (module_name != new_module_name)
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"op_code": op_code,
+						"var_content": static::useModuleName(t, module_name),
+					}
+				);
+				t = res[0];
+				string var_name = res[1];
+				return [t, var_name];
+			}
+		}
+		
+		return [t, op_code.value];
+	}
+	
+	
+	
+	/**
+	 * OpTypeIdentifier
+	 */
+	lambda list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
+	{
+		string var_name = "";
+		
+		if (op_code.entity_name.names.count() > 0)
+		{
+			string module_name = op_code.entity_name.names.first();
+			string new_module_name = static::findModuleName(t, module_name);
+			if (module_name != new_module_name)
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"var_content": static::useModuleName(t, module_name),
+					}
+				);
+				t = res[0];
+				var_name = res[1];
+			}
+		}
+		
+		if (var_name == "")
+		{
+			var_name = rs::join(".", op_code.entity_name.names);
+		}
+		
+		return [t, var_name];
+	}
+	
+	
+	
+	/**
+	 * OpCollection
+	 */
+	lambda list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
+	{
+		string content = "";
+		Collection<string> values = op_code.values.map
+		(
+			string (BaseOpCode op_code) use (t)
+			{
+				list res = static::Expression(t, op_code); t = res[0]; string s = res[1];
+				return s;
+			}
+		);
+		content = static::useModuleName(t, "Runtime.Collection") ~
+			".from([" ~ rs::join(",", values) ~ "])"
+		;
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpDict
+	 */
+	lambda list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
+	{
+		string content = "";
+		Collection<string> values = op_code.values.transition
+		(
+			string (BaseOpCode op_code, string key) use (t)
+			{
+				list res = static::Expression(t, op_code); t = res[0]; string s = res[1];
+				return static::toString(key) ~ ":" ~ s;
+			}
+		);
+		content = static::useModuleName(t, "Runtime.Dict") ~
+			".from({" ~ rs::join(",", values) ~ "})"
+		;
+		return [t, content];
+	}
+	
+}

@@ -1,0 +1,792 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.LangES6;
+
+use Runtime.CoreStruct;
+use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.LangES6.TranslatorES6;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAssign;
+use Bayrell.Lang.OpCodes.OpAssignStruct;
+use Bayrell.Lang.OpCodes.OpAssignValue;
+use Bayrell.Lang.OpCodes.OpAttr;
+use Bayrell.Lang.OpCodes.OpBreak;
+use Bayrell.Lang.OpCodes.OpCall;
+use Bayrell.Lang.OpCodes.OpComment;
+use Bayrell.Lang.OpCodes.OpContinue;
+use Bayrell.Lang.OpCodes.OpDeclareFunction;
+use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
+use Bayrell.Lang.OpCodes.OpDelete;
+use Bayrell.Lang.OpCodes.OpFor;
+use Bayrell.Lang.OpCodes.OpIf;
+use Bayrell.Lang.OpCodes.OpIfElse;
+use Bayrell.Lang.OpCodes.OpInc;
+use Bayrell.Lang.OpCodes.OpItems;
+use Bayrell.Lang.OpCodes.OpMath;
+use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
+use Bayrell.Lang.OpCodes.OpReturn;
+use Bayrell.Lang.OpCodes.OpThrow;
+use Bayrell.Lang.OpCodes.OpTryCatch;
+use Bayrell.Lang.OpCodes.OpTryCatchItem;
+use Bayrell.Lang.OpCodes.OpWhile;
+
+
+struct TranslatorES6Operator extends CoreStruct
+{
+	
+	/**
+	 * Returns true if op_code contains await
+	 */
+	lambda memorize bool isAwait(BaseOpCode op_code)
+	{
+		if (op_code == null) return false;
+		if (op_code instanceof OpAssign)
+		{
+			if (op_code.kind == OpAssign::KIND_ASSIGN or op_code.kind == OpAssign::KIND_DECLARE)
+			{
+				for (int i=0; i<op_code.values.count(); i++)
+				{
+					OpAssignValue item = op_code.values.item(i);
+					bool flag = static::isAwait(item.expression);
+					if (flag) return true;
+				}
+			}
+			else if (op_code.kind == OpAssign::KIND_STRUCT)
+			{
+				bool flag = static::isAwait(op_code.expression);
+				if (flag) return true;
+			}
+		}
+		else if (op_code instanceof OpAssignStruct)
+		{
+			bool flag = static::isAwait(op_code.expression);
+			if (flag) return true;
+		}
+		else if (op_code instanceof OpAttr)
+		{
+			BaseOpCode op_code_next = op_code;
+			while (op_code_next instanceof OpAttr)
+			{
+				op_code_next = op_code_next.obj;
+			}
+			return static::isAwait(op_code_next);
+		}
+		else if (op_code instanceof OpCall)
+		{
+			return op_code.is_await;
+		}
+		else if (op_code instanceof OpPipe)
+		{
+			return op_code.is_await;
+		}
+		else if (op_code instanceof OpFor)
+		{
+			return static::isAwait(op_code.expr2) or static::isAwait(op_code.value);
+		}
+		else if (op_code instanceof OpIf)
+		{
+			bool flag = false;
+			flag = static::isAwait(op_code.condition); if (flag) return true;
+			flag = static::isAwait(op_code.if_true); if (flag) return true;
+			flag = static::isAwait(op_code.if_false); if (flag) return true;
+			for (int i=0; i<op_code.if_else.count(); i++)
+			{
+				OpIfElse if_else = op_code.if_else.item(i);
+				flag = static::isAwait(if_else.condition); if (flag) return true;
+				flag = static::isAwait(if_else.if_true); if (flag) return true;
+			}
+		}
+		else if (op_code instanceof OpItems)
+		{
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				BaseOpCode item = op_code.items.item(i);
+				bool flag = static::isAwait(item);
+				if (flag) return true;
+			}
+		}
+		else if (op_code instanceof OpMath)
+		{
+			if (op_code.math == "!" or op_code.math == "not")
+			{
+				return static::isAwait(op_code.value1);
+			}
+			else
+			{
+				return static::isAwait(op_code.value1) or static::isAwait(op_code.value2);
+			}
+		}
+		else if (op_code instanceof OpReturn)
+		{
+			bool flag = static::isAwait(op_code.expression);
+			if (flag) return true;
+		}
+		else if (op_code instanceof OpTryCatch)
+		{
+			return static::isAwait(op_code.op_try);
+		}
+		else if (op_code instanceof OpWhile)
+		{
+			return static::isAwait(op_code.condition) or static::isAwait(op_code.value);
+		}
+		return false;
+	}
+	
+	
+	
+	/**
+	 * OpAssign
+	 */
+	lambda list<TranslatorES6, string> OpAssignStruct(TranslatorES6 t, OpAssignStruct op_code, int pos = 0)
+	{
+		if (op_code.names.count() <= pos)
+		{
+			return t.expression::Expression(t, op_code.expression);
+		}
+		
+		Collection<string> names = op_code.names.slice(0, pos).unshiftIm(op_code.var_name);
+		string s = rs::join(".", names);
+		string name = op_code.names.item(pos);
+		
+		list res = static::OpAssignStruct(t, op_code, pos + 1); t = res[0];
+		s ~= ".copy(__ctx, { \"" ~ name ~ "\": " ~ res[1]  ~ " })";
+		
+		return [t, s];
+	}
+	
+	
+	
+	/**
+	 * OpAssign
+	 */
+	lambda list<TranslatorES6, string> OpAssign(TranslatorES6 t, OpAssign op_code, bool flag_indent = true)
+	{
+		string content = "";
+		
+		if (op_code.kind == OpAssign::KIND_ASSIGN or op_code.kind == OpAssign::KIND_DECLARE)
+		{
+			for (int i=0; i<op_code.values.count(); i++)
+			{
+				string s = "";
+				string op = "=";
+				OpAssignValue item = op_code.values.item(i);
+				if (op_code.kind == OpAssign::KIND_DECLARE)
+				{
+					if (t.current_function.isFlag("async")) s = item.var_name;
+					else s = "var " ~ item.var_name;
+				}
+				else
+				{
+					list res = t.expression::Dynamic(t, item.op_code);
+					t = res[0]; s = res[1]; op = item.op;
+				}
+				if (item.expression != null)
+				{
+					list res = t.expression::Expression(t, item.expression);
+					t = res[0];
+					if (op == "~=") s ~= " += " ~ t.expression::rtlToStr(t, res[1]);
+					else s ~= " " ~ op ~ " " ~ res[1];
+				}
+				if ( not (
+					item.expression == null and
+					op_code.kind == OpAssign::KIND_DECLARE and
+					t.current_function.isFlag("async")
+				))
+				{
+					content ~= flag_indent ? t.s(s ~ ";") : (s ~ ";");
+				}
+				
+				if (item.var_name != "" and t.save_vars.indexOf(item.var_name) == -1)
+				{
+					t <= save_vars <= t.save_vars.pushIm(item.var_name);
+				}
+			}
+		}
+		else if (op_code.kind == OpAssign::KIND_STRUCT)
+		{
+			string s = op_code.var_name ~ " = ";
+			list res = static::OpAssignStruct(t, op_code, 0); t = res[0];
+			content = t.s(s ~ res[1] ~ ";");
+		}
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpDelete
+	 */
+	lambda list<TranslatorES6, string> OpDelete(TranslatorES6 t, OpDelete op_code)
+	{
+		string content = "";
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpFor
+	 */
+	lambda list<TranslatorES6, string> OpFor(TranslatorES6 t, OpFor op_code)
+	{
+		if (t.current_function.isFlag("async"))
+		{
+			if (static::isAwait(op_code))
+			{
+				return t.async_await::OpFor(t, op_code);
+			}
+		}
+		
+		string content = "";
+		string s1 = "";
+		string s2 = "";
+		string s3 = "";
+		
+		if (op_code.expr1 instanceof OpAssign)
+		{
+			list res = static::OpAssign(t, op_code.expr1, false);
+			t = res[0]; s1 = res[1];
+		}
+		else
+		{
+			list res = t.expression::Expression(t, op_code.expr1); 
+			t = res[0]; s1 = res[1];
+		}
+		
+		list res = t.expression::Expression(t, op_code.expr2); t = res[0]; s2 = res[1];
+		list res = t.expression::Expression(t, op_code.expr3); t = res[0]; s3 = res[1];
+		
+		content = t.s("for ("~s1~s2~";"~s3~")");
+		content ~= t.s("{");
+		t = t.levelInc();
+		list res = static::Operators(t, op_code.value); t = res[0]; content ~= res[1];
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpIf
+	 */
+	lambda list<TranslatorES6, string> OpIf(TranslatorES6 t, OpIf op_code)
+	{
+		if (t.current_function.isFlag("async"))
+		{
+			if (static::isAwait(op_code))
+			{
+				return t.async_await::OpIf(t, op_code);
+			}
+		}
+		
+		string content = "";
+		list res = t.expression::Expression(t, op_code.condition);
+		t = res[0]; string s1 = res[1];
+		
+		content = t.s("if ("~s1~")");
+		content ~= t.s("{");
+		t = t.levelInc();
+		list res = static::Operators(t, op_code.if_true); t = res[0]; content ~= res[1];
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		for (int i=0; i<op_code.if_else.count(); i++)
+		{
+			OpIfElse if_else = op_code.if_else.item(i);
+			list res = t.expression::Expression(t, if_else.condition); 
+			t = res[0]; string s2 = res[1];
+			content ~= t.s("else if ("~s2~")");
+			content ~= t.s("{");
+			t = t.levelInc();
+			list res = static::Operators(t, if_else.if_true); t = res[0]; content ~= res[1];
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
+		
+		if (op_code.if_false != null)
+		{
+			content ~= t.s("else");
+			content ~= t.s("{");
+			t = t.levelInc();
+			list res = static::Operators(t, op_code.if_false); 
+			t = res[0]; content ~= res[1];
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpReturn
+	 */
+	lambda list<TranslatorES6, string> OpReturn(TranslatorES6 t, OpReturn op_code)
+	{
+		if (t.current_function.isFlag("async"))
+		{
+			return t.async_await::OpReturn(t, op_code);
+		}
+		
+		string content = "";
+		string s1 = "";
+		if (op_code.expression)
+		{
+			list res = t.expression::Expression(t, op_code.expression); t = res[0]; s1 = res[1];
+		}
+		
+		if (t.current_function.flags != null and t.current_function.flags.isFlag("memorize"))
+		{
+			string content = t.s("var __memorize_value = " ~ s1 ~ ";");
+			content ~= t.s(t.expression::useModuleName(t, "Runtime.rtl") ~ "._memorizeSave(\"" ~ 
+					t.current_class_full_name ~ "." ~ t.current_function.name ~
+					"\", arguments, __memorize_value);");
+			content ~= t.s("return __memorize_value;");
+			return [t, content];
+		}
+		
+		content ~= t.s("return " ~ s1 ~ ";");
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpThrow
+	 */
+	lambda list<TranslatorES6, string> OpThrow(TranslatorES6 t, OpThrow op_code)
+	{
+		list res = t.expression::Expression(t, op_code.expression); t = res[0];
+		string content = t.s("throw " ~ res[1]);
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpTryCatch
+	 */
+	lambda list<TranslatorES6, string> OpTryCatch(TranslatorES6 t, OpTryCatch op_code)
+	{
+		if (t.current_function.isFlag("async"))
+		{
+			if (static::isAwait(op_code))
+			{
+				return t.async_await::OpTryCatch(t, op_code);
+			}
+		}
+		
+		string content = "";
+		
+		content ~= t.s("try");
+		content ~= t.s("{");
+		t = t.levelInc();
+		list res = static::Operators(t, op_code.op_try); t = res[0]; content ~= res[1];
+		t = t.levelDec();
+		content ~= t.s("}");
+		content ~= t.s("catch (_ex)");
+		content ~= t.s("{");
+		t = t.levelInc();
+		
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			string s = ""; string pattern = "";
+			OpTryCatchItem item = op_code.items.item(i);
+			list res = t.expression::OpTypeIdentifier(t, item.pattern); t = res[0]; pattern ~= res[1];
+			
+			if (pattern != "var") s = "if (_ex instanceof " ~ pattern ~ ")";
+			else s = "if (true)";
+			
+			s ~= t.s("{");
+			t = t.levelInc();
+			
+			s ~= (s != "") ? t.s("var " ~ item.name ~ " = _ex;") : "var " ~ item.name ~ " = _ex;";
+			list res = t.operator::Operators(t, item.value); t = res[0]; s ~= t.s(res[1]);
+			
+			t = t.levelDec();
+			s ~= t.s("}");
+			
+			if (i != 0) s = "else " ~ s;
+			content ~= t.s(s);
+		}
+		
+		content ~= t.s("else");
+		content ~= t.s("{");
+		t = t.levelInc();
+		content ~= t.s("throw _ex;");
+		t = t.levelDec();
+		content ~= t.s("}");
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpWhile
+	 */
+	lambda list<TranslatorES6, string> OpWhile(TranslatorES6 t, OpWhile op_code)
+	{
+		if (t.current_function.isFlag("async"))
+		{
+			if (static::isAwait(op_code))
+			{
+				return t.async_await::OpWhile(t, op_code);
+			}
+		}
+		
+		string content = "";
+		list res = t.expression::Expression(t, op_code.condition); t = res[0]; string s1 = res[1];
+		
+		content ~= t.s("while ("~s1~")");
+		content ~= t.s("{");
+		t = t.levelInc();
+		list res = static::Operators(t, op_code.value); t = res[0]; content ~= res[1];
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpPreprocessorIfCode
+	 */
+	lambda list<TranslatorES6, string> OpPreprocessorIfCode(TranslatorES6 t, OpPreprocessorIfCode op_code)
+	{
+		string content = "";
+		if (t.preprocessor_flags.has(op_code.condition.value))
+		{
+			content = rs::trim(op_code.content);
+		}
+		return [t, t.s(content)];
+	}
+	
+	
+	
+	/**
+	 * OpComment
+	 */
+	lambda list<TranslatorES6, string> OpComment(TranslatorES6 t, OpComment op_code)
+	{
+		string content = t.s("/*" ~ op_code.value ~ "*/");
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpComments
+	 */
+	lambda list<TranslatorES6, string> OpComments(TranslatorES6 t, Collection<OpComment> comments)
+	{
+		string content = "";
+		for (int i=0; i<comments.count(); i++)
+		{
+			list res = static::OpComment(t, comments.item(i));
+			content ~= res[1];
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpComments
+	 */
+	lambda list<TranslatorES6, string> AddComments
+	(
+		TranslatorES6 t, Collection<OpComment> comments, string content
+	)
+	{
+		if (comments and comments.count() > 0)
+		{
+			list res = static::OpComments(t, comments);
+			string s = res[1];
+			if (s != "")
+			{
+				content = s ~ content;
+			}
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * Operator
+	 */
+	lambda list<TranslatorES6, string> Operator(TranslatorES6 t, BaseOpCode op_code)
+	{
+		string content = "";
+		
+		/* Clear save op codes */
+		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+		int save_op_code_inc = t.save_op_code_inc;
+		
+		if (op_code instanceof OpAssign)
+		{
+			list res = static::OpAssign(t, op_code); t = res[0];
+			
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") content = save ~ content;
+			content ~= res[1];
+			
+			t <= save_op_codes <= save_op_codes;
+			t <= save_op_code_inc <= save_op_code_inc;
+			
+			return [t, content];
+		}
+		else if (op_code instanceof OpAssignStruct)
+		{
+			list res = static::OpAssignStruct(t, op_code); t = res[0]; string s1 = res[1];
+			
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") content = save;
+			content ~= t.s(op_code.var_name ~ " = " ~ s1 ~ ";");
+			
+			t <= save_op_codes <= save_op_codes;
+			t <= save_op_code_inc <= save_op_code_inc;
+			
+			return [t, content];
+		}
+		else if (op_code instanceof OpBreak)
+		{
+			content = t.s("break;");
+		}
+		else if (op_code instanceof OpCall)
+		{
+			list res = t.expression::OpCall(t, op_code, false); t = res[0];
+			if (res[1] != "") content = t.s(res[1] ~ ";");
+		}
+		else if (op_code instanceof OpContinue)
+		{
+			content = t.s("continue;");
+		}
+		else if (op_code instanceof OpDelete)
+		{
+			list res = static::OpDelete(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpFor)
+		{
+			list res = static::OpFor(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpIf)
+		{
+			list res = static::OpIf(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpPipe)
+		{
+			list res = t.expression::OpPipe(t, op_code, false); t = res[0]; content = t.s(res[1] ~ ";");
+		}
+		else if (op_code instanceof OpReturn)
+		{
+			list res = static::OpReturn(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpThrow)
+		{
+			list res = static::OpThrow(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpTryCatch)
+		{
+			list res = static::OpTryCatch(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpWhile)
+		{
+			list res = static::OpWhile(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpInc)
+		{
+			list res = t.expression::OpInc(t, op_code); t = res[0]; content = t.s(res[1] ~ ";");
+		}
+		else if (op_code instanceof OpPreprocessorIfCode)
+		{
+			list res = static::OpPreprocessorIfCode(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpPreprocessorSwitch)
+		{
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				list res = static::OpPreprocessorIfCode(t, op_code.items.item(i)); string s = res[1];
+				if (s == "") continue;
+				content ~= s;
+			}
+		}
+		else if (op_code instanceof OpComment)
+		{
+			list res = static::OpComment(t, op_code); t = res[0]; content = res[1];
+		}
+		
+		/* Output save op code */
+		string save = t::outputSaveOpCode(t, save_op_codes.count());
+		if (save != "") content = save ~ content;
+		
+		/* Restore save op codes */
+		t <= save_op_codes <= save_op_codes;
+		t <= save_op_code_inc <= save_op_code_inc;
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * Operators
+	 */
+	lambda list<TranslatorES6, string> Operators(TranslatorES6 t, BaseOpCode op_code)
+	{
+		string content = "";
+		
+		if (op_code instanceof OpItems)
+		{
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				BaseOpCode item = op_code.items.item(i);
+				list res = static::Operator(t, item); t = res[0];
+				content ~= res[1];
+			}
+		}
+		else
+		{
+			list res = static::Operator(t, op_code); t = res[0];
+			content ~= res[1];
+		}
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpDeclareFunction Arguments
+	 */
+	lambda list<TranslatorES6, string> OpDeclareFunctionArgs(TranslatorES6 t, OpDeclareFunction f)
+	{
+		string content = "";
+		if (f.args != null)
+		{
+			bool flag = false;
+			if (f.is_context) { content ~= "__ctx"; flag = true; }
+			for (int i=0; i<f.args.count(i); i++)
+			{
+				OpDeclareFunctionArg arg = f.args.item(i);
+				string name = arg.name;
+				content ~= (flag ? ", " : "") ~ name;
+				flag = true;
+			}
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpDeclareFunction Body
+	 */
+	lambda list<TranslatorES6, string> OpDeclareFunctionBody(TranslatorES6 t, OpDeclareFunction f)
+	{
+		TranslatorES6 save_t = t;
+		
+		if (f.isFlag("async"))
+		{
+			return t.async_await::OpDeclareFunctionBody(t, f);
+		}
+		
+		/* Save op codes */
+		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+		int save_op_code_inc = t.save_op_code_inc;
+		t = t::clearSaveOpCode(t);
+		
+		string content = "";
+		t = t.levelInc();
+		
+		if (f.args)
+		{
+			for (int i=0; i<f.args.count(); i++)
+			{
+				OpDeclareFunctionArg arg = f.args.item(i);
+				if (arg.expression == null) continue;
+				list res = t.expression::Expression(t, arg.expression); t = res[0]; string s = res[1];
+				s = "if (" ~ arg.name ~ " == undefined) " ~ arg.name ~ " = " ~ s ~ ";";
+				content ~= t.s(s);
+			}
+		}
+		
+		if (f.value)
+		{
+			list res = t.operator::Operators(t, f.value); t = res[0];
+			content ~= res[1];
+		}
+		else if (f.expression)
+		{
+			list res = t.expression::Expression(t, f.expression); t = res[0];
+			string expr = res[1];
+			string s = "";
+			if (f.flags != null and f.flags.isFlag("memorize"))
+			{
+				s = t.s("var __memorize_value = " ~ expr ~ ";");
+				s ~= t.s(t.expression::useModuleName(t, "Runtime.rtl") ~ "._memorizeSave(\"" ~ 
+						t.current_class_full_name ~ "." ~ f.name ~
+						"\", arguments, __memorize_value);");
+				s ~= t.s("return __memorize_value;");
+			}
+			else
+			{
+				s = t.s("return " ~ expr ~ ";");
+			}
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") content ~= save;
+			content ~= s;
+		}
+		
+		if (f.flags != null and f.flags.isFlag("memorize"))
+		{
+			string s = "";
+			s ~= t.s("var __memorize_value = " ~ t.expression::useModuleName(t, "Runtime.rtl") ~
+				"._memorizeValue(\"" ~
+				t.current_class_full_name ~ "." ~ f.name ~
+				"\", arguments);");
+			s ~= t.s("if (__memorize_value != " ~ t.expression::useModuleName(t, "Runtime.rtl") ~
+				"._memorize_not_found) return __memorize_value;");
+			content = s ~ content;
+		}
+		t = t.levelDec();
+		content = t.s("{") ~ content;
+		content ~= t.s("}");
+		
+		/* Restore save op codes */
+		t <= save_op_codes <= save_op_codes;
+		t <= save_op_code_inc <= save_op_code_inc;
+		
+		return [save_t, content];		
+	}
+	
+}

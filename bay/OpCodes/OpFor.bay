@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
- *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2019 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,41 +15,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayrellLang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+namespace Bayrell.Lang.OpCodes;
+
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-export class OpFor extends BaseOpCode{
-	
-	public serializable string op = "op_for";
-	public serializable BaseOpCode loop_condition = null;
-	public serializable BaseOpCode loop_init = null;
-	public serializable BaseOpCode loop_inc = null;
-	public serializable Vector<BaseOpCode> childs = null;
-	
-	
-	/**
-	 * Constructor
-	 */ 
-	void constructor(BaseOpCode loop_condition = null, BaseOpCode loop_init = null, 
-		BaseOpCode loop_inc = null, Vector<BaseOpCode> childs = null)
-	{
-		parent();
-		this.loop_condition = loop_condition;
-		this.loop_init = loop_init;
-		this.loop_inc = loop_inc;
-		this.childs = childs;
-	}
-	
-	
-	
-	/**
-	 * Destructor
-	 */ 
-	void destructor(){
-		parent();
-	}
-	
+struct OpFor extends BaseOpCode
+{	
+	string op = "op_for";
+	BaseOpCode expr1 = null;
+	BaseOpCode expr2 = null;
+	BaseOpCode expr3 = null;
+	BaseOpCode value = null;
 }

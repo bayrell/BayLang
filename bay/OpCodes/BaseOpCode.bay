@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,18 +16,17 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
 use Runtime.CoreObject;
 use Runtime.CoreStruct;
 use Runtime.Interfaces.SerializeInterface;
+use Bayrell.Lang.Caret;
 
 
-class BaseOpCode extends CoreStruct implements SerializeInterface
+struct BaseOpCode extends CoreStruct
 {
-	
-	public serializable string op = "";
-	
-	
-	
+	static const string op = "";
+	Caret caret_start = null;
+	Caret caret_end = null;
 }

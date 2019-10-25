@@ -16,14 +16,14 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.OpChilds;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
 
 
-export class OpPreprocessorSwitch extends OpChilds{
-	
-	public serializable string op = "op_preprocessor_switch";
-	
-	
+struct OpPreprocessorSwitch extends BaseOpCode
+{
+	string op = "op_preprocessor_switch";
+	Collection<OpPreprocessorIfCode> items = null;	
 }

@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Common Languages Transcompiler
+ *  Bayrell Language
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,13 +16,12 @@
  *  limitations under the License.
  */
  
-namespace BayrellLang.OpCodes;
+namespace Bayrell.Lang.OpCodes;
 
-use BayrellLang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-export class OpBreak extends BaseOpCode{
-	
-	public serializable string op = "op_break";
-	
+struct OpBreak extends BaseOpCode
+{
+	string op = "op_break";
 }

@@ -5,6 +5,8 @@ Bayrell Common Language
 
 Versions:
 
+[25 Nov 2019] 0.8.0 - Alpha version
+
 [29 Apr 2019] 0.7.2 - lambda, pure, async bugfix
 
 [25 Mar 2019] 0.7.1 - Add memorize, Dict, Collection, rtl::method, UIStruct normalization, DateTime as Struct
