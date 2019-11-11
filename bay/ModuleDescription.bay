@@ -113,6 +113,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 		"Bayrell.Lang/OpCodes/OpNew",
 		"Bayrell.Lang/OpCodes/OpNumber",
 		"Bayrell.Lang/OpCodes/OpPreprocessorIfCode",
+		"Bayrell.Lang/OpCodes/OpPreprocessorIfDef",
 		"Bayrell.Lang/OpCodes/OpPreprocessorSwitch",
 		"Bayrell.Lang/OpCodes/OpReturn",
 		"Bayrell.Lang/OpCodes/OpString",

@@ -18,6 +18,8 @@
 
 namespace Bayrell.Lang.LangPHP;
 
+use Runtime.CoreStruct;
+use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAnnotation;
@@ -30,6 +32,7 @@ use Bayrell.Lang.OpCodes.OpFlags;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpNamespace;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
@@ -47,6 +50,45 @@ static class TranslatorPHPProgram
 		Collection<string> arr = rs::split("\\.", op_code.name);
 		t <= current_namespace_name <= op_code.name;
 		return [t, t.s("namespace " ~ rs::join("\\", arr) ~ ";")];
+	}
+	
+	
+	
+	/**
+	 * OpDeclareFunction
+	 */
+	lambda list<TranslatorPHP, string> OpDeclareFunction(TranslatorPHP t, OpDeclareFunction op_code)
+	{
+		if (op_code.isFlag("declare")) return [t, ""];
+		
+		string content = "";
+		
+		/* Set current function */
+		t <= current_function <= op_code;
+		
+		string s1 = "", s2 = "";
+		if (op_code.isStatic())
+		{
+			s1 ~= "static ";
+			t <= is_static_function <= true;
+		}
+		else
+		{
+			t <= is_static_function <= false;
+		}
+		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
+		s1 ~= "function " ~ op_code.name ~ "(" ~ args ~ ")";
+		if (t.current_class.kind != OpDeclareClass::KIND_INTERFACE)
+		{
+			list res = t.operator::OpDeclareFunctionBody(t, op_code); s2 ~= res[1];
+		}
+		else s2 ~= ";";
+		
+		s1 = t.s(s1);
+		
+		/* Function comments */
+		list res = t.operator::AddComments(t, op_code.comments, s1 ~ s2); content ~= res[1];
+		return [t, content];
 	}
 	
 	
@@ -105,6 +147,10 @@ static class TranslatorPHPProgram
 		string content = "";
 		string class_kind = op_code.kind;
 		
+		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+		int save_op_code_inc = t.save_op_code_inc;
+		t = t::clearSaveOpCode(t);
+		
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -157,33 +203,7 @@ static class TranslatorPHPProgram
 			for (int i=0; i<op_code.functions.count(); i++)
 			{
 				OpDeclareFunction f = op_code.functions.item(i);
-				if (f.flags.isFlag("declare")) continue;
-				
-				/* Set function name */
-				t <= current_function <= f;
-				
-				string s1 = "", s2 = "";
-				if (f.isStatic())
-				{
-					s1 ~= "static ";
-					t <= is_static_function <= true;
-				}
-				else
-				{
-					t <= is_static_function <= false;
-				}
-				list res = t.operator::OpDeclareFunctionArgs(t, f); string args = res[1];
-				s1 ~= "function " ~ f.name ~ "(" ~ args ~ ")";
-				if (class_kind != OpDeclareClass::KIND_INTERFACE)
-				{
-					list res = t.operator::OpDeclareFunctionBody(t, f); s2 ~= res[1];
-				}
-				else s2 ~= ";";
-				
-				s1 = t.s(s1);
-				
-				/* Function comments */
-				list res = t.operator::AddComments(t, f.comments, s1 ~ s2); content ~= res[1];
+				list res = static::OpDeclareFunction(t, f); t = res[0]; content ~= res[1];
 			}
 		}
 		
@@ -202,12 +222,12 @@ static class TranslatorPHPProgram
 			
 			if (t.current_class_full_name != "Runtime.CoreObject" and vars.count() > 0)
 			{
-				content ~= t.s("function _init($__ctx)");
+				content ~= t.s("function _init($ctx)");
 				content ~= t.s("{");
 				t = t.levelInc();
 				if (t.current_class_extends_name != "")
 				{
-					content ~= t.s("parent::_init($__ctx);");
+					content ~= t.s("parent::_init($ctx);");
 				}
 				
 				for (int i=0; i<op_code.vars.count(); i++)
@@ -246,7 +266,7 @@ static class TranslatorPHPProgram
 			if (class_kind == OpDeclareClass::KIND_STRUCT)
 			{
 				/* Assign Object */
-				content ~= t.s("function assignObject($__ctx,$o)");
+				content ~= t.s("function assignObject($ctx,$o)");
 				content ~= t.s("{");
 				t = t.levelInc();
 				content ~= t.s("if ($o instanceof \\" ~
@@ -269,12 +289,12 @@ static class TranslatorPHPProgram
 				}
 				t = t.levelDec();
 				content ~= t.s("}");
-				content ~= t.s("parent::assignObject($__ctx,$o);");
+				content ~= t.s("parent::assignObject($ctx,$o);");
 				t = t.levelDec();
 				content ~= t.s("}");
 				
 				/* Assign Value */
-				content ~= t.s("function assignValue($__ctx,$k,$v)");
+				content ~= t.s("function assignValue($ctx,$k,$v)");
 				content ~= t.s("{");
 				t = t.levelInc();
 				bool flag = false;
@@ -310,12 +330,12 @@ static class TranslatorPHPProgram
 						flag = true;
 					}
 				}
-				content ~= t.s( (flag ? "else " : "") ~ "parent::assignValue($__ctx,$k,$v);");
+				content ~= t.s( (flag ? "else " : "") ~ "parent::assignValue($ctx,$k,$v);");
 				t = t.levelDec();
 				content ~= t.s("}");
 				
 				/* Take Value */
-				content ~= t.s("function takeValue($__ctx,$k,$d=null)");
+				content ~= t.s("function takeValue($ctx,$k,$d=null)");
 				content ~= t.s("{");
 				t = t.levelInc();
 				bool flag = false;
@@ -338,7 +358,7 @@ static class TranslatorPHPProgram
 						flag = true;
 					}
 				}
-				content ~= t.s("return parent::takeValue($__ctx,$k,$d);");
+				content ~= t.s("return parent::takeValue($ctx,$k,$d);");
 				t = t.levelDec();
 				content ~= t.s("}");
 			}
@@ -382,10 +402,11 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Class info */
-			content ~= t.s("static function getClassInfo($__ctx)");
+			content ~= t.s("static function getClassInfo($ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
-			content ~= t.s("return new \\Runtime\\Annotations\\IntrospectionInfo($__ctx, [");
+			t = t::clearSaveOpCode(t);
+			content ~= t.s("return new \\Runtime\\Annotations\\IntrospectionInfo($ctx, [");
 			t = t.levelInc();
 			content ~= t.s("\"kind\"=>\\Runtime\\Annotations\\IntrospectionInfo::ITEM_CLASS,");
 			content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
@@ -399,7 +420,7 @@ static class TranslatorPHPProgram
 				t = res[0]; string name = res[1];
 				list res = t.expression::OpDict(t, annotation.params, true);
 				t = res[0]; string params = res[1];
-				content ~= t.s("new " ~ name ~ "($__ctx, " ~ params ~ "),");
+				content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
 			}
 			t = t.levelDec();
 			content ~= t.s("]),");
@@ -409,7 +430,7 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Get fields list of the function */
-			content ~= t.s("static function getFieldsList($__ctx,$f)");
+			content ~= t.s("static function getFieldsList($ctx,$f)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("$a = [];");
@@ -481,15 +502,53 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Get field info by name */
-			content ~= t.s("static function getFieldInfoByName($__ctx,$field_name)");
+			content ~= t.s("static function getFieldInfoByName($ctx,$field_name)");
 			content ~= t.s("{");
 			t = t.levelInc();
+			
+			if (op_code.vars != null)
+			{
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					Collection<string> v = variable.values.map( string (OpAssignValue value) => value.var_name );
+					v = v.map
+					(
+						string (string var_name) use (t) =>
+							"$field_name == " ~ t.expression::toString(var_name)
+					);
+					
+					t = t::clearSaveOpCode(t);
+					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+						"return new \\Runtime\\Annotations\\IntrospectionInfo($ctx, [");
+					t = t.levelInc();
+					content ~= t.s("\"kind\"=>\\Runtime\\Annotations\\IntrospectionInfo::ITEM_FIELD,");
+					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+					content ~= t.s("\"name\"=> $field_name,");
+					content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
+					t = t.levelInc();
+					for (int j=0; j<variable.annotations.count(); j++)
+					{
+						OpAnnotation annotation = variable.annotations.item(j);
+						list res = t.expression::OpTypeIdentifier(t, annotation.name);
+						t = res[0]; string name = res[1];
+						list res = t.expression::OpDict(t, annotation.params, true);
+						t = res[0]; string params = res[1];
+						content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
+					}
+					t = t.levelDec();
+					content ~= t.s("]),");
+					t = t.levelDec();
+					content ~= t.s("]);");
+				}
+			}
+			
 			content ~= t.s("return null;");
 			t = t.levelDec();
 			content ~= t.s("}");
 			
 			/* Get methods list of the function */
-			content ~= t.s("static function getMethodsList($__ctx)");
+			content ~= t.s("static function getMethodsList($ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("$a = [");
@@ -511,7 +570,7 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Get method info by name */
-			content ~= t.s("static function getMethodInfoByName($__ctx,$field_name)");
+			content ~= t.s("static function getMethodInfoByName($ctx,$field_name)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			if (op_code.functions != null)
@@ -523,7 +582,7 @@ static class TranslatorPHPProgram
 					if (f.annotations.count() == 0) continue;
 					content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 					t = t.levelInc();
-					content ~= t.s("return new \\Runtime\\Annotations\\IntrospectionInfo($__ctx, [");
+					content ~= t.s("return new \\Runtime\\Annotations\\IntrospectionInfo($ctx, [");
 					t = t.levelInc();
 					content ~= t.s("\"kind\"=>\\Runtime\\Annotations\\IntrospectionInfo::ITEM_METHOD,");
 					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
@@ -537,7 +596,7 @@ static class TranslatorPHPProgram
 						t = res[0]; string name = res[1];
 						list res = t.expression::OpDict(t, annotation.params, true);
 						t = res[0]; string params = res[1];
-						content ~= t.s("new " ~ name ~ "($__ctx, " ~ params ~ "),");
+						content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
 					}
 					t = t.levelDec();
 					content ~= t.s("]),");
@@ -560,11 +619,16 @@ static class TranslatorPHPProgram
 				list res = t.operator::OpPreprocessorIfCode(t, item);
 				content ~= t.s(res[1]);
 			}
+			else if (item instanceof OpPreprocessorIfDef)
+			{
+				list res = t.operator::OpPreprocessorIfDef(t, item, OpPreprocessorIfDef::KIND_CLASS_BODY);
+				content ~= t.s(res[1]);
+			}
 			else if (item instanceof OpPreprocessorSwitch)
 			{
-				for (int j=0; i<item.items.count(); i++)
+				for (int j=0; j<item.items.count(); j++)
 				{
-					list res = t.operator::OpPreprocessorIfCode(t, item.items.item(i)); string s = res[1];
+					list res = t.operator::OpPreprocessorIfCode(t, item.items.item(j)); string s = res[1];
 					if (s == "") continue;
 					content ~= t.s(res[1]);
 				}
@@ -601,6 +665,7 @@ static class TranslatorPHPProgram
 		}
 		
 		string content = "";
+		t <= current_class <= op_code;
 		t <= current_class_name <= op_code.name;
 		t <= current_class_full_name <= t.current_namespace_name ~ "." ~ t.current_class_name;
 		
@@ -717,6 +782,8 @@ static class TranslatorPHPProgram
 	lambda list<TranslatorPHP, string> translateProgram(TranslatorPHP t, OpItems op_code)
 	{
 		string content = "";
+		
+		if (op_code == null) return [t, content];
 		if (op_code.uses != null)
 		{
 			t <= modules <= op_code.uses;

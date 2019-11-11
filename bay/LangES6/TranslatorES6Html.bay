@@ -21,7 +21,7 @@ namespace Bayrell.Lang.LangES6;
 use Runtime.lib;
 use Runtime.re;
 use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
+use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 use Bayrell.Lang.OpCodes.OpHtmlContent;
@@ -39,6 +39,7 @@ class TranslatorES6Html
 	 */
 	lambda bool isComponent(string tag_name)
 	{
+		if (tag_name == "") return false;
 		string ch1 = rs::substr(tag_name, 0, 1);
 		string ch2 = rs::strtoupper(ch1);
 		return ch1 == "{" or ch1 == ch2;
@@ -49,7 +50,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlAttrs(TranslatorPHP t, Collection<OpHtmlAttribute> attrs)
+	lambda list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs)
 	{
 		string attr_s = "null";
 		Collection<string> attrs = attrs.map
@@ -61,7 +62,7 @@ class TranslatorES6Html
 				if (attr_key == "@class" and attr.value instanceof OpString)
 				{
 					return "\"class\":" ~
-						"this.getCssName(__ctx, " ~ t.expression::toString(attr.value.value) ~ ")"
+						"this.getCssName(ctx, " ~ t.expression::toString(attr.value.value) ~ ")"
 					;
 				}
 				if (rs::substr(attr_key, 0, 7) == "@event:")
@@ -82,7 +83,9 @@ class TranslatorES6Html
 					{
 						list res = t.expression::Expression(t, attr.value.value); 
 						t = res[0]; string value = res[1];
-						value = "static::json_encode(__ctx, " ~ value ~ ")";
+						value = t.expression::useModuleName(t, "RenderHelper") ~
+							".json_encode(ctx, " ~ value ~ ")"
+						;
 						return t.expression::toString(attr_key) ~ ":" ~ value;
 					}
 				}
@@ -104,8 +107,33 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlTag(TranslatorPHP t, OpHtmlTag op_code, int item_pos)
+	lambda list<TranslatorES6, string> OpHtmlTagEmpty(TranslatorES6 t, OpHtmlTag op_code, int item_pos)
 	{
+		fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
+		list res = t::saveOpCodeCall(t, f, [op_code.items]); t = res[0];
+		string content = res[1];
+		string var_name = res[2];
+		list res = t::addSaveOpCode
+		(
+			t,
+			{
+				"op_code": op_code,
+				"var_name": var_name,
+				"content": content,
+			}
+		);
+		t = res[0];
+		return [t, var_name];
+	}
+	
+	
+	
+	/**
+	 * Translator html template
+	 */
+	lambda list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos)
+	{
+		if (op_code.tag_name == "") return static::OpHtmlTagEmpty(t, op_code, item_pos);
 		bool is_component = static::isComponent(op_code.tag_name);
 		
 		string content = "";
@@ -147,7 +175,7 @@ class TranslatorES6Html
 				list res = t.expression::Expression(t, op_code.op_code_name);
 				t = res[0]; tag_name = res[1];
 			}
-			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.UI.Drivers.RenderDriver.component(" ~
+			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.UI.Drivers.RenderDriver.component(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
@@ -158,7 +186,7 @@ class TranslatorES6Html
 		}
 		else
 		{
-			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.UI.Drivers.RenderDriver.elem(" ~
+			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.UI.Drivers.RenderDriver.elem(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
@@ -186,7 +214,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html items
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlItems(TranslatorPHP t, OpHtmlItems op_code)
+	lambda list<TranslatorES6, string> OpHtmlItems(TranslatorES6 t, OpHtmlItems op_code)
 	{
 		if (op_code.items.count() == 0)
 		{
@@ -202,6 +230,7 @@ class TranslatorES6Html
 			OpHtmlTag item = op_code.items.item(i);
 			string item_value = "";
 			bool is_text = false;
+			bool is_html = false;
 			bool is_raw = false;
 			
 			if (item instanceof OpHtmlContent)
@@ -221,11 +250,17 @@ class TranslatorES6Html
 					t = res[0]; item_value = res[1];
 					is_raw = true;
 				}
+				else if (item.kind == OpHtmlValue::KIND_HTML)
+				{
+					list res = t.expression::Expression(t, item.value); 
+					t = res[0]; item_value = res[1];
+					is_html = true;
+				}
 				else if (item.kind == OpHtmlValue::KIND_JSON)
 				{
 					list res = t.expression::Expression(t, item.value); 
 					t = res[0]; item_value = res[1];
-					item_value = "this.json_encode(__ctx, " ~ item_value ~ ")";
+					item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
 					is_text = true;
 				}
 			}
@@ -240,7 +275,16 @@ class TranslatorES6Html
 			
 			if (is_text)
 			{
-				item_value = "Runtime.UI.Drivers.RenderDriver.text(" ~
+				item_value = "Runtime.Web.UI.Drivers.RenderDriver.text(" ~
+					"layout," ~
+					item_value ~ "," ~
+					"control," ~
+					i ~
+				")";
+			}
+			else if (is_html)
+			{
+				item_value = "Runtime.Web.UI.Drivers.RenderDriver.html(" ~
 					"layout," ~
 					item_value ~ "," ~
 					"control," ~
@@ -249,7 +293,7 @@ class TranslatorES6Html
 			}
 			else if (is_raw)
 			{
-				item_value = "Runtime.UI.Drivers.RenderDriver.raw(" ~
+				item_value = "Runtime.Web.UI.Drivers.RenderDriver.raw(" ~
 					"layout," ~
 					item_value ~ "," ~
 					"control," ~

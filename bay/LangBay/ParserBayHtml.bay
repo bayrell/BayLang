@@ -227,11 +227,12 @@ class ParserBayHtml extends CoreObject
 			
 			string ch3 = rs::substr(content.ref, pos, 3);
 			string ch4 = rs::substr(content.ref, pos, 4);
-			if (ch3 == "raw" or ch4 == "json")
+			if (ch3 == "raw" or ch4 == "json" or ch4 == "html")
 			{
 				list res;
 				if (ch3 == "raw") res = parser.parser_base::next(parser, ch3, x, y, pos);
 				if (ch4 == "json") res = parser.parser_base::next(parser, ch4, x, y, pos);
+				if (ch4 == "html") res = parser.parser_base::next(parser, ch4, x, y, pos);
 				x = res[0]; y = res[1]; pos = res[2];
 			}
 			
@@ -256,6 +257,16 @@ class ParserBayHtml extends CoreObject
 				item = new OpHtmlValue
 				{
 					"kind": OpHtmlValue::KIND_JSON,
+					"value": item,
+					"caret_start": caret,
+					"caret_end": parser.caret.clone(),
+				};
+			}
+			else if (ch4 == "html")
+			{
+				item = new OpHtmlValue
+				{
+					"kind": OpHtmlValue::KIND_HTML,
 					"value": item,
 					"caret_start": caret,
 					"caret_end": parser.caret.clone(),
@@ -290,6 +301,17 @@ class ParserBayHtml extends CoreObject
 		
 		list res = parser.parser_base::readIdentifier(parser); parser = res[0]; ident = res[1];
 		key ~= ident.value;
+		
+		/* Read attr */
+		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		while (token.content == "-")
+		{
+			list res = parser.parser_base::readIdentifier(look.clone()); parser = res[0]; ident = res[1];
+			key ~= "-" ~ ident.value;
+			
+			/* Look next token */
+			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		}
 		
 		/* Look token */
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
@@ -349,11 +371,12 @@ class ParserBayHtml extends CoreObject
 		
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz;
-		Caret caret = parser.parser_base::skipChar(parser, content.ref, parser.caret.clone());
+		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret.clone());
 		string ch = rs::substr(content.ref, caret.pos, 1);
 		while (ch != ">" and caret.pos < content_sz)
 		{
 			Caret caret_start = caret;
+			parser <= caret <= caret.clone();
 			list res = static::readHTMLAttrKey(parser); parser = res[0]; string key = res[1];
 			list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
 			list res = static::readHTMLAttrValue(parser); parser = res[0]; BaseOpCode value = res[1];
@@ -367,7 +390,7 @@ class ParserBayHtml extends CoreObject
 					"caret_end": parser.caret.clone(),
 				}
 			);
-			caret = parser.parser_base::skipChar(parser, content.ref, parser.caret.clone());
+			caret = parser.parser_base::skipChar(parser, content, parser.caret.clone());
 			ch = rs::substr(content.ref, caret.pos, 1);
 			string ch2 = rs::substr(content.ref, caret.pos, 2);
 			if (ch2 == "/>") break;
@@ -493,6 +516,11 @@ class ParserBayHtml extends CoreObject
 			Caret caret2 = parser.caret.clone();
 			tag_name = rs::substr(parser.content.ref, caret1.pos, caret2.pos - caret1.pos);
 		}
+		else if (token.content == ">")
+		{
+			op_code_flag = true;
+			tag_name = "";
+		}
 		else
 		{
 			list res = parser.parser_base::readIdentifier(parser, false);
@@ -522,14 +550,20 @@ class ParserBayHtml extends CoreObject
 			{
 				list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
 				list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
-				list res = parser.parser_base::matchString(parser, tag_name); parser = res[0];
+				if (tag_name)
+				{
+					list res = parser.parser_base::matchString(parser, tag_name); parser = res[0];
+				}
 				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 			}
 			else
 			{
 				list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
 				list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
-				list res = parser.parser_base::matchToken(parser, ident.value); parser = res[0];
+				if (ident != null)
+				{
+					list res = parser.parser_base::matchToken(parser, ident.value); parser = res[0];
+				}
 				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 			}
 		}

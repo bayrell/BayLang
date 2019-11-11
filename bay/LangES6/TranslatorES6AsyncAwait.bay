@@ -139,7 +139,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		string content = s;
 		if (t.current_function.is_context and op_code.is_context)
 		{
-			content ~= "__ctx";
+			content ~= "ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)
@@ -208,7 +208,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= "(";
 		if (t.current_function.is_context and op_code.is_context)
 		{
-			content ~= "__ctx";
+			content ~= "ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)

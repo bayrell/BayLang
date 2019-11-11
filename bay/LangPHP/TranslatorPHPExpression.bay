@@ -187,11 +187,11 @@ static class TranslatorPHPExpression
 		}
 		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
 		{
-			return [t, "$__ctx"];
+			return [t, "$ctx"];
 		}
 		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
 		{
-			return [t, "$__ctx->translate"];
+			return [t, "$ctx->translate"];
 		}
 		string content = op_code.value;
 		return [t, content];
@@ -338,12 +338,12 @@ static class TranslatorPHPExpression
 				else if (op_code_next.kind == OpIdentifier::KIND_CONTEXT and op_code_next.value == "@")
 				{
 					prev_kind = "var";
-					s = "$__ctx";
+					s = "$ctx";
 				}
 				else if (op_code_next.kind == OpIdentifier::KIND_CONTEXT and op_code_next.value == "_")
 				{
 					prev_kind = "var";
-					s = "$__ctx->translate";
+					s = "$ctx->translate";
 				}
 				else
 				{
@@ -518,7 +518,7 @@ static class TranslatorPHPExpression
 		content ~= "(";
 		if (t.current_function == null or t.current_function.is_context)
 		{
-			content ~= "$__ctx";
+			content ~= "$ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)
@@ -555,7 +555,7 @@ static class TranslatorPHPExpression
 		string content = s;
 		if ((t.current_function == null or t.current_function.is_context) and op_code.is_context)
 		{
-			content ~= (flag ? ", " : "") ~ "$__ctx";
+			content ~= (flag ? ", " : "") ~ "$ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)
@@ -611,7 +611,7 @@ static class TranslatorPHPExpression
 		content ~= "(";
 		if (t.current_function.is_context and op_code.is_context)
 		{
-			content ~= "$__ctx";
+			content ~= "$ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)

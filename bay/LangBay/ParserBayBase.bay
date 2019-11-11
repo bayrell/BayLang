@@ -155,6 +155,7 @@ class ParserBayBase
 		if (name == "__async_t") return true;
 		if (name == "__async_var") return true;
 		if (name == "__ctx") return true;
+		if (name == "ctx") return true;
 		if (rs::substr(name, 0, 3) == "__v") return true;
 		return false;
 	}
@@ -359,7 +360,7 @@ class ParserBayBase
 		if (s == "#ifcode" or s == "#switch") return s;
 		
 		s = rs::substr(content.ref, pos, 6);
-		if (s == "#endif") return s;
+		if (s == "#endif" or s == "#ifdef") return s;
 		
 		s = rs::substr(content.ref, pos, 5);
 		if (s == "#case") return s;

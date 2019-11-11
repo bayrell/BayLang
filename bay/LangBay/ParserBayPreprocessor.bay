@@ -23,6 +23,7 @@ use Bayrell.Lang.CoreToken;
 use Bayrell.Lang.LangBay.ParserBay;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
 
 
@@ -132,5 +133,50 @@ static class ParserBayPreprocessor
 		];
 	}
 	
+	
+	
+	/**
+	 * Read preprocessor ifdef
+	 */
+	lambda list<ParserBay, BaseOpCode> readPreprocessorIfDef(ParserBay parser, string kind = "")
+	{
+		Collection<BaseOpCode> items = null;
+		CoreToken token = null;
+		
+		list res = parser.parser_base::matchToken(parser, "#ifdef"); parser = res[0]; token = res[1];
+		Caret caret_start = token.caret_start.clone();
+		
+		/* Read condition */
+		BaseOpCode condition = null;
+		parser <= find_ident <= false;
+		list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
+		parser <= find_ident <= true;
+		
+		/* Read then */
+		list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+		
+		if (kind == OpPreprocessorIfDef::KIND_PROGRAM)
+		{
+			list res = parser.parser_program::readProgram(parser, "#endif"); parser = res[0]; items = res[1];
+			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+		}
+		else if (kind == OpPreprocessorIfDef::KIND_CLASS_BODY)
+		{
+			list res = parser.parser_program::readClassBody(parser, "#endif"); parser = res[0]; items = res[1];
+			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+		}
+		
+		return
+		[
+			parser,
+			new OpPreprocessorIfDef
+			{
+				"items": items,
+				"condition": condition,
+				"caret_start": caret_start,
+				"caret_end": parser.caret.clone(),
+			}
+		];
+	}
 	
 }

@@ -22,6 +22,7 @@ use Runtime.lib;
 use Runtime.CoreStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpDeclareClass;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 
 
@@ -33,6 +34,7 @@ struct CoreTranslator extends CoreStruct
 	string current_class_name = "";
 	string current_class_full_name = "";
 	string current_class_extends_name = "";
+	OpDeclareClass current_class = null;
 	OpDeclareFunction current_function = null;
 	Dict<string> modules = null;
 	Dict<bool> vars = null;

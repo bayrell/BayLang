@@ -62,6 +62,7 @@ struct TranslatorNode extends CoreTranslator
 			"save_op_code_inc": 0,
 			"preprocessor_flags": 
 			{
+				"BACKEND": true,
 				"NODEJS": true,
 				"JAVASCRIPT": true,
 			},

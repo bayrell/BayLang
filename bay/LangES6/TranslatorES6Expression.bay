@@ -158,11 +158,11 @@ struct TranslatorES6Expression extends CoreStruct
 	{
 		if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
 		{
-			return [t, "__ctx"];
+			return [t, "ctx"];
 		}
 		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
 		{
-			return [t, "__ctx.translate"];
+			return [t, "ctx.translate"];
 		}
 		else if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{
@@ -308,12 +308,12 @@ struct TranslatorES6Expression extends CoreStruct
 				else if (op_code_first.kind == OpIdentifier::KIND_CONTEXT and op_code_first.value == "@")
 				{
 					prev_kind = "var";
-					s = "__ctx";
+					s = "ctx";
 				}
 				else if (op_code_first.kind == OpIdentifier::KIND_CONTEXT and op_code_first.value == "_")
 				{
 					prev_kind = "var";
-					s = "__ctx.translate";
+					s = "ctx.translate";
 				}
 				else
 				{
@@ -465,7 +465,7 @@ struct TranslatorES6Expression extends CoreStruct
 		content ~= "(";
 		if (t.current_function == null or t.current_function.is_context)
 		{
-			content ~= "__ctx";
+			content ~= "ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)
@@ -510,7 +510,7 @@ struct TranslatorES6Expression extends CoreStruct
 		string content = s;
 		if (t.current_function.is_context and op_code.is_context)
 		{
-			content ~= (flag ? ", " : "") ~ "__ctx";
+			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)
@@ -570,7 +570,7 @@ struct TranslatorES6Expression extends CoreStruct
 		content ~= "(";
 		if (t.current_function.is_context and op_code.is_context)
 		{
-			content ~= "__ctx";
+			content ~= "ctx";
 			flag = true;
 		}
 		for (int i=0; i<op_code.args.count(); i++)

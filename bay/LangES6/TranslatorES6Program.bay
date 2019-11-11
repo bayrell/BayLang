@@ -33,6 +33,7 @@ use Bayrell.Lang.OpCodes.OpFlags;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpNamespace;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
@@ -84,6 +85,35 @@ struct TranslatorES6Program extends CoreStruct
 	
 	
 	/**
+	 * OpDeclareFunction
+	 */
+	lambda list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
+	{
+		bool is_static_function = t.is_static_function;
+		bool is_static = op_code.isStatic();
+		string content = "";
+		
+		if (op_code.isFlag("declare")) return [t, ""];
+		if (not is_static and is_static_function or is_static and not is_static_function) return [t, ""];
+		
+		/* Set current function */
+		t <= current_function <= op_code;
+		
+		string s = "";
+		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
+		s ~= op_code.name ~ ": function(" ~ args ~ ")";
+		list res = t.operator::OpDeclareFunctionBody(t, op_code); s ~= res[1];
+		s ~= ",";
+		
+		/* Function comments */
+		list res = t.operator::AddComments(t, op_code.comments, t.s(s)); content ~= res[1];
+		
+		return [t, content];
+	}
+	
+	
+	
+	/**
 	 * OpDeclareClass
 	 */
 	lambda list<TranslatorES6, string> OpDeclareClassConstructor(TranslatorES6 t, OpDeclareClass op_code)
@@ -101,7 +131,7 @@ struct TranslatorES6Program extends CoreStruct
 		if (op_code.fn_create == null)
 		{
 			open ~= t.current_class_full_name ~ " = ";
-			open ~= "function(__ctx)";
+			open ~= "function(ctx)";
 			open = t.s(open) ~ t.s("{");
 			t = t.levelInc();
 			
@@ -149,6 +179,22 @@ struct TranslatorES6Program extends CoreStruct
 	
 	
 	/**
+	 * OpDeclareClassBodyItem
+	 */
+	lambda list<TranslatorES6, string> OpDeclareClassBodyItem(TranslatorES6 t, BaseOpCode item)
+	{
+		string content = "";
+		if (item instanceof OpPreprocessorIfDef)
+		{
+			list res = t.operator::OpPreprocessorIfDef(t, item, OpPreprocessorIfDef::KIND_CLASS_BODY);
+			content ~= t.s(res[1]);
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
 	 * OpDeclareClass
 	 */
 	lambda list<TranslatorES6, string> OpDeclareClassBodyStatic(TranslatorES6 t, OpDeclareClass op_code)
@@ -156,6 +202,10 @@ struct TranslatorES6Program extends CoreStruct
 		string content = "";
 		string class_kind = op_code.kind;
 		string current_class_extends_name = t.expression::findModuleName(t, t.current_class_extends_name);
+		
+		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+		int save_op_code_inc = t.save_op_code_inc;
+		t = t::clearSaveOpCode(t);
 		
 		/* Returns parent class name */
 		string parent_class_name = "";
@@ -220,6 +270,17 @@ struct TranslatorES6Program extends CoreStruct
 				}
 			}
 			
+			/* Items */
+			if (op_code.items != null)
+			{
+				t <= is_static_function <= true;
+				for (int i=0; i<op_code.items.count(); i++)
+				{
+					BaseOpCode item = op_code.items.item(i);
+					list res = static::OpDeclareClassBodyItem(t, item); t = res[0]; content ~= res[1];
+				}
+			}
+			
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
 			
 			/* Get current namespace function */
@@ -250,15 +311,16 @@ struct TranslatorES6Program extends CoreStruct
 			
 			
 			/* Class info */
-			content ~= t.s("getClassInfo: function(__ctx)");
+			content ~= t.s("getClassInfo: function(ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
+			t = t::clearSaveOpCode(t);
 			string s1 = "";
 			s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 			s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 			s1 ~= t.s("var IntrospectionInfo = " ~
 				t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
-			s1 ~= t.s("return new IntrospectionInfo(__ctx, {");
+			s1 ~= t.s("return new IntrospectionInfo(ctx, {");
 			t = t.levelInc();
 			s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_CLASS,");
 			s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
@@ -272,21 +334,22 @@ struct TranslatorES6Program extends CoreStruct
 				t = res[0]; string name = res[1];
 				list res = t.expression::OpDict(t, annotation.params, true);
 				t = res[0]; string params = res[1];
-				s1 ~= t.s("new " ~ name ~ "(__ctx, " ~ params ~ "),");
+				s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
 			}
 			t = t.levelDec();
 			s1 ~= t.s("]),");
 			t = t.levelDec();
 			s1 ~= t.s("});");
 			string save = t::outputSaveOpCode(t);
-			if (save != "") content ~= t.s(save);
+			if (save != "") content ~= save;
 			content ~= s1;
 			t = t.levelDec();
 			content ~= t.s("},");
 			
 			
 			/* Get fields list of the function */
-			content ~= t.s("getFieldsList: function(__ctx, f)");
+			t = t::clearSaveOpCode(t);
+			content ~= t.s("getFieldsList: function(ctx, f)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("var a = [];");
@@ -354,22 +417,68 @@ struct TranslatorES6Program extends CoreStruct
 				
 			}
 			
+			
 			content ~= t.s("return " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ".from(a);");
 			t = t.levelDec();
 			content ~= t.s("},");
 			
 			
 			/* Get field info by name */
-			content ~= t.s("getFieldInfoByName: function(__ctx,field_name)");
+			content ~= t.s("getFieldInfoByName: function(ctx,field_name)");
 			content ~= t.s("{");
 			t = t.levelInc();
+			if (op_code.vars != null)
+			{
+				content ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
+				content ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
+				content ~= t.s("var IntrospectionInfo = " ~
+					t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					Collection<string> v = variable.values.map( string (OpAssignValue value) => value.var_name );
+					v = v.map
+					(
+						string (string var_name) use (t) =>
+							"field_name == " ~ t.expression::toString(var_name)
+					);
+					
+					t = t::clearSaveOpCode(t);
+					string s1 = "";
+					s1 ~= t.s("if (" ~ rs::join(" or ", v) ~ ") return new IntrospectionInfo(ctx, {");
+					t = t.levelInc();
+					s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_FIELD,");
+					s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
+					s1 ~= t.s("\"name\": field_name,");
+					s1 ~= t.s("\"annotations\": Collection.from([");
+					t = t.levelInc();
+					for (int j=0; j<variable.annotations.count(); j++)
+					{
+						OpAnnotation annotation = variable.annotations.item(j);
+						list res = t.expression::OpTypeIdentifier(t, annotation.name);
+						t = res[0]; string name = res[1];
+						list res = t.expression::OpDict(t, annotation.params, true);
+						t = res[0]; string params = res[1];
+						s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
+					}
+					t = t.levelDec();
+					s1 ~= t.s("]),");
+					t = t.levelDec();
+					s1 ~= t.s("});");
+					
+					string save = t::outputSaveOpCode(t);
+					if (save != "") content ~= save;
+					content ~= s1;
+				}
+			}
 			content ~= t.s("return null;");
 			t = t.levelDec();
 			content ~= t.s("},");
 			
 			
 			/* Get methods list of the function */
-			content ~= t.s("getMethodsList: function(__ctx)");
+			t = t::clearSaveOpCode(t);
+			content ~= t.s("getMethodsList: function(ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("var a = [");
@@ -392,7 +501,8 @@ struct TranslatorES6Program extends CoreStruct
 			
 			
 			/* Get method info by name */
-			content ~= t.s("getMethodInfoByName: function(__ctx,field_name)");
+			t = t::clearSaveOpCode(t);
+			content ~= t.s("getMethodInfoByName: function(ctx,field_name)");
 			content ~= t.s("{");
 			t = t.levelInc();		
 			if (op_code.functions != null)
@@ -410,7 +520,7 @@ struct TranslatorES6Program extends CoreStruct
 					s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 					s1 ~= t.s("var IntrospectionInfo = " ~
 						t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
-					s1 ~= t.s("return new IntrospectionInfo(__ctx, {");
+					s1 ~= t.s("return new IntrospectionInfo(ctx, {");
 					t = t.levelInc();
 					s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_METHOD,");
 					s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
@@ -424,7 +534,7 @@ struct TranslatorES6Program extends CoreStruct
 						t = res[0]; string name = res[1];
 						list res = t.expression::OpDict(t, annotation.params, true);
 						t = res[0]; string params = res[1];
-						s1 ~= t.s("new " ~ name ~ "(__ctx, " ~ params ~ "),");
+						s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
 					}
 					t = t.levelDec();
 					s1 ~= t.s("]),");
@@ -483,6 +593,10 @@ struct TranslatorES6Program extends CoreStruct
 		t = t.levelDec();
 		content ~= t.s("});");
 		
+		/* Restore save op codes */
+		t <= save_op_codes <= save_op_codes;
+		t <= save_op_code_inc <= save_op_code_inc;
+		
 		return [t, content];
 	}
 	
@@ -522,6 +636,17 @@ struct TranslatorES6Program extends CoreStruct
 			}
 		}
 		
+		/* Items */
+		if (op_code.items != null)
+		{
+			t <= is_static_function <= false;
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				BaseOpCode item = op_code.items.item(i);
+				list res = static::OpDeclareClassBodyItem(t, item); t = res[0]; content ~= res[1];
+			}
+		}
+		
 		/* Init variables */
 		if (class_kind != OpDeclareClass::KIND_INTERFACE and op_code.vars != null)
 		{
@@ -532,7 +657,7 @@ struct TranslatorES6Program extends CoreStruct
 			
 			if (t.current_class_full_name != "Runtime.CoreObject" and vars.count() > 0)
 			{
-				content ~= t.s("_init: function(__ctx)");
+				content ~= t.s("_init: function(ctx)");
 				content ~= t.s("{");
 				t = t.levelInc();
 				
@@ -602,7 +727,7 @@ struct TranslatorES6Program extends CoreStruct
 					s1 ~= t.s
 					(
 						t.expression::useModuleName(t, t.current_class_extends_name) ~ 
-							".prototype._init.call(this,__ctx);"
+							".prototype._init.call(this,ctx);"
 					);
 				}
 				
@@ -626,7 +751,7 @@ struct TranslatorES6Program extends CoreStruct
 			string var_prefix = is_struct ? "__" : "";
 			
 			/* Assign Object */
-			content ~= t.s("assignObject: function(__ctx,o)");
+			content ~= t.s("assignObject: function(ctx,o)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("if (o instanceof " ~
@@ -655,14 +780,14 @@ struct TranslatorES6Program extends CoreStruct
 				content ~= t.s
 				(
 					t.expression::useModuleName(t, t.current_class_extends_name) ~
-						".prototype.assignObject.call(this,__ctx,o);"
+						".prototype.assignObject.call(this,ctx,o);"
 				);
 			}
 			t = t.levelDec();
 			content ~= t.s("},");
 			
 			/* Assign Value */
-			content ~= t.s("assignValue: function(__ctx,k,v)");
+			content ~= t.s("assignValue: function(ctx,k,v)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			bool flag = false;
@@ -703,14 +828,14 @@ struct TranslatorES6Program extends CoreStruct
 				content ~= t.s(
 					(flag ? "else " : "") ~ 
 					t.expression::useModuleName(t, t.current_class_extends_name) ~
-						".prototype.assignValue.call(this,__ctx,k,v);"
+						".prototype.assignValue.call(this,ctx,k,v);"
 				);
 			}
 			t = t.levelDec();
 			content ~= t.s("},");
 			
 			/* Take Value */
-			content ~= t.s("takeValue: function(__ctx,k,d)");
+			content ~= t.s("takeValue: function(ctx,k,d)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("if (d == undefined) d = null;");
@@ -739,7 +864,7 @@ struct TranslatorES6Program extends CoreStruct
 				content ~= t.s
 				(
 					"return " ~ t.expression::useModuleName(t, t.current_class_extends_name) ~
-						".prototype.takeValue.call(this,__ctx,k,d);"
+						".prototype.takeValue.call(this,ctx,k,d);"
 				);
 			}
 			t = t.levelDec();
@@ -748,7 +873,7 @@ struct TranslatorES6Program extends CoreStruct
 		}
 		
 		/* Get class name function */
-		content ~= t.s("getClassName: function(__ctx)");
+		content ~= t.s("getClassName: function(ctx)");
 		content ~= t.s("{");
 		t = t.levelInc();
 		content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -785,6 +910,7 @@ struct TranslatorES6Program extends CoreStruct
 		}
 		
 		string content = "";
+		t <= current_class <= op_code;
 		t <= current_class_name <= op_code.name;
 		t <= current_class_full_name <= t.current_namespace_name ~ "." ~ t.current_class_name;
 		
@@ -893,6 +1019,8 @@ struct TranslatorES6Program extends CoreStruct
 	lambda list<TranslatorES6, string> translateProgram(TranslatorES6 t, OpItems op_code)
 	{
 		string content = "";
+		
+		if (op_code == null) return [t, content];
 		if (op_code.uses != null)
 		{
 			t <= modules <= op_code.uses;

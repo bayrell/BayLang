@@ -59,6 +59,7 @@ struct TranslatorES6 extends CoreTranslator
 			"save_op_code_inc": 0,
 			"preprocessor_flags": 
 			{
+				"FRONTEND": true,
 				"ES6": true,
 				"JAVASCRIPT": true,
 			},

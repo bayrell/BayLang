@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  Bayrell Common Languages Transcompiler
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -15,20 +15,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 namespace Bayrell.Lang.OpCodes;
 
 use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 
 
-struct OpHtmlValue extends BaseOpCode
+struct OpPreprocessorIfDef extends BaseOpCode
 {
-	static const string KIND_RAW = "raw";
-	static const string KIND_JSON = "json";
-	static const string KIND_HTML = "html";
+	static const string KIND_PROGRAM = "program";
+	static const string KIND_CLASS_BODY = "class_body";
 	
-	string op = "op_html_value";
-	string kind = "";
-	BaseOpCode value = null;
+	string op = "op_preprocessor_ifdef";
+	BaseOpCode condition = null;
+	Collection<BaseOpCode> items = null;
 }

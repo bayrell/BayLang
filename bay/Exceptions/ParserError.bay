@@ -39,4 +39,24 @@ class ParserError extends ParserUnknownError
 		this.updateError();
 	}
 	
+	
+	public string buildMessage()
+	{
+		string error_str = this.error_str;
+		string file = this.getFileName();
+		string line = this.getErrorLine();
+		string pos = this.getErrorPos();
+		
+		if (line != -1)
+		{
+			error_str ~= " at Ln:" ~ line ~ ( (pos != "") ? ", Pos:" ~ pos : "" );
+		}
+		if (file != "")
+		{
+			error_str ~= " in file:'" ~ file ~ "'";
+		}
+		
+		return error_str;
+	}
+	
 }

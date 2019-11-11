@@ -110,7 +110,7 @@ static class ParserBayProgram
 	/**
 	 * Read class body
 	 */
-	lambda ParserBay readClassBody(ParserBay parser)
+	lambda ParserBay readClassBody(ParserBay parser, string end_tag = "}")
 	{
 		BaseOpCode look = null;
 		CoreToken token = null;
@@ -120,7 +120,7 @@ static class ParserBayProgram
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
 		parser <= skip_comments <= true;
 		
-		while (not token.eof and token.content != "}")
+		while (not token.eof and token.content != end_tag)
 		{
 			BaseOpCode item = null;
 			
@@ -137,6 +137,12 @@ static class ParserBayProgram
 			else if (token.content == "#switch" or token.content == "#ifcode")
 			{
 				list res = parser.parser_preprocessor::readPreprocessor(parser);
+				parser = res[0]; item = res[1];
+				if (item != null) items.push(item);
+			}
+			else if (token.content == "#ifdef")
+			{
+				list res = parser.parser_preprocessor::readPreprocessorIfDef(parser, "class_body");
 				parser = res[0]; item = res[1];
 				if (item != null) items.push(item);
 			}
@@ -410,7 +416,7 @@ static class ParserBayProgram
 	/**
 	 * Read program
 	 */
-	lambda ParserBay readProgram(ParserBay parser)
+	lambda ParserBay readProgram(ParserBay parser, string end_tag = "")
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -430,7 +436,7 @@ static class ParserBayProgram
 			return [parser, null];
 		}
 		
-		while (not token.eof)
+		while (not token.eof and (end_tag == "" or (end_tag != "" and token.content == end_tag)))
 		{
 			if (token.content == "/")
 			{
@@ -449,6 +455,20 @@ static class ParserBayProgram
 				comments.clear();
 				
 				list res = parser.parser_preprocessor::readPreprocessor(parser);
+				parser = res[0]; op_code = res[1];
+				if (op_code != null)
+				{
+					items.appendVector(comments);
+					items.push(op_code);
+				}
+			}
+			else if (token.content == "#ifdef")
+			{
+				/* Append comments */
+				items.appendVector(comments);
+				comments.clear();
+				
+				list res = parser.parser_preprocessor::readPreprocessorIfDef(parser, "program");
 				parser = res[0]; op_code = res[1];
 				if (op_code != null)
 				{

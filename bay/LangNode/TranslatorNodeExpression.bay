@@ -61,11 +61,11 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	{
 		if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
 		{
-			return [t, "__ctx"];
+			return [t, "ctx"];
 		}
 		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
 		{
-			return [t, "__ctx.translate"];
+			return [t, "ctx.translate"];
 		}
 		else if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{
