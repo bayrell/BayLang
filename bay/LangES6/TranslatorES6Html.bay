@@ -136,18 +136,19 @@ class TranslatorES6Html
 		if (op_code.tag_name == "") return static::OpHtmlTagEmpty(t, op_code, item_pos);
 		bool is_component = static::isComponent(op_code.tag_name);
 		
+		string tag_name = "";
 		string content = "";
 		if (is_component)
 		{
 			content = t.s("/* Component '" ~ op_code.tag_name ~ "' */");
+			tag_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
 		}
 		else
 		{
 			content = t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+			tag_name = t.expression::toString(op_code.tag_name);
 		}
 		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
-		
-		string tag_name = t.expression::toString(op_code.tag_name);
 		list res = static::OpHtmlAttrs(t, op_code.attrs); t = res[0]; string attrs = res[1];
 		
 		string var_name_content = var_name ~ "_content";

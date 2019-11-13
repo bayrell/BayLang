@@ -343,7 +343,7 @@ static class TranslatorPHPHtml
 			}
 		);
 		t = res[0];
-		return [t, var_name];
+		return [t, "new \\Runtime\\RawString(" ~ var_name ~ ")"];
 	}
 	
 }
