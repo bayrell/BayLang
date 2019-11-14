@@ -184,6 +184,102 @@ static class ParserBayProgram
 	
 	
 	/**
+	 * Class body analyze
+	 */
+	lambda Dict classBodyAnalyze(ParserBay parser, Collection<BaseOpCode> arr)
+	{
+		Map<bool> names = new Map();
+		Vector<BaseOpCode> vars = new Vector();
+		Vector<BaseOpCode> functions = new Vector();
+		Vector<BaseOpCode> items = new Vector();
+		Vector<BaseOpCode> annotations = new Vector(); 
+		Vector<BaseOpCode> comments = new Vector(); 
+		BaseOpCode fn_create = null;
+		BaseOpCode fn_destroy = null;
+		
+		for (int i=0; i<arr.count(); i++)
+		{
+			BaseOpCode item = arr.item(i);
+			if (item instanceof OpAnnotation)
+			{
+				annotations.push(item);
+			}
+			else if (item instanceof OpComment)
+			{
+				comments.push(item);
+			}
+			else if (item instanceof OpAssign)
+			{
+				for (int j=0; j<item.values.count(); j++)
+				{
+					OpAssignValue assign_value = item.values.item(j);
+					string value_name = assign_value.var_name;
+					if (names.has(value_name))
+					{
+						throw new ParserError
+						(
+							"Dublicate identifier " ~ value_name,
+							assign_value.caret_start.clone(),
+							parser.file_name
+						);
+					}
+					names.set(value_name, true);
+				}
+				
+				item = item.copy({
+					"annotations": annotations.toCollection(),
+					"comments": comments.toCollection(),
+				});
+				vars.push(item);
+				annotations.clear();
+				comments.clear();
+			}
+			else if (item instanceof OpDeclareFunction)
+			{
+				item = item.copy({
+					"annotations": annotations.toCollection(),
+					"comments": comments.toCollection(),
+				});
+				
+				if (names.has(item.name))
+				{
+					throw new ParserError
+					(
+						"Dublicate identifier " ~ item.name,
+						item.caret_start.clone(),
+						parser.file_name
+					);
+				}
+				names.set(item.name, true);
+				
+				if (item.name == "constructor") fn_create = item;
+				else if (item.name == "destructor") fn_destroy = item;
+				else functions.push(item);
+				
+				annotations.clear();
+				comments.clear();
+			}
+			else
+			{
+				items.push(item);
+			}
+		}
+		
+		items.appendVector(comments);
+		return {
+			"annotations": annotations.toCollection(),
+			"comments": comments.toCollection(),
+			"functions": functions.toCollection(),
+			"items": items.toCollection(),
+			"vars": vars.toCollection(),
+			"fn_create": fn_create,
+			"fn_destroy": fn_destroy,
+		};
+	}
+	
+	
+	
+	/**
 	 * Read class
 	 */
 	lambda ParserBay readClass(ParserBay parser)
@@ -303,85 +399,7 @@ static class ParserBayProgram
 		Collection<BaseOpCode> arr = null;
 		list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 		list res = static::readClassBody(parser); parser = res[0]; arr = res[1];
-		
-		Map<bool> names = new Map();
-		Vector<BaseOpCode> vars = new Vector();
-		Vector<BaseOpCode> functions = new Vector();
-		Vector<BaseOpCode> items = new Vector();
-		Vector<BaseOpCode> annotations = new Vector(); 
-		Vector<BaseOpCode> comments = new Vector(); 
-		BaseOpCode fn_create = null;
-		BaseOpCode fn_destroy = null;
-		
-		for (int i=0; i<arr.count(); i++)
-		{
-			BaseOpCode item = arr.item(i);
-			if (item instanceof OpAnnotation)
-			{
-				annotations.push(item);
-			}
-			else if (item instanceof OpComment)
-			{
-				comments.push(item);
-			}
-			else if (item instanceof OpAssign)
-			{
-				for (int j=0; j<item.values.count(); j++)
-				{
-					OpAssignValue assign_value = item.values.item(j);
-					string value_name = assign_value.var_name;
-					if (names.has(value_name))
-					{
-						throw new ParserError
-						(
-							"Dublicate identifier " ~ value_name,
-							assign_value.caret_start.clone(),
-							parser.file_name
-						);
-					}
-					names.set(value_name, true);
-				}
-				
-				item = item.copy({
-					"annotations": annotations.toCollection(),
-					"comments": comments.toCollection(),
-				});
-				vars.push(item);
-				annotations.clear();
-				comments.clear();
-			}
-			else if (item instanceof OpDeclareFunction)
-			{
-				item = item.copy({
-					"annotations": annotations.toCollection(),
-					"comments": comments.toCollection(),
-				});
-				
-				if (names.has(item.name))
-				{
-					throw new ParserError
-					(
-						"Dublicate identifier " ~ item.name,
-						item.caret_start.clone(),
-						parser.file_name
-					);
-				}
-				names.set(item.name, true);
-				
-				if (item.name == "constructor") fn_create = item;
-				else if (item.name == "destructor") fn_destroy = item;
-				else functions.push(item);
-				
-				annotations.clear();
-				comments.clear();
-			}
-			else
-			{
-				items.push(item);
-			}
-		}
-		
-		items.appendVector(comments);
+		list d = static::classBodyAnalyze(parser, arr);
 		list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 		BaseOpCode current_class = new OpDeclareClass
 		{
@@ -392,11 +410,11 @@ static class ParserBayProgram
 			"class_extends": class_extends,
 			"class_implements": (class_implements != null) ? class_implements.toCollection() : null,
 			"template": (template != null) ? template.toCollection() : null,
-			"vars": vars.toCollection(),
-			"functions": functions.toCollection(),
-			"fn_create": fn_create,
-			"fn_destroy": fn_destroy,
-			"items": items.toCollection(),
+			"vars": d.item("vars"),
+			"functions": d.item("functions"),
+			"fn_create": d.item("fn_create"),
+			"fn_destroy": d.item("fn_destroy"),
+			"items": d.item("items"),
 			"caret_start": caret_start,
 			"caret_end": parser.caret.clone(),
 		};

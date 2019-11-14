@@ -187,7 +187,7 @@ struct TranslatorES6Program extends CoreStruct
 		if (item instanceof OpPreprocessorIfDef)
 		{
 			list res = t.operator::OpPreprocessorIfDef(t, item, OpPreprocessorIfDef::KIND_CLASS_BODY);
-			content ~= t.s(res[1]);
+			content ~= res[1];
 		}
 		return [t, content];
 	}

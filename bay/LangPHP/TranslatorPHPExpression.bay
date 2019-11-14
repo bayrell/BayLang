@@ -168,6 +168,10 @@ static class TranslatorPHPExpression
 	 */
 	lambda list<TranslatorPHP, string> OpIdentifier(TranslatorPHP t, OpIdentifier op_code)
 	{
+		if (op_code.value == "@") return [t, "$ctx"];
+		if (op_code.value == "_") return [t, "$ctx->translate"];
+		if (op_code.value == "log") return [t, "var_dump"];
+		
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{
 			string module_name = op_code.value;
@@ -185,14 +189,7 @@ static class TranslatorPHPExpression
 			if (content == "this") content = "$this";
 			return [t, content];
 		}
-		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
-		{
-			return [t, "$ctx"];
-		}
-		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
-		{
-			return [t, "$ctx->translate"];
-		}
+		
 		string content = op_code.value;
 		return [t, content];
 	}
@@ -312,12 +309,7 @@ static class TranslatorPHPExpression
 			}
 			else if (op_code_next instanceof OpIdentifier)
 			{
-				if (t.modules.has(op_code_next.value) or op_code_next.kind == OpIdentifier::KIND_SYS_TYPE)
-				{
-					prev_kind = "static";
-					list res = static::OpIdentifier(t, op_code_next); t = res[0]; s = res[1];
-				}
-				else if (op_code_next.kind == OpIdentifier::KIND_CLASSREF)
+				if (op_code_next.kind == OpIdentifier::KIND_CLASSREF)
 				{
 					if (op_code_next.value == "static")
 					{
@@ -335,20 +327,14 @@ static class TranslatorPHPExpression
 						s = "$this";
 					}
 				}
-				else if (op_code_next.kind == OpIdentifier::KIND_CONTEXT and op_code_next.value == "@")
-				{
-					prev_kind = "var";
-					s = "$ctx";
-				}
-				else if (op_code_next.kind == OpIdentifier::KIND_CONTEXT and op_code_next.value == "_")
-				{
-					prev_kind = "var";
-					s = "$ctx->translate";
-				}
 				else
 				{
+					list res = static::OpIdentifier(t, op_code_next); t = res[0]; s = res[1];
 					prev_kind = "var";
-					s = "$" ~ op_code_next.value;
+					if (t.modules.has(op_code_next.value) or op_code_next.kind == OpIdentifier::KIND_SYS_TYPE)
+					{
+						prev_kind = "static";
+					}
 				}
 			}
 			

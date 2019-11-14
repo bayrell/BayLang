@@ -164,6 +164,8 @@ static class ParserBayPreprocessor
 		{
 			list res = parser.parser_program::readClassBody(parser, "#endif"); parser = res[0]; items = res[1];
 			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+			list d = parser.parser_program::classBodyAnalyze(parser, items);
+			items = d.item("functions");
 		}
 		
 		return

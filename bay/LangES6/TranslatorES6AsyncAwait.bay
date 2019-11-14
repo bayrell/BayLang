@@ -158,12 +158,12 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content = t.s
 		(
 			"return " ~ async_t ~
-			".jump(" ~ async_t ~ "," ~ next_pos ~ ")" ~
-			".call(" ~ async_t ~ "," ~ content ~ "," ~ t.expression::toString(var_name) ~ ");"
+			".jump(ctx, " ~ next_pos ~ ")" ~
+			".call(ctx, " ~ content ~ "," ~ t.expression::toString(var_name) ~ ");"
 		);
 		t = t.levelDec();
 		content ~= t.s("}");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ next_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ next_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -178,7 +178,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		);
 		t = res[0];
 		
-		if (is_expression) return [t, async_t ~ ".getVar(" ~ t.expression::toString(var_name) ~ ")"];
+		if (is_expression) return [t, async_t ~ ".getVar(ctx, " ~ t.expression::toString(var_name) ~ ")"];
 		return [t, ""];
 	}
 	
@@ -227,12 +227,12 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content = t.s
 		(
 			"return " ~ async_t ~
-			".jump(" ~ async_t ~ "," ~ next_pos ~ ")" ~
-			".call(" ~ async_t ~ "," ~ content ~ "," ~ t.expression::toString(var_name) ~ ");"
+			".jump(ctx, " ~ next_pos ~ ")" ~
+			".call(ctx, " ~ content ~ "," ~ t.expression::toString(var_name) ~ ");"
 		);
 		t = t.levelDec();
 		content ~= t.s("}");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ next_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ next_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -247,7 +247,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		);
 		t = res[0];
 		
-		if (is_expression) return [t, async_t ~ ".getVar(" ~ t.expression::toString(var_name) ~ ")"];
+		if (is_expression) return [t, async_t ~ ".getVar(ctx, " ~ t.expression::toString(var_name) ~ ")"];
 		return [t, ""];
 	}
 	
@@ -270,11 +270,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 			new AsyncAwait{ "start_pos": start_pos, "end_pos": end_pos }
 		);
 		
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Start Loop */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -296,11 +296,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		
 		/* Loop Expression */
 		list res = static::nextPos(t); t = res[0]; string loop_expression = res[1];
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ loop_expression ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ loop_expression ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Loop Expression */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ loop_expression ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ loop_expression ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -315,16 +315,16 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= t.s("if (async_var)");
 		content ~= t.s("{");
 		t = t.levelInc();
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_loop ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_loop ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ end_pos ~ ");");		
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ end_pos ~ ");");		
 		
 		/* Start Loop */
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Loop */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_loop ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_loop ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -332,11 +332,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		list res = t.operator::Operators(t, op_code.value); t = res[0]; content ~= res[1];
 		
 		/* End Loop */
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ loop_expression ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ loop_expression ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* End Loop */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ end_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ end_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -373,27 +373,27 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= t.s("if (async_var)");
 		content ~= t.s("{");
 		t = t.levelInc();
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_if ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_if ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ next_if ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ next_if ~ ");");
 		
 		/* Start Loop */
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* If true */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_if ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_if ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
 		list res = t.operator::Operators(t, op_code); t = res[0]; content ~= res[1];
 		
 		/* End if */
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ end_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ end_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Next If */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ next_if ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ next_if ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -415,11 +415,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		
 		list res = static::pushPos(t); t = res[0]; string start_pos = res[1];
 		list res = static::popPos(t); save_t = res[0]; string end_pos = res[1];
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Start if */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -443,11 +443,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		}
 		
 		/* End if */
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ end_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ end_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* End if */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ end_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ end_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -475,7 +475,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		}
 		
 		string async_t = t.async_await.async_t;
-		content = t.s("return " ~ async_t ~ ".ret(" ~ async_t ~ ", " ~ s1 ~ ");");
+		content = t.s("return " ~ async_t ~ ".ret(ctx, " ~ s1 ~ ");");
 		return [t, content];
 	}
 	
@@ -501,11 +501,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		;
 		
 		/* Start Try Catch */
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Start Try */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		list res = static::levelIncPos(t); t = res[0]; string start_catch = res[1];
@@ -514,11 +514,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		list res = t.operator::Operators(t, op_code.op_try); t = res[0]; content ~= res[1];
 		
 		/* Start Catch */
-		content ~= t.s("return " ~ async_t ~ ".catch_pop().jump(" ~ async_t ~ ", " ~ end_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".catch_pop().jump(ctx, " ~ end_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Start Catch */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_catch ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_catch ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -552,11 +552,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= t.s("}");
 		
 		/* End Try Catch */
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ end_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ end_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* End Catch */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ end_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ end_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -588,11 +588,11 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 			)
 		;
 		
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Start while */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -607,27 +607,27 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= t.s("if (async_var)");
 		content ~= t.s("{");
 		t = t.levelInc();
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_loop ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_loop ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ end_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ end_pos ~ ");");
 		
 		/* Start Loop */
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Loop while */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ start_loop ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_loop ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
 		list res = t.operator::Operators(t, op_code.value); t = res[0]; content ~= res[1];
 		
 		/* End Loop */
-		content ~= t.s("return " ~ async_t ~ ".jump(" ~ async_t ~ ", " ~ start_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* End while */");
-		content ~= t.s("else if (" ~ async_t ~ ".pos() == " ~ end_pos ~ ")");
+		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ end_pos ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		
@@ -657,7 +657,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		string s1 = t.s("return (" ~ async_t ~ ") =>");
 		s1 ~= t.s("{");
 		t = t.levelInc();
-		s1 ~= t.s("if (" ~ async_t ~ ".pos() == " ~ static::currentPos(t) ~ ")");
+		s1 ~= t.s("if (" ~ async_t ~ ".pos(ctx) == " ~ static::currentPos(t) ~ ")");
 		s1 ~= t.s("{");
 		t = t.levelInc();
 		
@@ -670,12 +670,12 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		{
 			list res = t.expression::Expression(t, f.expression); t = res[0];
 			string expr = res[1];
-			s1 ~= t.s("return " ~ async_t ~ ".ret(" ~ async_t ~ ", " ~ expr ~ ");");
+			s1 ~= t.s("return " ~ async_t ~ ".ret(ctx, " ~ expr ~ ");");
 		}
 		
 		t = t.levelDec();
 		s1 ~= t.s("}");
-		s1 ~= t.s("return " ~ async_t ~ ".ret_void();");
+		s1 ~= t.s("return " ~ async_t ~ ".ret_void(ctx);");
 		t = t.levelDec();
 		s1 ~= t.s("};");
 		t = t.levelDec();

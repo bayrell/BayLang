@@ -71,6 +71,12 @@ class TranslatorES6Html
 					event_name = t.expression::findModuleName(t, event_name);
 					attr_key = "@event:" ~ event_name;
 				}
+				if (rs::substr(attr_key, 0, 12) == "@eventAsync:")
+				{
+					string event_name = rs::substr(attr_key, 12);
+					event_name = t.expression::findModuleName(t, event_name);
+					attr_key = "@eventAsync:" ~ event_name;
+				}
 				
 				if (attr.value instanceof OpHtmlValue)
 				{
