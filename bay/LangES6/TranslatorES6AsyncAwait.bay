@@ -312,7 +312,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		/* Loop condition */
 		content ~= t.s("var " ~ async_var ~ " = " ~ value ~ ";");
 		list res = static::nextPos(t); t = res[0]; string start_loop = res[1];
-		content ~= t.s("if (async_var)");
+		content ~= t.s("if (" ~ async_var ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_loop ~ ");");
@@ -370,7 +370,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		
 		/* If condition */
 		content ~= t.s("var " ~ async_var ~ " = " ~ value ~ ";");
-		content ~= t.s("if (async_var)");
+		content ~= t.s("if (" ~ async_var ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_if ~ ");");
@@ -604,7 +604,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		/* Loop condition */
 		content ~= t.s("var " ~ async_var ~ " = " ~ value ~ ";");
 		list res = static::nextPos(t); t = res[0]; string start_loop = res[1];
-		content ~= t.s("if (async_var)");
+		content ~= t.s("if (" ~ async_var ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		content ~= t.s("return " ~ async_t ~ ".jump(ctx, " ~ start_loop ~ ");");

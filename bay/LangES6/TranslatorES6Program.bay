@@ -195,6 +195,107 @@ struct TranslatorES6Program extends CoreStruct
 	
 	
 	/**
+	 * OpFunctionAnnotations
+	 */
+	lambda list<TranslatorES6, string> OpFunctionAnnotations(TranslatorES6 t, OpDeclareFunction f)
+	{
+		string content = "";
+		if (f.flags.isFlag("declare")) return [t, content];
+		if (f.annotations.count() == 0) return [t, content];
+		content ~= t.s("if (field_name == " ~ t.expression::toString(f.name) ~ ")");
+		content ~= t.s("{");
+		string s1 = "";
+		t = t.levelInc();
+		s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
+		s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
+		s1 ~= t.s("var IntrospectionInfo = " ~
+			t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
+		s1 ~= t.s("return new IntrospectionInfo(ctx, {");
+		t = t.levelInc();
+		s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_METHOD,");
+		s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
+		s1 ~= t.s("\"name\": " ~ t.expression::toString(f.name) ~ ",");
+		s1 ~= t.s("\"annotations\": Collection.from([");
+		t = t.levelInc();
+		for (int j=0; j<f.annotations.count(); j++)
+		{
+			OpAnnotation annotation = f.annotations.item(j);
+			list res = t.expression::OpTypeIdentifier(t, annotation.name);
+			t = res[0]; string name = res[1];
+			list res = t.expression::OpDict(t, annotation.params, true);
+			t = res[0]; string params = res[1];
+			s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
+		}
+		t = t.levelDec();
+		s1 ~= t.s("]),");
+		t = t.levelDec();
+		s1 ~= t.s("});");
+		string save = t::outputSaveOpCode(t);
+		if (save != "") content ~= t.s(save);
+		content ~= s1;
+		t = t.levelDec();
+		content ~= t.s("}");
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpClassBodyItemMethodsList
+	 */
+	lambda list<TranslatorES6, string> OpClassBodyItemMethodsList(TranslatorES6 t, BaseOpCode item)
+	{
+		string content = "";
+		if (item instanceof OpPreprocessorIfDef)
+		{
+			if (t.preprocessor_flags.has(item.condition.value))
+			{
+				for (int i=0; i<item.items.count(); i++)
+				{
+					BaseOpCode op_code = item.items.item(i);
+					list res = static::OpClassBodyItemMethodsList(t, op_code);
+					t = res[0]; content ~= res[1];
+				}
+			}
+		}
+		else if (item instanceof OpDeclareFunction)
+		{
+			content ~= t.s( t.expression::toString(item.name) ~ "," );
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpClassBodyItemAnnotations
+	 */
+	lambda list<TranslatorES6, string> OpClassBodyItemAnnotations(TranslatorES6 t, BaseOpCode item)
+	{
+		string content = "";
+		if (item instanceof OpPreprocessorIfDef)
+		{
+			if (t.preprocessor_flags.has(item.condition.value))
+			{
+				for (int i=0; i<item.items.count(); i++)
+				{
+					BaseOpCode op_code = item.items.item(i);
+					list res = static::OpClassBodyItemAnnotations(t, op_code);
+					t = res[0]; content ~= res[1];
+				}
+			}
+		}
+		else if (item instanceof OpDeclareFunction)
+		{
+			list res = static::OpFunctionAnnotations(t, item);
+			t = res[0]; content ~= res[1];
+		}
+		return [t, content];
+	}
+	
+	
+	
+	/**
 	 * OpDeclareClass
 	 */
 	lambda list<TranslatorES6, string> OpDeclareClassBodyStatic(TranslatorES6 t, OpDeclareClass op_code)
@@ -493,6 +594,15 @@ struct TranslatorES6Program extends CoreStruct
 					content ~= t.s( t.expression::toString(f.name) ~ "," );
 				}
 			}
+			if (op_code.items != null)
+			{
+				for (int i=0; i<op_code.items.count(); i++)
+				{
+					BaseOpCode item = op_code.items.item(i);
+					list res = static::OpClassBodyItemMethodsList(t, item);
+					t = res[0]; content ~= res[1];
+				}
+			}
 			t = t.levelDec();
 			content ~= t.s("];");
 			content ~= t.s("return " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ".from(a);");
@@ -510,41 +620,17 @@ struct TranslatorES6Program extends CoreStruct
 				for (int i=0; i<op_code.functions.count(); i++)
 				{
 					OpDeclareFunction f = op_code.functions.item(i);
-					if (f.flags.isFlag("declare")) continue;
-					if (f.annotations.count() == 0) continue;
-					content ~= t.s("if (field_name == " ~ t.expression::toString(f.name) ~ ")");
-					content ~= t.s("{");
-					string s1 = "";
-					t = t.levelInc();
-					s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
-					s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
-					s1 ~= t.s("var IntrospectionInfo = " ~
-						t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
-					s1 ~= t.s("return new IntrospectionInfo(ctx, {");
-					t = t.levelInc();
-					s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_METHOD,");
-					s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-					s1 ~= t.s("\"name\": " ~ t.expression::toString(f.name) ~ ",");
-					s1 ~= t.s("\"annotations\": Collection.from([");
-					t = t.levelInc();
-					for (int j=0; j<f.annotations.count(); j++)
-					{
-						OpAnnotation annotation = f.annotations.item(j);
-						list res = t.expression::OpTypeIdentifier(t, annotation.name);
-						t = res[0]; string name = res[1];
-						list res = t.expression::OpDict(t, annotation.params, true);
-						t = res[0]; string params = res[1];
-						s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
-					}
-					t = t.levelDec();
-					s1 ~= t.s("]),");
-					t = t.levelDec();
-					s1 ~= t.s("});");
-					string save = t::outputSaveOpCode(t);
-					if (save != "") content ~= t.s(save);
-					content ~= s1;
-					t = t.levelDec();
-					content ~= t.s("}");
+					list res = static::OpFunctionAnnotations(t, f);
+					t = res[0]; content ~= res[1];
+				}
+			}
+			if (op_code.items != null)
+			{
+				for (int i=0; i<op_code.items.count(); i++)
+				{
+					BaseOpCode item = op_code.items.item(i);
+					list res = static::OpClassBodyItemAnnotations(t, item);
+					t = res[0]; content ~= res[1];
 				}
 			}
 			content ~= t.s("return null;");
