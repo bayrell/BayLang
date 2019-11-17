@@ -53,9 +53,22 @@ class TranslatorES6Html
 	lambda list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs)
 	{
 		string attr_s = "null";
+		string v_model = "";
+		
+		BaseOpCode model = attrs.findItem( lib::equalAttr("key", "@model") );
+		if (not model)
+		{
+			BaseOpCode bind = attrs.findItem( lib::equalAttr("key", "@bind") );
+			if (bind)
+			{
+				list res = t.expression::Expression(t, bind.value); t = res[0];
+				v_model = "model[" ~ res[1] ~ "]";
+			}
+		}
+		
 		Collection<string> attrs = attrs.map
 		(
-			string (OpHtmlAttribute attr) use (t)
+			string (OpHtmlAttribute attr) use (t, v_model)
 			{
 				string attr_key = attr.key;
 				string ch = rs::substr(attr_key, 0, 1);
@@ -97,6 +110,13 @@ class TranslatorES6Html
 				}
 				
 				list res = t.expression::Expression(t, attr.value); t = res[0]; string value = res[1];
+				if (attr_key == "@bind" and v_model != "")
+				{
+					string s = "";
+					s = t.expression::toString(attr_key) ~ ":" ~ res[1] ~ ",";
+					s ~= t.expression::toString("@model") ~ ":" ~ v_model;
+					return s;
+				}
 				return t.expression::toString(attr_key) ~ ":" ~ res[1];
 			}
 		);
