@@ -36,6 +36,7 @@ struct OpFlags extends CoreStruct
 	public bool p_assignable = false;
 	public bool p_memorize = false;
 	public bool p_lambda = false;
+	public bool p_pure = false;
 	
 	
 	/**
@@ -69,6 +70,7 @@ struct OpFlags extends CoreStruct
 			"assignable",
 			"memorize",
 			"lambda",
+			"pure",
 		];
 	}
 	
@@ -92,7 +94,8 @@ struct OpFlags extends CoreStruct
 			flag_name == "cloneable" or
 			flag_name == "assignable" or
 			flag_name == "memorize" or
-			flag_name == "lambda"
+			flag_name == "lambda" or
+			flag_name == "pure"
 		){
 			return true;
 		}

@@ -211,6 +211,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 			content ~= "ctx";
 			flag = true;
 		}
+		content ~= (flag ? ", " : "") ~ var_name; flag = true;
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
@@ -218,7 +219,6 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 			content ~= (flag ? ", " : "") ~ s1;
 			flag = true;
 		}
-		content ~= (flag ? ", " : "") ~ var_name;
 		content ~= ")";
 		
 		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];

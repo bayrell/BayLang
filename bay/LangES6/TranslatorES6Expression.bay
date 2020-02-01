@@ -157,7 +157,7 @@ struct TranslatorES6Expression extends CoreStruct
 	lambda list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
 		if (op_code.value == "@") return [t, "ctx"];
-		if (op_code.value == "_") return [t, "ctx.translate"];
+		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
 		if (op_code.value == "log") return [t, "console.log"];
 		
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
@@ -284,6 +284,11 @@ struct TranslatorES6Expression extends CoreStruct
 					if (op_code_first.value == "static")
 					{
 						s = "this" ~ (not t.is_static_function ? ".constructor" : "");
+						prev_kind = "static";
+					}
+					else if (op_code_first.value == "parent")
+					{
+						s = t.current_class_extends_name;
 						prev_kind = "static";
 					}
 					else if (op_code_first.value == "self")
@@ -494,7 +499,12 @@ struct TranslatorES6Expression extends CoreStruct
 		else s ~= "(";
 		
 		string content = s;
-		if (t.current_function.is_context and op_code.is_context)
+		if (op_code.obj instanceof OpIdentifier and op_code.obj.value == "_")
+		{
+			content ~= (flag ? ", " : "") ~ "ctx, ctx";
+			flag = true;
+		}
+		else if (t.current_function.is_context and op_code.is_context)
 		{
 			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
@@ -559,6 +569,7 @@ struct TranslatorES6Expression extends CoreStruct
 			content ~= "ctx";
 			flag = true;
 		}
+		content ~= (flag ? ", " : "") ~ var_name; flag = true;
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
@@ -566,7 +577,6 @@ struct TranslatorES6Expression extends CoreStruct
 			content ~= (flag ? ", " : "") ~ s1;
 			flag = true;
 		}
-		content ~= (flag ? ", " : "") ~ var_name;
 		content ~= ")";
 		
 		return [t, content];

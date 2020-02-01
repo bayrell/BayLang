@@ -74,7 +74,7 @@ static class TranslatorPHPHtml
 			{
 				list res = t.expression::Expression(t, attr.value.value); 
 				t = res[0]; string value = res[1];
-				value = "\\Runtime\\Web\\UI\\RenderHelper::json_encode($ctx, " ~ value ~ ")";
+				value = "\\Runtime\\Web\\RenderHelper::json_encode($ctx, " ~ value ~ ")";
 				return [t, value];
 			}
 		}
@@ -213,7 +213,7 @@ static class TranslatorPHPHtml
 					t = res[0]; attr_value = res[1];
 				}
 				
-				return key ~ "=\"'.\\Runtime\\Web\\UI\\RenderHelper::escapeAttr($ctx, " ~ attr_value ~ ").'\"";
+				return key ~ "=\"'.\\Runtime\\Web\\RenderHelper::escapeAttr($ctx, " ~ attr_value ~ ").'\"";
 			}
 		);
 		attrs = attrs.filter( bool (string s) => s != "" );
@@ -244,7 +244,7 @@ static class TranslatorPHPHtml
 					}
 					else
 					{
-						content ~= t.s(var_name ~ " .= \\Runtime\\Web\\UI\\RenderHelper::escapeHtml($ctx, " ~
+						content ~= t.s(var_name ~ " .= \\Runtime\\Web\\RenderHelper::escapeHtml($ctx, " ~
 							attr_value ~ ");");
 					}
 					flag_value = true;
@@ -314,20 +314,20 @@ static class TranslatorPHPHtml
 				{
 					list res = t.expression::Expression(t, item.value); 
 					t = res[0]; item_value = res[1];
-					item_value = "\\Runtime\\Web\\UI\\RenderHelper::toHtml($ctx, " ~ item_value ~ ")";
+					item_value = "\\Runtime\\Web\\RenderHelper::toHtml($ctx, " ~ item_value ~ ")";
 				}
 				else if (item.kind == OpHtmlValue::KIND_JSON)
 				{
 					list res = t.expression::Expression(t, item.value); 
 					t = res[0]; item_value = res[1];
-					item_value = "\\Runtime\\Web\\UI\\RenderHelper::json_encode($ctx, " ~ item_value ~ ")";
+					item_value = "\\Runtime\\Web\\RenderHelper::json_encode($ctx, " ~ item_value ~ ")";
 				}
 			}
 			else
 			{
 				list res = t.expression::Expression(t, item); 
 				t = res[0]; item_value = res[1];
-				item_value = "\\Runtime\\Web\\UI\\RenderHelper::escapeHtml($ctx, " ~ item_value ~ ")";
+				item_value = "\\Runtime\\Web\\RenderHelper::escapeHtml($ctx, " ~ item_value ~ ")";
 			}
 			
 			content ~= t.s(var_name ~ " .= " ~ item_value ~ ";");

@@ -202,7 +202,7 @@ class TranslatorES6Html
 				list res = t.expression::Expression(t, op_code.op_code_name);
 				t = res[0]; tag_name = res[1];
 			}
-			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.UI.Drivers.RenderDriver.component(" ~
+			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.Drivers.RenderDriver.component(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
@@ -213,7 +213,7 @@ class TranslatorES6Html
 		}
 		else
 		{
-			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.UI.Drivers.RenderDriver.elem(" ~
+			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.Drivers.RenderDriver.elem(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
@@ -302,7 +302,7 @@ class TranslatorES6Html
 			
 			if (is_text)
 			{
-				item_value = "Runtime.Web.UI.Drivers.RenderDriver.text(" ~
+				item_value = "Runtime.Web.Drivers.RenderDriver.text(" ~
 					"layout," ~
 					item_value ~ "," ~
 					"control," ~
@@ -311,7 +311,7 @@ class TranslatorES6Html
 			}
 			else if (is_html)
 			{
-				item_value = "Runtime.Web.UI.Drivers.RenderDriver.html(" ~
+				item_value = "Runtime.Web.Drivers.RenderDriver.html(" ~
 					"layout," ~
 					item_value ~ "," ~
 					"control," ~
@@ -320,7 +320,7 @@ class TranslatorES6Html
 			}
 			else if (is_raw)
 			{
-				item_value = "Runtime.Web.UI.Drivers.RenderDriver.raw(" ~
+				item_value = "Runtime.Web.Drivers.RenderDriver.raw(" ~
 					"layout," ~
 					item_value ~ "," ~
 					"control," ~

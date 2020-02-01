@@ -1464,6 +1464,7 @@ class ParserBayBase
 				BaseOpCode class_name = null;
 				BaseOpCode method_name = null;
 				parser = look.clone();
+				is_context_call = true;
 				
 				if (token_content == "->")
 				{
@@ -1514,6 +1515,7 @@ class ParserBayBase
 				string kind = "";
 				BaseOpCode look_value = null;
 				parser = look.clone();
+				is_context_call = true;
 				
 				if (token_content == ".") kind = OpAttr::KIND_ATTR;
 				else if (token_content == "::") kind = OpAttr::KIND_STATIC;

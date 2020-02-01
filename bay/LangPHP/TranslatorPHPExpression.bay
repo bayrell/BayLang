@@ -169,7 +169,7 @@ static class TranslatorPHPExpression
 	lambda list<TranslatorPHP, string> OpIdentifier(TranslatorPHP t, OpIdentifier op_code)
 	{
 		if (op_code.value == "@") return [t, "$ctx"];
-		if (op_code.value == "_") return [t, "$ctx->translate"];
+		if (op_code.value == "_") return [t, "($ctx->staticMethod('translate'))"];
 		if (op_code.value == "log") return [t, "var_dump"];
 		
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
@@ -316,6 +316,11 @@ static class TranslatorPHPExpression
 						s = "static";
 						prev_kind = "static";
 					}
+					else if (op_code_next.value == "parent")
+					{
+						s = "parent";
+						prev_kind = "static";
+					}
 					else if (op_code_next.value == "self")
 					{
 						prev_kind = "static";
@@ -368,7 +373,7 @@ static class TranslatorPHPExpression
 					}
 					else
 					{
-						s ~= "->staticMethod(" ~ static::toString(attr.value.value) ~ ")";
+						s = "(" ~ s ~ "->staticMethod(" ~ static::toString(attr.value.value) ~ "))";
 					}
 					prev_kind = "static";
 				}
@@ -539,7 +544,12 @@ static class TranslatorPHPExpression
 		else s ~= "(";
 		
 		string content = s;
-		if ((t.current_function == null or t.current_function.is_context) and op_code.is_context)
+		if (op_code.obj instanceof OpIdentifier and op_code.obj.value == "_")
+		{
+			content ~= (flag ? ", " : "") ~ "$ctx, $ctx";
+			flag = true;
+		}
+		else if ((t.current_function == null or t.current_function.is_context) and op_code.is_context)
 		{
 			content ~= (flag ? ", " : "") ~ "$ctx";
 			flag = true;
@@ -600,6 +610,7 @@ static class TranslatorPHPExpression
 			content ~= "$ctx";
 			flag = true;
 		}
+		content ~= (flag ? ", " : "") ~ var_name; flag = true;
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
@@ -607,7 +618,6 @@ static class TranslatorPHPExpression
 			content ~= (flag ? ", " : "") ~ s1;
 			flag = true;
 		}
-		content ~= (flag ? ", " : "") ~ var_name;
 		content ~= ")";
 		
 		return [t, content];

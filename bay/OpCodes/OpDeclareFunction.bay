@@ -40,11 +40,17 @@ struct OpDeclareFunction extends BaseOpCode
 	bool is_context = true;
 	
 	
+	
 	/**
 	 * Returns true if static function
 	 */
 	bool isStatic() =>
-		this.flags != null and this.flags.isFlag("static") or this.flags.isFlag("lambda")
+		this.flags != null and
+		(
+			this.flags.isFlag("static") or
+			this.flags.isFlag("lambda") or
+			this.flags.isFlag("pure")
+		)
 	;
 	
 	
