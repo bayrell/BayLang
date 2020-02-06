@@ -373,7 +373,7 @@ class ParserBayHtml extends CoreObject
 		int content_sz = parser.content_sz;
 		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret.clone());
 		string ch = rs::substr(content.ref, caret.pos, 1);
-		while (ch != ">" and caret.pos < content_sz)
+		while (ch != "/" and ch != ">" and caret.pos < content_sz)
 		{
 			Caret caret_start = caret;
 			parser <= caret <= caret.clone();

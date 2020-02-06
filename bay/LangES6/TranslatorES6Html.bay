@@ -48,11 +48,47 @@ class TranslatorES6Html
 	
 	
 	/**
+	 * Translator html value
+	 */
+	lambda list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, BaseOpCode op_code, int item_pos)
+	{
+		if (op_code instanceof OpString)
+		{
+			return [t, t.expression::toString(op_code.value)];
+		}
+		if (op_code instanceof OpHtmlValue)
+		{
+			if (op_code.kind == OpHtmlValue::KIND_RAW)
+			{
+				list res = t.expression::Expression(t, op_code.value); t = res[0]; string value = res[1];
+				return [t, value];
+			}
+			else if (op_code.kind == OpHtmlValue::KIND_JSON)
+			{
+				list res = t.expression::Expression(t, op_code.value); 
+				t = res[0]; string value = res[1];
+				value = t.expression::useModuleName(t, "RenderHelper") ~
+					".json_encode(ctx, " ~ value ~ ")"
+				;
+				return [t, value];
+			}
+		}
+		
+		list res = t.expression::Expression(t, op_code); t = res[0]; string value = res[1];
+		return [t, value];
+	}
+	
+	
+	
+	/**
 	 * Translator html template
 	 */
 	lambda list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs)
 	{
+		Vector<string> attr_class = new Vector<string>();
 		string attr_s = "null";
+		string attr_key_value = "";
+		bool has_attr_key = false;
 		string v_model = "";
 		
 		BaseOpCode model = attrs.findItem( lib::equalAttr("key", "@model") );
@@ -68,16 +104,39 @@ class TranslatorES6Html
 		
 		Collection<string> attrs = attrs.map
 		(
-			string (OpHtmlAttribute attr) use (t, v_model)
+			string (OpHtmlAttribute attr) use (t, v_model, attr_class, attr_key_value, has_attr_key)
 			{
+				list res = static::OpHtmlAttr(t, attr.value);
+				t = res[0]; string attr_value = res[1];
+				
 				string attr_key = attr.key;
 				string ch = rs::substr(attr_key, 0, 1);
-				if (attr_key == "@class" and attr.value instanceof OpString)
+				if (attr_key == "@class")
 				{
-					return "\"class\":" ~
-						"this.getCssName(ctx, " ~ t.expression::toString(attr.value.value) ~ ")"
-					;
+					attr_class.push("this.getCssName(ctx, " ~ attr_value ~ ")");
+					
+					if (not has_attr_key and attr.value instanceof OpString)
+					{
+						var arr = rs::split(" ", attr.value.value);
+						attr_key_value = t.expression::toString(arr[0]);
+						has_attr_key = true;
+					}
+					
+					return "";
 				}
+				else if (attr_key == "class")
+				{
+					attr_class.push(attr_value);
+					return "";
+				}
+				else if (attr_key == "@key")
+				{
+					has_attr_key = true;
+					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
+					attr_key_value = attr_value;
+					return "";
+				}
+				
 				if (rs::substr(attr_key, 0, 7) == "@event:")
 				{
 					string event_name = rs::substr(attr_key, 7);
@@ -91,36 +150,31 @@ class TranslatorES6Html
 					attr_key = "@eventAsync:" ~ event_name;
 				}
 				
-				if (attr.value instanceof OpHtmlValue)
-				{
-					if (attr.value.kind == OpHtmlValue::KIND_RAW)
-					{
-						list res = t.expression::Expression(t, attr.value.value); t = res[0]; 
-						return t.expression::toString(attr_key) ~ ":" ~ res[1];
-					}
-					else if (attr.value.kind == OpHtmlValue::KIND_JSON)
-					{
-						list res = t.expression::Expression(t, attr.value.value); 
-						t = res[0]; string value = res[1];
-						value = t.expression::useModuleName(t, "RenderHelper") ~
-							".json_encode(ctx, " ~ value ~ ")"
-						;
-						return t.expression::toString(attr_key) ~ ":" ~ value;
-					}
-				}
-				
-				list res = t.expression::Expression(t, attr.value); t = res[0]; string value = res[1];
 				if (attr_key == "@bind" and v_model != "")
 				{
 					string s = "";
-					s = t.expression::toString(attr_key) ~ ":" ~ res[1] ~ ",";
+					s = t.expression::toString(attr_key) ~ ":" ~ attr_value ~ ",";
 					s ~= t.expression::toString("@model") ~ ":" ~ v_model;
 					return s;
 				}
-				return t.expression::toString(attr_key) ~ ":" ~ res[1];
+				return t.expression::toString(attr_key) ~ ":" ~ attr_value;
 			}
 		);
 		attrs = attrs.filter( bool (string s) => s != "" );
+		if (attr_class.count() > 0)
+		{
+			attrs = attrs.pushIm
+			(
+				"\"class\":" ~ rs::join(" ~ \" \" ~ ", attr_class)
+			);
+		}
+		if (attr_key_value != "")
+		{
+			attrs = attrs.pushIm
+			(
+				"\"key\":" ~ attr_key_value
+			);
+		}
 		if (attrs.count() > 0)
 		{
 			attr_s = "{" ~ rs::join(",", attrs) ~ "}";

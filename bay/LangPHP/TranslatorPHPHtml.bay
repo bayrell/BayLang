@@ -59,33 +59,6 @@ static class TranslatorPHPHtml
 	
 	
 	/**
-	 * Translator html attr
-	 */
-	lambda list<TranslatorPHP, string> OpHtmlAttr(TranslatorPHP t, OpHtmlAttribute attr)
-	{
-		if (attr.value instanceof OpHtmlValue)
-		{
-			if (attr.value.kind == OpHtmlValue::KIND_RAW)
-			{
-				list res = t.expression::Expression(t, attr.value.value); t = res[0]; 
-				return [t, res[1]];
-			}
-			else if (attr.value.kind == OpHtmlValue::KIND_JSON)
-			{
-				list res = t.expression::Expression(t, attr.value.value); 
-				t = res[0]; string value = res[1];
-				value = "\\Runtime\\Web\\RenderHelper::json_encode($ctx, " ~ value ~ ")";
-				return [t, value];
-			}
-		}
-		
-		list res = t.expression::Expression(t, attr.value); t = res[0]; string value = res[1];
-		return [t, value];
-	}
-	
-	
-	
-	/**
 	 * Translator html component
 	 */
 	lambda list<TranslatorPHP, string> OpHtmlComponent(TranslatorPHP t, OpHtmlTag op_code)
@@ -173,6 +146,37 @@ static class TranslatorPHPHtml
 	
 	
 	/**
+	 * Translator html attr
+	 */
+	lambda list<TranslatorPHP, string> OpHtmlAttr(TranslatorPHP t, OpHtmlAttribute attr)
+	{
+		if (attr.value instanceof OpString)
+		{
+			return [t, t.expression::toString(attr.value.value)];
+		}
+		if (attr.value instanceof OpHtmlValue)
+		{
+			if (attr.value.kind == OpHtmlValue::KIND_RAW)
+			{
+				list res = t.expression::Expression(t, attr.value.value); t = res[0]; 
+				return [t, res[1]];
+			}
+			else if (attr.value.kind == OpHtmlValue::KIND_JSON)
+			{
+				list res = t.expression::Expression(t, attr.value.value); 
+				t = res[0]; string value = res[1];
+				value = "\\Runtime\\Web\\RenderHelper::json_encode($ctx, " ~ value ~ ")";
+				return [t, value];
+			}
+		}
+		
+		list res = t.expression::Expression(t, attr.value); t = res[0]; string value = res[1];
+		return [t, value];
+	}
+	
+	
+	
+	/**
 	 * Translator html template
 	 */
 	lambda list<TranslatorPHP, string> OpHtmlTag(TranslatorPHP t, OpHtmlTag op_code)
@@ -182,29 +186,56 @@ static class TranslatorPHPHtml
 			return static::OpHtmlComponent(t, op_code);
 		}
 		
+		Vector<string> attr_class = new Vector<string>();
 		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
 		string attr_s = "";
+		string attr_key_value = "";
+		bool has_attr_key = false;
+		
 		Collection<string> attrs = op_code.attrs.map
 		(
-			string (OpHtmlAttribute attr) use (t, op_code)
+			string (OpHtmlAttribute attr) use (t, op_code, attr_class, attr_key_value, has_attr_key)
 			{
+				string attr_key = attr.key;
 				string attr_value = "";
-				string key = attr.key;
-				if (key == "@class" and attr.value instanceof OpString)
+				
+				if (attr_key == "@class")
 				{
-					return "class=" ~
-						"\"'.static::getCssName($ctx, " ~ t.expression::toString(attr.value.value) ~ ").'\""
-					;
+					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
+					attr_class.push("\"'.static::getCssName($ctx, " ~ attr_value ~ ").'\"");
+					
+					if (not has_attr_key and attr.value instanceof OpString)
+					{
+						var arr = rs::split(" ", attr.value.value);
+						attr_key_value = t.expression::toString(arr[0]);
+						has_attr_key = true;
+					}
+					
+					return "";
 				}
-				if (key == "@model" and op_code.tag_name == "input") key = "value";
-				if (key == "@bind" and op_code.tag_name == "input")
+				else if (attr_key == "class")
+				{
+					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
+					attr_class.push(attr_value);
+					return "";
+				}
+				else if (attr_key == "@key")
+				{
+					has_attr_key = true;
+					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
+					attr_key_value = attr_value;
+					return "";
+				}
+				
+				if (attr_key == "@model" and op_code.tag_name == "input") attr_key = "value";
+				if (attr_key == "@bind" and op_code.tag_name == "input")
 				{
 					list res = t.expression::Expression(t, attr.value); t = res[0];
 					attr_value = "$model[" ~ res[1] ~ "]";
-					key = "value";
+					attr_key = "value";
 				}
 				
-				string ch = rs::substr(key, 0, 1);
+				string ch = rs::substr(attr_key, 0, 1);
 				if (ch == "@") return "";
 				
 				if (attr_value == "")
@@ -213,10 +244,24 @@ static class TranslatorPHPHtml
 					t = res[0]; attr_value = res[1];
 				}
 				
-				return key ~ "=\"'.\\Runtime\\Web\\RenderHelper::escapeAttr($ctx, " ~ attr_value ~ ").'\"";
+				return attr_key ~ "=\"'.\\Runtime\\Web\\RenderHelper::escapeAttr($ctx, " ~ attr_value ~ ").'\"";
 			}
 		);
 		attrs = attrs.filter( bool (string s) => s != "" );
+		if (attr_class.count() > 0)
+		{
+			attrs = attrs.pushIm
+			(
+				"\"class\"=" ~ rs::join(" ~ \" \" ~ ", attr_class)
+			);
+		}
+		if (attr_key_value != "")
+		{
+			attrs = attrs.pushIm
+			(
+				"\"key\"=" ~ attr_key_value
+			);
+		}
 		if (attrs.count() > 0)
 		{
 			attr_s = " " ~ rs::join(" ", attrs);
