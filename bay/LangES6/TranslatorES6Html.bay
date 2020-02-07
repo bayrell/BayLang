@@ -50,9 +50,11 @@ class TranslatorES6Html
 	/**
 	 * Translator html value
 	 */
-	lambda list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, BaseOpCode op_code, int item_pos)
+	lambda list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, OpHtmlAttribute attr, int item_pos)
 	{
-		if (op_code instanceof OpString)
+		BaseOpCode op_code = attr.value;
+		
+		if (attr instanceof OpString)
 		{
 			return [t, t.expression::toString(op_code.value)];
 		}
@@ -106,7 +108,7 @@ class TranslatorES6Html
 		(
 			string (OpHtmlAttribute attr) use (t, v_model, attr_class, attr_key_value, has_attr_key)
 			{
-				list res = static::OpHtmlAttr(t, attr.value);
+				list res = static::OpHtmlAttr(t, attr);
 				t = res[0]; string attr_value = res[1];
 				
 				string attr_key = attr.key;
@@ -172,7 +174,7 @@ class TranslatorES6Html
 		{
 			attrs = attrs.pushIm
 			(
-				"\"key\":" ~ attr_key_value
+				"\"@key\":" ~ attr_key_value
 			);
 		}
 		if (attrs.count() > 0)
@@ -187,107 +189,145 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorES6, string> OpHtmlTagEmpty(TranslatorES6 t, OpHtmlTag op_code, int item_pos)
-	{
-		fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
-		list res = t::saveOpCodeCall(t, f, [op_code.items]); t = res[0];
-		string content = res[1];
-		string var_name = res[2];
-		list res = t::addSaveOpCode
-		(
-			t,
-			{
-				"op_code": op_code,
-				"var_name": var_name,
-				"content": content,
-			}
-		);
-		t = res[0];
-		return [t, var_name];
-	}
-	
-	
-	
-	/**
-	 * Translator html template
-	 */
 	lambda list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos)
 	{
-		if (op_code.tag_name == "") return static::OpHtmlTagEmpty(t, op_code, item_pos);
-		bool is_component = static::isComponent(op_code.tag_name);
-		
+		bool is_text = false;
+		bool is_html = false;
+		bool is_raw = false;
+		bool is_element = false;
+		bool is_component = false;
+		bool is_empty_tag = false;
+		string attrs = "";
+		string item_value = "";
 		string tag_name = "";
-		string content = "";
-		if (is_component)
-		{
-			content = t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-			tag_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
-		}
-		else
-		{
-			content = t.s("/* Element '" ~ op_code.tag_name ~ "' */");
-			tag_name = t.expression::toString(op_code.tag_name);
-		}
-		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
-		list res = static::OpHtmlAttrs(t, op_code.attrs); t = res[0]; string attrs = res[1];
 		
-		string var_name_content = var_name ~ "_content";
-		if (op_code.items != null and op_code.items.items.count() > 0)
+		if (op_code instanceof OpHtmlContent)
 		{
-			content ~= t.s("var " ~ var_name_content ~ " = (control) =>");
-			content ~= t.s("{");
-			t = t.levelInc();
-			fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
-			list res = t::saveOpCodeCall(t, f, [op_code.items]); t = res[0];
-			content ~= res[1];
-			content ~= t.s("return " ~ res[2] ~ ";");
-			t = t.levelDec();
-			content ~= t.s("};");
+			item_value = t.expression::toString(op_code.value);
+			is_text = true;
 		}
-		else
+		else if (op_code instanceof OpHtmlValue)
 		{
-			var_name_content = "null";
-		}
-		
-		if (is_component)
-		{
-			if (op_code.op_code_name)
+			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
-				list res = t.expression::Expression(t, op_code.op_code_name);
-				t = res[0]; tag_name = res[1];
+				list res = t.expression::Expression(t, op_code.value); 
+				t = res[0]; item_value = res[1];
+				is_raw = true;
 			}
-			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.Drivers.RenderDriver.component(" ~
+			else if (op_code.kind == OpHtmlValue::KIND_HTML)
+			{
+				list res = t.expression::Expression(t, op_code.value); 
+				t = res[0]; item_value = res[1];
+				is_html = true;
+			}
+			else if (op_code.kind == OpHtmlValue::KIND_JSON)
+			{
+				list res = t.expression::Expression(t, op_code.value); 
+				t = res[0]; item_value = res[1];
+				item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
+				is_text = true;
+			}
+		}
+		else if (op_code instanceof OpHtmlTag)
+		{
+			if (op_code.tag_name == "")
+			{
+				list res = static::OpHtmlItems(t, op_code.items);
+				t = res[0]; item_value = res[1];
+			}
+			else
+			{
+				list res = static::OpHtmlAttrs(t, op_code.attrs); t = res[0]; string attrs = res[1];
+				
+				is_component = static::isComponent(op_code.tag_name);
+				if (is_component)
+				{
+					if (op_code.op_code_name)
+					{
+						list res = t.expression::Expression(t, op_code.op_code_name);
+						t = res[0]; tag_name = res[1];
+					}
+					else tag_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
+				}
+				else
+				{
+					tag_name = t.expression::toString(op_code.tag_name);
+					is_element = true;
+				}
+				
+				list res = static::OpHtmlItems(t, op_code.items);
+				t = res[0]; item_value = res[1];
+			}
+		}
+		else
+		{
+			list res = t.expression::Expression(t, op_code); 
+			t = res[0]; item_value = res[1];
+			is_text = true;
+		}
+		
+		if (item_value == "") item_value = "null";
+		
+		if (is_text)
+		{
+			item_value = "RenderDriver.text(" ~
+				"layout," ~
+				item_value ~ "," ~
+				"control," ~
+				item_pos ~
+			")";
+		}
+		else if (is_html)
+		{
+			item_value = "RenderDriver.html(" ~
+				"layout," ~
+				item_value ~ "," ~
+				"control," ~
+				item_pos ~
+			")";
+		}
+		else if (is_raw)
+		{
+			item_value = "RenderDriver.raw(" ~
+				"layout," ~
+				item_value ~ "," ~
+				"control," ~
+				item_pos ~
+			")";
+		}
+		else if (is_component)
+		{
+			item_value = "RenderDriver.component(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
-				var_name_content ~ "," ~
+				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			");");
+			")";
 		}
-		else
+		else if (is_element)
 		{
-			content ~= t.s("var " ~ var_name ~ "_elem = Runtime.Web.Drivers.RenderDriver.elem(" ~
+			item_value = "RenderDriver.elem(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
-				var_name_content ~ "," ~
+				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			");");
+			")";
+		}
+		else if (is_empty_tag)
+		{
+			item_value = "RenderDriver.empty(" ~
+				"layout," ~
+				item_value ~ "," ~
+				"control," ~
+				item_pos ~
+			")";
 		}
 		
-		list res = t::addSaveOpCode
-		(
-			t,
-			{
-				"op_code": op_code,
-				"var_name": var_name,
-				"content": content,
-			}
-		);
-		t = res[0];
-		return [t, var_name ~ "_elem"];
+		return [t, item_value];
 	}
 	
 	
@@ -297,105 +337,53 @@ class TranslatorES6Html
 	 */
 	lambda list<TranslatorES6, string> OpHtmlItems(TranslatorES6 t, OpHtmlItems op_code)
 	{
-		if (op_code.items.count() == 0)
+		if (op_code == null or op_code.items.count() == 0)
 		{
 			return [t, ""];
 		}
 		
-		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
+		string content = "";
+		content ~= "(control) =>";
+		content ~= t.s("{");
+		t = t.levelInc();
 		
-		string content = t.s("/* Items */");
+		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
 		content ~= t.s("var " ~ var_name ~ " = [];");
+		
 		for (int i=0; i<op_code.items.count(); i++)
 		{
 			OpHtmlTag item = op_code.items.item(i);
 			string item_value = "";
-			bool is_text = false;
-			bool is_html = false;
-			bool is_raw = false;
 			
-			if (item instanceof OpHtmlContent)
-			{
-				item_value = t.expression::toString(item.value);
-				is_text = true;
-			}
-			else if (item instanceof OpHtmlTag)
-			{
-				list res = static::OpHtmlTag(t, item, i); t = res[0]; item_value = res[1];
-			}
-			else if (item instanceof OpHtmlValue)
-			{
-				if (item.kind == OpHtmlValue::KIND_RAW)
-				{
-					list res = t.expression::Expression(t, item.value); 
-					t = res[0]; item_value = res[1];
-					is_raw = true;
-				}
-				else if (item.kind == OpHtmlValue::KIND_HTML)
-				{
-					list res = t.expression::Expression(t, item.value); 
-					t = res[0]; item_value = res[1];
-					is_html = true;
-				}
-				else if (item.kind == OpHtmlValue::KIND_JSON)
-				{
-					list res = t.expression::Expression(t, item.value); 
-					t = res[0]; item_value = res[1];
-					item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
-					is_text = true;
-				}
-			}
-			else
-			{
-				list res = t.expression::Expression(t, item); 
-				t = res[0]; item_value = res[1];
-				is_text = true;
-			}
-			
+			list res = static::OpHtmlTag(t, item, i);
+			t = res[0]; item_value = res[1];
 			if (item_value == "") continue;
 			
-			if (is_text)
+			if (item instanceof OpHtmlTag)
 			{
-				item_value = "Runtime.Web.Drivers.RenderDriver.text(" ~
-					"layout," ~
-					item_value ~ "," ~
-					"control," ~
-					i ~
-				")";
-			}
-			else if (is_html)
-			{
-				item_value = "Runtime.Web.Drivers.RenderDriver.html(" ~
-					"layout," ~
-					item_value ~ "," ~
-					"control," ~
-					i ~
-				")";
-			}
-			else if (is_raw)
-			{
-				item_value = "Runtime.Web.Drivers.RenderDriver.raw(" ~
-					"layout," ~
-					item_value ~ "," ~
-					"control," ~
-					i ~
-				")";
+				bool is_component = static::isComponent(item.tag_name);
+				if (item.tag_name == "")
+				{
+					content ~= t.s("/* Items */");
+				}
+				else if (is_component)
+				{
+					content ~= t.s("/* Component '" ~ item.tag_name ~ "' */");
+				}
+				else
+				{
+					content ~= t.s("/* Element '" ~ item.tag_name ~ "' */");
+				}
 			}
 			
 			content ~= t.s(var_name ~ ".push(" ~ item_value ~ ");");
 		}
 		
-		list res = t::addSaveOpCode
-		(
-			t,
-			{
-				"op_code": op_code,
-				"var_name": var_name,
-				"content": content,
-			}
-		);
-		t = res[0];
-		return [t, var_name];
+		
+		content ~= t.s("return " ~ var_name ~ ";");
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		return [t, content];
 	}
-	
 }
