@@ -85,7 +85,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs)
+	lambda list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs, int item_pos)
 	{
 		Vector<string> attr_class = new Vector<string>();
 		string attr_s = "null";
@@ -106,7 +106,7 @@ class TranslatorES6Html
 		
 		Collection<string> attrs = attrs.map
 		(
-			string (OpHtmlAttribute attr) use (t, v_model, attr_class, attr_key_value, has_attr_key)
+			string (OpHtmlAttribute attr) use (t, v_model, attr_class, attr_key_value, has_attr_key, item_pos)
 			{
 				list res = static::OpHtmlAttr(t, attr);
 				t = res[0]; string attr_value = res[1];
@@ -120,7 +120,7 @@ class TranslatorES6Html
 					if (not has_attr_key and attr.value instanceof OpString)
 					{
 						var arr = rs::split(" ", attr.value.value);
-						attr_key_value = t.expression::toString(arr[0]);
+						attr_key_value = t.expression::toString(arr[0] ~ "-" ~ item_pos);
 						has_attr_key = true;
 					}
 					
@@ -237,7 +237,7 @@ class TranslatorES6Html
 			}
 			else
 			{
-				list res = static::OpHtmlAttrs(t, op_code.attrs); t = res[0]; string attrs = res[1];
+				list res = static::OpHtmlAttrs(t, op_code.attrs, item_pos); t = res[0]; string attrs = res[1];
 				
 				is_component = static::isComponent(op_code.tag_name);
 				if (is_component)
