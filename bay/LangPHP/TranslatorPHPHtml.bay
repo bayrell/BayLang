@@ -171,6 +171,8 @@ static class TranslatorPHPHtml
 		}
 		
 		list res = t.expression::Expression(t, attr.value); t = res[0]; string value = res[1];
+		value = t.o(value, res[0].opcode_level, 13);
+		
 		return [t, value];
 	}
 	
@@ -202,7 +204,7 @@ static class TranslatorPHPHtml
 				if (attr_key == "@class")
 				{
 					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.push("\"'.static::getCssName($ctx, " ~ attr_value ~ ").'\"");
+					attr_class.push( "static::getCssName($ctx, " ~ attr_value ~ ")" );
 					
 					if (not has_attr_key and attr.value instanceof OpString)
 					{
@@ -215,6 +217,7 @@ static class TranslatorPHPHtml
 				}
 				else if (attr_key == "class")
 				{
+					t <= opcode_level <= 1000;
 					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
 					attr_class.push(attr_value);
 					return "";
@@ -252,7 +255,7 @@ static class TranslatorPHPHtml
 		{
 			attrs = attrs.pushIm
 			(
-				"class=" ~ rs::join(" ~ \" \" ~ ", attr_class)
+				"class=" ~ "\"'." ~ rs::join(".\" \".", attr_class) ~ ".'\""
 			);
 		}
 		if (attrs.count() > 0)
@@ -317,7 +320,7 @@ static class TranslatorPHPHtml
 	 */
 	lambda list<TranslatorPHP, string> OpHtmlItems(TranslatorPHP t, OpHtmlItems op_code, string var_name = "")
 	{
-		if (op_code.items.count() == 0)
+		if (op_code == null or op_code.items.count() == 0)
 		{
 			return [t, ""];
 		}

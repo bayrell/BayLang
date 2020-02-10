@@ -39,7 +39,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	 * Returns module name
 	 * @return string
 	 */
-	lambda string getModuleVersion() => "0.8.0";
+	lambda string getModuleVersion() => "0.8.1";
 	
 	
 	

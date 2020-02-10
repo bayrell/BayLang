@@ -77,6 +77,8 @@ class TranslatorES6Html
 		}
 		
 		list res = t.expression::Expression(t, op_code); t = res[0]; string value = res[1];
+		value = t.o(value, res[0].opcode_level, 13);
+		
 		return [t, value];
 	}
 	
@@ -167,7 +169,7 @@ class TranslatorES6Html
 		{
 			attrs = attrs.pushIm
 			(
-				"\"class\":" ~ rs::join(" ~ \" \" ~ ", attr_class)
+				"\"class\":" ~ rs::join(" + \" \" + ", attr_class)
 			);
 		}
 		if (attr_key_value != "")
