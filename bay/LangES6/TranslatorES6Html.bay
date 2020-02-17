@@ -191,7 +191,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos)
+	lambda list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name)
 	{
 		bool is_text = false;
 		bool is_html = false;
@@ -202,6 +202,8 @@ class TranslatorES6Html
 		string attrs = "";
 		string item_value = "";
 		string tag_name = "";
+		string content = "";
+		string item_content = "";
 		
 		if (op_code instanceof OpHtmlContent)
 		{
@@ -234,8 +236,10 @@ class TranslatorES6Html
 		{
 			if (op_code.tag_name == "")
 			{
-				list res = static::OpHtmlItems(t, op_code.items);
-				t = res[0]; item_value = res[1];
+				list res = t::incSaveOpCode(t); t = res[0]; string item_value = res[1];
+				list res = static::OpHtmlChilds(t, op_code, item_value);
+				t = res[0]; item_content = res[1];
+				is_empty_tag = true;
 			}
 			else
 			{
@@ -257,9 +261,12 @@ class TranslatorES6Html
 					is_element = true;
 				}
 				
-				list res = static::OpHtmlItems(t, op_code.items);
-				t = res[0]; item_value = res[1];
+				list res = t::incSaveOpCode(t); t = res[0]; string item_value = res[1];
+				list res = static::OpHtmlChilds(t, op_code.items, item_value);
+				t = res[0]; item_content = res[1];
 			}
+			
+			if (item_content == "") item_value = "null";
 		}
 		else
 		{
@@ -272,64 +279,97 @@ class TranslatorES6Html
 		
 		if (is_text)
 		{
-			item_value = "RenderDriver.text(" ~
+			content ~= t.s(var_name ~ ".push(RenderDriver.text(" ~
 				"layout," ~
 				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			")";
+			"));");
 		}
 		else if (is_html)
 		{
-			item_value = "RenderDriver.html(" ~
+			content ~= t.s(var_name ~ ".push(RenderDriver.html(" ~
 				"layout," ~
 				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			")";
+			"));");
 		}
 		else if (is_raw)
 		{
-			item_value = "RenderDriver.raw(" ~
+			content ~= t.s(var_name ~ ".push(RenderDriver.raw(" ~
 				"layout," ~
 				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			")";
+			"));");
 		}
 		else if (is_component)
 		{
-			item_value = "RenderDriver.component(" ~
+			content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
+			content ~= item_content;
+			content ~= t.s(var_name ~ ".push(RenderDriver.component(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
 				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			")";
+			"));");
 		}
 		else if (is_element)
 		{
-			item_value = "RenderDriver.elem(" ~
+			content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+			content ~= item_content;
+			content ~= t.s(var_name ~ ".push(RenderDriver.elem(" ~
 				"layout," ~
 				tag_name ~ "," ~
 				attrs ~ "," ~
 				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			")";
+			"));");
 		}
 		else if (is_empty_tag)
 		{
-			item_value = "RenderDriver.empty(" ~
+			content ~= t.s("/* Items */");
+			content ~= item_content;
+			content ~= t.s(var_name ~ ".push(RenderDriver.empty(" ~
 				"layout," ~
 				item_value ~ "," ~
 				"control," ~
 				item_pos ~
-			")";
+			"));");
 		}
 		
-		return [t, item_value];
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * Translator html items
+	 */
+	lambda list<TranslatorES6, string> OpHtmlChilds(TranslatorES6 t, OpHtmlItems op_code, string var_name)
+	{
+		if (op_code == null or op_code.items.count() == 0)
+		{
+			return [t, ""];
+		}
+		
+		string content = "";
+		content ~= t.s("var " ~ var_name ~ " = [];");
+		
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			OpHtmlTag item = op_code.items.item(i);
+			string item_value = "";
+			
+			list res = static::OpHtmlTag(t, item, i, var_name);
+			t = res[0]; content ~= res[1];
+		}
+		
+		return [t, content];
 	}
 	
 	
@@ -350,37 +390,8 @@ class TranslatorES6Html
 		t = t.levelInc();
 		
 		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
-		content ~= t.s("var " ~ var_name ~ " = [];");
-		
-		for (int i=0; i<op_code.items.count(); i++)
-		{
-			OpHtmlTag item = op_code.items.item(i);
-			string item_value = "";
-			
-			list res = static::OpHtmlTag(t, item, i);
-			t = res[0]; item_value = res[1];
-			if (item_value == "") continue;
-			
-			if (item instanceof OpHtmlTag)
-			{
-				bool is_component = static::isComponent(item.tag_name);
-				if (item.tag_name == "")
-				{
-					content ~= t.s("/* Items */");
-				}
-				else if (is_component)
-				{
-					content ~= t.s("/* Component '" ~ item.tag_name ~ "' */");
-				}
-				else
-				{
-					content ~= t.s("/* Element '" ~ item.tag_name ~ "' */");
-				}
-			}
-			
-			content ~= t.s(var_name ~ ".push(" ~ item_value ~ ");");
-		}
-		
+		list res = static::OpHtmlChilds(t, op_code, var_name);
+		t = res[0]; content ~= res[1];
 		
 		content ~= t.s("return " ~ var_name ~ ";");
 		t = t.levelDec();
