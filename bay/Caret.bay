@@ -22,7 +22,7 @@ use Runtime.CoreStruct;
 use Runtime.FakeStruct;
 
 
-class Caret extends FakeStruct
+class Caret extends CoreStruct
 {
 	
 	/**

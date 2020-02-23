@@ -31,7 +31,7 @@ use Bayrell.Lang.Exceptions.ParserExpected;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-class CoreParser extends FakeStruct
+class CoreParser extends CoreStruct
 {
 	/* Settings */
 	int tab_size = 4;

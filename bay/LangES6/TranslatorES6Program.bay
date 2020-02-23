@@ -769,7 +769,8 @@ struct TranslatorES6Program extends CoreStruct
 					string prefix = "";
 					if (class_kind == OpDeclareClass::KIND_STRUCT)
 					{
-						prefix = "__";
+						/* prefix = "__"; */
+						prefix = "";
 					}
 					else if (class_kind == OpDeclareClass::KIND_CLASS)
 					{
@@ -786,10 +787,10 @@ struct TranslatorES6Program extends CoreStruct
 						if (class_kind == OpDeclareClass::KIND_STRUCT)
 						{
 							string var_name = t.expression::toString(value.var_name);
-							s1 ~= t.s
+							/*s1 ~= t.s
 							(
 								"if (a.indexOf(" ~ var_name ~ ") == -1) defProp(this, " ~ var_name ~ ");"
-							);
+							);*/
 							/*
 							s1 ~= t.s
 							(
@@ -834,7 +835,8 @@ struct TranslatorES6Program extends CoreStruct
 			
 			
 			bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
-			string var_prefix = is_struct ? "__" : "";
+			/* string var_prefix = is_struct ? "__" : ""; */
+			string var_prefix = "";
 			
 			/* Assign Object */
 			content ~= t.s("assignObject: function(ctx,o)");
