@@ -5,6 +5,8 @@ Bayrell Common Language
 
 Versions:
 
+[24 Feb 2020] 0.8.2 - New version, Optimized CoreStruct
+
 [25 Nov 2019] 0.8.0 - Alpha version
 
 [29 Apr 2019] 0.7.2 - lambda, pure, async bugfix
