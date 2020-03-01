@@ -96,15 +96,12 @@ class ParserBayHtml extends CoreObject
 	
 	
 	/**
-	 * Read css
+	 * Read css body
 	 */
-	lambda list<ParserBay, BaseOpCode> readCss(ParserBay parser)
+	lambda list<ParserBay, string> readCssBody(ParserBay parser)
 	{
-		Caret caret_start = parser.caret.clone();
-		
-		list res = parser.parser_base::matchToken(parser, "@css"); parser = res[0];
-		list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-		
+		Caret caret_start = parser.caret;
+	
 		string css_str = "";
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz;
@@ -134,6 +131,27 @@ class ParserBayHtml extends CoreObject
 				list res = static::readCssSelector(parser);
 				parser = res[0]; string s = res[1];
 				css_str ~= s;
+				
+				/* Set pos, x, y */
+				caret_start = parser.caret.clone();
+				pos = parser.caret.pos;
+				x = parser.caret.x;
+				y = parser.caret.y;
+				start_pos = pos;
+			}
+			else if (ch == "@")
+			{
+				x = parser.parser_base::nextX(parser, ch, x);
+				y = parser.parser_base::nextY(parser, ch, y);
+				pos = pos + 1;
+				
+				list res = parser.parser_base::readUntilStringArr(parser, ["{"], false);
+				parser = res[0]; string s1 = res[1];
+				list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+				list res = static::readCssBody(parser);
+				parser = res[0]; string s2 = res[1];
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+				css_str ~= s1 ~ "{" ~ s2 ~ "}";
 				
 				/* Set pos, x, y */
 				caret_start = parser.caret.clone();
@@ -180,6 +198,27 @@ class ParserBayHtml extends CoreObject
 		if (value != "") css_str ~= value;
 		
 		parser <= caret <= caret;
+		
+		return [parser, css_str];
+	}
+	
+	
+	
+	/**
+	 * Read css
+	 */
+	lambda list<ParserBay, BaseOpCode> readCss(ParserBay parser)
+	{
+		Caret caret_start = parser.caret.clone();
+		
+		list res = parser.parser_base::matchToken(parser, "@css"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+		
+		list res = static::readCssBody(parser);
+		parser = res[0]; string css_str = res[1];
+		
+		Caret caret = parser.caret;
+		
 		list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 		css_str = rs::replace("\t", "", css_str);
 		css_str = rs::replace("\n", "", css_str);
