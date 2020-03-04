@@ -1,6 +1,6 @@
 # Description
 
-Bayrell Common Language
+Bayrell Language
 
 
 Versions:
