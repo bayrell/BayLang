@@ -226,7 +226,7 @@ static class TranslatorPHPOperator
 		
 		if (t.current_function.flags != null and t.current_function.flags.isFlag("memorize"))
 		{
-			string content = "$__memorize_value = " ~ s1 ~ ";";
+			string content = t.s("$__memorize_value = " ~ s1 ~ ";");
 			content ~= t.s(t.expression::getModuleName(t, "Runtime.rtl") ~ "::_memorizeSave(\"" ~ 
 					t.current_class_full_name ~ "." ~ t.current_function.name ~
 					"\", func_get_args(), $__memorize_value);");

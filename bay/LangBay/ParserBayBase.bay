@@ -40,7 +40,6 @@ use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
-use Bayrell.Lang.OpCodes.OpPipe;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTypeConvert;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
@@ -199,10 +198,6 @@ class ParserBayBase
 		else if (name == "static" or name == "self" or name == "this" or name == "parent")
 		{
 			kind = OpIdentifier::KIND_CLASSREF;
-		}
-		else if (parser.find_ident)
-		{
-			throw new ParserError("Unknown identifier '" ~ name ~ "'", caret, parser.file_name);
 		}
 		return kind;
 	}
@@ -382,7 +377,6 @@ class ParserBayBase
 			s == "<=" or
 			s == ">=" or
 			s == "=>" or
-			s == "|>" or
 			s == "->" or
 			s == "::" or
 			s == "+=" or
@@ -922,10 +916,11 @@ class ParserBayBase
 		}
 		
 		name = token.content;
-		bool kind = "";
-		if (find_ident)
+		bool kind = static::findIdentifier(parser, name, token.caret_start);
+		
+		if (parser.find_ident and find_ident and kind == "")
 		{
-			kind = static::findIdentifier(parser, name, token.caret_start.clone());
+			throw new ParserError("Unknown identifier '" ~ name ~ "'", token.caret_start, parser.file_name);
 		}
 		
 		return 
@@ -1146,7 +1141,7 @@ class ParserBayBase
 	/**
 	 * Read fixed
 	 */
-	lambda list<ParserBay, BaseOpCode> readFixed(ParserBay parser, bool find_ident = false)
+	lambda list<ParserBay, BaseOpCode> readFixed(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1200,29 +1195,7 @@ class ParserBayBase
 			];
 		}
 		
-		/* Read Identifier */
-		if (not static::isIdentifier(token.content))
-		{
-			throw new ParserExpected("Identifier", token.caret_start.clone(), look.file_name);
-		}
-		
-		string kind = "";
-		if (find_ident)
-		{
-			kind = static::findIdentifier(parser, token.content, token.caret_start.clone());
-		}
-		
-		return 
-		[
-			look,
-			new OpIdentifier
-			{
-				"kind":kind,
-				"value": token.content,
-				"caret_start": token.caret_start.clone(),
-				"caret_end": look.caret.clone(),
-			}
-		];
+		return static::readIdentifier(parser, true);
 	}
 	
 	
@@ -1349,13 +1322,111 @@ class ParserBayBase
 	
 	
 	/**
+	 * Read base item
+	 */
+	lambda list<ParserBay, BaseOpCode> readBaseItem(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		BaseOpCode op_code = null;
+		
+		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		Caret caret_start = look.caret.clone();
+		if (token.content == "new")
+		{
+			list res = static::readNew(parser); parser = res[0]; op_code = res[1];
+		}
+		else if (token.content == "method")
+		{
+			list res = static::readMethod(parser); parser = res[0]; op_code = res[1];
+		}
+		else if (token.content == "classof")
+		{
+			list res = static::readClassOf(parser); parser = res[0]; op_code = res[1];
+		}
+		else if (token.content == "classref")
+		{
+			list res = static::readClassRef(parser); parser = res[0]; op_code = res[1];
+		}
+		else if (token.content == "(")
+		{
+			list res = static::matchToken(parser, "("); parser = res[0];
+			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
+			list res = static::matchToken(parser, ")"); parser = res[0];
+		}
+		else
+		{
+			list res = static::readFixed(parser); parser = res[0]; op_code = res[1];
+		}
+		
+		return [parser, op_code];
+	}
+	
+	
+	
+	/**
+	 * Read classof
+	 */
+	lambda list<ParserBay, BaseOpCode> readClassOf(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		BaseOpCode op_code = null;
+		
+		list res = static::matchToken(parser, "classof"); parser = res[0]; token = res[1];
+		Caret caret_start = token.caret_start.clone();
+		
+		list res = static::readEntityName(parser); parser = res[0]; op_code = res[1];
+		return 
+		[
+			parser,
+			new OpClassOf
+			{
+				"entity_name": op_code,
+				"caret_start": caret_start,
+				"caret_end": parser.caret.clone(),
+			}
+		];
+	}
+	
+	
+	
+	/**
+	 * Read classref
+	 */
+	lambda list<ParserBay, BaseOpCode> readClassRef(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		BaseOpCode op_code = null;
+		
+		list res = static::matchToken(parser, "classref"); parser = res[0]; token = res[1];
+		Caret caret_start = token.caret_start.clone();
+		
+		list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
+		return 
+		[
+			parser, 
+			new OpClassRef
+			{
+				"value": op_code,
+				"caret_start": caret_start,
+				"caret_end": parser.caret.clone(),
+			}
+		];
+	}
+	
+	
+	
+	/**
 	 * Read dynamic
 	 */
-	lambda list<ParserBay, BaseOpCode> readDynamic(ParserBay parser, BaseOpCode op_code = null)
+	lambda list<ParserBay, BaseOpCode> readDynamic(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
 		Collection<BaseOpCode> parser_items = null;
+		BaseOpCode op_code = null
 		BaseOpCode op_code_first = null;
 		bool is_await = false;
 		bool is_context_call = true;
@@ -1363,34 +1434,31 @@ class ParserBayBase
 		
 		fn f_next = bool (string s) =>
 			s == "." or s == "::" or
-			s == "->" or s == "|>" or
 			s == "{" or s == "[" or s == "(" or s == "@"
 		;
 		
-		if (op_code == null)
+		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		if (token.content == "await")
 		{
-			list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-			if (token.content == "await")
+			caret_start = token.caret_start.clone();
+			is_await = true;
+			parser = look.clone();
+		}
+		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		if (token.content == "@")
+		{
+			list res = static::readToken(look.clone()); ParserBay look2 = res[0]; CoreToken token2 = res[1];
+			if (not f_next(token2.content))
 			{
-				caret_start = token.caret_start.clone();
-				is_await = true;
-				parser = look.clone();
-			}
-			list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-			if (token.content == "@")
-			{
-				list res = static::readToken(look.clone()); ParserBay look2 = res[0]; CoreToken token2 = res[1];
-				if (not f_next(token2.content))
+				if (static::isIdentifier(token2.content))
 				{
-					if (static::isIdentifier(token2.content))
-					{
-						parser = look.clone();
-						is_context_call = false;
-					}
+					parser = look.clone();
+					is_context_call = false;
 				}
 			}
-			list res = static::readFixed(parser, true); parser = res[0]; op_code = res[1];
 		}
+		list res = static::readBaseItem(parser); parser = res[0]; op_code = res[1];
+		
 		op_code_first = op_code;
 		if (caret_start == null) caret_start = op_code.caret_start.clone();		
 		if (op_code.kind == OpIdentifier::KIND_CONTEXT or op_code.kind == OpIdentifier::KIND_SYS_FUNCTION)
@@ -1457,58 +1525,6 @@ class ParserBayBase
 				is_context_call = true;
 			}
 			
-			/* Object pipe */
-			else if (token_content == "->" or token_content == "|>")
-			{
-				string kind = "";
-				BaseOpCode class_name = null;
-				BaseOpCode method_name = null;
-				parser = look.clone();
-				is_context_call = true;
-				
-				if (token_content == "->")
-				{
-					list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-					if (token.content == "@")
-					{
-						parser = look.clone();
-						is_context_call = false;
-					}
-					list res = static::readIdentifier(parser); parser = res[0]; method_name = res[1];
-					kind = OpPipe::KIND_METHOD;
-				}
-				else if (token_content == "|>")
-				{
-					list res = static::readTypeIdentifier(parser); parser = res[0]; class_name = res[1];
-					list res = static::matchToken(parser, "::"); parser = res[0];
-					list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-					if (token.content == "@")
-					{
-						parser = look.clone();
-						is_context_call = false;
-					}
-					list res = static::readIdentifier(parser); parser = res[0]; method_name = res[1];
-					kind = OpPipe::KIND_LAMBDA;
-				}
-				
-				list res = static::readCallArgs(parser);
-				parser = res[0]; Collection<BaseOpCode> args = res[1];
-				
-				op_code = new OpPipe
-				{
-					"kind": kind,
-					"obj": op_code,
-					"args": args,
-					"class_name": class_name,
-					"method_name": method_name,
-					"caret_start": caret_start,
-					"caret_end": parser.caret.clone(),
-					"is_await": is_await,
-					"is_context": is_context_call,
-				};
-				is_context_call = true;
-			}
-			
 			/* Object access */
 			else if (token_content == "." or token_content == "::" or token_content == "[")
 			{
@@ -1565,141 +1581,6 @@ class ParserBayBase
 		}
 		
 		return [parser, op_code];
-	}
-	
-	
-	
-	/**
-	 * Read base item
-	 */
-	lambda list<ParserBay, BaseOpCode> readBaseItem(ParserBay parser)
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		bool flag_dynamic = false;
-		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-		Caret caret_start = look.caret.clone();
-		if (token.content == "new")
-		{
-			list res = static::readNew(parser); parser = res[0]; op_code = res[1];
-			flag_dynamic = true;
-		}
-		else if (token.content == "method")
-		{
-			list res = static::readMethod(parser); parser = res[0]; op_code = res[1];
-		}
-		else if (token.content == "classof")
-		{
-			list res = static::readClassOf(parser); parser = res[0]; op_code = res[1];
-		}
-		else if (token.content == "classref")
-		{
-			list res = static::readClassRef(parser); parser = res[0]; op_code = res[1];
-		}
-		else if (token.content == "(")
-		{
-			ParserBay save_parser = look.clone(); parser = look.clone();
-			
-			/* Try to read OpTypeConvert */
-			try
-			{
-				list res = static::readTypeIdentifier(parser);
-				parser = res[0]; OpTypeIdentifier op_type = res[1];
-				
-				list res = static::readToken(parser); parser = res[0]; token = res[1];
-				if (token.content == ")")
-				{
-					list res = static::readBaseItem(parser); parser = res[0]; op_code = res[1];
-					return
-					[
-						parser,
-						new OpTypeConvert
-						{
-							"pattern": op_type,
-							"value": op_code,
-							"caret_start": caret_start,
-							"caret_end": parser.caret.clone(),
-						}
-					];
-				}
-			}
-			catch (ParserError e)
-			{
-			}
-			
-			/* Read Expression */
-			parser = save_parser.clone();
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-			list res = static::matchToken(parser, ")"); parser = res[0];
-			flag_dynamic = true;
-		}
-		else
-		{
-			flag_dynamic = true;
-		}
-		
-		if (flag_dynamic)
-		{
-			list res = static::readDynamic(parser, op_code); parser = res[0]; op_code = res[1];
-		}
-		
-		return [parser, op_code];
-	}
-	
-	
-	
-	/**
-	 * Read classof
-	 */
-	lambda list<ParserBay, BaseOpCode> readClassOf(ParserBay parser)
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		
-		list res = static::matchToken(parser, "classof"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
-		
-		list res = static::readEntityName(parser); parser = res[0]; op_code = res[1];
-		return 
-		[
-			parser,
-			new OpClassOf
-			{
-				"entity_name": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
-			}
-		];
-	}
-	
-	
-	
-	/**
-	 * Read classref
-	 */
-	lambda list<ParserBay, BaseOpCode> readClassRef(ParserBay parser)
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		
-		list res = static::matchToken(parser, "classref"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
-		
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-		return 
-		[
-			parser, 
-			new OpClassRef
-			{
-				"value": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
-			}
-		];
 	}
 	
 }

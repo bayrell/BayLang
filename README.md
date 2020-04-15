@@ -5,6 +5,8 @@ Bayrell Language
 
 Versions:
 
+0.9 - Pipes and Monads. Change lambda to pure
+
 [01 Mar 2020] 0.8.3 - CSS html bugfix, media nesting
 
 [24 Feb 2020] 0.8.2 - New version, Optimized CoreStruct and compiler

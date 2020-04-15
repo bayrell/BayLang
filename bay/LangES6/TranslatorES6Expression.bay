@@ -340,10 +340,6 @@ struct TranslatorES6Expression extends CoreStruct
 		{
 			return static::OpCall(t, op_code);
 		}
-		else if (op_code instanceof OpPipe)
-		{
-			return static::OpPipe(t, op_code);
-		}
 		return [t, ""];
 	}
 	
@@ -524,67 +520,6 @@ struct TranslatorES6Expression extends CoreStruct
 	
 	
 	/**
-	 * OpPipe
-	 */
-	lambda list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code, bool is_expression = true)
-	{
-		if (t.current_function.isFlag("async") and op_code.is_await)
-		{
-			return t.async_await::OpPipe(t, op_code, is_expression);
-		}
-		
-		list res = t.expression::Expression(t, op_code.obj); t = res[0];
-		string var_name = "";
-		string content = "";
-		if (op_code.obj instanceof OpIdentifier)
-		{
-			var_name = res[1];
-		}
-		else
-		{
-			list res = t::addSaveOpCode
-			(
-				t,
-				{
-					"op_code": op_code.obj,
-					"var_content": res[1],
-				}
-			);
-			t = res[0]; var_name = res[1];
-		}
-		if (op_code.kind == OpPipe::KIND_METHOD)
-		{
-			content = var_name ~ ".constructor." ~ op_code.method_name.value;
-		}
-		else
-		{
-			list res = static::OpTypeIdentifier(t, op_code.class_name); t = res[0];
-			content = res[1] ~ "." ~ op_code.method_name.value;
-		}
-		
-		bool flag = false;
-		content ~= "(";
-		if (t.current_function.is_context and op_code.is_context)
-		{
-			content ~= "ctx";
-			flag = true;
-		}
-		content ~= (flag ? ", " : "") ~ var_name; flag = true;
-		for (int i=0; i<op_code.args.count(); i++)
-		{
-			BaseOpCode item = op_code.args.item(i);
-			list res = t.expression::Expression(t, item); t = res[0]; string s1 = res[1];
-			content ~= (flag ? ", " : "") ~ s1;
-			flag = true;
-		}
-		content ~= ")";
-		
-		return [t, content];
-	}
-	
-	
-	
-	/**
 	 * OpClassOf
 	 */
 	lambda list<TranslatorES6, string> OpClassOf(TranslatorES6 t, OpClassOf op_code)
@@ -613,6 +548,152 @@ struct TranslatorES6Expression extends CoreStruct
 		
 		/* OpTernary */
 		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * OpPipe
+	 */
+	lambda list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code)
+	{
+		string content = "";
+		string var_name = "";
+		string value = "";
+		
+		list res = t::incSaveOpCode(t);
+		t = res[0]; var_name = res[1];
+		
+		Vector<OpPipe> items = new Vector();
+		BaseOpCode op_code_item = op_code;
+		while (op_code_item instanceof OpPipe)
+		{
+			items.push(op_code_item);
+			op_code_item = op_code_item.obj;
+		}
+		items = items.reverseIm();
+		
+		/* First item */
+		list res = t.expression::Expression(t, op_code_item); t = res[0]; value = res[1];
+		list res = t::addSaveOpCode
+		(
+			t,
+			{
+				"content": 
+					t.s("var " ~ var_name ~ " = new Runtime.Monad(ctx, " ~ value ~ ");")
+				,
+			}
+		);
+		t = res[0];
+		
+		/* Output items */
+		for (int i=0; i<items.count(); i++)
+		{
+			string s1 = "";
+			string s2 = "";
+			OpPipe op_item = items.item(i);
+			
+			if (op_item.kind == OpPipe::KIND_ATTR)
+			{
+				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
+				s1 = var_name ~ ".attr(ctx, " ~ value ~ ")";
+			}
+			else if (op_item.kind == OpPipe::KIND_METHOD)
+			{
+				string value_attrs = "";
+				value = static::toString(op_item.value.obj.value);
+				
+				if (op_item.value.args != null)
+				{
+					bool flag = false;
+					if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
+					{
+						value_attrs ~= "ctx";
+						flag = true;
+					}
+					for (int i=0; i<op_item.value.args.count(); i++)
+					{
+						BaseOpCode item = op_code.args.item(i);
+						list res = static::Expression(t, item); t = res[0]; string s = res[1];
+						value_attrs ~= (flag ? ", " : "") ~ s;
+						flag = true;
+					}
+				}
+				
+				if (value_attrs != "") value_attrs = "Runtime.Collection.from([" ~ value_attrs ~ "])";
+				else value_attrs = "null";
+				
+				if (not op_item.is_async)
+				{
+					s1 = var_name ~ ".callMethod($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+				}
+				else if (op_item.is_async and t.current_function.isFlag("async"))
+				{
+					s2 = var_name ~ ".callMethodAsync($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+				}
+			}
+			else if (op_item.kind == OpPipe::KIND_CALL)
+			{
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				if (not op_item.is_async)
+				{
+					s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
+				}
+				else if (op_item.is_async and t.current_function.isFlag("async"))
+				{
+					s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+				}
+			}
+			else if (op_item.kind == OpPipe::KIND_MONAD)
+			{
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				s1 = var_name ~ ".monad(ctx, " ~ value ~ ")";
+			}
+			
+			if (s1 != "")
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"content": 
+							t.s(var_name ~ " = " ~ s1 ~ ";")
+						,
+					}
+				);
+				t = res[0];
+			}
+			if (s2 != "")
+			{
+				list res = t.async_await::nextPos(t); t = res[0]; string next_pos = res[1];
+				string async_t = t.async_await.async_t;
+				string s3 = t.s
+				(
+					"return " ~ async_t ~
+					".jump(ctx, " ~ next_pos ~ ")" ~
+					".call(ctx, " ~ s2 ~ "," ~ t.expression::toString(var_name) ~ ");"
+				);
+				t = t.levelDec();
+				s3 ~= t.s("}");
+				s3 ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ next_pos ~ ")");
+				s3 ~= t.s("{");
+				t = t.levelInc();
+				s3 ~= t.s(
+					"var " ~ var_name ~ " = " ~ async_t ~ 
+					".getVar(ctx, " ~ t.expression::toString(var_name) ~ ");"
+				);
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"content": s3,
+					}
+				);
+				t = res[0];
+			}
+		}
+		
+		return [t, var_name ~ ".value(ctx)"];
 	}
 	
 	
@@ -702,7 +783,7 @@ struct TranslatorES6Expression extends CoreStruct
 		{
 			list res = static::OpNew(t, op_code); t = res[0]; content = res[1];
 		}
-		else if (op_code instanceof OpAttr or op_code instanceof OpPipe)
+		else if (op_code instanceof OpAttr)
 		{
 			list res = static::Dynamic(t, op_code); t = res[0]; content = res[1];
 		}
@@ -713,6 +794,10 @@ struct TranslatorES6Expression extends CoreStruct
 		else if (op_code instanceof OpClassOf)
 		{
 			list res = static::OpClassOf(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpPipe)
+		{
+			list res = static::OpPipe(t, op_code); t = res[0]; content = res[1];
 		}
 		else if (op_code instanceof OpTernary)
 		{

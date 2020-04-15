@@ -154,13 +154,13 @@ struct CoreTranslator extends CoreStruct
 		string var_content = data.get("var_content", "");
 		int save_op_code_inc = t.save_op_code_inc;
 		
-		if (var_name == "")
+		if (var_name == "" and content == "")
 		{
 			var_name = static::nextSaveOpCode(t);
+			data = data.setIm("var_name", var_name);
 			save_op_code_inc += 1;
 		}
 		
-		data = data.setIm("var_name", var_name);
 		SaveOpCode s = new SaveOpCode(data);
 		t = t.copy({
 			"save_op_codes": t.save_op_codes.pushIm(s),

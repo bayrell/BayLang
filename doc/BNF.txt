@@ -21,11 +21,10 @@ Collection = '[', { Empty | CollectionItem } ,']'
 
 CallArgs = Expression, { ",", Expression }
 CallBody = '(', { CallArgs }, ')'
+BaseItem = ClassRef | ClassOf | NewInstance | MethodIdentifier | '(', Expression, ')' | Fixed
+
 Dynamic = [ 'await' ], Fixed, { ( ( '.' | '::' ), Identifier ) | ('[', Expression ,']') | CallBody }
-Pipe = Dynamic, { ('->', Fixed | '|>', Dynamic ), CallBody }
 Inc = ( [ '++', '--' ], Dynamic ) | ( Dynamic, [ '++', '--' ] )
-BaseItem = ClassRef | ClassOf | NewInstance | MethodIdentifier | '(', Expression, ')' | 
-	[ '(', TypeIdentifier, ')' ] Dynamic
 
 TypeTemplate = '<', { TypeIdentifier } '>'
 TypeIdentifier = EntityName, [ TypeTemplate ]
@@ -48,11 +47,11 @@ DeclareFunction = [ 'async' ], Type, Identifier, DeclareFunctionArguments, Decla
 CompareOperators = '==' | '!=' | '===' | '<' | '>' | '<=' | '>='
 IsOperators = is | 'implements' | 'instanceof'
 
-ExpressionBitNot = ['!'], { BaseItem }
+ExpressionBitNot = ['!'], { Dynamic }
 ExpressionBitShift = ExpressionBitNot, { ('>>' | '<<'), ExpressionBitNot }
 ExpressionBitAnd = ExpressionBitShift, { '&', ExpressionBitShift }
-ExpressionBitXor = ExpressionBitAnd, { ('xor'), ExpressionBitAnd }
-ExpressionBitOr = ExpressionBitXor, { ('|'), ExpressionBitXor }
+ExpressionBitXor = ExpressionBitAnd, { 'xor') ExpressionBitAnd }
+ExpressionBitOr = ExpressionBitXor, { '|', ExpressionBitXor }
 ExpressionFactor = ExpressionBitOr, { ( '/' | '*' | '%' | 'div' | 'mod' ), ExpressionBitOr }
 ExpressionArithmetic = ExpressionFactor, { ( '+' | '-' | '|' ), ExpressionFactor }
 ExpressionConcat = ExpressionArithmetic, { '~', ExpressionClassof }
@@ -62,8 +61,8 @@ ExpressionAnd = ExpressionNot, { 'and', ExpressionNot }
 ExpressionOr = ExpressionAnd, { 'or', ExpressionAnd }
 ExpressionElement = DeclareFunction | ExpressionOr
 ExpressionTernary = ExpressionOr, '?', ExpressionElement, ':', ExpressionElement
-Expression = ExpressionTernary | ExpressionHTML
-
+ExpressionPipe = ExpressionTernary, { '->', (('attr', Expression ) | ( {'monad'}, Dynamic )) }
+Expression = ExpressionPipe | ExpressionHTML
 
 
 # Operators
