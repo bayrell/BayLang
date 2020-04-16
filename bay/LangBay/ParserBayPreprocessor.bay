@@ -45,6 +45,11 @@ static class ParserBayPreprocessor
 			return static::readPreprocessorSwitch(start);
 		}
 		
+		if (token.content == "#ifcode")
+		{
+			return static::readPreprocessorIfCode(start);
+		}
+		
 		return null;
 	}
 	
@@ -136,6 +141,51 @@ static class ParserBayPreprocessor
 	
 	
 	/**
+	 * Read preprocessor ifcode
+	 */
+	lambda list<ParserBay, BaseOpCode> readPreprocessorIfCode(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		Caret caret_start = parser.caret;
+		list res = parser.parser_base::matchToken(parser, "#ifcode"); parser = res[0]; token = res[1];
+		
+		/* Read condition */
+		BaseOpCode condition = null;
+		parser <= find_ident <= false;
+		list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
+		parser <= find_ident <= true;
+		
+		/* Read then */
+		list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+		
+		/* Read content */
+		string content = "";
+		Caret caret_content = parser.caret.clone();
+		list res = parser.parser_base::readUntilStringArr(parser, ["#endif"], false);
+		parser = res[0]; content = res[1];
+		
+		/* Match endif */
+		list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0]; token = res[1];
+		
+		OpPreprocessorIfCode ifcode = new OpPreprocessorIfCode
+		{
+			"condition": condition,
+			"content": content,
+			"caret_start": caret_content,
+			"caret_end": parser.caret,
+		};
+		
+		return
+		[
+			parser,
+			ifcode
+		];
+	}
+	
+	
+	
+	/**
 	 * Read preprocessor ifdef
 	 */
 	lambda list<ParserBay, BaseOpCode> readPreprocessorIfDef(ParserBay parser, string kind = "")
@@ -143,8 +193,8 @@ static class ParserBayPreprocessor
 		Collection<BaseOpCode> items = null;
 		CoreToken token = null;
 		
+		Caret caret_start = parser.caret;
 		list res = parser.parser_base::matchToken(parser, "#ifdef"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
 		
 		/* Read condition */
 		BaseOpCode condition = null;
@@ -166,6 +216,16 @@ static class ParserBayPreprocessor
 			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
 			list d = parser.parser_program::classBodyAnalyze(parser, items);
 			items = d.item("functions");
+		}
+		else if (kind == OpPreprocessorIfDef::KIND_OPERATOR)
+		{
+			list res = parser.parser_operator::readOpItems(parser, "#endif"); parser = res[0]; items = res[1];
+			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+		}
+		else if (kind == OpPreprocessorIfDef::KIND_EXPRESSION)
+		{
+			list res = parser.parser_expression::readExpression(parser); parser = res[0]; items = res[1];
+			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
 		}
 		
 		return

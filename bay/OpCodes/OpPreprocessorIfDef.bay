@@ -25,6 +25,8 @@ struct OpPreprocessorIfDef extends BaseOpCode
 {
 	static const string KIND_PROGRAM = "program";
 	static const string KIND_CLASS_BODY = "class_body";
+	static const string KIND_OPERATOR = "operator";
+	static const string KIND_EXPRESSION = "expression";
 	
 	string op = "op_preprocessor_ifdef";
 	BaseOpCode condition = null;

@@ -56,3 +56,8 @@ instanceof
 implementsof
 list
 module
+classref
+fn
+html
+attr
+monad

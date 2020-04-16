@@ -27,6 +27,7 @@ use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpInc;
 use Bayrell.Lang.OpCodes.OpMath;
 use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpTernary;
 
 
@@ -624,13 +625,20 @@ static class ParserBayExpression
 		ParserBay look = null;
 		CoreToken token = null;
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		if (token.content == '<')
+		if (token.content == "<")
 		{
 			return parser.parser_html::readHTML(parser);
 		}
-		if (token.content == '@css')
+		else if (token.content == "@css")
 		{
 			return parser.parser_html::readCss(parser);
+		}
+		else if (token.content == "#ifdef")
+		{
+			return parser.parser_preprocessor::readPreprocessorIfDef
+			(
+				parser, OpPreprocessorIfDef::KIND_EXPRESSION
+			);
 		}
 		return static::ExpressionPipe(parser);
 	}

@@ -352,6 +352,16 @@ static class TranslatorPHPOperator
 	)
 	{
 		if (not t.preprocessor_flags.has(op_code.condition.value)) return [t, ""];
+		
+		if (kind == OpPreprocessorIfDef::KIND_OPERATOR)
+		{
+			return static::Operators(t, op_code.items);
+		}
+		else if (kind == OpPreprocessorIfDef::KIND_EXPRESSION)
+		{
+			return t.expression::Expression(t, op_code.items);
+		}
+		
 		string content = "";
 		for (int i=0; i<op_code.items.count(); i++)
 		{
@@ -510,6 +520,11 @@ static class TranslatorPHPOperator
 		else if (op_code instanceof OpPreprocessorIfCode)
 		{
 			list res = static::OpPreprocessorIfCode(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			list res = static::OpPreprocessorIfDef(t, op_code, OpPreprocessorIfDef::KIND_OPERATOR);
+			t = res[0]; content = res[1];
 		}
 		else if (op_code instanceof OpPreprocessorSwitch)
 		{

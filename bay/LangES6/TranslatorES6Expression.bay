@@ -40,6 +40,7 @@ use Bayrell.Lang.OpCodes.OpMath;
 use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
 use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTernary;
 use Bayrell.Lang.OpCodes.OpTypeConvert;
@@ -213,6 +214,7 @@ struct TranslatorES6Expression extends CoreStruct
 				return s;
 			}
 		);
+		values = values.filter( bool (string s) => s != "" );
 		string module_name = static::findModuleName(t, "Collection");
 		content = module_name ~ ".from([" ~ rs::join(",", values) ~ "])";
 		return [t, content];
@@ -234,6 +236,7 @@ struct TranslatorES6Expression extends CoreStruct
 				return static::toString(key) ~ ":" ~ s;
 			}
 		);
+		values = values.filter( bool (string s) => s != "" );
 		string module_name = static::findModuleName(t, "Dict");
 		content = module_name ~ ".from({" ~ rs::join(",", values) ~ "})";
 		return [t, content];
@@ -814,6 +817,11 @@ struct TranslatorES6Expression extends CoreStruct
 		else if (op_code instanceof OpHtmlItems)
 		{
 			list res = t.html::OpHtmlItems(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			list res = t.operator::OpPreprocessorIfDef(t, op_code, OpPreprocessorIfDef::KIND_EXPRESSION);
+			t = res[0]; content = res[1];
 		}
 		
 		return [t, content];

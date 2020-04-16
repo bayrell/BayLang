@@ -45,6 +45,7 @@ use Bayrell.Lang.OpCodes.OpIfElse;
 use Bayrell.Lang.OpCodes.OpInc;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpReturn;
 use Bayrell.Lang.OpCodes.OpThrow;
 use Bayrell.Lang.OpCodes.OpTryCatch;
@@ -718,6 +719,13 @@ static class ParserBayOperator
 		{
 			return parser.parser_preprocessor::readPreprocessor(parser);
 		}
+		else if (token.content == "#ifdef")
+		{
+			return parser.parser_preprocessor::readPreprocessorIfDef
+			(
+				parser, OpPreprocessorIfDef::KIND_OPERATOR
+			);
+		}
 		else if (token.content == "break")
 		{
 			return
@@ -795,6 +803,56 @@ static class ParserBayOperator
 	/**
 	 * Read operators
 	 */
+	lambda list<ParserBay, BaseOpCode> readOpItems(ParserBay parser, string end_tag = "}")
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		BaseOpCode op_code = null;
+		Vector<BaseOpCode> arr = new Vector();
+		Caret caret_start = parser.caret;
+		
+		parser <= skip_comments <= false;
+		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		parser <= skip_comments <= true;
+		
+		while (not token.eof and token.content != end_tag)
+		{
+			BaseOpCode parser_value = null;
+			
+			list res = static::readOperator(parser); parser = res[0]; parser_value = res[1];
+			if (parser_value != null)
+			{
+				arr.push(parser_value);
+			}
+			
+			parser <= skip_comments <= false;
+			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			parser <= skip_comments <= true;
+			
+			if (token.content == ";")
+			{
+				parser = look.clone();
+				parser <= skip_comments <= false;
+				list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+				parser <= skip_comments <= true;
+			}
+		}
+		
+		op_code = new OpItems
+		{
+			"items": arr.toCollection(),
+			"caret_start": caret_start,
+			"caret_end": parser.caret,
+		};
+		
+		return [parser, op_code];
+	}
+	
+	
+	
+	/**
+	 * Read operators
+	 */
 	lambda list<ParserBay, BaseOpCode> readOperators(ParserBay parser)
 	{
 		ParserBay look = null;
@@ -809,42 +867,9 @@ static class ParserBayOperator
 		
 		if (token.content == "{")
 		{
-			Vector<BaseOpCode> arr = new Vector();
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-			
-			parser <= skip_comments <= false;
-			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-			parser <= skip_comments <= true;
-			
-			while (not token.eof and token.content != "}")
-			{
-				BaseOpCode parser_value = null;
-				
-				list res = static::readOperator(parser); parser = res[0]; parser_value = res[1];
-				if (parser_value != null)
-				{
-					arr.push(parser_value);
-				}
-				
-				parser <= skip_comments <= false;
-				list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-				parser <= skip_comments <= true;
-				
-				if (token.content == ";")
-				{
-					parser = look.clone();
-					parser <= skip_comments <= false;
-					list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-					parser <= skip_comments <= true;
-				}
-			}
+			list res = static::readOpItems(parser, "}"); parser = res[0]; op_code = res[1];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-			op_code = new OpItems
-			{
-				"items": arr.toCollection(),
-				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
-			};
 		}
 		else
 		{
