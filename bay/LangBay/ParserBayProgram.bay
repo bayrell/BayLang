@@ -34,6 +34,7 @@ use Bayrell.Lang.OpCodes.OpFlags;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpModule;
 use Bayrell.Lang.OpCodes.OpNamespace;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
 

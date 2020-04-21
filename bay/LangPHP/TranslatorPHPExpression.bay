@@ -376,7 +376,7 @@ static class TranslatorPHPExpression
 					}
 					else
 					{
-						s = "(" ~ s ~ "::" ~ attr.value.value ~ ")";
+						s = s ~ "::" ~ attr.value.value;
 					}
 					prev_kind = "static";
 				}
@@ -628,7 +628,7 @@ static class TranslatorPHPExpression
 			t,
 			{
 				"content": 
-					t.s("var " ~ var_name ~ " = new \\Runtime\\Monad($ctx, " ~ value ~ ");")
+					t.s(var_name ~ " = new \\Runtime\\Monad($ctx, " ~ value ~ ");")
 				,
 			}
 		);
@@ -654,21 +654,21 @@ static class TranslatorPHPExpression
 				if (op_item.value.args != null)
 				{
 					bool flag = false;
-					if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
+					/*if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
 					{
 						value_attrs ~= "$ctx";
 						flag = true;
-					}
+					}*/
 					for (int i=0; i<op_item.value.args.count(); i++)
 					{
-						BaseOpCode item = op_code.args.item(i);
+						BaseOpCode item = op_item.value.args.item(i);
 						list res = static::Expression(t, item); t = res[0]; string s = res[1];
 						value_attrs ~= (flag ? ", " : "") ~ s;
 						flag = true;
 					}
 				}
 				
-				if (value_attrs != "") value_attrs = "\\Runtime\\Collection::from([" ~ value_attrs ~ "])";
+				if (op_item.value.args != null) value_attrs = "\\Runtime\\Collection::from([" ~ value_attrs ~ "])";
 				else value_attrs = "null";
 				
 				if (not op_item.is_async or op_item.is_async and t.current_function.isFlag("async"))

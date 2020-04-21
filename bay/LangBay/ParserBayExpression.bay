@@ -515,13 +515,13 @@ static class ParserBayExpression
 		ParserBay look = null;
 		CoreToken token = null;
 		BaseOpCode op_code = null;
-		bool is_context_call = false;
+		bool is_context_call = true;
 		Caret caret_start = parser.caret;
 		
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
 		if (token.content == "@")
 		{
-			is_context_call = true;
+			is_context_call = false;
 			parser = look;
 		}
 		
