@@ -5,7 +5,7 @@ Bayrell Language
 
 Versions:
 
-0.9 - Pipes and Monads. Change lambda to pure
+[21 Apr 2020] 0.9.0 - Pipes and Monads. Change lambda to pure
 
 [01 Mar 2020] 0.8.3 - CSS html bugfix, media nesting
 
