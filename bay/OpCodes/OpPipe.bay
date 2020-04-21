@@ -25,7 +25,7 @@ struct OpPipe extends BaseOpCode
 {
 	static const string KIND_ATTR = "attr";
 	static const string KIND_ASYNC = "async";
-	static const string KIND_CALL = "method";
+	static const string KIND_CALL = "call";
 	static const string KIND_METHOD = "method";
 	static const string KIND_MONAD = "monad";
 	
