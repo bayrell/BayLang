@@ -37,7 +37,7 @@ static class ParserBayExpression
 	/**
 	 * Read bit not
 	 */
-	lambda list<ParserBay, BaseOpCode> readBitNot(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readBitNot(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -68,7 +68,7 @@ static class ParserBayExpression
 	/**
 	 * Read bit shift
 	 */
-	lambda list<ParserBay, BaseOpCode> readBitShift(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readBitShift(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -109,7 +109,7 @@ static class ParserBayExpression
 	/**
 	 * Read bit and
 	 */
-	lambda list<ParserBay, BaseOpCode> readBitAnd(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readBitAnd(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -145,7 +145,7 @@ static class ParserBayExpression
 	/**
 	 * Read bit or
 	 */
-	lambda list<ParserBay, BaseOpCode> readBitOr(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readBitOr(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -181,7 +181,7 @@ static class ParserBayExpression
 	/**
 	 * Read factor
 	 */
-	lambda list<ParserBay, BaseOpCode> readFactor(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readFactor(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -225,7 +225,7 @@ static class ParserBayExpression
 	/**
 	 * Read arithmetic
 	 */
-	lambda list<ParserBay, BaseOpCode> readArithmetic(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readArithmetic(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -261,7 +261,7 @@ static class ParserBayExpression
 	/**
 	 * Read concat
 	 */
-	lambda list<ParserBay, BaseOpCode> readConcat(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readConcat(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -297,7 +297,7 @@ static class ParserBayExpression
 	/**
 	 * Read compare
 	 */
-	lambda list<ParserBay, BaseOpCode> readCompare(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readCompare(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -350,7 +350,7 @@ static class ParserBayExpression
 	/**
 	 * Read not
 	 */
-	lambda list<ParserBay, BaseOpCode> readNot(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readNot(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -382,7 +382,7 @@ static class ParserBayExpression
 	/**
 	 * Read and
 	 */
-	lambda list<ParserBay, BaseOpCode> readAnd(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readAnd(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -418,7 +418,7 @@ static class ParserBayExpression
 	/**
 	 * Read or
 	 */
-	lambda list<ParserBay, BaseOpCode> readOr(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readOr(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -454,7 +454,7 @@ static class ParserBayExpression
 	/**
 	 * Read element
 	 */
-	lambda list<ParserBay, BaseOpCode> readElement(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readElement(ParserBay parser)
 	{
 		/* Try to read function */
 		if (parser.parser_operator::tryReadFunction(parser.clone(), false))
@@ -469,7 +469,7 @@ static class ParserBayExpression
 	/**
 	 * Read ternary operation
 	 */
-	lambda list<ParserBay, BaseOpCode> readTernary(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readTernary(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -510,7 +510,7 @@ static class ParserBayExpression
 	/**
 	 * Read pipe call
 	 */
-	lambda list<ParserBay, BaseOpCode> readPipeCall(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readPipeCall(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -552,7 +552,7 @@ static class ParserBayExpression
 	/**
 	 * Read pipe
 	 */
-	lambda list<ParserBay, BaseOpCode> ExpressionPipe(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> ExpressionPipe(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken look_token = null;
@@ -620,7 +620,7 @@ static class ParserBayExpression
 	/**
 	 * Read expression
 	 */
-	lambda list<ParserBay, BaseOpCode> readExpression(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readExpression(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;

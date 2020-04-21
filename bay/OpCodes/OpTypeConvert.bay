@@ -24,7 +24,7 @@ use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 
 struct OpTypeConvert extends BaseOpCode
 {
-	string op = "op_classof";
+	string op = "op_type_convert";
 	OpTypeIdentifier pattern = null;
 	BaseOpCode value = null;
 }

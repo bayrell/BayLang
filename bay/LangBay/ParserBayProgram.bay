@@ -46,7 +46,7 @@ static class ParserBayProgram
 	/**
 	 * Read namespace
 	 */
-	lambda ParserBay readNamespace(ParserBay parser)
+	pure ParserBay readNamespace(ParserBay parser)
 	{
 		CoreToken token = null;
 		OpEntityName name = null;
@@ -73,7 +73,7 @@ static class ParserBayProgram
 	/**
 	 * Read use
 	 */
-	lambda ParserBay readUse(ParserBay parser)
+	pure ParserBay readUse(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -111,7 +111,7 @@ static class ParserBayProgram
 	/**
 	 * Read class body
 	 */
-	lambda ParserBay readClassBody(ParserBay parser, string end_tag = "}")
+	pure ParserBay readClassBody(ParserBay parser, string end_tag = "}")
 	{
 		BaseOpCode look = null;
 		CoreToken token = null;
@@ -190,7 +190,7 @@ static class ParserBayProgram
 	/**
 	 * Class body analyze
 	 */
-	lambda Dict classBodyAnalyze(ParserBay parser, Collection<BaseOpCode> arr)
+	pure Dict classBodyAnalyze(ParserBay parser, Collection<BaseOpCode> arr)
 	{
 		Map<bool> names = new Map();
 		Vector<BaseOpCode> vars = new Vector();
@@ -286,7 +286,7 @@ static class ParserBayProgram
 	/**
 	 * Read class
 	 */
-	lambda ParserBay readClass(ParserBay parser)
+	pure ParserBay readClass(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -438,7 +438,7 @@ static class ParserBayProgram
 	/**
 	 * Read program
 	 */
-	lambda ParserBay readProgram(ParserBay parser, string end_tag = "")
+	pure ParserBay readProgram(ParserBay parser, string end_tag = "")
 	{
 		ParserBay look = null;
 		CoreToken token = null;

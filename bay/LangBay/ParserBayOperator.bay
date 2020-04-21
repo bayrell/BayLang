@@ -61,7 +61,7 @@ static class ParserBayOperator
 	/**
 	 * Read return
 	 */
-	lambda list<ParserBay, BaseOpCode> readReturn(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readReturn(ParserBay parser)
 	{
 		CoreToken token = null;
 		BaseOpCode op_code = null;
@@ -93,7 +93,7 @@ static class ParserBayOperator
 	/**
 	 * Read delete
 	 */
-	lambda list<ParserBay, BaseOpCode> readDelete(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readDelete(ParserBay parser)
 	{
 		CoreToken token = null;
 		BaseOpCode op_code = null;
@@ -120,7 +120,7 @@ static class ParserBayOperator
 	/**
 	 * Read throw
 	 */
-	lambda list<ParserBay, BaseOpCode> readThrow(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readThrow(ParserBay parser)
 	{
 		CoreToken token = null;
 		BaseOpCode op_code = null;
@@ -147,7 +147,7 @@ static class ParserBayOperator
 	/**
 	 * Read try
 	 */
-	lambda list<ParserBay, BaseOpCode> readTry(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readTry(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -219,7 +219,7 @@ static class ParserBayOperator
 	/**
 	 * Read then
 	 */
-	lambda list<ParserBay, CoreToken> readThen(ParserBay parser)
+	pure list<ParserBay, CoreToken> readThen(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -236,7 +236,7 @@ static class ParserBayOperator
 	/**
 	 * Read do
 	 */
-	lambda list<ParserBay, CoreToken> readDo(ParserBay parser)
+	pure list<ParserBay, CoreToken> readDo(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -253,7 +253,7 @@ static class ParserBayOperator
 	/**
 	 * Read if
 	 */
-	lambda list<ParserBay, BaseOpCode> readIf(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readIf(ParserBay parser)
 	{
 		ParserBay look = null;
 		ParserBay look2 = null;
@@ -339,7 +339,7 @@ static class ParserBayOperator
 	/**
 	 * Read For
 	 */
-	lambda list<ParserBay, BaseOpCode> readFor(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readFor(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -389,7 +389,7 @@ static class ParserBayOperator
 	/**
 	 * Read While
 	 */
-	lambda list<ParserBay, BaseOpCode> readWhile(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readWhile(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -424,7 +424,7 @@ static class ParserBayOperator
 	/**
 	 * Read assign
 	 */
-	lambda list<ParserBay, BaseOpCode> readAssign(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readAssign(ParserBay parser)
 	{
 		ParserBay start = parser.clone();
 		ParserBay save = null;
@@ -620,7 +620,7 @@ static class ParserBayOperator
 	/**
 	 * Read operator
 	 */
-	lambda list<ParserBay, BaseOpCode> readInc(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readInc(ParserBay parser)
 	{
 		ParserBay look = null;
 		ParserBay look1 = null;
@@ -683,7 +683,7 @@ static class ParserBayOperator
 	/**
 	 * Read call function
 	 */
-	lambda list<ParserBay, BaseOpCode> readCallFunction(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readCallFunction(ParserBay parser)
 	{
 		BaseOpCode op_code = null;
 		list res = parser.parser_base::readDynamic(parser); parser = res[0]; op_code = res[1];
@@ -701,7 +701,7 @@ static class ParserBayOperator
 	/**
 	 * Read operator
 	 */
-	lambda list<ParserBay, BaseOpCode> readOperator(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readOperator(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -803,7 +803,7 @@ static class ParserBayOperator
 	/**
 	 * Read operators
 	 */
-	lambda list<ParserBay, BaseOpCode> readOpItems(ParserBay parser, string end_tag = "}")
+	pure list<ParserBay, BaseOpCode> readOpItems(ParserBay parser, string end_tag = "}")
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -853,7 +853,7 @@ static class ParserBayOperator
 	/**
 	 * Read operators
 	 */
-	lambda list<ParserBay, BaseOpCode> readOperators(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readOperators(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -888,7 +888,7 @@ static class ParserBayOperator
 	/**
 	 * Read flags
 	 */
-	lambda list<ParserBay, OpFlags> readFlags(ParserBay parser)
+	pure list<ParserBay, OpFlags> readFlags(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -916,7 +916,7 @@ static class ParserBayOperator
 	/**
 	 * Read function args
 	 */
-	lambda list<ParserBay, Collection> readDeclareFunctionArgs(ParserBay parser, bool find_ident = true)
+	pure list<ParserBay, Collection> readDeclareFunctionArgs(ParserBay parser, bool find_ident = true)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -984,7 +984,7 @@ static class ParserBayOperator
 	/**
 	 * Read function variables
 	 */
-	lambda list<ParserBay, Collection> readDeclareFunctionUse
+	pure list<ParserBay, Collection> readDeclareFunctionUse
 	(
 		ParserBay parser, Dict<bool> vars = null, bool find_ident = true
 	)
@@ -1037,7 +1037,7 @@ static class ParserBayOperator
 	/**
 	 * Read function
 	 */
-	lambda list<ParserBay, BaseOpCode> readDeclareFunction(ParserBay parser, string has_name = true)
+	pure list<ParserBay, BaseOpCode> readDeclareFunction(ParserBay parser, string has_name = true)
 	{
 		ParserBay look = null;
 		BaseOpCode parser_value = null;
@@ -1127,7 +1127,7 @@ static class ParserBayOperator
 	/**
 	 * Returns true if next is function
 	 */
-	lambda bool tryReadFunction(ParserBay parser, string has_name = true, OpFlags flags = null)
+	pure bool tryReadFunction(ParserBay parser, string has_name = true, OpFlags flags = null)
 	{
 		ParserBay look = null;
 		BaseOpCode parser_value = null;
@@ -1183,7 +1183,7 @@ static class ParserBayOperator
 	/**
 	 * Read annotation
 	 */
-	lambda list<ParserBay, BaseOpCode> readAnnotation(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readAnnotation(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;

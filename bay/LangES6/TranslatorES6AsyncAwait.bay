@@ -53,7 +53,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * Returns current pos
 	 */
-	lambda string currentPos(TranslatorES6 t)
+	pure string currentPos(TranslatorES6 t)
 	{
 		return t.expression::toString(rs::join(".", t.async_await.pos));
 	}
@@ -63,7 +63,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * Returns current pos
 	 */
-	lambda list<TranslatorES6, string> nextPos(TranslatorES6 t)
+	pure list<TranslatorES6, string> nextPos(TranslatorES6 t)
 	{
 		Collection<int> pos = t.async_await.pos;
 		t <= async_await <= pos <= pos.setIm(pos.count() - 1, pos.last() + 1);
@@ -76,7 +76,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * Returns push pos
 	 */
-	lambda list<TranslatorES6, string> pushPos(TranslatorES6 t)
+	pure list<TranslatorES6, string> pushPos(TranslatorES6 t)
 	{
 		Collection<int> pos = t.async_await.pos;
 		t <= async_await <= pos <= pos.setIm(pos.count() - 1, pos.last() + 1).pushIm(0);
@@ -89,7 +89,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * Returns inc pos
 	 */
-	lambda list<TranslatorES6, string> levelIncPos(TranslatorES6 t)
+	pure list<TranslatorES6, string> levelIncPos(TranslatorES6 t)
 	{
 		Collection<int> pos = t.async_await.pos;
 		t <= async_await <= pos <= pos.setIm(pos.count() - 1, pos.last()).pushIm(0);
@@ -102,7 +102,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * Returns pop pos
 	 */
-	lambda list<TranslatorES6, string> popPos(TranslatorES6 t)
+	pure list<TranslatorES6, string> popPos(TranslatorES6 t)
 	{
 		Collection<int> pos = t.async_await.pos.removeLastIm();
 		t <= async_await <= pos <= pos.setIm(pos.count() - 1, pos.last() + 1);
@@ -115,7 +115,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpCall
 	 */
-	lambda list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
+	pure list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
 	{
 		string s = "";
 		bool flag = false;
@@ -187,7 +187,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpPipe
 	 */
-	lambda list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code, bool is_expression = true)
+	pure list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code, bool is_expression = true)
 	{
 		string content = "";
 		string var_name = "";
@@ -256,7 +256,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpFor
 	 */
-	lambda list<TranslatorES6, string> OpFor(TranslatorES6 t, OpFor op_code)
+	pure list<TranslatorES6, string> OpFor(TranslatorES6 t, OpFor op_code)
 	{
 		TranslatorES6 save_t = null;
 		string async_t = t.async_await.async_t;
@@ -351,7 +351,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpIfBlock
 	 */
-	lambda list<TranslatorES6, string> OpIfBlock
+	pure list<TranslatorES6, string> OpIfBlock
 	(
 		TranslatorES6 t, BaseOpCode condition, BaseOpCode op_code, string end_pos
 	)
@@ -405,7 +405,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpIf
 	 */
-	lambda list<TranslatorES6, string> OpIf(TranslatorES6 t, OpIf op_code)
+	pure list<TranslatorES6, string> OpIf(TranslatorES6 t, OpIf op_code)
 	{
 		TranslatorES6 save_t = null;
 		string async_t = t.async_await.async_t;
@@ -461,7 +461,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpReturn
 	 */
-	lambda list<TranslatorES6, string> OpReturn(TranslatorES6 t, OpReturn op_code)
+	pure list<TranslatorES6, string> OpReturn(TranslatorES6 t, OpReturn op_code)
 	{
 		string content = "";
 		string s1 = "";
@@ -484,7 +484,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpTryCatch
 	 */
-	lambda list<TranslatorES6, string> OpTryCatch(TranslatorES6 t, OpTryCatch op_code)
+	pure list<TranslatorES6, string> OpTryCatch(TranslatorES6 t, OpTryCatch op_code)
 	{
 		TranslatorES6 save_t = null;
 		string content = "";
@@ -572,7 +572,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpWhile
 	 */
-	lambda list<TranslatorES6, string> OpWhile(TranslatorES6 t, OpWhile op_code)
+	pure list<TranslatorES6, string> OpWhile(TranslatorES6 t, OpWhile op_code)
 	{
 		TranslatorES6 save_t = null;
 		string async_t = t.async_await.async_t;
@@ -642,7 +642,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 	/**
 	 * OpDeclareFunction Body
 	 */
-	lambda list<TranslatorES6, string> OpDeclareFunctionBody(TranslatorES6 t, OpDeclareFunction f)
+	pure list<TranslatorES6, string> OpDeclareFunctionBody(TranslatorES6 t, OpDeclareFunction f)
 	{
 		TranslatorES6 save_t = t;
 		

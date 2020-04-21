@@ -45,7 +45,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpNamespace
 	 */
-	lambda list<TranslatorPHP, string> OpNamespace(TranslatorPHP t, OpNamespace op_code)
+	pure list<TranslatorPHP, string> OpNamespace(TranslatorPHP t, OpNamespace op_code)
 	{
 		Collection<string> arr = rs::split("\\.", op_code.name);
 		t <= current_namespace_name <= op_code.name;
@@ -57,7 +57,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpDeclareFunction
 	 */
-	lambda list<TranslatorPHP, string> OpDeclareFunction(TranslatorPHP t, OpDeclareFunction op_code)
+	pure list<TranslatorPHP, string> OpDeclareFunction(TranslatorPHP t, OpDeclareFunction op_code)
 	{
 		if (op_code.isFlag("declare")) return [t, ""];
 		
@@ -96,7 +96,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpFunctionAnnotations
 	 */
-	lambda list<TranslatorPHP, string> OpFunctionAnnotations(TranslatorPHP t, OpDeclareFunction f)
+	pure list<TranslatorPHP, string> OpFunctionAnnotations(TranslatorPHP t, OpDeclareFunction f)
 	{
 		string content = "";
 		if (f.flags.isFlag("declare")) return [t, content];
@@ -132,7 +132,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpClassBodyItemMethodsList
 	 */
-	lambda list<TranslatorPHP, string> OpClassBodyItemMethodsList(TranslatorPHP t, BaseOpCode item)
+	pure list<TranslatorPHP, string> OpClassBodyItemMethodsList(TranslatorPHP t, BaseOpCode item)
 	{
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
@@ -159,7 +159,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpClassBodyItemAnnotations
 	 */
-	lambda list<TranslatorPHP, string> OpClassBodyItemAnnotations(TranslatorPHP t, BaseOpCode item)
+	pure list<TranslatorPHP, string> OpClassBodyItemAnnotations(TranslatorPHP t, BaseOpCode item)
 	{
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
@@ -187,7 +187,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorPHP, string> OpDeclareClassConstructor(TranslatorPHP t, OpDeclareClass op_code)
+	pure list<TranslatorPHP, string> OpDeclareClassConstructor(TranslatorPHP t, OpDeclareClass op_code)
 	{
 		if (op_code.fn_create == null) return [t, ""];
 		
@@ -233,7 +233,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorPHP, string> OpDeclareClassBody(TranslatorPHP t, OpDeclareClass op_code)
+	pure list<TranslatorPHP, string> OpDeclareClassBody(TranslatorPHP t, OpDeclareClass op_code)
 	{
 		string content = "";
 		string class_kind = op_code.kind;
@@ -735,7 +735,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpDeclareClassFooter
 	 */
-	lambda list<TranslatorPHP, string> OpDeclareClassFooter(TranslatorPHP t, OpDeclareClass op_code)
+	pure list<TranslatorPHP, string> OpDeclareClassFooter(TranslatorPHP t, OpDeclareClass op_code)
 	{
 		string content = "";
 		return [t, content];
@@ -746,7 +746,7 @@ static class TranslatorPHPProgram
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorPHP, string> OpDeclareClass(TranslatorPHP t, OpDeclareClass op_code)
+	pure list<TranslatorPHP, string> OpDeclareClass(TranslatorPHP t, OpDeclareClass op_code)
 	{
 		if (op_code.is_declare)
 		{
@@ -819,7 +819,7 @@ static class TranslatorPHPProgram
 	/**
 	 * Translate item
 	 */
-	lambda list<TranslatorPHP, string> translateItem(TranslatorPHP t, OpItems op_code)
+	pure list<TranslatorPHP, string> translateItem(TranslatorPHP t, OpItems op_code)
 	{
 		if (op_code instanceof OpNamespace)
 		{
@@ -857,7 +857,7 @@ static class TranslatorPHPProgram
 	/**
 	 * Translate program
 	 */
-	lambda list<TranslatorPHP, string> translateProgramHeader(TranslatorPHP t, OpItems op_code)
+	pure list<TranslatorPHP, string> translateProgramHeader(TranslatorPHP t, OpItems op_code)
 	{
 		string content = "<?php";
 		return [t, content];
@@ -868,7 +868,7 @@ static class TranslatorPHPProgram
 	/**
 	 * Translate program
 	 */
-	lambda list<TranslatorPHP, string> translateProgram(TranslatorPHP t, OpItems op_code)
+	pure list<TranslatorPHP, string> translateProgram(TranslatorPHP t, OpItems op_code)
 	{
 		string content = "";
 		

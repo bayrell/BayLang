@@ -53,7 +53,7 @@ struct OpFlags extends CoreStruct
 	/**
 	 * Get flags
 	 */
-	lambda Collection<string> getFlags()
+	pure Collection<string> getFlags()
 	{
 		return 
 		[
@@ -69,7 +69,7 @@ struct OpFlags extends CoreStruct
 			"cloneable",
 			"assignable",
 			"memorize",
-			"lambda",
+			/*"lambda",*/
 			"pure",
 		];
 	}
@@ -79,7 +79,7 @@ struct OpFlags extends CoreStruct
 	/**
 	 * Get flags
 	 */
-	lambda bool hasFlag(string flag_name)
+	pure bool hasFlag(string flag_name)
 	{
 		if (
 			flag_name == "async" or

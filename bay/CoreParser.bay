@@ -57,7 +57,7 @@ class CoreParser extends CoreStruct
 	/**
 	 * Reset parser
 	 */
-	lambda CoreParser reset(CoreParser parser) =>
+	pure CoreParser reset(CoreParser parser) =>
 		parser.copy({
 			"caret": new Caret{},
 			"token": null,
@@ -69,7 +69,7 @@ class CoreParser extends CoreStruct
 	/**
 	 * Set content
 	 */
-	lambda CoreParser setContent(CoreParser parser, string content) =>
+	pure CoreParser setContent(CoreParser parser, string content) =>
 		parser.copy({
 			"content": new Reference(content), "content_sz": rs::strlen(content)
 		})
@@ -80,7 +80,7 @@ class CoreParser extends CoreStruct
 	/**
 	 * Parse file and convert to BaseOpCode
 	 */
-	lambda CoreParser parse(CoreParser parser, string content)
+	pure CoreParser parse(CoreParser parser, string content)
 	{
 		parser = static::reset(parser);
 		parser = static::setContent(parser, content);

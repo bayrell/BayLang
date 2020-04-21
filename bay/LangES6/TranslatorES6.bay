@@ -44,7 +44,7 @@ struct TranslatorES6 extends CoreTranslator
 	/**
 	 * Reset translator
 	 */
-	lambda TranslatorES6 reset(TranslatorES6 t) =>
+	pure TranslatorES6 reset(TranslatorES6 t) =>
 		t.copy({
 			"value": "",
 			"current_namespace_name": "",
@@ -71,7 +71,7 @@ struct TranslatorES6 extends CoreTranslator
 	/**
 	 * Translate BaseOpCode
 	 */
-	lambda list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
+	pure list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
 	{
 		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);

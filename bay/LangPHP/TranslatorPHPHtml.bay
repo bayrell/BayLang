@@ -37,7 +37,7 @@ static class TranslatorPHPHtml
 	/**
 	 * Is component
 	 */
-	lambda bool isComponent(string tag_name)
+	pure bool isComponent(string tag_name)
 	{
 		string ch1 = rs::substr(tag_name, 0, 1);
 		string ch2 = rs::strtoupper(ch1);
@@ -49,7 +49,7 @@ static class TranslatorPHPHtml
 	/**
 	 * Is single tag
 	 */
-	lambda string isSingleTag(string tag_name)
+	pure string isSingleTag(string tag_name)
 	{
 		Dict tokens = ["img", "meta", "input", "link", "br"];
 		if (tokens.indexOf(tag_name) == -1) return false;
@@ -61,7 +61,7 @@ static class TranslatorPHPHtml
 	/**
 	 * Translator html component
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlComponent(TranslatorPHP t, OpHtmlTag op_code)
+	pure list<TranslatorPHP, string> OpHtmlComponent(TranslatorPHP t, OpHtmlTag op_code)
 	{
 		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
 		string content = "";
@@ -148,7 +148,7 @@ static class TranslatorPHPHtml
 	/**
 	 * Translator html attr
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlAttr(TranslatorPHP t, OpHtmlAttribute attr)
+	pure list<TranslatorPHP, string> OpHtmlAttr(TranslatorPHP t, OpHtmlAttribute attr)
 	{
 		if (attr.value instanceof OpString)
 		{
@@ -181,7 +181,7 @@ static class TranslatorPHPHtml
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlTag(TranslatorPHP t, OpHtmlTag op_code)
+	pure list<TranslatorPHP, string> OpHtmlTag(TranslatorPHP t, OpHtmlTag op_code)
 	{
 		if (static::isComponent(op_code.tag_name))
 		{
@@ -318,7 +318,7 @@ static class TranslatorPHPHtml
 	/**
 	 * Translator html items
 	 */
-	lambda list<TranslatorPHP, string> OpHtmlItems(TranslatorPHP t, OpHtmlItems op_code, string var_name = "")
+	pure list<TranslatorPHP, string> OpHtmlItems(TranslatorPHP t, OpHtmlItems op_code, string var_name = "")
 	{
 		if (op_code == null or op_code.items.count() == 0)
 		{

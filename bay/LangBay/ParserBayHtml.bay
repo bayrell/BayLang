@@ -42,7 +42,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read css selector
 	 */
-	lambda list<ParserBay, string> readCssSelector(ParserBay parser)
+	pure list<ParserBay, string> readCssSelector(ParserBay parser)
 	{
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz;
@@ -98,7 +98,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read css body
 	 */
-	lambda list<ParserBay, string> readCssBody(ParserBay parser)
+	pure list<ParserBay, string> readCssBody(ParserBay parser)
 	{
 		Caret caret_start = parser.caret;
 	
@@ -207,7 +207,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read css
 	 */
-	lambda list<ParserBay, BaseOpCode> readCss(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readCss(ParserBay parser)
 	{
 		Caret caret_start = parser.caret.clone();
 		
@@ -237,7 +237,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html value
 	 */
-	lambda list<ParserBay, BaseOpCode> readHTMLValue(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readHTMLValue(ParserBay parser)
 	{
 		BaseOpCode item = null;
 		Caret caret = parser.caret.clone();
@@ -323,7 +323,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html attribute key
 	 */
-	lambda list<ParserBay, string> readHTMLAttrKey(ParserBay parser)
+	pure list<ParserBay, string> readHTMLAttrKey(ParserBay parser)
 	{
 		CoreToken token = null;
 		ParserBay look = null;
@@ -370,7 +370,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html attribute value
 	 */
-	lambda list<ParserBay, BaseOpCode> readHTMLAttrValue(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readHTMLAttrValue(ParserBay parser)
 	{
 		CoreToken token = null;
 		ParserBay look = null;
@@ -404,7 +404,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html attributes
 	 */
-	lambda list<ParserBay, BaseOpCode> readHTMLAttrs(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readHTMLAttrs(ParserBay parser)
 	{
 		Vector<OpHtmlAttribute> items = new Vector();
 		
@@ -443,7 +443,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html template
 	 */
-	lambda list<ParserBay, Collection> readHTMLContent(ParserBay parser, string end_tag)
+	pure list<ParserBay, Collection> readHTMLContent(ParserBay parser, string end_tag)
 	{
 		Vector<BaseOpCode> items = new Vector();
 		BaseOpCode item = null;
@@ -526,7 +526,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html tag
 	 */
-	lambda list<ParserBay, BaseOpCode> readHTMLTag(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readHTMLTag(ParserBay parser)
 	{
 		CoreToken token = null;
 		ParserBay look = null;
@@ -630,7 +630,7 @@ class ParserBayHtml extends CoreObject
 	/**
 	 * Read html template
 	 */
-	lambda list<ParserBay, BaseOpCode> readHTML(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readHTML(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;

@@ -36,7 +36,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	/**
 	 * Returns string
 	 */
-	lambda string rtlToStr(TranslatorES6 t, string s)
+	pure string rtlToStr(TranslatorES6 t, string s)
 	{
 		return "use(\"Runtime.rtl\").toStr("~s~")";
 	}
@@ -46,7 +46,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	/**
 	 * Use module name
 	 */
-	lambda string useModuleName(TranslatorES6 t, string module_name)
+	pure string useModuleName(TranslatorES6 t, string module_name)
 	{
 		module_name = static::findModuleName(t, module_name);
 		return "use(" ~ static::toString(module_name) ~ ")";
@@ -57,7 +57,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	/**
 	 * OpIdentifier
 	 */
-	lambda list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
+	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
 		if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
 		{
@@ -95,7 +95,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	/**
 	 * OpTypeIdentifier
 	 */
-	lambda list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
+	pure list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
 	{
 		string var_name = "";
 		
@@ -130,7 +130,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	/**
 	 * OpCollection
 	 */
-	lambda list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
+	pure list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
 	{
 		string content = "";
 		Collection<string> values = op_code.values.map
@@ -152,7 +152,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	/**
 	 * OpDict
 	 */
-	lambda list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
+	pure list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
 	{
 		string content = "";
 		Collection<string> values = op_code.values.transition

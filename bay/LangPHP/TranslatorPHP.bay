@@ -42,7 +42,7 @@ struct TranslatorPHP extends CoreTranslator
 	/**
 	 * Reset translator
 	 */
-	lambda TranslatorPHP reset(TranslatorPHP t) =>
+	pure TranslatorPHP reset(TranslatorPHP t) =>
 		t.copy({
 			"value": "",
 			"current_namespace_name": "",
@@ -67,7 +67,7 @@ struct TranslatorPHP extends CoreTranslator
 	/**
 	 * Translate BaseOpCode
 	 */
-	lambda list<TranslatorPHP, string> translate(TranslatorPHP t, BaseOpCode op_code)
+	pure list<TranslatorPHP, string> translate(TranslatorPHP t, BaseOpCode op_code)
 	{
 		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);
@@ -78,7 +78,7 @@ struct TranslatorPHP extends CoreTranslator
 	/**
 	 * Inc save op code
 	 */
-	lambda CoreTranslator nextSaveOpCode(CoreTranslator t)
+	pure CoreTranslator nextSaveOpCode(CoreTranslator t)
 	{
 		return "$__v" ~ t.save_op_code_inc;
 	}
@@ -88,7 +88,7 @@ struct TranslatorPHP extends CoreTranslator
 	/**
 	 * Output save op code content
 	 */
-	lambda string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
+	pure string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
 	{
 		string content = "";
 		for (int i=0; i<t.save_op_codes.count(); i++)

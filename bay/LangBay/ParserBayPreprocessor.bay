@@ -33,7 +33,7 @@ static class ParserBayPreprocessor
 	/**
 	 * Read namespace
 	 */
-	lambda list<ParserBay, BaseOpCode> readPreprocessor(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readPreprocessor(ParserBay parser)
 	{
 		ParserBay start = parser.clone();
 		ParserBay look = null;
@@ -58,7 +58,7 @@ static class ParserBayPreprocessor
 	/**
 	 * Read preprocessor switch
 	 */
-	lambda list<ParserBay, BaseOpCode> readPreprocessorSwitch(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readPreprocessorSwitch(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -143,7 +143,7 @@ static class ParserBayPreprocessor
 	/**
 	 * Read preprocessor ifcode
 	 */
-	lambda list<ParserBay, BaseOpCode> readPreprocessorIfCode(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readPreprocessorIfCode(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -188,7 +188,7 @@ static class ParserBayPreprocessor
 	/**
 	 * Read preprocessor ifdef
 	 */
-	lambda list<ParserBay, BaseOpCode> readPreprocessorIfDef(ParserBay parser, string kind = "")
+	pure list<ParserBay, BaseOpCode> readPreprocessorIfDef(ParserBay parser, string kind = "")
 	{
 		Collection<BaseOpCode> items = null;
 		CoreToken token = null;

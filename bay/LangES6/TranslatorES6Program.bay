@@ -45,7 +45,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * To pattern
 	 */
-	lambda string toPattern(TranslatorES6 t, OpTypeIdentifier pattern)
+	pure string toPattern(TranslatorES6 t, OpTypeIdentifier pattern)
 	{
 		Collection names = t.expression::findModuleNames(t, pattern.entity_name.names);
 		string e = rs::join(".", names);
@@ -64,7 +64,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpNamespace
 	 */
-	lambda list<TranslatorES6, string> OpNamespace(TranslatorES6 t, OpNamespace op_code)
+	pure list<TranslatorES6, string> OpNamespace(TranslatorES6 t, OpNamespace op_code)
 	{
 		string content = "";
 		string name = "";
@@ -87,7 +87,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareFunction
 	 */
-	lambda list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
+	pure list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
 	{
 		bool is_static_function = t.is_static_function;
 		bool is_static = op_code.isStatic();
@@ -116,7 +116,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClassConstructor(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClassConstructor(TranslatorES6 t, OpDeclareClass op_code)
 	{
 		string open = "";
 		string content = "";
@@ -181,7 +181,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareClassBodyItem
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClassBodyItem(TranslatorES6 t, BaseOpCode item)
+	pure list<TranslatorES6, string> OpDeclareClassBodyItem(TranslatorES6 t, BaseOpCode item)
 	{
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
@@ -197,7 +197,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpFunctionAnnotations
 	 */
-	lambda list<TranslatorES6, string> OpFunctionAnnotations(TranslatorES6 t, OpDeclareFunction f)
+	pure list<TranslatorES6, string> OpFunctionAnnotations(TranslatorES6 t, OpDeclareFunction f)
 	{
 		string content = "";
 		if (f.flags.isFlag("declare")) return [t, content];
@@ -243,7 +243,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpClassBodyItemMethodsList
 	 */
-	lambda list<TranslatorES6, string> OpClassBodyItemMethodsList(TranslatorES6 t, BaseOpCode item)
+	pure list<TranslatorES6, string> OpClassBodyItemMethodsList(TranslatorES6 t, BaseOpCode item)
 	{
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
@@ -270,7 +270,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpClassBodyItemAnnotations
 	 */
-	lambda list<TranslatorES6, string> OpClassBodyItemAnnotations(TranslatorES6 t, BaseOpCode item)
+	pure list<TranslatorES6, string> OpClassBodyItemAnnotations(TranslatorES6 t, BaseOpCode item)
 	{
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
@@ -298,7 +298,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClassBodyStatic(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClassBodyStatic(TranslatorES6 t, OpDeclareClass op_code)
 	{
 		string content = "";
 		string class_kind = op_code.kind;
@@ -691,7 +691,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClassBody(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClassBody(TranslatorES6 t, OpDeclareClass op_code)
 	{
 		string content = "";
 		string class_kind = op_code.kind;
@@ -979,7 +979,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareClassFooter
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
 	{
 		string content = t.s("Runtime.rtl.defClass(" ~ t.current_class_full_name ~ ");");
 		return [t, content];
@@ -990,7 +990,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * OpDeclareClass
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClass(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClass(TranslatorES6 t, OpDeclareClass op_code)
 	{
 		if (op_code.is_declare)
 		{
@@ -1053,7 +1053,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * Translate item
 	 */
-	lambda list<TranslatorES6, string> translateItem(TranslatorES6 t, OpItems op_code)
+	pure list<TranslatorES6, string> translateItem(TranslatorES6 t, OpItems op_code)
 	{
 		if (op_code instanceof OpNamespace)
 		{
@@ -1091,7 +1091,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * Translate program
 	 */
-	lambda list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
+	pure list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
 	{
 		string content = "\"use strict;\"";
 		content ~= t.s("var use = (typeof Runtime != 'undefined' && typeof Runtime.rtl != 'undefined')"~
@@ -1104,7 +1104,7 @@ struct TranslatorES6Program extends CoreStruct
 	/**
 	 * Translate program
 	 */
-	lambda list<TranslatorES6, string> translateProgram(TranslatorES6 t, OpItems op_code)
+	pure list<TranslatorES6, string> translateProgram(TranslatorES6 t, OpItems op_code)
 	{
 		string content = "";
 		

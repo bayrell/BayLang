@@ -59,7 +59,7 @@ class ParserBay extends CoreParser
 	/**
 	 * Reset parser
 	 */
-	lambda ParserBay reset(ParserBay parser) =>
+	pure ParserBay reset(ParserBay parser) =>
 		parser.copy({
 			"vars": new Dict<string>(),
 			"uses": new Dict<string>(),
@@ -79,7 +79,7 @@ class ParserBay extends CoreParser
 	/**
 	 * Parse file and convert to BaseOpCode
 	 */
-	lambda list<ParserBay, BaseOpCode> parse(ParserBay parser, string content)
+	pure list<ParserBay, BaseOpCode> parse(ParserBay parser, string content)
 	{
 		parser = static::reset(parser);
 		parser = static::setContent(parser, content);

@@ -37,7 +37,7 @@ class TranslatorES6Html
 	/**
 	 * Is component
 	 */
-	lambda bool isComponent(string tag_name)
+	pure bool isComponent(string tag_name)
 	{
 		if (tag_name == "") return false;
 		string ch1 = rs::substr(tag_name, 0, 1);
@@ -50,7 +50,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html value
 	 */
-	lambda list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, OpHtmlAttribute attr, int item_pos)
+	pure list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, OpHtmlAttribute attr, int item_pos)
 	{
 		BaseOpCode op_code = attr.value;
 		
@@ -87,7 +87,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs, int item_pos)
+	pure list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs, int item_pos)
 	{
 		Vector<string> attr_class = new Vector<string>();
 		string attr_s = "null";
@@ -191,7 +191,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	lambda list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name)
+	pure list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name)
 	{
 		string content = "";
 		string content2 = "";
@@ -347,7 +347,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html items
 	 */
-	lambda list<TranslatorES6, string> OpHtmlChilds(TranslatorES6 t, OpHtmlItems op_code, string control_name)
+	pure list<TranslatorES6, string> OpHtmlChilds(TranslatorES6 t, OpHtmlItems op_code, string control_name)
 	{
 		if (op_code == null or op_code.items.count() == 0)
 		{
@@ -375,7 +375,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html items
 	 */
-	lambda list<TranslatorES6, string> OpHtmlItems(TranslatorES6 t, OpHtmlItems op_code)
+	pure list<TranslatorES6, string> OpHtmlItems(TranslatorES6 t, OpHtmlItems op_code)
 	{
 		if (op_code == null or op_code.items.count() == 0)
 		{

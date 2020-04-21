@@ -51,7 +51,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Returns string
 	 */
-	lambda string toString(string s)
+	pure string toString(string s)
 	{
 		s = re::replace('\\\\', '\\\\', s);
 		s = re::replace('"', '\\\"', s);
@@ -66,7 +66,7 @@ static class TranslatorPHPExpression
 	/**
 	 * To pattern
 	 */
-	lambda string toPattern(TranslatorPHP t, OpTypeIdentifier pattern)
+	pure string toPattern(TranslatorPHP t, OpTypeIdentifier pattern)
 	{
 		Collection names = static::findModuleNames(t, pattern.entity_name.names);
 		string e = rs::join(".", names);
@@ -85,7 +85,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Returns string
 	 */
-	lambda string rtlToStr(TranslatorPHP t, string s)
+	pure string rtlToStr(TranslatorPHP t, string s)
 	{
 		string module_name = static::getModuleName(t, "rtl");
 		return module_name ~ "::toStr("~s~")";
@@ -96,7 +96,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Find module name
 	 */
-	lambda string findModuleName(TranslatorPHP t, string module_name)
+	pure string findModuleName(TranslatorPHP t, string module_name)
 	{
 		if (module_name == "Collection") return "Runtime.Collection";
 		else if (module_name == "Dict") return "Runtime.Dict";
@@ -114,7 +114,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Returns module name
 	 */
-	lambda Collection findModuleNames(TranslatorPHP t, Collection<string> names)
+	pure Collection findModuleNames(TranslatorPHP t, Collection<string> names)
 	{
 		if (names.count() > 0)
 		{
@@ -133,7 +133,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Return module name
 	 */
-	lambda string getModuleName(TranslatorPHP t, string module_name)
+	pure string getModuleName(TranslatorPHP t, string module_name)
 	{
 		module_name = static::findModuleName(t, module_name);
 		module_name = rs::replace("\\.", "\\", module_name);
@@ -145,7 +145,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Return module name
 	 */
-	lambda string getModuleNames(TranslatorPHP t, Collection<string> names)
+	pure string getModuleNames(TranslatorPHP t, Collection<string> names)
 	{
 		return "\\" ~ rs::join("\\", static::findModuleNames(t, names));
 	}
@@ -155,7 +155,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpTypeIdentifier
 	 */
-	lambda list<TranslatorPHP, string> OpTypeIdentifier(TranslatorPHP t, OpTypeIdentifier op_code)
+	pure list<TranslatorPHP, string> OpTypeIdentifier(TranslatorPHP t, OpTypeIdentifier op_code)
 	{
 		Collection<string> names = static::findModuleNames(t, op_code.entity_name.names);
 		string s = "\\" ~ rs::join("\\", names);
@@ -167,7 +167,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpIdentifier
 	 */
-	lambda list<TranslatorPHP, string> OpIdentifier(TranslatorPHP t, OpIdentifier op_code)
+	pure list<TranslatorPHP, string> OpIdentifier(TranslatorPHP t, OpIdentifier op_code)
 	{
 		if (op_code.value == "@") return [t, "$ctx"];
 		if (op_code.value == "_") return [t, "($ctx->staticMethod('translate'))"];
@@ -200,7 +200,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpNumber
 	 */
-	lambda list<TranslatorPHP, string> OpNumber(TranslatorPHP t, OpNumber op_code)
+	pure list<TranslatorPHP, string> OpNumber(TranslatorPHP t, OpNumber op_code)
 	{
 		string content = op_code.value;
 		if (op_code.negative)
@@ -216,7 +216,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpString
 	 */
-	lambda list<TranslatorPHP, string> OpString(TranslatorPHP t, OpString op_code)
+	pure list<TranslatorPHP, string> OpString(TranslatorPHP t, OpString op_code)
 	{
 		return [t, static::toString(op_code.value)];
 	}
@@ -226,7 +226,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpCollection
 	 */
-	lambda list<TranslatorPHP, string> OpCollection(TranslatorPHP t, OpCollection op_code)
+	pure list<TranslatorPHP, string> OpCollection(TranslatorPHP t, OpCollection op_code)
 	{
 		string content = "";
 		Collection<string> values = op_code.values.map
@@ -248,7 +248,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpDict
 	 */
-	lambda list<TranslatorPHP, string> OpDict(TranslatorPHP t, OpDict op_code, bool flag_array = false)
+	pure list<TranslatorPHP, string> OpDict(TranslatorPHP t, OpDict op_code, bool flag_array = false)
 	{
 		string content = "";
 		Collection<string> values = op_code.values.transition
@@ -277,7 +277,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Dynamic
 	 */
-	lambda list<TranslatorPHP, string> Dynamic(TranslatorPHP t, BaseOpCode op_code, BaseOpCode next_op_code = null)
+	pure list<TranslatorPHP, string> Dynamic(TranslatorPHP t, BaseOpCode op_code, BaseOpCode next_op_code = null)
 	{
 		if (op_code instanceof OpIdentifier)
 		{
@@ -405,7 +405,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpInc
 	 */
-	lambda list<TranslatorPHP, string> OpInc(TranslatorPHP t, OpInc op_code)
+	pure list<TranslatorPHP, string> OpInc(TranslatorPHP t, OpInc op_code)
 	{
 		string content = "";
 		list res = static::Expression(t, op_code.value); t = res[0]; string s = res[1];
@@ -423,7 +423,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpMath
 	 */
-	lambda list<TranslatorPHP, string> OpMath(TranslatorPHP t, OpMath op_code)
+	pure list<TranslatorPHP, string> OpMath(TranslatorPHP t, OpMath op_code)
 	{
 		list res = static::Expression(t, op_code.value1); t = res[0];
 		int opcode_level1 = res[0].opcode_level;
@@ -499,7 +499,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpNew
 	 */
-	lambda list<TranslatorPHP, string> OpNew(TranslatorPHP t, OpInc op_code)
+	pure list<TranslatorPHP, string> OpNew(TranslatorPHP t, OpInc op_code)
 	{
 		string content = "new ";
 		list res = static::OpTypeIdentifier(t, op_code.value); t = res[0]; content ~= res[1];
@@ -528,7 +528,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpCall
 	 */
-	lambda list<TranslatorPHP, string> OpCall(TranslatorPHP t, OpCall op_code)
+	pure list<TranslatorPHP, string> OpCall(TranslatorPHP t, OpCall op_code)
 	{
 		string s = "";
 		bool flag = false;
@@ -570,7 +570,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpClassOf
 	 */
-	lambda list<TranslatorPHP, string> OpClassOf(TranslatorPHP t, OpClassOf op_code)
+	pure list<TranslatorPHP, string> OpClassOf(TranslatorPHP t, OpClassOf op_code)
 	{
 		Collection<string> names = static::findModuleNames(t, op_code.entity_name.names);
 		string s = rs::join(".", names);
@@ -582,7 +582,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpTernary
 	 */
-	lambda list<TranslatorPHP, string> OpTernary(TranslatorPHP t, OpTernary op_code)
+	pure list<TranslatorPHP, string> OpTernary(TranslatorPHP t, OpTernary op_code)
 	{
 		string content = "";
 		
@@ -603,7 +603,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpPipe
 	 */
-	lambda list<TranslatorPHP, string> OpPipe(TranslatorPHP t, OpPipe op_code)
+	pure list<TranslatorPHP, string> OpPipe(TranslatorPHP t, OpPipe op_code)
 	{
 		string content = "";
 		string var_name = "";
@@ -710,7 +710,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpTypeConvert
 	 */
-	lambda list<TranslatorPHP, string> OpTypeConvert(TranslatorPHP t, OpTypeConvert op_code)
+	pure list<TranslatorPHP, string> OpTypeConvert(TranslatorPHP t, OpTypeConvert op_code)
 	{
 		string content = "";
 		list res = static::Expression(t, op_code.value); t = res[0]; string value = res[1];
@@ -723,7 +723,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpTernary
 	 */
-	lambda list<TranslatorPHP, string> OpDeclareFunction(TranslatorPHP t, OpDeclareFunction op_code)
+	pure list<TranslatorPHP, string> OpDeclareFunction(TranslatorPHP t, OpDeclareFunction op_code)
 	{
 		string content = "";
 		
@@ -753,7 +753,7 @@ static class TranslatorPHPExpression
 	/**
 	 * Expression
 	 */
-	lambda list<TranslatorPHP, string> Expression(TranslatorPHP t, BaseOpCode op_code)
+	pure list<TranslatorPHP, string> Expression(TranslatorPHP t, BaseOpCode op_code)
 	{
 		string content = "";
 		t <= opcode_level <= 100;

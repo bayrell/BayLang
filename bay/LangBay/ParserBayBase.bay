@@ -53,7 +53,7 @@ class ParserBayBase
 	 * @param char ch
 	 * @return boolean
 	 */
-	lambda memorize bool isChar (char ch) =>
+	pure memorize bool isChar (char ch) =>
 		rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1
 	;	
 	
@@ -64,7 +64,7 @@ class ParserBayBase
 	 * @param char ch
 	 * @return boolean
 	 */
-	lambda memorize bool isNumber (char ch) =>
+	pure memorize bool isNumber (char ch) =>
 		rs::strpos('0123456789', ch) !== -1
 	;
 	
@@ -75,7 +75,7 @@ class ParserBayBase
 	 * @param char ch
 	 * @return boolean
 	 */
-	lambda memorize bool isHexChar (char ch) => rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1;
+	pure memorize bool isHexChar (char ch) => rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1;
 	
 	
 	
@@ -84,7 +84,7 @@ class ParserBayBase
 	 * @param string s
 	 * @return boolean
 	 */
-	lambda memorize bool isStringOfNumbers (string s)
+	pure memorize bool isStringOfNumbers (string s)
 	{
 		int sz = rs::strlen(s);
 		for (int i=0; i<sz; i++){ if (not static::isNumber( rs::charAt(s, i) )) return false; }
@@ -96,7 +96,7 @@ class ParserBayBase
 	/**
 	 * Is system type
 	 */
-	lambda memorize bool isSystemType (string name)
+	pure memorize bool isSystemType (string name)
 	{
 		if (name == "var") return true;
 		if (name == "void") return true;
@@ -129,7 +129,7 @@ class ParserBayBase
 	/**
 	 * Returns true if name is identifier
 	 */
-	lambda memorize bool isIdentifier(string name)
+	pure memorize bool isIdentifier(string name)
 	{
 		if (name == "") return false;
 		if (name == "@") return true;
@@ -149,7 +149,7 @@ class ParserBayBase
 	/**
 	 * Returns true if reserved words
 	 */
-	lambda memorize bool isReserved(string name)
+	pure memorize bool isReserved(string name)
 	{
 		if (name == "__async_t") return true;
 		if (name == "__async_var") return true;
@@ -164,7 +164,7 @@ class ParserBayBase
 	/**
 	 * Returns kind of identifier or thrown Error
 	 */
-	lambda string findIdentifier(ParserBay parser, string name, Caret caret)
+	pure string findIdentifier(ParserBay parser, string name, Caret caret)
 	{
 		string kind = "";
 		if (parser.vars.has(name))
@@ -209,7 +209,7 @@ class ParserBayBase
 	 * @param {char} ch
 	 * @return {boolean}
 	 */
-	lambda memorize bool isTokenChar(char ch)
+	pure memorize bool isTokenChar(char ch)
 	{
 		return rs::strpos('qazwsxedcrfvtgbyhnujmikolp0123456789_', rs::strtolower(ch)) !== -1;
 	}
@@ -221,7 +221,7 @@ class ParserBayBase
 	 * @param char ch
 	 * @return boolean
 	 */
-	lambda memorize bool isSkipChar (char ch)
+	pure memorize bool isSkipChar (char ch)
 	{
 		if (rs::ord(ch) <= 32) return true;
 		return false;
@@ -232,7 +232,7 @@ class ParserBayBase
 	/**
 	 * Returns next X
 	 */
-	lambda int nextX(ParserBay parser, char ch, int pos)
+	pure int nextX(ParserBay parser, char ch, int pos)
 	{
 		if (ch == "\t") return pos + parser.tab_size;
 		if (ch == "\n") return 0;
@@ -244,7 +244,7 @@ class ParserBayBase
 	/**
 	 * Returns next Y
 	 */
-	lambda int nextY(ParserBay parser, char ch, int pos)
+	pure int nextY(ParserBay parser, char ch, int pos)
 	{
 		if (ch == "\n") return pos + 1;
 		return pos;
@@ -254,7 +254,7 @@ class ParserBayBase
 	/**
 	 * Returns next X
 	 */
-	lambda list<int, int, int> next(ParserBay parser, string s, int x, int y, int pos)
+	pure list<int, int, int> next(ParserBay parser, string s, int x, int y, int pos)
 	{
 		int sz = rs::strlen(s);
 		for (int i=0; i<sz; i++)
@@ -272,7 +272,7 @@ class ParserBayBase
 	/**
 	 * Open comment
 	 */
-	lambda bool isCommentOpen(string str, bool skip_comments) =>
+	pure bool isCommentOpen(string str, bool skip_comments) =>
 		skip_comments and str == "/*" /* */
 	;
 	
@@ -281,14 +281,14 @@ class ParserBayBase
 	/**
 	 * Close comment
 	 */
-	lambda bool isCommentClose(string str) => str == "*/";
+	pure bool isCommentClose(string str) => str == "*/";
 	
 	
 	
 	/**
 	 * Skip char
 	 */
-	lambda Caret skipChar(ParserBay parser, Reference<string> content, Caret start_pos)
+	pure Caret skipChar(ParserBay parser, Reference<string> content, Caret start_pos)
 	{
 		int x = start_pos.x;
 		int y = start_pos.y;
@@ -347,7 +347,7 @@ class ParserBayBase
 	/**
 	 * Read special token
 	 */
-	lambda string readSpecialToken(ParserBay parser, Reference<string> content, Caret start_pos)
+	pure string readSpecialToken(ParserBay parser, Reference<string> content, Caret start_pos)
 	{
 		int pos = start_pos.pos;
 		string s = "";
@@ -399,7 +399,7 @@ class ParserBayBase
 	/**
 	 * Read next token and return caret end
 	 */
-	lambda Caret nextToken(ParserBay parser, Reference<string> content, Caret start_pos)
+	pure Caret nextToken(ParserBay parser, Reference<string> content, Caret start_pos)
 	{
 		bool is_first = true;
 		int x = start_pos.x;
@@ -455,7 +455,7 @@ class ParserBayBase
 	/**
 	 * Read next token
 	 */
-	lambda list<ParserBay, CoreToken> readToken(ParserBay parser)
+	pure list<ParserBay, CoreToken> readToken(ParserBay parser)
 	{
 		Caret caret_start = null;
 		Caret caret_end = null;
@@ -495,7 +495,7 @@ class ParserBayBase
 	/**
 	 * Look next token
 	 */
-	lambda list<ParserBay, bool> lookToken(ParserBay parser, string token)
+	pure list<ParserBay, bool> lookToken(ParserBay parser, string token)
 	{
 		string token_content = "";
 		Reference<string> content = parser.content;
@@ -547,7 +547,7 @@ class ParserBayBase
 	/**
 	 * Match next token
 	 */
-	lambda list<ParserBay, CoreToken> matchToken(ParserBay parser, string next_token)
+	pure list<ParserBay, CoreToken> matchToken(ParserBay parser, string next_token)
 	{
 		CoreToken token = null;
 		
@@ -566,7 +566,7 @@ class ParserBayBase
 	/**
 	 * Match next string
 	 */
-	lambda list<ParserBay, CoreToken> matchString(ParserBay parser, string str1)
+	pure list<ParserBay, CoreToken> matchString(ParserBay parser, string str1)
 	{
 		Caret caret = parser.caret.clone();
 		int sz = rs::strlen(str1);
@@ -590,7 +590,7 @@ class ParserBayBase
 	/**
 	 * Read number
 	 */
-	lambda list<ParserBay, OpNumber> readNumber(ParserBay parser)
+	pure list<ParserBay, OpNumber> readNumber(ParserBay parser)
 	{
 		CoreToken token = null;
 		ParserBay start = parser.clone();
@@ -625,7 +625,7 @@ class ParserBayBase
 	/**
 	 * Read string
 	 */
-	lambda list<ParserBay, OpString> readUntilStringArr
+	pure list<ParserBay, OpString> readUntilStringArr
 	(
 		ParserBay parser, Collection arr, bool flag_include = true
 	)
@@ -716,7 +716,7 @@ class ParserBayBase
 	/**
 	 * Read string
 	 */
-	lambda list<ParserBay, OpString> readString(ParserBay parser)
+	pure list<ParserBay, OpString> readString(ParserBay parser)
 	{
 		CoreToken token = null;
 		ParserBay look = null;
@@ -814,7 +814,7 @@ class ParserBayBase
 	/**
 	 * Read comment
 	 */
-	lambda list<ParserBay, OpComment> readComment(ParserBay parser)
+	pure list<ParserBay, OpComment> readComment(ParserBay parser)
 	{
 		ParserBay start = parser.clone();
 		CoreToken token = null;
@@ -890,7 +890,7 @@ class ParserBayBase
 	/**
 	 * Read identifier
 	 */
-	lambda list<ParserBay, OpIdentifier> readIdentifier(ParserBay parser, bool find_ident = false)
+	pure list<ParserBay, OpIdentifier> readIdentifier(ParserBay parser, bool find_ident = false)
 	{
 		ParserBay start = parser.clone();
 		CoreToken token = null;
@@ -941,7 +941,7 @@ class ParserBayBase
 	/**
 	 * Read entity name
 	 */
-	lambda list<ParserBay, OpEntityName> readEntityName(ParserBay parser, bool find_ident = true)
+	pure list<ParserBay, OpEntityName> readEntityName(ParserBay parser, bool find_ident = true)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -987,7 +987,7 @@ class ParserBayBase
 	/**
 	 * Read type identifier
 	 */
-	lambda list<ParserBay, BaseOpCode> readTypeIdentifier(ParserBay parser, bool find_ident = true)
+	pure list<ParserBay, BaseOpCode> readTypeIdentifier(ParserBay parser, bool find_ident = true)
 	{
 		ParserBay start = parser.clone();
 		ParserBay look = null;
@@ -1049,7 +1049,7 @@ class ParserBayBase
 	/**
 	 * Read collection
 	 */
-	lambda list<ParserBay, BaseOpCode> readCollection(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readCollection(ParserBay parser)
 	{
 		ParserBay start = parser.clone();
 		ParserBay look = null;
@@ -1093,7 +1093,7 @@ class ParserBayBase
 	/**
 	 * Read collection
 	 */
-	lambda list<ParserBay, BaseOpCode> readDict(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readDict(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1141,7 +1141,7 @@ class ParserBayBase
 	/**
 	 * Read fixed
 	 */
-	lambda list<ParserBay, BaseOpCode> readFixed(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readFixed(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1203,7 +1203,7 @@ class ParserBayBase
 	/**
 	 * Read call args
 	 */
-	lambda list<ParserBay, Collection> readCallArgs(ParserBay parser)
+	pure list<ParserBay, Collection> readCallArgs(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1245,7 +1245,7 @@ class ParserBayBase
 	/**
 	 * Read new instance
 	 */
-	lambda list<ParserBay, BaseOpCode> readNew(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readNew(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1284,7 +1284,7 @@ class ParserBayBase
 	/**
 	 * Read method
 	 */
-	lambda list<ParserBay, BaseOpCode> readMethod(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readMethod(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1324,7 +1324,7 @@ class ParserBayBase
 	/**
 	 * Read base item
 	 */
-	lambda list<ParserBay, BaseOpCode> readBaseItem(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readBaseItem(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1350,7 +1350,37 @@ class ParserBayBase
 		}
 		else if (token.content == "(")
 		{
-			list res = static::matchToken(parser, "("); parser = res[0];
+			ParserBay save_parser = parser; parser = look;
+			
+			/* Try to read OpTypeConvert */
+			try
+			{
+				list res = static::readTypeIdentifier(parser);
+				parser = res[0]; OpTypeIdentifier op_type = res[1];
+				
+				list res = static::readToken(parser); parser = res[0]; token = res[1];
+				if (token.content == ")")
+				{
+					list res = static::readDynamic(parser); parser = res[0]; op_code = res[1];
+					return
+					[
+						parser,
+						new OpTypeConvert
+						{
+							"pattern": op_type,
+							"value": op_code,
+							"caret_start": caret_start,
+							"caret_end": parser.caret.clone(),
+						}
+					];
+				}
+			}
+			catch (ParserError e)
+			{
+			}			
+			
+			/* Read Expression */
+			list res = static::matchToken(save_parser, "("); parser = res[0];
 			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
 			list res = static::matchToken(parser, ")"); parser = res[0];
 		}
@@ -1367,7 +1397,7 @@ class ParserBayBase
 	/**
 	 * Read classof
 	 */
-	lambda list<ParserBay, BaseOpCode> readClassOf(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readClassOf(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1394,7 +1424,7 @@ class ParserBayBase
 	/**
 	 * Read classref
 	 */
-	lambda list<ParserBay, BaseOpCode> readClassRef(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readClassRef(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1421,7 +1451,7 @@ class ParserBayBase
 	/**
 	 * Read dynamic
 	 */
-	lambda list<ParserBay, BaseOpCode> readDynamic(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readDynamic(ParserBay parser)
 	{
 		ParserBay look = null;
 		CoreToken token = null;

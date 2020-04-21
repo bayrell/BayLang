@@ -53,7 +53,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Returns string
 	 */
-	lambda string toString(string s)
+	pure string toString(string s)
 	{
 		s = re::replace('\\\\', '\\\\', s);
 		s = re::replace('"', '\\\"', s);
@@ -68,7 +68,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * To pattern
 	 */
-	lambda string toPattern(TranslatorES6 t, OpTypeIdentifier pattern)
+	pure string toPattern(TranslatorES6 t, OpTypeIdentifier pattern)
 	{
 		Collection names = static::findModuleNames(t, pattern.entity_name.names);
 		string e = rs::join(".", names);
@@ -87,7 +87,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Returns string
 	 */
-	lambda string rtlToStr(TranslatorES6 t, string s)
+	pure string rtlToStr(TranslatorES6 t, string s)
 	{
 		string module_name = static::findModuleName(t, "rtl");
 		return module_name ~ ".toStr("~s~")";
@@ -98,7 +98,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Find module name
 	 */
-	lambda string findModuleName(TranslatorES6 t, string module_name)
+	pure string findModuleName(TranslatorES6 t, string module_name)
 	{
 		if (module_name == "Collection") return "Runtime.Collection";
 		else if (module_name == "Dict") return "Runtime.Dict";
@@ -116,7 +116,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Returns module name
 	 */
-	lambda list<TranslatorES6, Collection> findModuleNames(TranslatorES6 t, Collection<string> names)
+	pure list<TranslatorES6, Collection> findModuleNames(TranslatorES6 t, Collection<string> names)
 	{
 		if (names.count() > 0)
 		{
@@ -132,7 +132,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Use module name
 	 */
-	lambda string useModuleName(TranslatorES6 t, string module_name)
+	pure string useModuleName(TranslatorES6 t, string module_name)
 	{
 		module_name = static::findModuleName(t, module_name);
 		return module_name;
@@ -143,7 +143,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpTypeIdentifier
 	 */
-	lambda list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
+	pure list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
 	{
 		Collection<string> names = static::findModuleNames(t, op_code.entity_name.names);
 		string s = rs::join(".", names);
@@ -155,7 +155,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpIdentifier
 	 */
-	lambda list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
+	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
 		if (op_code.value == "@") return [t, "ctx"];
 		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
@@ -177,7 +177,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpNumber
 	 */
-	lambda list<TranslatorES6, string> OpNumber(TranslatorES6 t, OpNumber op_code)
+	pure list<TranslatorES6, string> OpNumber(TranslatorES6 t, OpNumber op_code)
 	{
 		string content = op_code.value;
 		if (op_code.negative)
@@ -193,7 +193,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpString
 	 */
-	lambda list<TranslatorES6, string> OpString(TranslatorES6 t, OpString op_code)
+	pure list<TranslatorES6, string> OpString(TranslatorES6 t, OpString op_code)
 	{
 		return [t, static::toString(op_code.value)];
 	}
@@ -203,7 +203,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpCollection
 	 */
-	lambda list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
+	pure list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
 	{
 		string content = "";
 		Collection<string> values = op_code.values.map
@@ -225,7 +225,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpDict
 	 */
-	lambda list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
+	pure list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
 	{
 		string content = "";
 		Collection<string> values = op_code.values.transition
@@ -247,7 +247,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Dynamic
 	 */
-	lambda list<TranslatorES6, string> Dynamic(TranslatorES6 t, BaseOpCode op_code)
+	pure list<TranslatorES6, string> Dynamic(TranslatorES6 t, BaseOpCode op_code)
 	{
 		if (op_code instanceof OpIdentifier)
 		{
@@ -351,7 +351,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpInc
 	 */
-	lambda list<TranslatorES6, string> OpInc(TranslatorES6 t, OpInc op_code)
+	pure list<TranslatorES6, string> OpInc(TranslatorES6 t, OpInc op_code)
 	{
 		string content = "";
 		list res = static::Expression(t, op_code.value); t = res[0]; string s = res[1];
@@ -369,7 +369,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpMath
 	 */
-	lambda list<TranslatorES6, string> OpMath(TranslatorES6 t, OpMath op_code)
+	pure list<TranslatorES6, string> OpMath(TranslatorES6 t, OpMath op_code)
 	{
 		list res = static::Expression(t, op_code.value1); t = res[0];
 		int opcode_level1 = res[0].opcode_level;
@@ -446,7 +446,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpNew
 	 */
-	lambda list<TranslatorES6, string> OpNew(TranslatorES6 t, OpInc op_code)
+	pure list<TranslatorES6, string> OpNew(TranslatorES6 t, OpInc op_code)
 	{
 		string content = "new ";
 		list res = static::OpTypeIdentifier(t, op_code.value); t = res[0]; content ~= res[1];
@@ -475,7 +475,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpCall
 	 */
-	lambda list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
+	pure list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
 	{
 		if (t.current_function.isFlag("async") and op_code.is_await)
 		{
@@ -525,7 +525,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpClassOf
 	 */
-	lambda list<TranslatorES6, string> OpClassOf(TranslatorES6 t, OpClassOf op_code)
+	pure list<TranslatorES6, string> OpClassOf(TranslatorES6 t, OpClassOf op_code)
 	{
 		Collection<string> names = static::findModuleNames(t, op_code.entity_name.names);
 		string s = rs::join(".", names);
@@ -537,7 +537,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpTernary
 	 */
-	lambda list<TranslatorES6, string> OpTernary(TranslatorES6 t, OpTernary op_code)
+	pure list<TranslatorES6, string> OpTernary(TranslatorES6 t, OpTernary op_code)
 	{
 		string content = "";
 		
@@ -558,7 +558,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpPipe
 	 */
-	lambda list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code)
+	pure list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code)
 	{
 		string content = "";
 		string var_name = "";
@@ -704,7 +704,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpTypeConvert
 	 */
-	lambda list<TranslatorES6, string> OpTypeConvert(TranslatorES6 t, OpTypeConvert op_code)
+	pure list<TranslatorES6, string> OpTypeConvert(TranslatorES6 t, OpTypeConvert op_code)
 	{
 		string content = "";
 		list res = static::Expression(t, op_code.value); t = res[0]; string value = res[1];
@@ -719,7 +719,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpTernary
 	 */
-	lambda list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
+	pure list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
 	{
 		string content = "";
 		
@@ -744,7 +744,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Expression
 	 */
-	lambda list<TranslatorES6, string> Expression(TranslatorES6 t, BaseOpCode op_code)
+	pure list<TranslatorES6, string> Expression(TranslatorES6 t, BaseOpCode op_code)
 	{
 		string content = "";
 		t <= opcode_level <= 100;

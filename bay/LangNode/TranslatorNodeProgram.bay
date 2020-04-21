@@ -34,7 +34,7 @@ static class TranslatorNodeProgram extends TranslatorES6Program
 	/**
 	 * Translate program
 	 */
-	lambda list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
+	pure list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
 	{
 		string content = "\"use strict;\"";
 		content ~= t.s("var use = require('bayrell').use;");
@@ -46,7 +46,7 @@ static class TranslatorNodeProgram extends TranslatorES6Program
 	/**
 	 * OpDeclareClassFooter
 	 */
-	lambda list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
 	{
 		string content = "";
 		string name = "";
