@@ -616,9 +616,9 @@ struct TranslatorES6Expression extends CoreStruct
 						value_attrs ~= "ctx";
 						flag = true;
 					}*/
-					for (int i=0; i<op_item.value.args.count(); i++)
+					for (int j=0; j<op_item.value.args.count(); j++)
 					{
-						BaseOpCode item = op_item.value.args.item(i);
+						BaseOpCode item = op_item.value.args.item(j);
 						list res = static::Expression(t, item); t = res[0]; string s = res[1];
 						value_attrs ~= (flag ? ", " : "") ~ s;
 						flag = true;

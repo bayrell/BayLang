@@ -1043,10 +1043,21 @@ static class ParserBayOperator
 		BaseOpCode parser_value = null;
 		BaseOpCode op_code = null;
 		CoreToken token = null;
+		OpFlags flags = null
 		
 		/* Clear vars */
 		Dict<bool> save_vars = parser.vars;
 		parser <= vars <= new Dict<bool>();
+		
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+		if (token.content == "async")
+		{
+			parser = look;
+			flags = new OpFlags
+			{
+				"p_async": true,
+			};
+		}
 		
 		list res = parser.parser_base::readTypeIdentifier(parser); parser = res[0]; parser_value = res[1];
 		Caret caret_start = parser_value.caret_start.clone();
@@ -1111,6 +1122,7 @@ static class ParserBayOperator
 			{
 				"args": args,
 				"vars": vars,
+				"flags": flags,
 				"name": name,
 				"is_context": is_context,
 				"result_type": result_type,
@@ -1141,6 +1153,9 @@ static class ParserBayOperator
 		bool res = false;
 		try
 		{
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+			if (token.content == "async") parser = look;
+			
 			list res = parser.parser_base::readTypeIdentifier(parser, false);
 			parser = res[0]; parser_value = res[1];
 			Caret caret_start = parser_value.caret_start.clone();

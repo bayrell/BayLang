@@ -509,12 +509,12 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= t.s("{");
 		t = t.levelInc();
 		list res = static::levelIncPos(t); t = res[0]; string start_catch = res[1];
-		content ~= t.s(async_t ~ " = " ~ async_t ~ ".catch_push(" ~ start_catch ~ ");");
+		content ~= t.s(async_t ~ " = " ~ async_t ~ ".catch_push(ctx, " ~ start_catch ~ ");");
 		
 		list res = t.operator::Operators(t, op_code.op_try); t = res[0]; content ~= res[1];
 		
 		/* Start Catch */
-		content ~= t.s("return " ~ async_t ~ ".catch_pop().jump(ctx, " ~ end_pos ~ ");");
+		content ~= t.s("return " ~ async_t ~ ".catch_pop(ctx).jump(ctx, " ~ end_pos ~ ");");
 		t = t.levelDec();
 		content ~= t.s("}");
 		content ~= t.s("/* Start Catch */");
@@ -668,8 +668,21 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		}
 		else if (f.expression)
 		{
+			/* Save op codes */
+			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+			int save_op_code_inc = t.save_op_code_inc;
+			
 			list res = t.expression::Expression(t, f.expression); t = res[0];
 			string expr = res[1];
+			
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") s1 ~= save;
+			
+			/* Restore save op codes */
+			t <= save_op_codes <= save_op_codes;
+			t <= save_op_code_inc <= save_op_code_inc;
+			
 			s1 ~= t.s("return " ~ async_t ~ ".ret(ctx, " ~ expr ~ ");");
 		}
 		

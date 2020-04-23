@@ -438,7 +438,7 @@ static class TranslatorPHPOperator
 	{
 		string content = "";
 		
-		/* Clear save op codes */
+		/* Save op codes */
 		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 		int save_op_code_inc = t.save_op_code_inc;
 		
