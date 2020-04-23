@@ -35,11 +35,13 @@ use Bayrell.Lang.OpCodes.OpCollection;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpDict;
+use Bayrell.Lang.OpCodes.OpDictPair;
 use Bayrell.Lang.OpCodes.OpEntityName;
 use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
+use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTypeConvert;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
@@ -1097,14 +1099,28 @@ class ParserBayBase
 	{
 		ParserBay look = null;
 		CoreToken token = null;
-		Map<BaseOpCode> values = new Map();
+		Vector<BaseOpCode> values = new Vector();
+		BaseOpCode ifdef_condition = null;
 		
+		bool flag_ifdef = true;
 		list res = static::matchToken(parser, "{"); parser = res[0]; token = res[1];
 		Caret caret_start = token.caret_start.clone();
 		
 		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
 		while (not token.eof and token.content != "}")
 		{
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+			if (token.content == "#ifdef")
+			{
+				parser = look;
+				parser <= find_ident <= false;
+				list res = parser.parser_expression::readExpression(parser);
+				parser = res[0]; ifdef_condition = res[1];
+				parser <= find_ident <= true;
+				list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+				flag_ifdef = true;
+			}
+			
 			BaseOpCode parser_value = null;
 			list res = static::readString(parser); parser = res[0]; parser_value = res[1];
 			string key = parser_value.value;
@@ -1113,13 +1129,25 @@ class ParserBayBase
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; parser_value = res[1];
 			
-			values.set(key, parser_value);
-			
-			list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = static::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == ",")
 			{
-				parser = look.clone();
-				list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+				parser = look;
+			}
+			
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+			if (token.content == "#endif")
+			{
+				parser = look;
+				flag_ifdef = false;
+			}
+			
+			values.push( new OpDictPair{ "key": key, "value": parser_value, "condition": ifdef_condition } );
+			
+			list res = static::readToken(parser); look = res[0]; token = res[1];
+			if (flag_ifdef)
+			{
+				ifdef_condition = null;
 			}
 		}
 		
@@ -1129,7 +1157,7 @@ class ParserBayBase
 			parser,
 			new OpDict
 			{
-				"values": values.toDict(),
+				"values": values.toCollection(),
 				"caret_start": caret_start,
 				"caret_end": token.caret_end.clone(),
 			}

@@ -98,6 +98,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 		"Bayrell.Lang/OpCodes/OpDeclareFunction",
 		"Bayrell.Lang/OpCodes/OpDeclareFunctionArg",
 		"Bayrell.Lang/OpCodes/OpDict",
+		"Bayrell.Lang/OpCodes/OpDictPair",
 		"Bayrell.Lang/OpCodes/OpEntityName",
 		"Bayrell.Lang/OpCodes/OpFlags",
 		"Bayrell.Lang/OpCodes/OpFor",

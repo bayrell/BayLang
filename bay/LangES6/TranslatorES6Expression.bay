@@ -31,6 +31,7 @@ use Bayrell.Lang.OpCodes.OpCollection;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpDict;
+use Bayrell.Lang.OpCodes.OpDictPair;
 use Bayrell.Lang.OpCodes.OpHtmlItems;
 use Bayrell.Lang.OpCodes.OpHtmlTag;
 use Bayrell.Lang.OpCodes.OpHtmlValue;
@@ -228,12 +229,13 @@ struct TranslatorES6Expression extends CoreStruct
 	pure list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
 	{
 		string content = "";
-		Collection<string> values = op_code.values.transition
+		Collection<string> values = op_code.values.map
 		(
-			string (BaseOpCode op_code, string key) use (t)
+			string (OpDictPair pair, string key) use (t)
 			{
-				list res = static::Expression(t, op_code); t = res[0]; string s = res[1];
-				return static::toString(key) ~ ":" ~ s;
+				if (pair.condition != null and not t.preprocessor_flags.has(pair.condition.value)) return "";
+				list res = static::Expression(t, pair.value); t = res[0]; string s = res[1];
+				return static::toString(pair.key) ~ ":" ~ s;
 			}
 		);
 		values = values.filter( bool (string s) => s != "" );
