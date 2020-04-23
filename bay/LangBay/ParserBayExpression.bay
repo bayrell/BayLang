@@ -633,13 +633,6 @@ static class ParserBayExpression
 		{
 			return parser.parser_html::readCss(parser);
 		}
-		else if (token.content == "#ifdef")
-		{
-			return parser.parser_preprocessor::readPreprocessorIfDef
-			(
-				parser, OpPreprocessorIfDef::KIND_EXPRESSION
-			);
-		}
 		return static::ExpressionPipe(parser);
 	}
 }
