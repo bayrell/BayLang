@@ -1352,7 +1352,7 @@ class ParserBayBase
 		list res = static::matchToken(parser, "method"); parser = res[0]; token = res[1];
 		Caret caret_start = token.caret_start.clone();
 		
-		list res = static::readTypeIdentifier(parser); parser = res[0]; value2 = res[1];
+		list res = static::readTypeIdentifier(parser); parser = res[0]; value1 = res[1];
 		
 		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
 		string look_token = token.content;

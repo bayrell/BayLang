@@ -26,6 +26,7 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpInc;
 use Bayrell.Lang.OpCodes.OpMath;
+use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpPipe;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpTernary;
@@ -525,25 +526,41 @@ static class ParserBayExpression
 			parser = look;
 		}
 		
+		Caret caret_start2 = parser.caret;
 		Collection<BaseOpCode> args = null;
 		list res = parser.parser_base::readIdentifier(parser); parser = res[0]; op_code = res[1];
-		list res = parser.parser_base::readToken(parser.clone()); token = res[1];
+		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		
+		if (token.content == "::")
+		{
+			list res = parser.parser_base::readIdentifier(look); parser = res[0]; BaseOpCode value2 = res[1];
+			op_code = new OpMethod
+			{
+				"value1": op_code,
+				"value2": value2,
+				"caret_start": caret_start2,
+				"caret_end": parser.caret,
+			}
+		}
+		
+		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
 		if (token.content == "(" or token.content == "{")
 		{
 			list res = parser.parser_base::readCallArgs(parser); parser = res[0]; args = res[1];
-		}
-		
-		return 
-		[
-			parser,
-			new OpCall
+			op_code = new OpCall
 			{
 				"obj": op_code,
 				"args": args,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 				"is_context": is_context_call,
-			}
+			};
+		}
+		
+		return
+		[
+			parser,
+			op_code
 		];
 	}
 	

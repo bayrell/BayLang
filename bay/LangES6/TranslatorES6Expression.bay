@@ -38,6 +38,7 @@ use Bayrell.Lang.OpCodes.OpHtmlValue;
 use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpInc;
 use Bayrell.Lang.OpCodes.OpMath;
+use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
 use Bayrell.Lang.OpCodes.OpPipe;
@@ -446,6 +447,20 @@ struct TranslatorES6Expression extends CoreStruct
 	
 	
 	/**
+	 * OpMethod
+	 */
+	pure list<TranslatorES6, string> OpMethod(TranslatorES6 t, OpMethod op_code)
+	{		
+		list res = static::Expression(t, op_code.value1); t = res[0]; string val1 = res[1];
+		list res = static::Expression(t, op_code.value2); t = res[0]; string val2 = res[1];
+		string content = val1 ~ "." ~ val2;
+		t <= opcode_level <= 0;
+		return [t, content];
+	}
+	
+	
+	
+	/**
 	 * OpNew
 	 */
 	pure list<TranslatorES6, string> OpNew(TranslatorES6 t, OpInc op_code)
@@ -606,7 +621,18 @@ struct TranslatorES6Expression extends CoreStruct
 			else if (op_item.kind == OpPipe::KIND_METHOD)
 			{
 				string value_attrs = "";
-				value = static::toString(op_item.value.obj.value);
+				if (op_item.value instanceof OpMethod)
+				{
+					list res = static::OpMethod(t, op_item.value); value = res[1];
+				}
+				else if (op_item.value instanceof OpCall)
+				{
+					value = static::toString(op_item.value.obj.value);
+				}
+				else
+				{
+					value = static::toString(op_item.value.value);
+				}
 				
 				if (op_item.value.args != null)
 				{
@@ -783,6 +809,10 @@ struct TranslatorES6Expression extends CoreStruct
 		else if (op_code instanceof OpMath)
 		{
 			list res = static::OpMath(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpMethod)
+		{
+			list res = static::OpMethod(t, op_code); t = res[0]; content = res[1];
 		}
 		else if (op_code instanceof OpNew)
 		{
