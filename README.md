@@ -5,6 +5,8 @@ Bayrell Language
 
 Versions:
 
+[25 Apr 2020] 0.9.1 - Run language on Raspberry PI
+
 [21 Apr 2020] 0.9.0 - Pipes and Monads. Change lambda to pure
 
 [01 Mar 2020] 0.8.3 - CSS html bugfix, media nesting
