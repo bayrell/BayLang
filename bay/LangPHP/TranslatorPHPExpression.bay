@@ -626,7 +626,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpPipe
 	 */
-	pure list<TranslatorPHP, string> OpPipe(TranslatorPHP t, OpPipe op_code)
+	pure list<TranslatorPHP, string> OpPipe(TranslatorPHP t, OpPipe op_code, bool is_expression = true)
 	{
 		string content = "";
 		string var_name = "";

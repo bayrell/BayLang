@@ -575,7 +575,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * OpPipe
 	 */
-	pure list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code)
+	pure list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code, bool is_expression = true)
 	{
 		string content = "";
 		string var_name = "";
