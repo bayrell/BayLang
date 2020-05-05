@@ -145,20 +145,29 @@ class TranslatorES6Html
 					string event_name = rs::substr(attr_key, 7);
 					event_name = t.expression::findModuleName(t, event_name);
 					attr_key = "@event:" ~ event_name;
-					attr_value = '"' ~ t.current_class_full_name ~ "::" ~ '" + ' ~ attr_value;
+					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
 				}
 				else if (rs::substr(attr_key, 0, 12) == "@eventAsync:")
 				{
 					string event_name = rs::substr(attr_key, 12);
 					event_name = t.expression::findModuleName(t, event_name);
 					attr_key = "@eventAsync:" ~ event_name;
-					attr_value = '"' ~ t.current_class_full_name ~ "::" ~ '" + ' ~ attr_value;
+					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
 				}
-				else if (attr_key == "@bind" and v_model != "")
+				else if (attr_key == "@ref")
+				{
+					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
+				}
+				else if (attr_key == "@bind")
 				{
 					string s = "";
-					s = t.expression::toString(attr_key) ~ ":" ~ attr_value ~ ",";
-					s ~= t.expression::toString("@model") ~ ":" ~ v_model;
+					s = t.expression::toString(attr_key) ~ ":" ~
+						"[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "],"
+					;
+					if (v_model != "")
+					{
+						s ~= t.expression::toString("@model") ~ ":" ~ v_model;
+					}
 					return s;
 				}
 				return t.expression::toString(attr_key) ~ ":" ~ attr_value;

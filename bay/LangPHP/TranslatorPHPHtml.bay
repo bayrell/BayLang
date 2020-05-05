@@ -103,6 +103,7 @@ static class TranslatorPHPHtml
 			
 			if (attr.key == "@bind") continue;
 			if (attr.key == "@model") continue;
+			if (attr.key == "@ref") continue;
 			list res = static::OpHtmlAttr(t, attr);
 			t = res[0]; string attr_value = res[1];
 
