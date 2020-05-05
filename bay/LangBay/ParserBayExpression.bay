@@ -642,7 +642,7 @@ static class ParserBayExpression
 		ParserBay look = null;
 		CoreToken token = null;
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		if (token.content == "<" or token.content == "{")
+		if (token.content == "<")
 		{
 			return parser.parser_html::readHTML(parser);
 		}

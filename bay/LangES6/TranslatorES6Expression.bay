@@ -563,7 +563,7 @@ struct TranslatorES6Expression extends CoreStruct
 		list res = t.expression::Expression(t, op_code.if_true); t = res[0]; string if_true = res[1];
 		list res = t.expression::Expression(t, op_code.if_false); t = res[0]; string if_false = res[1];
 		
-		content ~= "(" ~ condition ~ ") ? " ~ if_true ~ " : " ~ if_false;
+		content ~= "(" ~ condition ~ ") ? (" ~ if_true ~ ") : (" ~ if_false ~ ")";
 		t <= opcode_level <= 11;
 		
 		/* OpTernary */
@@ -848,7 +848,7 @@ struct TranslatorES6Expression extends CoreStruct
 		}
 		else if (op_code instanceof OpHtmlItems)
 		{
-			list res = t.html::OpHtmlItems(t, op_code); t = res[0]; content = res[1];
+			list res = t.html::OpHtml(t, op_code); t = res[0]; content = res[1];
 		}
 		else if (op_code instanceof OpPreprocessorIfDef)
 		{

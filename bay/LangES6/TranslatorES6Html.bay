@@ -140,21 +140,21 @@ class TranslatorES6Html
 					attr_key_value = attr_value;
 					return "";
 				}
-				
-				if (rs::substr(attr_key, 0, 7) == "@event:")
+				else if (rs::substr(attr_key, 0, 7) == "@event:")
 				{
 					string event_name = rs::substr(attr_key, 7);
 					event_name = t.expression::findModuleName(t, event_name);
 					attr_key = "@event:" ~ event_name;
+					attr_value = '"' ~ t.current_class_full_name ~ "::" ~ '" + ' ~ attr_value;
 				}
-				if (rs::substr(attr_key, 0, 12) == "@eventAsync:")
+				else if (rs::substr(attr_key, 0, 12) == "@eventAsync:")
 				{
 					string event_name = rs::substr(attr_key, 12);
 					event_name = t.expression::findModuleName(t, event_name);
 					attr_key = "@eventAsync:" ~ event_name;
+					attr_value = '"' ~ t.current_class_full_name ~ "::" ~ '" + ' ~ attr_value;
 				}
-				
-				if (attr_key == "@bind" and v_model != "")
+				else if (attr_key == "@bind" and v_model != "")
 				{
 					string s = "";
 					s = t.expression::toString(attr_key) ~ ":" ~ attr_value ~ ",";
@@ -414,6 +414,18 @@ class TranslatorES6Html
 		t <= save_op_codes <= save_op_codes;
 		t <= save_op_code_inc <= save_op_code_inc;
 		
+		return [t, content];
+	}
+	
+	
+	
+	/**
+	 * Translate html
+	 */
+	pure list<TranslatorES6, string> OpHtml(TranslatorES6 t, OpHtmlItems op_code)
+	{
+		string content = "";
+		list res = static::OpHtmlItems(t, op_code); t = res[0]; content ~= res[1];
 		return [t, content];
 	}
 }
