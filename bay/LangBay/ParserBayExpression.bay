@@ -486,12 +486,12 @@ static class ParserBayExpression
 		if (token.content == '?')
 		{
 			condition = op_code;
-			list res = static::readOr(look); parser = res[0]; if_true = res[1];
+			list res = static::readExpression(look); parser = res[0]; if_true = res[1];
 			
 			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
 			if (token.content == ':')
 			{
-				list res = static::readOr(look); parser = res[0]; if_false = res[1];
+				list res = static::readExpression(look); parser = res[0]; if_false = res[1];
 			}
 			
 			op_code = new OpTernary({
@@ -642,7 +642,7 @@ static class ParserBayExpression
 		ParserBay look = null;
 		CoreToken token = null;
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		if (token.content == "<")
+		if (token.content == "<" or token.content == "{")
 		{
 			return parser.parser_html::readHTML(parser);
 		}

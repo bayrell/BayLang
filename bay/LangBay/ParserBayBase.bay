@@ -762,6 +762,7 @@ class ParserBayBase
 				if (ch2 == "n") value_str ~= "\n";
 				else if (ch2 == "r") value_str ~= "\r";
 				else if (ch2 == "t") value_str ~= "\t";
+				else if (ch2 == "s") value_str ~= " ";
 				else if (ch2 == "\\") value_str ~= "\\";
 				else if (ch2 == "'") value_str ~= "'";
 				else if (ch2 == '"') value_str ~= '"';

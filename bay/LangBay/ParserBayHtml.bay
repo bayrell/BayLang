@@ -459,7 +459,10 @@ class ParserBayHtml extends CoreObject
 		int start_pos = pos;
 		int end_tag_sz = rs::strlen(end_tag);
 		string ch2 = rs::substr(content.ref, pos, end_tag_sz);
-		while (ch2 != end_tag and pos < content_sz)
+		bool flag_first = true;
+		bool first_html_tag = false;
+		if (end_tag == "") first_html_tag = true;
+		while ( ( end_tag == "" or (end_tag != "" and ch2 != end_tag) ) and pos < content_sz)
 		{
 			string ch = rs::substr(content.ref, pos, 1);
 			
@@ -470,6 +473,7 @@ class ParserBayHtml extends CoreObject
 				caret = new Caret{ "x": x, "y": y, "pos": pos };
 				value = rs::trim(value, "\t\r\n");
 				
+				if (flag_first and first_html_tag) value = rs::trim(value, " ");
 				if (value != "")
 				{
 					item = new OpHtmlContent
@@ -496,6 +500,10 @@ class ParserBayHtml extends CoreObject
 			}
 			else
 			{
+				if (first_html_tag and ch != " " and ch != "\t" and ch != "\r" and ch != "\n")
+				{
+					break;
+				}
 				x = parser.parser_base::nextX(parser, ch, x);
 				y = parser.parser_base::nextY(parser, ch, y);
 				pos = pos + 1;
@@ -507,6 +515,7 @@ class ParserBayHtml extends CoreObject
 		string value = rs::substr(content.ref, start_pos, pos - start_pos);
 		value = rs::trim(value, "\t\r\n");
 		caret = new Caret{ "x": x, "y": y, "pos": pos };
+		if (first_html_tag) value = rs::trim(value, " ");
 		if (value != "")
 		{
 			item = new OpHtmlContent
@@ -518,7 +527,7 @@ class ParserBayHtml extends CoreObject
 			items.push(item);
 		}
 		
-		return [ parser.copy({ "caret": caret }), items ];
+		return [ parser.copy{ "caret": caret }, items ];
 	}
 	
 	
@@ -632,27 +641,16 @@ class ParserBayHtml extends CoreObject
 	 */
 	pure list<ParserBay, BaseOpCode> readHTML(ParserBay parser)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		Vector<OpHtmlTag> items = new Vector();
-		Caret caret_start = parser.caret.clone();
+		Caret caret_start = parser.caret;
 		
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		string ch2 = rs::substr(parser.content.ref, parser.caret.pos, 2);
-		while (not token.eof and token.content == "<" and ch2 != "</")
-		{
-			list res = static::readHTMLTag(parser); parser = res[0]; OpHtmlTag op_code = res[1];
-			items.push(op_code);
-			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-			Caret caret = parser.parser_base::skipChar(parser, parser.content, parser.caret.clone());
-			ch2 = rs::substr(parser.content.ref, caret.pos, 2);
-		}
+		list res = static::readHTMLContent(parser, "");
+		parser = res[0]; Collection<BaseOpCode> items = res[1];
 		
 		OpHtmlItems op_code = new OpHtmlItems
 		{
 			"caret_start": caret_start,
-			"caret_end": parser.caret.clone(),
-			"items": items.toCollection(),
+			"caret_end": parser.caret,
+			"items": items,
 		}
 		
 		return [parser, op_code];
