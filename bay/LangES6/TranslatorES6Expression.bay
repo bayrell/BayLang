@@ -326,6 +326,7 @@ struct TranslatorES6Expression extends CoreStruct
 				if (attr.kind == OpAttr::KIND_ATTR)
 				{
 					s ~= "." ~ attr.value.value;
+					/*s = "Runtime.rtl.get(ctx, " ~ s ~ ", " ~ t.expression::toString(attr.value.value) ~ ")";*/
 				}
 				else if (attr.kind == OpAttr::KIND_STATIC)
 				{
@@ -336,7 +337,9 @@ struct TranslatorES6Expression extends CoreStruct
 				else if (attr.kind == OpAttr::KIND_DYNAMIC)
 				{
 					list res = static::Expression(t, attr.value);
-					t = res[0]; s ~= "[" ~ res[1] ~ "]";
+					t = res[0];
+					/* s ~= "[" ~ res[1] ~ "]"; */
+					s = "Runtime.rtl.get(ctx, " ~ s ~ ", " ~ res[1] ~ ")";
 				}
 			}
 			

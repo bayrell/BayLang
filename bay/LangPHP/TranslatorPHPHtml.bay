@@ -79,20 +79,11 @@ static class TranslatorPHPHtml
 			module_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
 		}
 		
-		BaseOpCode model = op_code.attrs.findItem( lib::equalAttr("key", "@model") );
-		if (model)
+		BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
+		if (bind)
 		{
-			list res = t.expression::Expression(t, model.value); t = res[0]; 
-			v_model = res[1];
-		}
-		else
-		{
-			BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
-			if (bind)
-			{
-				list res = t.expression::Expression(t, bind.value); t = res[0];
-				v_model = "\\Runtime\\rtl::attr($model, " ~ res[1] ~ ", null)";
-			}
+			list res = t.expression::Expression(t, bind.value); t = res[0];
+			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
 		}
 		
 		content ~= t.s("/* Component '" ~ tag_name ~ "' */");
@@ -231,12 +222,11 @@ static class TranslatorPHPHtml
 					return "";
 				}
 				
-				if (attr_key == "@model" and op_code.tag_name == "input") attr_key = "value";
-				if (attr_key == "@bind" and op_code.tag_name == "input")
+				if (attr_key == "@bind")
 				{
-					list res = t.expression::Expression(t, attr.value); t = res[0];
-					attr_value = "$model[" ~ res[1] ~ "]";
 					attr_key = "value";
+					list res = t.expression::Expression(t, attr.value); t = res[0];
+					attr_value = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
 				}
 				
 				string ch = rs::substr(attr_key, 0, 1);
@@ -274,25 +264,6 @@ static class TranslatorPHPHtml
 		{
 			if (op_code.tag_name != "") content ~= t.s(var_name ~ " = '<" ~ op_code.tag_name ~ attr_s ~ ">';");
 			bool flag_value = false;
-			if (op_code.tag_name == "textarea")
-			{
-				BaseOpCode model_attr = op_code.attrs.findItem( lib::equalAttr("key", "@model") );
-				if (model_attr != null)
-				{
-					list res = static::OpHtmlAttr(t, model_attr);
-					t = res[0]; string attr_value = res[1];
-					if (model_attr instanceof OpHtmlValue)
-					{
-						content ~= t.s(var_name ~ " .= " ~ attr_value ~ ";");
-					}
-					else
-					{
-						content ~= t.s(var_name ~ " .= static::escapeHtml($ctx, " ~
-							attr_value ~ ");");
-					}
-					flag_value = true;
-				}
-			}			
 			if (not flag_value)
 			{
 				fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");

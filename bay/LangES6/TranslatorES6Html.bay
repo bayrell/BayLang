@@ -93,22 +93,10 @@ class TranslatorES6Html
 		string attr_s = "null";
 		string attr_key_value = "";
 		bool has_attr_key = false;
-		string v_model = "";
-		
-		BaseOpCode model = attrs.findItem( lib::equalAttr("key", "@model") );
-		if (not model)
-		{
-			BaseOpCode bind = attrs.findItem( lib::equalAttr("key", "@bind") );
-			if (bind)
-			{
-				list res = t.expression::Expression(t, bind.value); t = res[0];
-				v_model = "model[" ~ res[1] ~ "]";
-			}
-		}
 		
 		Collection<string> attrs = attrs.map
 		(
-			string (OpHtmlAttribute attr) use (t, v_model, attr_class, attr_key_value, has_attr_key, item_pos)
+			string (OpHtmlAttribute attr) use (t, attr_class, attr_key_value, has_attr_key, item_pos)
 			{
 				list res = static::OpHtmlAttr(t, attr);
 				t = res[0]; string attr_value = res[1];
@@ -162,12 +150,8 @@ class TranslatorES6Html
 				{
 					string s = "";
 					s = t.expression::toString(attr_key) ~ ":" ~
-						"[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "],"
+						"[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]"
 					;
-					if (v_model != "")
-					{
-						s ~= t.expression::toString("@model") ~ ":" ~ v_model;
-					}
 					return s;
 				}
 				return t.expression::toString(attr_key) ~ ":" ~ attr_value;
