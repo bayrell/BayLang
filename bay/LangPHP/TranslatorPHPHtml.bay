@@ -91,7 +91,7 @@ static class TranslatorPHPHtml
 			if (bind)
 			{
 				list res = t.expression::Expression(t, bind.value); t = res[0];
-				v_model = "$model[" ~ res[1] ~ "]";
+				v_model = "\\Runtime\\rtl::attr($model, " ~ res[1] ~ ", null)";
 			}
 		}
 		

@@ -391,6 +391,10 @@ class ParserBayHtml extends CoreObject
 			list res = static::readHTMLValue(parser);
 			parser = res[0]; op_code = res[1];
 		}
+		else if (token.content == "[")
+		{
+			list res = parser.parser_base::readCollection(parser); parser = res[0]; op_code = res[1];
+		}
 		else
 		{
 			list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];

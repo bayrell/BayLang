@@ -158,19 +158,17 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpAssignStruct(TranslatorES6 t, OpAssignStruct op_code, int pos = 0)
 	{
-		if (op_code.names.count() <= pos)
-		{
-			return t.expression::Expression(t, op_code.expression);
-		}
+		string content = "";
+		string var_name = op_code.var_name;
+		list res = t.expression::Expression(t, op_code.expression); t = res[0]; string expr = res[1];
 		
-		Collection<string> names = op_code.names.slice(0, pos).unshiftIm(op_code.var_name);
-		string s = rs::join(".", names);
-		string name = op_code.names.item(pos);
+		Collection names = op_code.names.map
+		(
+			string (string s) use (t) => t.expression::toString(s)
+		);
 		
-		list res = static::OpAssignStruct(t, op_code, pos + 1); t = res[0];
-		s ~= ".copy(ctx, { \"" ~ name ~ "\": " ~ res[1]  ~ " })";
-		
-		return [t, s];
+		content = "\\Runtime\\rtl::setAttr(" ~ var_name ~ ", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
+		return [t, content];
 	}
 	
 	

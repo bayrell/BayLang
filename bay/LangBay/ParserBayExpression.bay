@@ -624,6 +624,8 @@ static class ParserBayExpression
 				"kind": kind,
 				"value": value,
 				"is_async": is_async,
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
 			};
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
