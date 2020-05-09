@@ -64,7 +64,7 @@ static class TranslatorPHPOperator
 			string (string s) use (t) => t.expression::toString(s)
 		);
 		
-		content = "\\Runtime\\rtl::setAttr($" ~ var_name ~ ", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
+		content = "\\Runtime\\rtl::setAttr($ctx, $" ~ var_name ~ ", \\Runtime\\Collection::from([" ~ rs::join(", ", names) ~ "]), " ~ expr ~ ")";
 		return [t, content];
 	}
 	
