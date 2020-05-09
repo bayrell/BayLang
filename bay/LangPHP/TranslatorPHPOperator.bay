@@ -276,30 +276,27 @@ static class TranslatorPHPOperator
 			list res = t.expression::OpTypeIdentifier(t, item.pattern); t = res[0]; pattern ~= res[1];
 			
 			if (pattern != "\\var") s = "if ($_ex instanceof " ~ pattern ~ ")";
-			else s = "";
+			else s = "if (true)";
 			
-			bool flag = true;
-			if (s == "") flag = false;
-			if (flag or i > 0)
-			{
-				s ~= t.s("{");
-				t = t.levelInc();
-			}
+			s ~= t.s("{");
+			t = t.levelInc();
 			
 			s ~= (s != "") ? t.s("$" ~ item.name ~ " = $_ex;") : "$" ~ item.name ~ " = $_ex;";
 			list res = static::Operators(t, item.value); t = res[0]; s ~= res[1];
 			
-			if (flag or i > 0)
-			{
-				t = t.levelDec();
-				s ~= t.s("}");			
-			}
+			t = t.levelDec();
+			s ~= t.s("}");
 			
 			if (i != 0) s = "else " ~ s;
 			content ~= t.s(s);
 		}
 		
+		content ~= t.s("else");
+		content ~= t.s("{");
+		t = t.levelInc();
 		content ~= t.s("throw $_ex;");
+		t = t.levelDec();
+		content ~= t.s("}");
 		t = t.levelDec();
 		content ~= t.s("}");
 		
