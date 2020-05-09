@@ -195,7 +195,7 @@ class TranslatorES6Html
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s(
 				"[__vnull, " ~ var_name ~ "_childs] = " ~
-				"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+				"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 				", \"text\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
 			);
 		}
@@ -206,7 +206,7 @@ class TranslatorES6Html
 				list res = t.expression::Expression(t, op_code.value); 
 				t = res[0]; string item_value = res[1];
 				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-					"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 					", \"raw\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
 				);
 			}
@@ -215,7 +215,7 @@ class TranslatorES6Html
 				list res = t.expression::Expression(t, op_code.value); 
 				t = res[0]; string item_value = res[1];
 				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-					"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 					", \"html\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
 				);
 			}
@@ -225,7 +225,7 @@ class TranslatorES6Html
 				t = res[0]; string item_value = res[1];
 				item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
 				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-					"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 					", \"text\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
 				);
 			}
@@ -249,14 +249,14 @@ class TranslatorES6Html
 					content ~= t.s("/* Items */");
 					content ~= t.s("var " ~ new_var_name ~ "; var " ~ new_var_name ~ "_childs = [];");
 					content ~= t.s("[" ~ new_var_name ~ ", " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 						", \"empty\", null, " ~ item_pos ~ ");"
 					);
 				}
 				else
 				{
 					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 						", \"empty\", null, " ~ item_pos ~ ");"
 					);
 				}
@@ -278,7 +278,7 @@ class TranslatorES6Html
 					content ~= t.s2("");
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 						", \"component\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~
 						", \"layout\": layout, \"content\": " ~ f ~ "}, " ~ item_pos ~ ");"
 					);
@@ -287,7 +287,7 @@ class TranslatorES6Html
 				else
 				{
 					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 						", \"component\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~
 						", \"layout\": layout}, " ~ item_pos ~ ");"
 					);
@@ -303,14 +303,14 @@ class TranslatorES6Html
 					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("var " ~ new_var_name ~ "; var " ~ new_var_name ~ "_childs = [];");
 					content ~= t.s("[" ~ new_var_name ~ ", " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 						", \"element\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~ "}, " ~ item_pos ~ ");"
 					);
 				}
 				else
 				{
 					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 						", \"element\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~ "}, " ~ item_pos ~ ");"
 					);
 				}
@@ -332,7 +332,7 @@ class TranslatorES6Html
 			list res = t.expression::Expression(t, op_code); 
 			t = res[0]; string item_value = res[1];
 			content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-				"RenderDriver.insert(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
+				"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 				", \"text\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
 			);
 		}
@@ -362,7 +362,7 @@ class TranslatorES6Html
 		
 		if (control_name != "control")
 		{
-			content ~= t.s("RenderDriver.patch(" ~ control_name ~ ", " ~ control_name ~ "_childs);");
+			content ~= t.s("RenderDriver.p(" ~ control_name ~ ", " ~ control_name ~ "_childs);");
 		}
 		
 		return [t, content];
