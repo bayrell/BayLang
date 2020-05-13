@@ -28,6 +28,7 @@ use Bayrell.Lang.OpCodes.OpAssignValue;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpDeclareClass;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
+use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpEntityName;
 use Bayrell.Lang.OpCodes.OpFlags;
 use Bayrell.Lang.OpCodes.OpItems;
@@ -159,6 +160,18 @@ struct TranslatorES6Program extends CoreStruct
 		/* Function body */
 		if (op_code.fn_create != null)
 		{
+			if (op_code.fn_create.args)
+			{
+				for (int i=0; i<op_code.fn_create.args.count(); i++)
+				{
+					OpDeclareFunctionArg arg = op_code.fn_create.args.item(i);
+					if (arg.expression == null) continue;
+					list res = t.expression::Expression(t, arg.expression); t = res[0]; string s = res[1];
+					s = "if (" ~ arg.name ~ " == undefined) " ~ arg.name ~ " = " ~ s ~ ";";
+					content ~= t.s(s);
+				}
+			}
+			
 			list res = t.operator::Operators
 			(
 				t, 
