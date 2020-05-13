@@ -311,7 +311,7 @@ class TranslatorES6Html
 				{
 					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
 						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"element\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~ "}, " ~ item_pos ~ ");"
+						", \"element\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~ "}, " ~ item_pos ~ ", false);"
 					);
 				}
 			}

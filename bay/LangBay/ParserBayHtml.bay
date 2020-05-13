@@ -39,6 +39,36 @@ use Bayrell.Lang.OpCodes.OpString;
 class ParserBayHtml extends CoreObject
 {
 	
+	
+	/**
+	 * Retuns css hash
+	 * @param string component class name
+	 * @return string hash
+	 */
+	static memorize string getCssHash(string s)
+	{
+		string r = "";
+		string a = "1234567890abcdef";
+		int sz = rs::strlen(s);
+		int h = 0;
+		for (int i=0; i<sz; i++)
+		{
+			int c = rs::ord( rs::substr(s, i, 1) );
+			h = ((h << 2) + (h >> 14) + c) & 65535;
+		}
+		int p = 0;
+		while (h != 0 or p < 4)
+		{
+			int c = h & 15;
+			h = h >> 4;
+			r ~= rs::substr(a, c, 1);
+			p = p + 1;
+		}
+		return r;
+	}
+	
+	
+	
 	/**
 	 * Read css selector
 	 */
@@ -87,7 +117,7 @@ class ParserBayHtml extends CoreObject
 			ch = rs::substr(content.ref, pos, 1);
 		}
 		string postfix = rs::substr(content.ref, start_pos, pos - start_pos);
-		string selector = "." ~ postfix ~ "-" ~ RuntimeUtils::getCssHash(class_name);
+		string selector = "." ~ postfix ~ "-" ~ static::getCssHash(class_name);
 		Caret caret = new Caret{ "x": x, "y": y, "pos": pos };
 		parser <= caret <= caret;
 		return [parser, selector];
