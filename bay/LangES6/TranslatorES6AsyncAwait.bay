@@ -521,6 +521,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		content ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ start_catch ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
+		content ~= t.s("var _ex = " ~ async_t ~ ".getErr(ctx);");
 		
 		for (int i=0; i<op_code.items.count(); i++)
 		{
@@ -535,7 +536,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 			t = t.levelInc();
 			
 			s ~= (s != "") ? t.s("var " ~ item.name ~ " = _ex;") : "var " ~ item.name ~ " = _ex;";
-			list res = t.operator::Operators(t, item.value); t = res[0]; s ~= t.s(res[1]);
+			list res = t.operator::Operators(t, item.value); t = res[0]; s ~= res[1];
 			
 			t = t.levelDec();
 			s ~= t.s("}");

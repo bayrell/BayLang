@@ -706,9 +706,13 @@ static class TranslatorPHPExpression
 				if (op_item.value.args != null) value_attrs = "\\Runtime\\Collection::from([" ~ value_attrs ~ "])";
 				else value_attrs = "null";
 				
-				if (not op_item.is_async or op_item.is_async and t.current_function.isFlag("async"))
+				if (op_item.is_async and t.current_function.isFlag("async"))
 				{
 					s1 = var_name ~ "->callMethod($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+				}
+				else if (not op_item.is_async)
+				{
+					s1 = var_name ~ "->callMethodAsync($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
 				}
 			}
 			else if (op_item.kind == OpPipe::KIND_MONAD)
@@ -719,7 +723,14 @@ static class TranslatorPHPExpression
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+				if (op_item.is_async)
+				{
+					s1 = var_name ~ "->callAsync($ctx, " ~ value ~ ")";
+				}
+				else
+				{
+					s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+				}
 			}
 			
 			if (s1 != "")
