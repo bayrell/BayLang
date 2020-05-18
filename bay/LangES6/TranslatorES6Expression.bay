@@ -295,7 +295,7 @@ struct TranslatorES6Expression extends CoreStruct
 					else if (op_code_first.value == "parent")
 					{
 						s = static::useModuleName(t, t.current_class_extends_name);
-						prev_kind = "static";
+						prev_kind = "parent";
 					}
 					else if (op_code_first.value == "self")
 					{
@@ -331,6 +331,10 @@ struct TranslatorES6Expression extends CoreStruct
 				else if (attr.kind == OpAttr::KIND_STATIC)
 				{
 					if (prev_kind == "var") s ~= ".constructor." ~ attr.value.value;
+					else if (prev_kind == "parent" and not t.current_function.isStatic())
+					{
+						s ~= ".prototype." ~ attr.value.value ~ ".bind(this)";
+					}
 					else s ~= "." ~ attr.value.value;
 					prev_kind = "static";
 				}
