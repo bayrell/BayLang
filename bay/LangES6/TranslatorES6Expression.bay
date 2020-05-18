@@ -294,7 +294,7 @@ struct TranslatorES6Expression extends CoreStruct
 					}
 					else if (op_code_first.value == "parent")
 					{
-						s = t.current_class_extends_name;
+						s = static::useModuleName(t, t.current_class_extends_name);
 						prev_kind = "static";
 					}
 					else if (op_code_first.value == "self")
