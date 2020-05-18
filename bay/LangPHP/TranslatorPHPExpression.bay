@@ -374,7 +374,9 @@ static class TranslatorPHPExpression
 						}
 						else
 						{
-							string val1 = static::toString(s);
+							string val1;
+							if (s == "static") val1 = "static::class";
+							else val1 = static::toString(s);
 							string val2 = static::toString(attr_val);
 							s = "new \\Runtime\\Callback(" ~ val1 ~ ", " ~ val2 ~ ")";
 						}
