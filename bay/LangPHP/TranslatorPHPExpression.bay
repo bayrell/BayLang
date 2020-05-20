@@ -710,11 +710,11 @@ static class TranslatorPHPExpression
 				
 				if (op_item.is_async and t.current_function.isFlag("async"))
 				{
-					s1 = var_name ~ "->callMethod($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+					s1 = var_name ~ "->callMethodAsync($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
 				}
 				else if (not op_item.is_async)
 				{
-					s1 = var_name ~ "->callMethodAsync($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+					s1 = var_name ~ "->callMethod($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
 				}
 			}
 			else if (op_item.kind == OpPipe::KIND_MONAD)

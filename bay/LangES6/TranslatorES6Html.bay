@@ -201,10 +201,23 @@ class TranslatorES6Html
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
+			/* Save op codes */
+			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+			int save_op_code_inc = t.save_op_code_inc;
+
+			list res = t.expression::Expression(t, op_code.value);
+			t = res[0]; string item_value = res[1];
+
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") content ~= save;
+
+			/* Restore op codes */
+			t <= save_op_codes <= save_op_codes;
+			t <= save_op_code_inc <= save_op_code_inc;
+			
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
-				list res = t.expression::Expression(t, op_code.value); 
-				t = res[0]; string item_value = res[1];
 				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
 					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 					", \"raw\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
@@ -212,8 +225,6 @@ class TranslatorES6Html
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
-				list res = t.expression::Expression(t, op_code.value); 
-				t = res[0]; string item_value = res[1];
 				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
 					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 					", \"html\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"
@@ -221,8 +232,6 @@ class TranslatorES6Html
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
-				list res = t.expression::Expression(t, op_code.value); 
-				t = res[0]; string item_value = res[1];
 				item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
 				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
 					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
@@ -329,8 +338,21 @@ class TranslatorES6Html
 		}
 		else
 		{
+			/* Save op codes */
+			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+			int save_op_code_inc = t.save_op_code_inc;
+
 			list res = t.expression::Expression(t, op_code); 
 			t = res[0]; string item_value = res[1];
+
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") content ~= save;
+
+			/* Restore op codes */
+			t <= save_op_codes <= save_op_codes;
+			t <= save_op_code_inc <= save_op_code_inc;
+			
 			content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
 				"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
 				", \"text\", {\"content\": " ~ item_value ~ "}, " ~ item_pos ~ ");"

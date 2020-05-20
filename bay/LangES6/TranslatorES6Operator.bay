@@ -96,7 +96,8 @@ struct TranslatorES6Operator extends CoreStruct
 		}
 		else if (op_code instanceof OpPipe)
 		{
-			return op_code.is_await;
+			if (op_code.is_async) return true;
+			return static::isAwait(op_code.value);
 		}
 		else if (op_code instanceof OpFor)
 		{

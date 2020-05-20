@@ -263,6 +263,7 @@ static class TranslatorPHPHtml
 		else
 		{
 			if (op_code.tag_name != "") content ~= t.s(var_name ~ " = '<" ~ op_code.tag_name ~ attr_s ~ ">';");
+			else content ~= t.s(var_name ~ " = \"\";");
 			bool flag_value = false;
 			if (not flag_value)
 			{
