@@ -42,7 +42,8 @@ struct TranslatorNode extends CoreTranslator
 	TranslatorES6Operator operator = null;
 	TranslatorES6Program program = null;
 	
-	
+	/* Flags */
+	bool use_module_name = true;
 	
 	/**
 	 * Reset translator

@@ -525,7 +525,7 @@ static class ParserBayProgram
 				
 				/* Register module in parser */
 				parser <= uses <= parser.uses.setIm(short_name, full_name);
-				
+				items.push(op_code);
 				list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 			}
 			else if 

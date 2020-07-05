@@ -994,7 +994,15 @@ struct TranslatorES6Program extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
 	{
-		string content = t.s("Runtime.rtl.defClass(" ~ t.current_class_full_name ~ ");");
+		string content = "";
+		string rtl_module_name = t.expression::useModuleName(t, "Runtime.rtl");
+		if (not t.use_module_name)
+		{
+			content ~= t.s(rtl_module_name ~ ".defClass(" ~ t.current_class_full_name ~ ");");
+			content ~= t.s("window[\"" ~ t.current_class_full_name ~ "\"] = " ~ t.current_class_full_name ~ ";");
+		}
+		content ~= t.s("if (typeof module != \"undefined\" && typeof module.exports != \"undefined\") " ~
+			"module.exports = " ~ t.current_class_full_name ~ ";");
 		return [t, content];
 	}
 	
@@ -1106,9 +1114,15 @@ struct TranslatorES6Program extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
 	{
-		string content = "\"use strict;\"";
-		content ~= t.s("var use = (typeof Runtime != 'undefined' && typeof Runtime.rtl != 'undefined')"~
-			" ? Runtime.rtl.find_class : null;");
+		string content = "";
+		
+		if (t.use_strict)
+		{
+			content = t.s("\"use strict;\"");
+		}
+		
+		/* content ~= t.s("var use = (typeof Runtime != 'undefined' && typeof Runtime.rtl != 'undefined')"~
+			" ? Runtime.rtl.find_class : null;"); */
 		return [t, content];
 	}
 	
@@ -1139,7 +1153,7 @@ struct TranslatorES6Program extends CoreStruct
 			}
 		}
 		
-		return [t, content];
+		return [t, rs::trim(content)];
 	}
 	
 }

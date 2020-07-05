@@ -52,6 +52,8 @@ static class TranslatorNodeProgram extends TranslatorES6Program
 		string name = "";
 		
 		content ~= "use.add("~t.current_class_full_name~");";
+		
+		/*
 		content ~= t.s("if (module.exports == undefined) module.exports = {};");
 		Collection<string> arr = rs::split("\\.", t.current_namespace_name);
 		for (int i=0; i<arr.count(); i++)
@@ -63,6 +65,9 @@ static class TranslatorNodeProgram extends TranslatorES6Program
 		
 		content ~= t.s("module.exports." ~
 			t.current_class_full_name ~ " = " ~ t.current_class_full_name ~ ";");
+		*/
+		
+		content ~= t.s("module.exports = " ~ t.current_class_full_name ~ ";");
 		
 		return [t, content];
 	}

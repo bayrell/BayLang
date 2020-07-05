@@ -34,26 +34,6 @@ use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 static class TranslatorNodeExpression extends TranslatorES6Expression
 {
 	
-	/**
-	 * Returns string
-	 */
-	pure string rtlToStr(TranslatorES6 t, string s)
-	{
-		return "use(\"Runtime.rtl\").toStr("~s~")";
-	}
-	
-	
-	
-	/**
-	 * Use module name
-	 */
-	pure string useModuleName(TranslatorES6 t, string module_name)
-	{
-		module_name = static::findModuleName(t, module_name);
-		return "use(" ~ static::toString(module_name) ~ ")";
-	}
-	
-	
 	
 	/**
 	 * OpIdentifier
@@ -126,51 +106,5 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 		return [t, var_name];
 	}
 	
-	
-	
-	/**
-	 * OpCollection
-	 */
-	pure list<TranslatorES6, string> OpCollection(TranslatorES6 t, OpCollection op_code)
-	{
-		string content = "";
-		Collection<string> values = op_code.values.map
-		(
-			string (BaseOpCode op_code) use (t)
-			{
-				list res = static::Expression(t, op_code); t = res[0]; string s = res[1];
-				return s;
-			}
-		);
-		values = values.filter( bool (string s) => s != "" );
-		content = static::useModuleName(t, "Runtime.Collection") ~
-			".from([" ~ rs::join(",", values) ~ "])"
-		;
-		return [t, content];
-	}
-	
-	
-	
-	/**
-	 * OpDict
-	 */
-	pure list<TranslatorES6, string> OpDict(TranslatorES6 t, OpDict op_code)
-	{
-		string content = "";
-		Collection<string> values = op_code.values.map
-		(
-			string (OpDictPair pair, string key) use (t)
-			{
-				if (pair.condition != null and not t.preprocessor_flags.has(pair.condition.value)) return "";
-				list res = static::Expression(t, pair.value); t = res[0]; string s = res[1];
-				return static::toString(pair.key) ~ ":" ~ s;
-			}
-		);
-		values = values.filter( bool (string s) => s != "" );
-		content = static::useModuleName(t, "Runtime.Dict") ~
-			".from({" ~ rs::join(",", values) ~ "})"
-		;
-		return [t, content];
-	}
 	
 }

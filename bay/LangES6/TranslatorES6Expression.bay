@@ -91,6 +91,10 @@ struct TranslatorES6Expression extends CoreStruct
 	 */
 	pure string rtlToStr(TranslatorES6 t, string s)
 	{
+		if (t.use_module_name)
+		{
+			return "use(\"Runtime.rtl\").toStr("~s~")";
+		}
 		string module_name = static::findModuleName(t, "rtl");
 		return module_name ~ ".toStr("~s~")";
 	}
@@ -137,6 +141,7 @@ struct TranslatorES6Expression extends CoreStruct
 	pure string useModuleName(TranslatorES6 t, string module_name)
 	{
 		module_name = static::findModuleName(t, module_name);
+		if (t.use_module_name) return "use(" ~ static::toString(module_name) ~ ")";
 		return module_name;
 	}
 	
@@ -166,7 +171,7 @@ struct TranslatorES6Expression extends CoreStruct
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{
 			string module_name = op_code.value;
-			string new_module_name = static::findModuleName(t, module_name);
+			string new_module_name = static::useModuleName(t, module_name);
 			return [t, new_module_name];
 		}
 		
@@ -217,7 +222,7 @@ struct TranslatorES6Expression extends CoreStruct
 			}
 		);
 		values = values.filter( bool (string s) => s != "" );
-		string module_name = static::findModuleName(t, "Collection");
+		string module_name = static::useModuleName(t, "Collection");
 		content = module_name ~ ".from([" ~ rs::join(",", values) ~ "])";
 		return [t, content];
 	}
@@ -240,7 +245,7 @@ struct TranslatorES6Expression extends CoreStruct
 			}
 		);
 		values = values.filter( bool (string s) => s != "" );
-		string module_name = static::findModuleName(t, "Dict");
+		string module_name = static::useModuleName(t, "Dict");
 		content = module_name ~ ".from({" ~ rs::join(",", values) ~ "})";
 		return [t, content];
 	}
