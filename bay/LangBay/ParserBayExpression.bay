@@ -574,61 +574,87 @@ static class ParserBayExpression
 		ParserBay look = null;
 		CoreToken look_token = null;
 		BaseOpCode op_code = null;
+		bool is_next_attr = false;
 		
 		list res = static::readTernary(parser); parser = res[0]; op_code = res[1];
 		Caret caret_start = op_code.caret_start;
 		
 		list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-		while (look_token.content == '->')
+		if (look_token.content == '->' or look_token.content == '|>')
 		{
-			parser = look;
-			BaseOpCode value = null;
-			string kind = "";
-			bool is_async = false;
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-			if (look_token.content == 'await')
+			while (look_token.content == '->' or look_token.content == '|>' or look_token.content == ',')
 			{
-				is_async = true;
 				parser = look;
+				BaseOpCode value = null;
+				string kind = "";
+				bool is_async = false;
+				
+				if (look_token.content == ',')
+				{
+					is_next_attr = true;
+				}
+				
 				list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+				if (look_token.content == 'await')
+				{
+					is_async = true;
+					parser = look;
+					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+				}
+				
+				if (look_token.content == 'attr')
+				{
+					parser = look;
+					list res = static::readTernary(parser); parser = res[0]; value = res[1];
+					kind = OpPipe::KIND_ATTR;
+				}
+				else if (look_token.content == '"' or look_token.content == "'")
+				{
+					list res = static::readTernary(parser); parser = res[0]; value = res[1];
+					kind = OpPipe::KIND_ATTR;
+				}
+				else if (look_token.content == '{')
+				{
+					parser = look;
+					list res = static::readTernary(parser); parser = res[0]; value = res[1];
+					kind = OpPipe::KIND_ATTR;
+					list res = parser.parser_base::matchToken(parser, '}'); parser = res[0];
+				}
+				else if (is_next_attr)
+				{
+					throw new ParserExpected("|>", parser.caret, parser.file_name);
+				}
+				else if (look_token.content == 'monad')
+				{
+					parser = look;
+					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					kind = OpPipe::KIND_MONAD;
+				}
+				else if (look_token.content == 'method' or look_token.content == ':' or look_token.content == '::')
+				{
+					parser = look;
+					kind = OpPipe::KIND_METHOD;
+					list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
+				}
+				else
+				{
+					kind = OpPipe::KIND_CALL;
+					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+				}
+				
+				op_code = new OpPipe
+				{
+					"obj": op_code,
+					"kind": kind,
+					"value": value,
+					"is_async": is_async,
+					"caret_start": caret_start,
+					"caret_end": parser.caret,
+				};
+				
+				list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+				is_next_attr = false;
 			}
-			
-			if (look_token.content == 'attr')
-			{
-				parser = look;
-				list res = static::readTernary(parser); parser = res[0]; value = res[1];
-				kind = OpPipe::KIND_ATTR;
-			}
-			else if (look_token.content == 'monad')
-			{
-				parser = look;
-				list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
-				kind = OpPipe::KIND_MONAD;
-			}
-			else if (look_token.content == 'method')
-			{
-				parser = look;
-				kind = OpPipe::KIND_METHOD;
-				list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
-			}
-			else
-			{
-				kind = OpPipe::KIND_CALL;
-				list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
-			}
-			
-			op_code = new OpPipe
-			{
-				"obj": op_code,
-				"kind": kind,
-				"value": value,
-				"is_async": is_async,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			};
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
 		}
 		
 		return [parser, op_code];

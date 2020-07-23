@@ -380,6 +380,7 @@ class ParserBayBase
 			s == ">=" or
 			s == "=>" or
 			s == "->" or
+			s == "|>" or
 			s == "::" or
 			s == "+=" or
 			s == "-=" or
