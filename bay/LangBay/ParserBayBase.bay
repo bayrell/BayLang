@@ -1510,7 +1510,7 @@ class ParserBayBase
 	/**
 	 * Read dynamic
 	 */
-	pure list<ParserBay, BaseOpCode> readDynamic(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readDynamic(ParserBay parser, int dynamic_flags = -1)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -1520,6 +1520,12 @@ class ParserBayBase
 		bool is_await = false;
 		bool is_context_call = true;
 		Caret caret_start = null;
+		
+		/* Dynamic flags */
+		int flag_call = 1;
+		int flag_attr = 2;
+		int flag_static = 4;
+		int flag_dynamic = 8;
 		
 		fn f_next = bool (string s) =>
 			s == "." or s == "::" or
@@ -1582,7 +1588,7 @@ class ParserBayBase
 				throw new ParserExpected
 				(
 					"Module or variable",
-					op_code.caret_start.clone(),
+					op_code.caret_start
 					parser.file_name
 				);
 			}
@@ -1595,6 +1601,15 @@ class ParserBayBase
 			/* Static call */
 			if (token_content == "(" or token_content == "{" or token_content == "@")
 			{
+				if (dynamic_flags & flag_call != flag_call)
+				{
+					throw new ParserError
+					(
+						"Call are not allowed",
+						token.caret_start, parser.file_name
+					);
+				}
+				
 				if (token_content == "@")
 				{
 					parser = look.clone();
@@ -1607,7 +1622,7 @@ class ParserBayBase
 					"obj": op_code,
 					"args": parser_items,
 					"caret_start": caret_start,
-					"caret_end": parser.caret.clone(),
+					"caret_end": parser.caret,
 					"is_await": is_await,
 					"is_context": is_context_call,
 				};
@@ -1618,19 +1633,73 @@ class ParserBayBase
 			else if (token_content == "." or token_content == "::" or token_content == "[")
 			{
 				string kind = "";
+				Vector<BaseOpCode> look_values = null;
 				BaseOpCode look_value = null;
 				parser = look.clone();
 				is_context_call = true;
 				
-				if (token_content == ".") kind = OpAttr::KIND_ATTR;
-				else if (token_content == "::") kind = OpAttr::KIND_STATIC;
-				else if (token_content == "[") kind = OpAttr::KIND_DYNAMIC;
+				if (token_content == ".")
+				{
+					kind = OpAttr::KIND_ATTR;
+					if (dynamic_flags & flag_attr != flag_attr)
+					{
+						throw new ParserError
+						(
+							"Attr are not allowed",
+							token.caret_start, parser.file_name
+						);
+					}
+				}
+				else if (token_content == "::")
+				{
+					kind = OpAttr::KIND_STATIC;
+					if (dynamic_flags & flag_static != flag_static)
+					{
+						throw new ParserError
+						(
+							"Static attr are not allowed",
+							token.caret_start, parser.file_name
+						);
+					}
+				}
+				else if (token_content == "[")
+				{
+					kind = OpAttr::KIND_DYNAMIC;
+					if (dynamic_flags & flag_dynamic != flag_dynamic)
+					{
+						throw new ParserError
+						(
+							"Dynamic attr are not allowed",
+							token.caret_start, parser.file_name
+						);
+					}
+				}
 				
 				if (token_content == "[")
 				{
 					list res = parser.parser_expression::readExpression(parser);
 					parser = res[0]; look_value = res[1];
+					
+					list res = static::readToken(parser); look = res[0]; token = res[1];
+					if (token.content == ",")
+					{
+						look_values = new Vector();
+						look_values.push(look_value);
+					}
+					while (token.content == ",")
+					{
+						parser = look;
+						list res = parser.parser_expression::readExpression(parser);
+						parser = res[0]; look_value = res[1];
+						look_values.push(look_value);
+						list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+					}
+					
 					list res = static::matchToken(parser, "]"); parser = res[0];
+					if (look_values != null)
+					{
+						kind = OpAttr::KIND_DYNAMIC_ATTRS;
+					}
 				}
 				else
 				{
@@ -1647,7 +1716,8 @@ class ParserBayBase
 				{
 					"kind": kind,
 					"obj": op_code,
-					"value": look_value,
+					"attrs": look_values != null ? look_values.toCollection() : null,
+					"value": look_values == null ? look_value : null,
 					"caret_start": caret_start,
 					"caret_end": parser.caret.clone(),
 				};

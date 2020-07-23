@@ -24,6 +24,7 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAssign;
 use Bayrell.Lang.OpCodes.OpAssignStruct;
 use Bayrell.Lang.OpCodes.OpAssignValue;
+use Bayrell.Lang.OpCodes.OpAttr;
 use Bayrell.Lang.OpCodes.OpBreak;
 use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpComment;
@@ -32,6 +33,7 @@ use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpDelete;
 use Bayrell.Lang.OpCodes.OpFor;
+use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpIf;
 use Bayrell.Lang.OpCodes.OpIfElse;
 use Bayrell.Lang.OpCodes.OpInc;
@@ -64,7 +66,7 @@ static class TranslatorPHPOperator
 			string (string s) use (t) => t.expression::toString(s)
 		);
 		
-		content = "\\Runtime\\rtl::setAttr($ctx, $" ~ var_name ~ ", \\Runtime\\Collection::from([" ~ rs::join(", ", names) ~ "]), " ~ expr ~ ")";
+		content = "\\Runtime\\rtl::setAttr($ctx, $" ~ var_name ~ ", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
 		return [t, content];
 	}
 	
@@ -81,29 +83,94 @@ static class TranslatorPHPOperator
 		{
 			for (int i=0; i<op_code.values.count(); i++)
 			{
-				string s = "";
-				string op = "=";
 				OpAssignValue item = op_code.values.item(i);
+				
+				string index_s = "";
+				string s = "";
+				string op = item.op; if (op == "") op = "=";
 				if (item.expression == null) continue;
-				if (op_code.kind == OpAssign::KIND_DECLARE) s = "$" ~ item.var_name;
+				
+				/* Expression */
+				string item_expression = "";
+				list res = t.expression::Expression(t, item.expression); t = res[0];
+				if (op == "~=") item_expression = t.expression::rtlToStr(t, res[1]);
+				else item_expression = res[1];
+				
+				if (item.op_code instanceof OpAttr)
+				{
+					Vector<string> items = new Vector();
+					
+					BaseOpCode op_code_next = item.op_code;
+					while (op_code_next instanceof OpAttr)
+					{
+						if (op_code_next.kind == OpAttr::KIND_ATTR)
+						{
+							items.push( t.expression::toString(op_code_next.value.value) );
+						}
+						else if (op_code_next.kind == OpAttr::KIND_DYNAMIC)
+						{
+							list res = t.expression::Expression(t, op_code_next.value); t = res[0];
+							items.push(res[1]);
+						}
+						else if (op_code_next.kind == OpAttr::KIND_DYNAMIC_ATTRS)
+						{
+							if (op_code_next.attrs != null)
+							{
+								for (int j=op_code_next.attrs.count() - 1; j>=0; j--)
+								{
+									list res = t.expression::Expression(t, op_code_next.attrs[j]); t = res[0];
+									items.push(res[1]);
+								}
+							}
+						}
+						op_code_next = op_code_next.obj;
+					}
+					
+					items = items.reverseIm();
+					
+					list res = t.expression::OpIdentifier(t, op_code_next);
+					t = res[0]; string obj_s = res[1];
+					
+					if (op == "~=" or op == "+=" or op == "-=")
+					{
+						
+						string op2 = "+";
+						if (op == "~=" or op == "+=") op2 = "+";
+						else if (op == "-=") op2 = "-";
+						
+						item_expression =
+							"Runtime.rtl.attr(ctx, " ~ obj_s ~ ", [" ~
+							rs::join(", ", items) ~ "]) " ~ op2 ~ " " ~
+							item_expression
+						;
+					}
+					
+					index_s = obj_s ~ " = \\Runtime\\rtl::setAttr($ctx, " ~ obj_s ~ ", [" ~
+						rs::join(", ", items) ~ "], " ~ item_expression ~ ")";
+				}
 				else
 				{
-					list res = t.expression::Dynamic(t, item.op_code);
-					t = res[0]; s = res[1]; op = item.op;
+					if (op_code.kind == OpAssign::KIND_DECLARE) s = "$" ~ item.var_name;
+					else
+					{
+						list res = t.expression::OpIdentifier(t, item.op_code);
+						t = res[0]; s = res[1];
+					}
+					
+					if (item_expression != "")
+					{
+					}
+					if (op == "~=") s ~= " .= " ~ item_expression;
+					else s ~= " " ~ op ~ " " ~ item_expression;
+					index_s = s ~ ";";
 				}
-				if (item.expression != null)
-				{
-					list res = t.expression::Expression(t, item.expression);
-					t = res[0];
-					if (op == "~=") s ~= " .= " ~ t.expression::rtlToStr(t, res[1]);
-					else s ~= " " ~ op ~ " " ~ res[1];
-				}
-				content ~= flag_indent ? t.s(s ~ ";") : (s ~ ";");
 				
 				if (item.var_name != "" and t.save_vars.indexOf(item.var_name) == -1)
 				{
 					t <= save_vars <= t.save_vars.pushIm(item.var_name);
 				}
+				
+				if (index_s != "") content ~= flag_indent ? t.s(index_s) : index_s;
 			}
 		}
 		else if (op_code.kind == OpAssign::KIND_STRUCT)

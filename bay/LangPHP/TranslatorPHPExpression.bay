@@ -393,9 +393,18 @@ static class TranslatorPHPExpression
 					t = res[0]; /* s ~= "[" ~ res[1] ~ "]"; */
 					s = "\\Runtime\\rtl::get($ctx, " ~ s ~ ", " ~ res[1] ~ ")";
 				}
-				else if (attr.kind == OpAttr::KIND_PIPE)
+				else if (attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 				{
-					s ~= "->" ~ attr.value.value;
+					Vector<string> items = new Vector();
+					if (attr.attrs != null)
+					{
+						for (int j=0; j<attr.attrs.count(); j++)
+						{
+							list res = static::Expression(t, attr.attrs[j]); t = res[0];
+							items.push(res[1]);
+						}
+					}
+					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
 				}
 			}
 			

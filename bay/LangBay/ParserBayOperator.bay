@@ -546,7 +546,8 @@ static class ParserBayOperator
 				}
 				
 				parser <= vars <= parser.vars.setIm(var_name, true);
-				values.push(
+				values.push
+				(
 					new OpAssignValue
 					{
 						"var_name": var_name,
@@ -568,7 +569,7 @@ static class ParserBayOperator
 			kind = OpAssign::KIND_ASSIGN;
 			string op = "";
 			
-			list res = parser.parser_base::readDynamic(parser);
+			list res = parser.parser_base::readDynamic(parser, 2 | 8);
 			parser = res[0]; BaseOpCode op_code = res[1];
 			
 			list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
@@ -596,7 +597,6 @@ static class ParserBayOperator
 			var_name = "";
 			expression = null;
 		}
-		
 		
 		return 
 		[

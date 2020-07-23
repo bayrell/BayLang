@@ -26,9 +26,11 @@ struct OpAttr extends BaseOpCode
 	static const string KIND_ATTR = "attr";
 	static const string KIND_STATIC = "static";
 	static const string KIND_DYNAMIC = "dynamic";
+	static const string KIND_DYNAMIC_ATTRS = "dynamic_attrs";
 	
 	string op = "op_attr";
 	string kind = "";
 	BaseOpCode obj = null;
 	BaseOpCode value = null;
+	Collection<BaseOpCode> attrs = null;
 }
