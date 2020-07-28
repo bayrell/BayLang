@@ -31,6 +31,6 @@ struct OpAssignStruct extends BaseOpCode
 	string var_name = "";
 	Collection<OpAnnotation> annotations = null;
 	Collection<OpComment> comments = null;
-	Collection<string> names = null;
+	Collection<var> names = null;
 	BaseOpCode expression = null;
 }

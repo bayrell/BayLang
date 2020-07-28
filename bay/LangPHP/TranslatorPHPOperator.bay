@@ -63,7 +63,15 @@ static class TranslatorPHPOperator
 		
 		Collection names = op_code.names.map
 		(
-			string (string s) use (t) => t.expression::toString(s)
+			string (var item) use (t)
+			{
+				if (item instanceof BaseOpCode)
+				{
+					list res = t.expression::Expression(t, item); t = res[0];
+					return res[1];
+				}
+				return t.expression::toString(item);
+			}
 		);
 		
 		content = "\\Runtime\\rtl::setAttr($ctx, $" ~ var_name ~ ", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
@@ -99,37 +107,47 @@ static class TranslatorPHPOperator
 				if (item.op_code instanceof OpAttr)
 				{
 					Vector<string> items = new Vector();
+					Vector<string> items2 = new Vector();
 					
 					BaseOpCode op_code_next = item.op_code;
 					while (op_code_next instanceof OpAttr)
 					{
-						if (op_code_next.kind == OpAttr::KIND_ATTR)
-						{
-							items.push( t.expression::toString(op_code_next.value.value) );
-						}
-						else if (op_code_next.kind == OpAttr::KIND_DYNAMIC)
-						{
-							list res = t.expression::Expression(t, op_code_next.value); t = res[0];
-							items.push(res[1]);
-						}
-						else if (op_code_next.kind == OpAttr::KIND_DYNAMIC_ATTRS)
-						{
-							if (op_code_next.attrs != null)
-							{
-								for (int j=op_code_next.attrs.count() - 1; j>=0; j--)
-								{
-									list res = t.expression::Expression(t, op_code_next.attrs[j]); t = res[0];
-									items.push(res[1]);
-								}
-							}
-						}
+						items.push(op_code_next);
 						op_code_next = op_code_next.obj;
 					}
 					
 					items = items.reverseIm();
-					
 					list res = t.expression::OpIdentifier(t, op_code_next);
 					t = res[0]; string obj_s = res[1];
+					
+					for (int j=0; j<items.count(); j++)
+					{
+						OpAttr item = items[j];
+						
+						if (item.kind == OpAttr::KIND_ATTR)
+						{
+							obj_s ~= "->" ~ item.value.value;
+							items2.push( t.expression::toString(item.value.value) );
+						}
+						else if (item.kind == OpAttr::KIND_DYNAMIC)
+						{
+							list res = t.expression::Expression(t, item.value); t = res[0];
+							obj_s ~= "[" ~ res[1] ~ "]";
+							items2.push(res[1]);
+						}
+						else if (item.kind == OpAttr::KIND_DYNAMIC_ATTRS)
+						{
+							if (item.attrs != null)
+							{
+								for (int j=item.attrs.count() - 1; j>=0; j--)
+								{
+									list res = t.expression::Expression(t, item.attrs[j]); t = res[0];
+									obj_s ~= "[" ~ res[1] ~ "]";
+									items2.push(res[1]);
+								}
+							}
+						}
+					}
 					
 					if (op == "~=" or op == "+=" or op == "-=")
 					{
@@ -139,14 +157,13 @@ static class TranslatorPHPOperator
 						else if (op == "-=") op2 = "-";
 						
 						item_expression =
-							"Runtime.rtl.attr(ctx, " ~ obj_s ~ ", [" ~
-							rs::join(", ", items) ~ "]) " ~ op2 ~ " " ~
+							"\\Runtime\\rtl\\attr($ctx, " ~ obj_s ~ ", [" ~
+							rs::join(", ", items2) ~ "]) " ~ op2 ~ " " ~
 							item_expression
 						;
 					}
 					
-					index_s = obj_s ~ " = \\Runtime\\rtl::setAttr($ctx, " ~ obj_s ~ ", [" ~
-						rs::join(", ", items) ~ "], " ~ item_expression ~ ")";
+					index_s = obj_s ~ " = " ~ item_expression ~ ";";
 				}
 				else
 				{

@@ -434,7 +434,7 @@ static class ParserBayOperator
 		BaseOpCode op_code = null;
 		BaseOpCode reg_name = null;
 		BaseOpCode expression = null;
-		Collection<string> names = null;
+		Collection<var> names = null;
 		Vector<OpAssignValue> values = null;
 		string kind = OpAssign::KIND_ASSIGN;
 		string var_name = "";
@@ -443,17 +443,33 @@ static class ParserBayOperator
 		Caret caret_start = op_code.caret_start.clone();
 		var_name = op_code.value;
 		
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "<=")
 		{
 			Vector<string> arr = new Vector();
 			
 			while (not token.eof and token.content == "<=")
 			{
+				var name = "";
 				parser = look.clone(); save = parser.clone();
 				
-				list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
-				string name = token.content;
+				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+				if (token.content == "{")
+				{
+					list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+					list res = parser.parser_expression::readExpression(parser);
+					parser = res[0]; name = res[1];
+					list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+				}
+				else if (token.content == '"' or token.content == "'")
+				{
+					list res = parser.parser_base::readString(parser); parser = res[0]; name = res[1];
+				}
+				else
+				{
+					list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
+					name = token.content;
+				}
 				
 				list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
 				if (token.content != "<=")
@@ -463,10 +479,6 @@ static class ParserBayOperator
 				}
 				else
 				{
-					if (not parser.parser_base::isIdentifier(name))
-					{
-						throw new ParserExpected("Identifier", save.caret.clone(), parser.file_name);
-					}
 					arr.push( name );
 				}
 			}
