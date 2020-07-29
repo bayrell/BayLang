@@ -234,11 +234,11 @@ class ParserBayBase
 	/**
 	 * Returns next X
 	 */
-	pure int nextX(ParserBay parser, char ch, int pos)
+	pure int nextX(ParserBay parser, char ch, int x, int direction = 1)
 	{
-		if (ch == "\t") return pos + parser.tab_size;
+		if (ch == "\t") return x + parser.tab_size * direction;
 		if (ch == "\n") return 0;
-		return pos + 1;
+		return x + direction;
 	}
 	
 	
@@ -246,15 +246,15 @@ class ParserBayBase
 	/**
 	 * Returns next Y
 	 */
-	pure int nextY(ParserBay parser, char ch, int pos)
+	pure int nextY(ParserBay parser, char ch, int y, int direction = 1)
 	{
-		if (ch == "\n") return pos + 1;
-		return pos;
+		if (ch == "\n") return y + direction;
+		return y;
 	}
 	
 	
 	/**
-	 * Returns next X
+	 * Returns next
 	 */
 	pure list<int, int, int> next(ParserBay parser, string s, int x, int y, int pos)
 	{
@@ -451,6 +451,38 @@ class ParserBayBase
 			}
 		}
 		return new Caret{ "pos": pos, "x": x, "y": y };
+	}
+	
+	
+	
+	/**
+	 * Read back
+	 */
+	pure ParserBay readBack(ParserBay parser, string search = "")
+	{
+		Reference<string> content = parser.content;
+		Caret caret = parser.caret;
+		int x = caret.x;
+		int y = caret.y;
+		int pos = caret.pos;
+		int search_sz = rs::strlen(search);
+		string s = "";
+		
+		while (pos >= 0)
+		{
+			char ch = rs::charAt(content.ref, pos);
+			x = static::nextX(parser, ch, x, -1);
+			y = static::nextY(parser, ch, y, -1);
+			pos--;
+			
+			s = rs::substr(content.ref, pos, search_sz);
+			if (s == search)
+			{
+				break;
+			}
+		}
+		
+		return parser.copy{ "caret": new Caret{ "pos": pos, "x": x, "y": y } };
 	}
 	
 	
@@ -1343,27 +1375,62 @@ class ParserBayBase
 	/**
 	 * Read method
 	 */
-	pure list<ParserBay, BaseOpCode> readMethod(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readMethod(ParserBay parser, bool match = true)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
 		BaseOpCode parser_value = null;
-		BaseOpCode value1 = null;
-		BaseOpCode value2 = null;
+		BaseOpCode op_code = null;
+		string value1 = "";
+		string value2 = "";
+		string kind = "";
 		
-		list res = static::matchToken(parser, "method"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
-		
-		list res = static::readTypeIdentifier(parser); parser = res[0]; value1 = res[1];
-		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-		string look_token = token.content;
-		if (look_token != "." and look_token != "::" )
+		Caret caret_start = parser.caret;
+		if (match)
 		{
-			throw new ParserExpected("'.' or '::'", token.caret_start.clone(), look.file_name);
+			list res = static::matchToken(parser, "method"); parser = res[0]; token = res[1];
 		}
 		
-		list res = static::readIdentifier(look.clone()); parser = res[0]; value2 = res[1];
+		ParserBay save = parser;
+		
+		/* Read static method */
+		try
+		{
+			list res = static::readIdentifier(parser); parser = res[0]; op_code = res[1];
+			list res = static::matchToken(parser, "::"); parser = res[0];
+			list res = static::readToken(parser); parser = res[0]; token = res[1];
+			if (op_code.kind == OpIdentifier::KIND_VARIABLE) kind = OpMethod::KIND_STATIC;
+			else kind = OpMethod::KIND_CLASS;
+			value1 = op_code.value;
+			value2 = token.content;
+		}
+		catch (ParserError e)
+		{
+		}
+		
+		/* Read instance method */
+		if (kind == "")
+		{
+			parser = save;
+			try
+			{
+				list res = static::readIdentifier(parser); parser = res[0]; op_code = res[1];
+				list res = static::matchToken(parser, "."); parser = res[0];
+				list res = static::readToken(parser); parser = res[0]; token = res[1];
+				kind = OpMethod::KIND_ATTR;
+				value1 = op_code.value;
+				value2 = token.content;
+			}
+			catch (ParserError e)
+			{
+			}
+		}
+		
+		/* Error */
+		if (kind == "")
+		{
+			throw new ParserExpected("'.' or '::'", parser.caret, parser.file_name);
+		}
 		
 		return 
 		[
@@ -1372,8 +1439,9 @@ class ParserBayBase
 			{
 				"value1": value1,
 				"value2": value2,
+				"kind": kind,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}

@@ -20,6 +20,7 @@ namespace Bayrell.Lang.LangBay;
 
 use Bayrell.Lang.Caret;
 use Bayrell.Lang.CoreToken;
+use Bayrell.Lang.Exceptions.ParserError;
 use Bayrell.Lang.Exceptions.ParserExpected;
 use Bayrell.Lang.LangBay.ParserBay;
 use Bayrell.Lang.OpCodes.BaseOpCode;
@@ -511,7 +512,7 @@ static class ParserBayExpression
 	/**
 	 * Read pipe call
 	 */
-	pure list<ParserBay, BaseOpCode> readPipeCall(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readPipeCall(ParserBay parser, bool is_method = false)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
@@ -533,11 +534,17 @@ static class ParserBayExpression
 		
 		if (token.content == "::")
 		{
-			list res = parser.parser_base::readIdentifier(look); parser = res[0]; BaseOpCode value2 = res[1];
+			if (is_method)
+			{
+				throw new ParserError("second :: are not allowed", parser.caret, parser.file_name);
+			}
+			
+			list res = parser.parser_base::readToken(look); look = res[0]; token = res[1];
 			op_code = new OpMethod
 			{
-				"value1": op_code,
-				"value2": value2,
+				"value1": op_code.value,
+				"value2": token.content,
+				"kind": OpMethod::KIND_STATIC,
 				"caret_start": caret_start2,
 				"caret_end": parser.caret,
 			}
@@ -634,13 +641,35 @@ static class ParserBayExpression
 				{
 					parser = look;
 					kind = OpPipe::KIND_METHOD;
-					list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
+					bool save_find_ident = parser.find_ident; parser <= find_ident <= false;
+					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					parser <= find_ident <= save_find_ident;
 				}
 				else
 				{
 					kind = OpPipe::KIND_CALL;
 					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
 				}
+				
+				if (value instanceof OpCall)
+				{
+					kind = OpPipe::KIND_CALL;
+				}
+				
+				/*
+				else if (look_token.content == 'method' or look_token.content == ':' or look_token.content == '::')
+				{
+					parser = look;
+					kind = OpPipe::KIND_METHOD;
+					list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
+				}
+				else
+				{
+					kind = OpPipe::KIND_CALL;
+					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
+				}
+				*/
 				
 				op_code = new OpPipe
 				{

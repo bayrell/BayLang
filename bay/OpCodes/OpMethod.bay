@@ -23,7 +23,12 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 
 struct OpMethod extends BaseOpCode
 {
+	static const string KIND_ATTR = "attr";
+	static const string KIND_STATIC = "static";
+	static const string KIND_CLASS = "class";
+	
 	string op = "op_method";
-	BaseOpCode value1 = null;
-	BaseOpCode value2 = null;
+	string value1 = null;
+	string value2 = null;
+	string kind = "";
 }

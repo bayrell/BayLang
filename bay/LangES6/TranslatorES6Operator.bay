@@ -271,7 +271,7 @@ struct TranslatorES6Operator extends CoreStruct
 				{
 					if (op_code.kind == OpAssign::KIND_DECLARE)
 					{
-						if (t.current_function.isFlag("async")) s = item.var_name;
+						if (t.current_function.isFlag("async") and t.enable_async_await) s = item.var_name;
 						else s = "var " ~ item.var_name;
 					}
 					else
@@ -287,11 +287,12 @@ struct TranslatorES6Operator extends CoreStruct
 					}
 				}
 				
-				if ( not (
-					item.expression == null and
-					op_code.kind == OpAssign::KIND_DECLARE and
-					t.current_function.isFlag("async")
-				))
+				if (t.current_function.isFlag("async") and t.enable_async_await)
+				{
+					if (item.expression == null) s = "";
+					else if (op_code.kind == OpAssign::KIND_DECLARE) s = s ~ ";";
+				}
+				else
 				{
 					s = s ~ ";";
 				}

@@ -266,6 +266,7 @@ struct TranslatorES6Expression extends CoreStruct
 			Vector<BaseOpCode> attrs = new Vector();
 			OpAttr op_code_item = op_code;
 			BaseOpCode op_code_first = op_code;
+			string first_item = "";
 			string prev_kind = "";
 			string s = "";
 			
@@ -324,7 +325,8 @@ struct TranslatorES6Expression extends CoreStruct
 				}
 			}
 			
-			for (int i=0; i<attrs.count(); i++)
+			int attrs_sz = attrs.count();
+			for (int i=0; i<attrs_sz; i++)
 			{
 				OpAttr attr = attrs.item(i);
 				
@@ -476,10 +478,20 @@ struct TranslatorES6Expression extends CoreStruct
 	 * OpMethod
 	 */
 	pure list<TranslatorES6, string> OpMethod(TranslatorES6 t, OpMethod op_code)
-	{		
-		list res = static::Expression(t, op_code.value1); t = res[0]; string val1 = res[1];
-		list res = static::Expression(t, op_code.value2); t = res[0]; string val2 = res[1];
-		string content = val1 ~ "." ~ val2;
+	{
+		string content = "";
+		string val1 = op_code.value1;
+		string val2 = op_code.value2;
+		
+		if (op_code.kind == OpMethod::KIND_STATIC)
+		{
+			content = val1 ~ ".constructor." ~ val2 ~ ".bind(" ~ val1 ~ ".constructor)";
+		}
+		else
+		{
+			content = val1 ~ "." ~ val2 ~ ".bind(" ~ val1 ~ ")";
+		}
+		
 		t <= opcode_level <= 0;
 		return [t, content];
 	}
@@ -527,7 +539,7 @@ struct TranslatorES6Expression extends CoreStruct
 		
 		string s = "";
 		bool flag = false;
-		list res = t.expression::Dynamic(t, op_code.obj); t = res[0]; s = res[1];
+		list res = t.expression::Dynamic(t, op_code.obj, true); t = res[0]; s = res[1];
 		if (s == "parent")
 		{
 			s = static::useModuleName(t, t.current_class_extends_name);
@@ -659,30 +671,29 @@ struct TranslatorES6Expression extends CoreStruct
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ ".attr(ctx, " ~ value ~ ")";
 			}
-			else if (op_item.kind == OpPipe::KIND_METHOD)
+			else if (op_item.kind == OpPipe::KIND_MONAD)
+			{
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				s1 = var_name ~ ".monad(ctx, " ~ value ~ ")";
+			}
+			else
 			{
 				string value_attrs = "";
-				if (op_item.value instanceof OpMethod)
+				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
+				if (op_item.value instanceof OpIdentifier)
 				{
-					list res = static::OpMethod(t, op_item.value); value = res[1];
-				}
-				else if (op_item.value instanceof OpCall)
-				{
-					value = static::toString(op_item.value.obj.value);
-				}
-				else
-				{
-					value = static::toString(op_item.value.value);
+					value = static::toString(value);
 				}
 				
+				/*
 				if (op_item.value.args != null)
 				{
 					bool flag = false;
-					/*if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
+					if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
 					{
 						value_attrs ~= "ctx";
 						flag = true;
-					}*/
+					}
 					for (int j=0; j<op_item.value.args.count(); j++)
 					{
 						BaseOpCode item = op_item.value.args.item(j);
@@ -694,16 +705,33 @@ struct TranslatorES6Expression extends CoreStruct
 				
 				if (op_item.value.args != null) value_attrs = "Runtime.Collection.from([" ~ value_attrs ~ "])";
 				else value_attrs = "null";
+				*/
 				
-				if (not op_item.is_async or not t.enable_async_await)
+				if (op_item.kind == OpPipe::KIND_CALL)
 				{
-					s1 = var_name ~ ".callMethod(ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+					if (not op_item.is_async or not t.enable_async_await)
+					{
+						s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
+					}
+					else if (op_item.is_async and t.current_function.isFlag("async"))
+					{
+						s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+					}
 				}
-				else if (op_item.is_async and t.current_function.isFlag("async"))
+				else if (op_item.kind == OpPipe::KIND_METHOD)
 				{
-					s2 = var_name ~ ".callMethodAsync(ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
+					if (not op_item.is_async or not t.enable_async_await)
+					{
+						s1 = var_name ~ ".callMethod(ctx, " ~ value ~ ")";
+					}
+					else if (op_item.is_async and t.current_function.isFlag("async"))
+					{
+						s2 = var_name ~ ".callMethodAsync(ctx, " ~ value ~ ")";
+					}
 				}
 			}
+			
+			/*
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
@@ -716,11 +744,7 @@ struct TranslatorES6Expression extends CoreStruct
 					s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
 				}
 			}
-			else if (op_item.kind == OpPipe::KIND_MONAD)
-			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s1 = var_name ~ ".monad(ctx, " ~ value ~ ")";
-			}
+			*/
 			
 			if (s1 != "")
 			{
