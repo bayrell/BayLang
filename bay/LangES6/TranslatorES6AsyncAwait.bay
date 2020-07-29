@@ -281,14 +281,14 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		/* Loop Assign */
 		if (op_code.expr1 instanceof OpAssign)
 		{
-			list res = t::saveOpCodeCall(t, t.operator.@staticMethod("OpAssign"), [op_code.expr1]);
+			list res = t::saveOpCodeCall(t, rtl::method(t.operator.getClassName(), "OpAssign"), [op_code.expr1]);
 			t = res[0]; string save = res[1]; string value = res[2];
 			if (save != "") content ~= save;
 			content ~= value;
 		}
 		else
 		{
-			list res = t::saveOpCodeCall(t, t.expression.@staticMethod("Expression"), [op_code.expr1]);
+			list res = t::saveOpCodeCall(t, rtl::method(t.expression.getClassName(), "Expression"), [op_code.expr1]);
 			t = res[0]; string save = res[1]; string value = res[2];
 			if (save != "") content ~= save;
 			content ~= value;
@@ -305,7 +305,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		t = t.levelInc();
 		
 		/* Call condition expression */
-		list res = t::saveOpCodeCall(t, t.expression.@staticMethod("Expression"), [op_code.expr2]);
+		list res = t::saveOpCodeCall(t, rtl::method(t.expression.getClassName(), "Expression"), [op_code.expr2]);
 		t = res[0]; string save = res[1]; string value = res[2];
 		if (save != "") content ~= save;
 		
@@ -361,7 +361,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		string async_var = t.async_await.async_var;
 		
 		/* Call condition expression */
-		list res = t::saveOpCodeCall(t, t.expression.@staticMethod("Expression"), [condition]);
+		list res = t::saveOpCodeCall(t, rtl::method(t.expression.getClassName(), "Expression"), [condition]);
 		t = res[0]; string save = res[1]; string value = res[2];
 		if (save != "") content ~= save;
 		
@@ -598,7 +598,7 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		t = t.levelInc();
 		
 		/* Call condition expression */
-		list res = t::saveOpCodeCall(t, t.expression.@staticMethod("Expression"), [op_code.condition]);
+		list res = t::saveOpCodeCall(t, rtl::method(t.expression.getClassName(), "Expression"), [op_code.condition]);
 		t = res[0]; string save = res[1]; string value = res[2];
 		if (save != "") content ~= save;
 		
