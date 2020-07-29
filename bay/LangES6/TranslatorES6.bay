@@ -43,6 +43,7 @@ struct TranslatorES6 extends CoreTranslator
 	/* Flags */
 	bool use_module_name = false;
 	bool use_strict = true;
+	bool enable_async_await = true;
 	
 	/**
 	 * Reset translator

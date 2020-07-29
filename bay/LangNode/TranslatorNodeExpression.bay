@@ -40,15 +40,11 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	 */
 	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
-		if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "@")
-		{
-			return [t, "ctx"];
-		}
-		else if (op_code.kind == OpIdentifier::KIND_CONTEXT and op_code.value == "_")
-		{
-			return [t, "ctx.translate"];
-		}
-		else if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
+		if (op_code.value == "@") return [t, "ctx"];
+		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
+		if (op_code.value == "log") return [t, "console.log"];
+		
+		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{
 			string module_name = op_code.value;
 			string new_module_name = static::findModuleName(t, module_name);

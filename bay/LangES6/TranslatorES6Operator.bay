@@ -335,7 +335,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpFor(TranslatorES6 t, OpFor op_code)
 	{
-		if (t.current_function.isFlag("async"))
+		if (t.current_function.isFlag("async") and t.enable_async_await)
 		{
 			if (static::isAwait(op_code))
 			{
@@ -379,7 +379,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpIf(TranslatorES6 t, OpIf op_code)
 	{
-		if (t.current_function.isFlag("async"))
+		if (t.current_function.isFlag("async") and t.enable_async_await)
 		{
 			if (static::isAwait(op_code))
 			{
@@ -432,7 +432,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpReturn(TranslatorES6 t, OpReturn op_code)
 	{
-		if (t.current_function.isFlag("async"))
+		if (t.current_function.isFlag("async") and t.enable_async_await)
 		{
 			return t.async_await::OpReturn(t, op_code);
 		}
@@ -477,7 +477,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpTryCatch(TranslatorES6 t, OpTryCatch op_code)
 	{
-		if (t.current_function.isFlag("async"))
+		if (t.current_function.isFlag("async") and t.enable_async_await)
 		{
 			if (static::isAwait(op_code))
 			{
@@ -538,7 +538,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpWhile(TranslatorES6 t, OpWhile op_code)
 	{
-		if (t.current_function.isFlag("async"))
+		if (t.current_function.isFlag("async") and t.enable_async_await)
 		{
 			if (static::isAwait(op_code))
 			{
@@ -845,7 +845,7 @@ struct TranslatorES6Operator extends CoreStruct
 	{
 		TranslatorES6 save_t = t;
 		
-		if (f.isFlag("async"))
+		if (f.isFlag("async") and t.enable_async_await)
 		{
 			return t.async_await::OpDeclareFunctionBody(t, f);
 		}
