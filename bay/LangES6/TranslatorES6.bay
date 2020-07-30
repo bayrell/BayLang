@@ -32,6 +32,9 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 
 struct TranslatorES6 extends CoreTranslator
 {
+	/* Work */
+	bool is_pipe = false;
+	string pipe_var_name = "";
 	
 	/* Translators */
 	TranslatorES6AsyncAwait async_await = null;

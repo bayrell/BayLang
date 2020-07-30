@@ -46,6 +46,7 @@ class ParserBay extends CoreParser
 	string current_class_kind = "";
 	bool find_identifier = true;
 	bool skip_comments = true;
+	bool is_pipe = false;
 	
 	/* Parsers */
 	ParserBayBase parser_base = null;
@@ -86,4 +87,21 @@ class ParserBay extends CoreParser
 		return parser.parser_program::readProgram(parser);
 	}
 	
+	
+	
+	/**
+	 * Find module name
+	 */
+	pure string findModuleName(ParserBay parser, string module_name)
+	{
+		if (module_name == "Collection") return "Runtime.Collection";
+		else if (module_name == "Dict") return "Runtime.Dict";
+		else if (module_name == "Map") return "Runtime.Map";
+		else if (module_name == "Vector") return "Runtime.Vector";
+		else if (module_name == "rs") return "Runtime.rs";
+		else if (module_name == "rtl") return "Runtime.rtl";
+		else if (module_name == "ArrayInterface") return "";
+		else if (parser.uses.has(module_name)) return parser.uses.item(module_name);
+		return module_name;
+	}
 }

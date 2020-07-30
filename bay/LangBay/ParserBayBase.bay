@@ -1635,6 +1635,7 @@ class ParserBayBase
 			if (op_code instanceof OpIdentifier)
 			{
 				if (
+					parser.find_ident and
 					op_code.kind != OpIdentifier::KIND_SYS_TYPE and
 					op_code.kind != OpIdentifier::KIND_SYS_FUNCTION and
 					op_code.kind != OpIdentifier::KIND_VARIABLE and
@@ -1660,6 +1661,24 @@ class ParserBayBase
 					parser.file_name
 				);
 			}
+		}
+		
+		/* If is pipe */
+		if (parser.is_pipe and op_code instanceof OpIdentifier)
+		{
+			op_code = new OpAttr
+			{
+				"kind": OpAttr::KIND_STATIC,
+				"obj": new OpIdentifier
+				{
+					"kind": OpIdentifier::KIND_PIPE,
+					"caret_start": op_code.caret_start,
+					"caret_end": op_code.caret_end,
+				},
+				"value": op_code,
+				"caret_start": op_code.caret_start,
+				"caret_end": op_code.caret_end,
+			};
 		}
 		
 		while (not token.eof and f_next(token.content))

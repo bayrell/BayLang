@@ -255,7 +255,7 @@ struct TranslatorES6Expression extends CoreStruct
 	/**
 	 * Dynamic
 	 */
-	pure list<TranslatorES6, string> Dynamic(TranslatorES6 t, BaseOpCode op_code)
+	pure list<TranslatorES6, string> Dynamic(TranslatorES6 t, BaseOpCode op_code, bool is_call = false)
 	{
 		if (op_code instanceof OpIdentifier)
 		{
@@ -269,6 +269,7 @@ struct TranslatorES6Expression extends CoreStruct
 			string first_item = "";
 			string prev_kind = "";
 			string s = "";
+			bool first_item_complex = false;
 			
 			while (op_code_first instanceof OpAttr)
 			{
@@ -283,11 +284,13 @@ struct TranslatorES6Expression extends CoreStruct
 			{
 				prev_kind = "var";
 				list res = static::OpCall(t, op_code_first); t = res[0]; s = res[1];
+				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpNew)
 			{
 				prev_kind = "var";
 				list res = static::OpNew(t, op_code_first); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpIdentifier)
 			{
@@ -314,6 +317,11 @@ struct TranslatorES6Expression extends CoreStruct
 						s = "this";
 					}
 				}
+				else if (op_code_first.kind == OpIdentifier::KIND_PIPE)
+				{
+					prev_kind = "var";
+					s = t.pipe_var_name ~ ".val";
+				}
 				else
 				{
 					list res = static::OpIdentifier(t, op_code_first); t = res[0]; s = res[1];
@@ -325,6 +333,21 @@ struct TranslatorES6Expression extends CoreStruct
 				}
 			}
 			
+			first_item = s;
+			if (first_item_complex and t.is_pipe)
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"var_content": first_item,
+					}
+				);
+				t = res[0];
+				first_item = res[1];
+				s = first_item;
+			}
+			
 			int attrs_sz = attrs.count();
 			for (int i=0; i<attrs_sz; i++)
 			{
@@ -333,16 +356,45 @@ struct TranslatorES6Expression extends CoreStruct
 				if (attr.kind == OpAttr::KIND_ATTR)
 				{
 					s ~= "." ~ attr.value.value;
-					/*s = "Runtime.rtl.get(ctx, " ~ s ~ ", " ~ t.expression::toString(attr.value.value) ~ ")";*/
+					
+					/* Pipe */
+					if (t.is_pipe and not is_call)
+					{
+						if (i == attrs_sz - 1)
+						{
+							s ~= ".bind(" ~ first_item ~ ")";
+						}
+						else
+						{
+							first_item = s;
+						}
+					}
 				}
 				else if (attr.kind == OpAttr::KIND_STATIC)
 				{
-					if (prev_kind == "var") s ~= ".constructor." ~ attr.value.value;
+					if (prev_kind == "var")
+					{
+						s ~= ".constructor." ~ attr.value.value;
+						first_item ~= ".constructor";
+					}
 					else if (prev_kind == "parent" and not t.current_function.isStatic())
 					{
 						s ~= ".prototype." ~ attr.value.value ~ ".bind(this)";
 					}
 					else s ~= "." ~ attr.value.value;
+					
+					/* Pipe */
+					if (t.is_pipe and prev_kind != "parent" and not is_call)
+					{
+						if (i == attrs_sz - 1)
+						{
+							s ~= ".bind(" ~ first_item ~ ")";
+						}
+						else
+						{
+							first_item = s;
+						}
+					}
 					prev_kind = "static";
 				}
 				else if (attr.kind == OpAttr::KIND_DYNAMIC)
@@ -636,6 +688,7 @@ struct TranslatorES6Expression extends CoreStruct
 		
 		list res = t::incSaveOpCode(t);
 		t = res[0]; var_name = res[1];
+		t <= pipe_var_name <= var_name;
 		
 		Vector<OpPipe> items = new Vector();
 		BaseOpCode op_code_item = op_code;
@@ -676,6 +729,24 @@ struct TranslatorES6Expression extends CoreStruct
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ ".monad(ctx, " ~ value ~ ")";
 			}
+			else if (op_item.kind == OpPipe::KIND_CALL)
+			{
+				t <= is_pipe <= true;
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				
+				if (not op_item.is_async or not t.enable_async_await)
+				{
+					s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
+				}
+				else if (op_item.is_async and t.current_function.isFlag("async"))
+				{
+					s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+				}
+				
+				t <= is_pipe <= false;
+			}
+			
+			/*
 			else
 			{
 				string value_attrs = "";
@@ -685,7 +756,7 @@ struct TranslatorES6Expression extends CoreStruct
 					value = static::toString(value);
 				}
 				
-				/*
+				
 				if (op_item.value.args != null)
 				{
 					bool flag = false;
@@ -705,7 +776,7 @@ struct TranslatorES6Expression extends CoreStruct
 				
 				if (op_item.value.args != null) value_attrs = "Runtime.Collection.from([" ~ value_attrs ~ "])";
 				else value_attrs = "null";
-				*/
+				
 				
 				if (op_item.kind == OpPipe::KIND_CALL)
 				{
@@ -730,7 +801,7 @@ struct TranslatorES6Expression extends CoreStruct
 					}
 				}
 			}
-			
+			*/
 			/*
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{

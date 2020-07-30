@@ -23,6 +23,7 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 
 struct OpIdentifier extends BaseOpCode
 {
+	static const string KIND_PIPE = "pipe";
 	static const string KIND_VARIABLE = "var";
 	static const string KIND_SYS_TYPE = "sys";
 	static const string KIND_SYS_FUNCTION = "sys_fn";

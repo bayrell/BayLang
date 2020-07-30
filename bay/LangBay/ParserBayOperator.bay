@@ -815,7 +815,7 @@ static class ParserBayOperator
 		string var_name = op_code.value;
 		
 		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		if (token.content == "->")
+		if (token.content == "|>")
 		{
 			return parser.parser_expression::ExpressionPipe(save_parser);
 		}

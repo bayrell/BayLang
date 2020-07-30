@@ -30,6 +30,9 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 
 struct TranslatorPHP extends CoreTranslator
 {
+	/* Work */
+	bool is_pipe = false;
+	string pipe_var_name = "";
 	
 	/* Translators */
 	TranslatorPHPExpression expression = null;

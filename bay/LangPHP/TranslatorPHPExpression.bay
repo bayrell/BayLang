@@ -293,6 +293,7 @@ static class TranslatorPHPExpression
 			BaseOpCode op_code_next = op_code;
 			string prev_kind = "";
 			string s = "";
+			bool first_item_complex = false;
 			
 			while (op_code_next instanceof OpAttr)
 			{
@@ -307,11 +308,13 @@ static class TranslatorPHPExpression
 			{
 				prev_kind = "var";
 				list res = static::OpCall(t, op_code_next); t = res[0]; s = res[1];
+				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpNew)
 			{
 				prev_kind = "var";
 				list res = static::OpNew(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpIdentifier)
 			{
@@ -338,6 +341,19 @@ static class TranslatorPHPExpression
 						s = "$this";
 					}
 				}
+				else if (op_code_next.kind == OpIdentifier::KIND_PIPE)
+				{
+					prev_kind = "var";
+					list res = t::addSaveOpCode
+					(
+						t,
+						{
+							"var_content": t.pipe_var_name ~ "->val",
+						}
+					);
+					t = res[0];
+					s = res[1];
+				}
 				else
 				{
 					list res = static::OpIdentifier(t, op_code_next); t = res[0]; s = res[1];
@@ -347,6 +363,19 @@ static class TranslatorPHPExpression
 						prev_kind = "static";
 					}
 				}
+			}
+			
+			if (first_item_complex and t.is_pipe)
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"var_content": s,
+					}
+				);
+				t = res[0];
+				s = res[1];
 			}
 			
 			int attrs_sz = attrs.count();
@@ -657,6 +686,7 @@ static class TranslatorPHPExpression
 		
 		list res = t::incSaveOpCode(t);
 		t = res[0]; var_name = res[1];
+		t <= pipe_var_name <= var_name;
 		
 		Vector<OpPipe> items = new Vector();
 		BaseOpCode op_code_item = op_code;
@@ -692,6 +722,29 @@ static class TranslatorPHPExpression
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ "->attr($ctx, " ~ value ~ ")";
 			}
+			else if (op_item.kind == OpPipe::KIND_MONAD)
+			{
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
+			}
+			else if (op_item.kind == OpPipe::KIND_CALL)
+			{
+				t <= is_pipe <= true;
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				
+				if (not op_item.is_async or not t.enable_async_await)
+				{
+					s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+				}
+				else if (op_item.is_async and t.current_function.isFlag("async"))
+				{
+					s2 = var_name ~ "->callAsync($ctx, " ~ value ~ ")";
+				}
+				
+				t <= is_pipe <= false;
+			}
+			
+			/*
 			else if (op_item.kind == OpPipe::KIND_METHOD)
 			{
 				string value_attrs = "";
@@ -700,11 +753,11 @@ static class TranslatorPHPExpression
 				if (op_item.value.args != null)
 				{
 					bool flag = false;
-					/*if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
+					if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
 					{
 						value_attrs ~= "$ctx";
 						flag = true;
-					}*/
+					}
 					for (int j=0; j<op_item.value.args.count(); j++)
 					{
 						BaseOpCode item = op_item.value.args.item(j);
@@ -726,23 +779,7 @@ static class TranslatorPHPExpression
 					s1 = var_name ~ "->callMethod($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
 				}
 			}
-			else if (op_item.kind == OpPipe::KIND_MONAD)
-			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
-			}
-			else if (op_item.kind == OpPipe::KIND_CALL)
-			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				if (op_item.is_async)
-				{
-					s1 = var_name ~ "->callAsync($ctx, " ~ value ~ ")";
-				}
-				else
-				{
-					s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
-				}
-			}
+			*/
 			
 			if (s1 != "")
 			{
