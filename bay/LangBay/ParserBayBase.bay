@@ -1381,7 +1381,7 @@ class ParserBayBase
 		CoreToken token = null;
 		BaseOpCode parser_value = null;
 		BaseOpCode op_code = null;
-		string value1 = "";
+		BaseOpCode value1 = "";
 		string value2 = "";
 		string kind = "";
 		
@@ -1401,7 +1401,7 @@ class ParserBayBase
 			list res = static::readToken(parser); parser = res[0]; token = res[1];
 			if (op_code.kind == OpIdentifier::KIND_VARIABLE) kind = OpMethod::KIND_STATIC;
 			else kind = OpMethod::KIND_CLASS;
-			value1 = op_code.value;
+			value1 = op_code;
 			value2 = token.content;
 		}
 		catch (ParserError e)
@@ -1418,7 +1418,7 @@ class ParserBayBase
 				list res = static::matchToken(parser, "."); parser = res[0];
 				list res = static::readToken(parser); parser = res[0]; token = res[1];
 				kind = OpMethod::KIND_ATTR;
-				value1 = op_code.value;
+				value1 = op_code;
 				value2 = token.content;
 			}
 			catch (ParserError e)

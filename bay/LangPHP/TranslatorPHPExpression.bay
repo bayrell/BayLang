@@ -405,7 +405,8 @@ static class TranslatorPHPExpression
 						{
 							string val1;
 							if (s == "static") val1 = "static::class";
-							else val1 = static::toString(s);
+							/*else val1 = static::toString(s);*/
+							else val1 = s ~ "::class";
 							string val2 = static::toString(attr_val);
 							s = "new \\Runtime\\Callback(" ~ val1 ~ ", " ~ val2 ~ ")";
 						}
@@ -548,20 +549,16 @@ static class TranslatorPHPExpression
 	pure list<TranslatorPHP, string> OpMethod(TranslatorPHP t, OpMethod op_code)
 	{
 		string content = "";
-		string val1 = op_code.value1;
+		list res = static::OpIdentifier(t, op_code.value1); t = res[0]; string val1 = res[1];
 		string val2 = op_code.value2;
 		
 		if (op_code.kind == OpMethod::KIND_STATIC)
 		{
-			val1 = "$" ~ val1 ~ "->getClassName()";
+			val1 = val1 ~ "->getClassName()";
 		}
 		else if (op_code.kind == OpMethod::KIND_CLASS)
 		{
 			val1 = val1 ~ "::class";
-		}
-		else
-		{
-			val1 = "$" ~ val1;
 		}
 		
 		string content = "new \\Runtime\\Callback(" ~ val1 ~ ", " ~ static::toString(val2) ~ ")";
@@ -743,43 +740,6 @@ static class TranslatorPHPExpression
 				
 				t <= is_pipe <= false;
 			}
-			
-			/*
-			else if (op_item.kind == OpPipe::KIND_METHOD)
-			{
-				string value_attrs = "";
-				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
-				
-				if (op_item.value.args != null)
-				{
-					bool flag = false;
-					if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
-					{
-						value_attrs ~= "$ctx";
-						flag = true;
-					}
-					for (int j=0; j<op_item.value.args.count(); j++)
-					{
-						BaseOpCode item = op_item.value.args.item(j);
-						list res = static::Expression(t, item); t = res[0]; string s = res[1];
-						value_attrs ~= (flag ? ", " : "") ~ s;
-						flag = true;
-					}
-				}
-				
-				if (op_item.value.args != null) value_attrs = "\\Runtime\\Collection::from([" ~ value_attrs ~ "])";
-				else value_attrs = "null";
-				
-				if (op_item.is_async and t.current_function.isFlag("async"))
-				{
-					s1 = var_name ~ "->callMethodAsync($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
-				}
-				else if (not op_item.is_async)
-				{
-					s1 = var_name ~ "->callMethod($ctx, " ~ value ~ ", " ~ value_attrs ~ ")";
-				}
-			}
-			*/
 			
 			if (s1 != "")
 			{

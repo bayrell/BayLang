@@ -28,7 +28,7 @@ struct OpMethod extends BaseOpCode
 	static const string KIND_CLASS = "class";
 	
 	string op = "op_method";
-	string value1 = null;
+	BaseOpCode value1 = null;
 	string value2 = null;
 	string kind = "";
 }

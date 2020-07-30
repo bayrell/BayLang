@@ -532,7 +532,7 @@ struct TranslatorES6Expression extends CoreStruct
 	pure list<TranslatorES6, string> OpMethod(TranslatorES6 t, OpMethod op_code)
 	{
 		string content = "";
-		string val1 = op_code.value1;
+		list res = static::OpIdentifier(t, op_code.value1); t = res[0]; string val1 = res[1];
 		string val2 = op_code.value2;
 		
 		if (op_code.kind == OpMethod::KIND_STATIC)
@@ -746,77 +746,6 @@ struct TranslatorES6Expression extends CoreStruct
 				t <= is_pipe <= false;
 			}
 			
-			/*
-			else
-			{
-				string value_attrs = "";
-				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
-				if (op_item.value instanceof OpIdentifier)
-				{
-					value = static::toString(value);
-				}
-				
-				
-				if (op_item.value.args != null)
-				{
-					bool flag = false;
-					if ((t.current_function == null or t.current_function.is_context) and op_item.value.is_context)
-					{
-						value_attrs ~= "ctx";
-						flag = true;
-					}
-					for (int j=0; j<op_item.value.args.count(); j++)
-					{
-						BaseOpCode item = op_item.value.args.item(j);
-						list res = static::Expression(t, item); t = res[0]; string s = res[1];
-						value_attrs ~= (flag ? ", " : "") ~ s;
-						flag = true;
-					}
-				}
-				
-				if (op_item.value.args != null) value_attrs = "Runtime.Collection.from([" ~ value_attrs ~ "])";
-				else value_attrs = "null";
-				
-				
-				if (op_item.kind == OpPipe::KIND_CALL)
-				{
-					if (not op_item.is_async or not t.enable_async_await)
-					{
-						s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
-					}
-					else if (op_item.is_async and t.current_function.isFlag("async"))
-					{
-						s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
-					}
-				}
-				else if (op_item.kind == OpPipe::KIND_METHOD)
-				{
-					if (not op_item.is_async or not t.enable_async_await)
-					{
-						s1 = var_name ~ ".callMethod(ctx, " ~ value ~ ")";
-					}
-					else if (op_item.is_async and t.current_function.isFlag("async"))
-					{
-						s2 = var_name ~ ".callMethodAsync(ctx, " ~ value ~ ")";
-					}
-				}
-			}
-			*/
-			/*
-			else if (op_item.kind == OpPipe::KIND_CALL)
-			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				if (not op_item.is_async or not t.enable_async_await)
-				{
-					s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
-				}
-				else if (op_item.is_async and t.current_function.isFlag("async"))
-				{
-					s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
-				}
-			}
-			*/
-			
 			if (s1 != "")
 			{
 				list res = t::addSaveOpCode
@@ -911,7 +840,9 @@ struct TranslatorES6Expression extends CoreStruct
 	pure list<TranslatorES6, string> Expression(TranslatorES6 t, BaseOpCode op_code)
 	{
 		string content = "";
+		bool save_is_pipe = t.is_pipe;
 		t <= opcode_level <= 100;
+		t <= is_pipe <= false;
 		
 		if (op_code instanceof OpIdentifier)
 		{
@@ -992,6 +923,7 @@ struct TranslatorES6Expression extends CoreStruct
 			t = res[0]; content = res[1];
 		}
 		
+		t <= is_pipe <= save_is_pipe;
 		return [t, content];
 	}
 	

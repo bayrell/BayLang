@@ -513,70 +513,6 @@ static class ParserBayExpression
 	
 	
 	/**
-	 * Read pipe call
-	 */
-	pure list<ParserBay, BaseOpCode> readPipeCall(ParserBay parser, bool is_method = false)
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		bool is_context_call = true;
-		Caret caret_start = parser.caret;
-		
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		if (token.content == "@")
-		{
-			is_context_call = false;
-			parser = look;
-		}
-		
-		Caret caret_start2 = parser.caret;
-		Collection<BaseOpCode> args = null;
-		list res = parser.parser_base::readIdentifier(parser); parser = res[0]; op_code = res[1];
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		
-		if (token.content == "::")
-		{
-			if (is_method)
-			{
-				throw new ParserError("second :: are not allowed", parser.caret, parser.file_name);
-			}
-			
-			list res = parser.parser_base::readToken(look); look = res[0]; token = res[1];
-			op_code = new OpMethod
-			{
-				"value1": op_code.value,
-				"value2": token.content,
-				"kind": OpMethod::KIND_STATIC,
-				"caret_start": caret_start2,
-				"caret_end": parser.caret,
-			}
-		}
-		
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
-		if (token.content == "(" or token.content == "{")
-		{
-			list res = parser.parser_base::readCallArgs(parser); parser = res[0]; args = res[1];
-			op_code = new OpCall
-			{
-				"obj": op_code,
-				"args": args,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-				"is_context": is_context_call,
-			};
-		}
-		
-		return
-		[
-			parser,
-			op_code
-		];
-	}
-	
-	
-	
-	/**
 	 * Read pipe
 	 */
 	pure list<ParserBay, BaseOpCode> ExpressionPipe(ParserBay parser)
@@ -586,13 +522,16 @@ static class ParserBayExpression
 		BaseOpCode op_code = null;
 		bool is_next_attr = false;
 		
+		bool save_is_pipe = parser.is_pipe;
+		parser <= is_pipe <= false;
 		list res = static::readTernary(parser); parser = res[0]; op_code = res[1];
 		Caret caret_start = op_code.caret_start;
+		parser <= is_pipe <= save_is_pipe;
 		
 		list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-		if (look_token.content == '|>')
+		if (look_token.content == '|>' or look_token.content == '->')
 		{
-			while (look_token.content == '|>' or look_token.content == ',')
+			while (look_token.content == '->' or look_token.content == '|>' or look_token.content == ',')
 			{
 				parser = look;
 				BaseOpCode value = null;
@@ -645,44 +584,85 @@ static class ParserBayExpression
 					BaseOpCode arg1, arg2;
 					kind = OpPipe::KIND_MONAD;
 					
-					list res = parser.parser_base::readIdentifier(look); parser = res[0]; arg1 = res[1];
-					list res = static::readTernary(parser); parser = res[0]; arg2 = res[1];
-					
-					arg1 = new OpString
+					try
 					{
-						"value": parser::findModuleName(parser, arg1.value),
-						"caret_start": arg1.caret_start,
-						"caret_end": arg1.caret_end,
-					};
-					
-					value = new OpCall
-					{
-						"args":
-						[
-							arg1,
-							arg2
-						],
-						"obj": new OpAttr
+						list res = parser.parser_base::readIdentifier(look); parser = res[0]; arg1 = res[1];
+						list res = static::readTernary(parser); parser = res[0]; arg2 = res[1];
+						
+						arg1 = new OpString
 						{
-							"kind": OpAttr::KIND_STATIC,
-							"obj": new OpIdentifier
+							"value": parser::findModuleName(parser, arg1.value),
+							"caret_start": arg1.caret_start,
+							"caret_end": arg1.caret_end,
+						};
+						
+						value = new OpCall
+						{
+							"args":
+							[
+								arg1,
+								arg2
+							],
+							"obj": new OpAttr
 							{
-								"kind": OpIdentifier::KIND_MODULE,
+								"kind": OpAttr::KIND_STATIC,
+								"obj": new OpIdentifier
+								{
+									"kind": OpIdentifier::KIND_SYS_TYPE,
+									"caret_start": caret_start,
+									"caret_end": parser.caret,
+									"value": "rtl",
+								},
+								"value": new OpIdentifier
+								{
+									"caret_start": caret_start,
+									"caret_end": parser.caret,
+									"value": "m_to",
+								},
 								"caret_start": caret_start,
 								"caret_end": parser.caret,
-								"value": "rtl",
-							},
-							"value": new OpIdentifier
-							{
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-								"value": "m_to",
 							},
 							"caret_start": caret_start,
 							"caret_end": parser.caret,
-						},
-						"caret_start": caret_start,
-						"caret_end": parser.caret,
+						}
+					}
+					catch (ParserError err)
+					{
+						value = null;
+					}
+					
+					if (value == null)
+					{
+						list res = static::readTernary(look); parser = res[0]; arg2 = res[1];
+						
+						value = new OpCall
+						{
+							"args":
+							[
+								arg2
+							],
+							"obj": new OpAttr
+							{
+								"kind": OpAttr::KIND_STATIC,
+								"obj": new OpIdentifier
+								{
+									"kind": OpIdentifier::KIND_SYS_TYPE,
+									"caret_start": caret_start,
+									"caret_end": parser.caret,
+									"value": "rtl",
+								},
+								"value": new OpIdentifier
+								{
+									"caret_start": caret_start,
+									"caret_end": parser.caret,
+									"value": "m_def",
+								},
+								"caret_start": caret_start,
+								"caret_end": parser.caret,
+							},
+							"caret_start": caret_start,
+							"caret_end": parser.caret,
+						}
 					}
 					
 				}
