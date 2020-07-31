@@ -46,7 +46,9 @@ class ParserBay extends CoreParser
 	string current_class_kind = "";
 	bool find_identifier = true;
 	bool skip_comments = true;
+	string pipe_kind = "";
 	bool is_pipe = false;
+	
 	
 	/* Parsers */
 	ParserBayBase parser_base = null;

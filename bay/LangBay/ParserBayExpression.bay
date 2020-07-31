@@ -537,6 +537,7 @@ static class ParserBayExpression
 				BaseOpCode value = null;
 				string kind = "";
 				bool is_async = false;
+				bool is_monad = false;
 				
 				if (look_token.content == ',')
 				{
@@ -547,6 +548,12 @@ static class ParserBayExpression
 				if (look_token.content == 'await')
 				{
 					is_async = true;
+					parser = look;
+					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+				}
+				if (look_token.content == 'monad')
+				{
+					is_monad = true;
 					parser = look;
 					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
 				}
@@ -572,12 +579,6 @@ static class ParserBayExpression
 				else if (is_next_attr)
 				{
 					throw new ParserExpected("|>", parser.caret, parser.file_name);
-				}
-				else if (look_token.content == 'monad')
-				{
-					parser = look;
-					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
-					kind = OpPipe::KIND_MONAD;
 				}
 				else if (look_token.content == 'default')
 				{
@@ -666,7 +667,11 @@ static class ParserBayExpression
 					}
 					
 				}
-				else if (look_token.content == 'method' or look_token.content == ':' or look_token.content == '::')
+				else if
+				(
+					look_token.content == 'method' or look_token.content == '.' or
+					look_token.content == ':' or look_token.content == '::'
+				)
 				{
 					parser = look;
 					kind = OpPipe::KIND_CALL;
@@ -675,6 +680,15 @@ static class ParserBayExpression
 					bool save_find_ident = parser.find_ident;
 					parser <= find_ident <= false;
 					parser <= is_pipe <= true;
+					
+					if (look_token.content == '.')
+					{
+						parser <= pipe_kind <= OpAttr::KIND_ATTR;
+					}
+					else
+					{
+						parser <= pipe_kind <= OpAttr::KIND_STATIC;
+					}
 					
 					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
 					
@@ -688,27 +702,13 @@ static class ParserBayExpression
 					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
 				}
 				
-				/*
-				else if (look_token.content == 'method' or look_token.content == ':' or look_token.content == '::')
-				{
-					parser = look;
-					kind = OpPipe::KIND_METHOD;
-					list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
-				}
-				else
-				{
-					kind = OpPipe::KIND_CALL;
-					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
-					list res = static::readPipeCall(parser); parser = res[0]; value = res[1];
-				}
-				*/
-				
 				op_code = new OpPipe
 				{
 					"obj": op_code,
 					"kind": kind,
 					"value": value,
 					"is_async": is_async,
+					"is_monad": is_monad,
 					"caret_start": caret_start,
 					"caret_end": parser.caret,
 				};

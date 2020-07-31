@@ -719,11 +719,6 @@ static class TranslatorPHPExpression
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ "->attr($ctx, " ~ value ~ ")";
 			}
-			else if (op_item.kind == OpPipe::KIND_MONAD)
-			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
-			}
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				t <= is_pipe <= true;
@@ -731,11 +726,25 @@ static class TranslatorPHPExpression
 				
 				if (not op_item.is_async or not t.enable_async_await)
 				{
-					s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+					if (op_item.is_monad)
+					{
+						s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
+					}
+					else
+					{
+						s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+					}
 				}
 				else if (op_item.is_async and t.current_function.isFlag("async"))
 				{
-					s2 = var_name ~ "->callAsync($ctx, " ~ value ~ ")";
+					if (op_item.is_monad)
+					{
+						s1 = var_name ~ "->monadAsync($ctx, " ~ value ~ ")";
+					}
+					else
+					{
+						s1 = var_name ~ "->callAsync($ctx, " ~ value ~ ")";
+					}
 				}
 				
 				t <= is_pipe <= false;

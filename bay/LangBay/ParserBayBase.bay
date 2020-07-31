@@ -1668,7 +1668,7 @@ class ParserBayBase
 		{
 			op_code = new OpAttr
 			{
-				"kind": OpAttr::KIND_STATIC,
+				"kind": parser.pipe_kind,
 				"obj": new OpIdentifier
 				{
 					"kind": OpIdentifier::KIND_PIPE,
