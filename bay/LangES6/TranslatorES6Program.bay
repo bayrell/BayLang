@@ -100,9 +100,12 @@ struct TranslatorES6Program extends CoreStruct
 		/* Set current function */
 		t <= current_function <= op_code;
 		
+		string is_async = "";
+		if (op_code.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
+		
 		string s = "";
 		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
-		s ~= op_code.name ~ ": function(" ~ args ~ ")";
+		s ~= op_code.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
 		list res = t.operator::OpDeclareFunctionBody(t, op_code); s ~= res[1];
 		s ~= ",";
 		
@@ -373,9 +376,12 @@ struct TranslatorES6Program extends CoreStruct
 					/* Set function name */
 					t <= current_function <= f;
 					
+					string is_async = "";
+					if (f.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
+					
 					string s = "";
 					list res = t.operator::OpDeclareFunctionArgs(t, f); string args = res[1];
-					s ~= f.name ~ ": function(" ~ args ~ ")";
+					s ~= f.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
 					list res = t.operator::OpDeclareFunctionBody(t, f); s ~= res[1];
 					s ~= ",";
 					
@@ -724,9 +730,12 @@ struct TranslatorES6Program extends CoreStruct
 				/* Set function name */
 				t <= current_function <= f;
 				
+				string is_async = "";
+				if (f.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
+				
 				string s = "";
 				list res = t.operator::OpDeclareFunctionArgs(t, f); string args = res[1];
-				s ~= f.name ~ ": function(" ~ args ~ ")";
+				s ~= f.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
 				list res = t.operator::OpDeclareFunctionBody(t, f); s ~= res[1];
 				s ~= ",";
 				

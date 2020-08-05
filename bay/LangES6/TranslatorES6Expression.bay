@@ -584,7 +584,7 @@ struct TranslatorES6Expression extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
 	{
-		if (t.current_function.isFlag("async") and op_code.is_await and t.enable_async_await)
+		if (t.current_function.isFlag("async") and op_code.is_await and t.isEmulateAsyncAwait())
 		{
 			return t.async_await::OpCall(t, op_code, is_expression);
 		}
@@ -623,6 +623,11 @@ struct TranslatorES6Expression extends CoreStruct
 			flag = true;
 		}
 		content ~= ")";
+		
+		if (t.current_function.isFlag("async") and op_code.is_await and t.isAsyncAwait())
+		{
+			content = "await " ~ content;
+		}
 		
 		return [t, content];
 	}
@@ -742,13 +747,27 @@ struct TranslatorES6Expression extends CoreStruct
 				}
 				else if (op_item.is_async and t.current_function.isFlag("async"))
 				{
-					if (op_item.is_monad)
+					if (t.isAsyncAwait())
 					{
-						s1 = var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
+						if (op_item.is_monad)
+						{
+							s2 = var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
+						}
+						else
+						{
+							s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+						}
 					}
-					else
+					else if (t.isEmulateAsyncAwait())
 					{
-						s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+						if (op_item.is_monad)
+						{
+							s1 = "await " ~ var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
+						}
+						else
+						{
+							s1 = "await " ~ var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+						}
 					}
 				}
 				

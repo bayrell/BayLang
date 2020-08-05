@@ -47,6 +47,22 @@ struct TranslatorES6 extends CoreTranslator
 	bool use_module_name = false;
 	bool use_strict = true;
 	bool enable_async_await = true;
+	bool emulate_async_await = true;
+	
+	
+	/**
+	 * Returns true if emulate async await
+	 */
+	bool isEmulateAsyncAwait() => this.enable_async_await and this.emulate_async_await;
+	
+	
+	
+	/**
+	 * Returns true if async await
+	 */
+	bool isAsyncAwait() => this.enable_async_await and not this.emulate_async_await;
+	
+	
 	
 	/**
 	 * Reset translator

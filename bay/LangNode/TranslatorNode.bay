@@ -32,7 +32,7 @@ use Bayrell.Lang.LangNode.TranslatorNodeProgram;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-struct TranslatorNode extends CoreTranslator
+struct TranslatorNode extends TranslatorES6
 {
 	
 	/* Translators */
@@ -44,6 +44,10 @@ struct TranslatorNode extends CoreTranslator
 	
 	/* Flags */
 	bool use_module_name = true;
+	bool enable_async_await = true;
+	bool emulate_async_await = false;
+	
+	
 	
 	/**
 	 * Reset translator

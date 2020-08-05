@@ -271,7 +271,7 @@ struct TranslatorES6Operator extends CoreStruct
 				{
 					if (op_code.kind == OpAssign::KIND_DECLARE)
 					{
-						if (t.current_function.isFlag("async") and t.enable_async_await) s = item.var_name;
+						if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait()) s = item.var_name;
 						else s = "var " ~ item.var_name;
 					}
 					else
@@ -287,7 +287,7 @@ struct TranslatorES6Operator extends CoreStruct
 					}
 				}
 				
-				if (t.current_function.isFlag("async") and t.enable_async_await)
+				if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait())
 				{
 					if (item.expression == null) s = "";
 					else if (op_code.kind == OpAssign::KIND_DECLARE) s = s ~ ";";
@@ -336,7 +336,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpFor(TranslatorES6 t, OpFor op_code)
 	{
-		if (t.current_function.isFlag("async") and t.enable_async_await)
+		if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait())
 		{
 			if (static::isAwait(op_code))
 			{
@@ -380,7 +380,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpIf(TranslatorES6 t, OpIf op_code)
 	{
-		if (t.current_function.isFlag("async") and t.enable_async_await)
+		if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait())
 		{
 			if (static::isAwait(op_code))
 			{
@@ -433,7 +433,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpReturn(TranslatorES6 t, OpReturn op_code)
 	{
-		if (t.current_function.isFlag("async") and t.enable_async_await)
+		if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait())
 		{
 			return t.async_await::OpReturn(t, op_code);
 		}
@@ -455,7 +455,14 @@ struct TranslatorES6Operator extends CoreStruct
 			return [t, content];
 		}
 		
-		content ~= t.s("return " ~ s1 ~ ";");
+		if (t.current_function.isFlag("async") and t.isAsyncAwait())
+		{
+			content ~= t.s("return Promise.resolve(" ~ s1 ~ ");");
+		}
+		else
+		{
+			content ~= t.s("return " ~ s1 ~ ";");
+		}
 		return [t, content];
 	}
 	
@@ -478,7 +485,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpTryCatch(TranslatorES6 t, OpTryCatch op_code)
 	{
-		if (t.current_function.isFlag("async") and t.enable_async_await)
+		if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait())
 		{
 			if (static::isAwait(op_code))
 			{
@@ -539,7 +546,7 @@ struct TranslatorES6Operator extends CoreStruct
 	 */
 	pure list<TranslatorES6, string> OpWhile(TranslatorES6 t, OpWhile op_code)
 	{
-		if (t.current_function.isFlag("async") and t.enable_async_await)
+		if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait())
 		{
 			if (static::isAwait(op_code))
 			{
@@ -846,7 +853,7 @@ struct TranslatorES6Operator extends CoreStruct
 	{
 		TranslatorES6 save_t = t;
 		
-		if (f.isFlag("async") and t.enable_async_await)
+		if (f.isFlag("async") and t.isEmulateAsyncAwait())
 		{
 			return t.async_await::OpDeclareFunctionBody(t, f);
 		}
