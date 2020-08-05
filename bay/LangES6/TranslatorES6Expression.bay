@@ -532,17 +532,43 @@ struct TranslatorES6Expression extends CoreStruct
 	pure list<TranslatorES6, string> OpMethod(TranslatorES6 t, OpMethod op_code)
 	{
 		string content = "";
-		list res = static::OpIdentifier(t, op_code.value1); t = res[0]; string val1 = res[1];
+		string val1 = "";
 		string val2 = op_code.value2;
+		string prev_kind = "";
 		
-		if (op_code.kind == OpMethod::KIND_STATIC)
+		if (op_code.value1.kind == OpIdentifier::KIND_CLASSREF)
 		{
-			content = val1 ~ ".constructor." ~ val2 ~ ".bind(" ~ val1 ~ ".constructor)";
+			if (op_code.value1.value == "static")
+			{
+				val1 = "this" ~ (not t.is_static_function ? ".constructor" : "");
+				prev_kind = "static";
+			}
+			else if (op_code.value1.value == "parent")
+			{
+				val1 = static::useModuleName(t, t.current_class_extends_name);
+				prev_kind = "parent";
+			}
+			else if (op_code.value1.value == "self")
+			{
+				prev_kind = "static";
+				val1 = t.current_class_full_name;
+			}
+			else if (op_code.value1.value == "this")
+			{
+				prev_kind = "var";
+				val1 = "this";
+			}
 		}
 		else
 		{
-			content = val1 ~ "." ~ val2 ~ ".bind(" ~ val1 ~ ")";
+			list res = static::OpIdentifier(t, op_code.value1); t = res[0]; val1 = res[1];
+			if (op_code.kind == OpMethod::KIND_STATIC)
+			{
+				val1 ~= ".constructor";
+			}
 		}
+		
+		content = val1 ~ "." ~ val2 ~ ".bind(" ~ val1 ~ ")";
 		
 		t <= opcode_level <= 0;
 		return [t, content];
