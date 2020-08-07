@@ -5,6 +5,8 @@ Bayrell Language
 
 Versions:
 
+[07 Aug 2020] 0.10.0 - Move Context to Runtime.Core, Clear Runtime library, Async/Await in NodeJS, Fix pipes, |> as pipe
+
 [25 Apr 2020] 0.9.1 - Run language on Raspberry PI
 
 [21 Apr 2020] 0.9.0 - Pipes and Monads. Change lambda to pure
