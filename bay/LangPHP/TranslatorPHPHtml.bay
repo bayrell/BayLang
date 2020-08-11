@@ -23,6 +23,7 @@ use Runtime.re;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAssign;
 use Bayrell.Lang.OpCodes.OpFor;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 use Bayrell.Lang.OpCodes.OpHtmlContent;
@@ -345,6 +346,12 @@ static class TranslatorPHPHtml
 					t = res[0]; item_value = res[1];
 					item_value = "static::json_encode($ctx, " ~ item_value ~ ")";
 				}
+			}
+			else if (item instanceof OpAssign)
+			{
+				list res = t.operator::OpAssign(t, item);
+				t = res[0]; content ~= res[1];
+				continue;
 			}
 			else if (item instanceof OpFor)
 			{

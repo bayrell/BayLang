@@ -537,7 +537,7 @@ class ParserBayHtml extends CoreObject
 			}
 			
 			/* If html operator */
-			else if (ch3 == "%if" or ch4 == "%for" or ch6 == "%while")
+			else if (ch3 == "%if" or ch4 == "%for" or ch4 == "%val" or ch6 == "%while")
 			{
 				string value = rs::substr(content.ref, start_pos, pos - start_pos);
 				caret = new Caret{ "x": x, "y": y, "pos": pos };
@@ -726,6 +726,14 @@ class ParserBayHtml extends CoreObject
 		else if (token.content == "%while")
 		{
 			return parser.parser_operator::readWhile(parser);
+		}
+		else if (token.content == "%val")
+		{
+			BaseOpCode op_code = null;
+			list res = parser.parser_base::matchToken(parser, "%val"); parser = res[0];
+			list res = parser.parser_operator::readAssign(parser); parser = res[0]; op_code = res[1];
+			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
+			return [parser, op_code];
 		}
 		
 		return [parser, null];

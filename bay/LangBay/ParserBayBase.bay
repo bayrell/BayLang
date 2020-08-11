@@ -367,7 +367,7 @@ class ParserBayBase
 		if (s == "#case" or s == "%else") return s;
 		
 		s = rs::substr(content.ref, pos, 4);
-		if (s == "@css" or s == "%for") return s;
+		if (s == "@css" or s == "%for" or s == "%val") return s;
 		
 		s = rs::substr(content.ref, pos, 3);
 		if (

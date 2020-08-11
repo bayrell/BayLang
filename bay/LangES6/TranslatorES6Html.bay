@@ -23,6 +23,7 @@ use Runtime.re;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAssign;
 use Bayrell.Lang.OpCodes.OpFor;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 use Bayrell.Lang.OpCodes.OpHtmlContent;
@@ -385,7 +386,12 @@ class TranslatorES6Html
 		{
 			OpHtmlTag item = op_code.items.item(i);
 			
-			if (item instanceof OpFor)
+			if (item instanceof OpAssign)
+			{
+				list res = t.operator::OpAssign(t, item);
+				t = res[0]; content ~= res[1];
+			}
+			else if (item instanceof OpFor)
 			{
 				list res = t.operator::OpFor(t, item);
 				t = res[0]; content ~= res[1];
