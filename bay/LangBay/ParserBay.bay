@@ -48,6 +48,7 @@ class ParserBay extends CoreParser
 	bool skip_comments = true;
 	string pipe_kind = "";
 	bool is_pipe = false;
+	bool is_html = false;
 	
 	
 	/* Parsers */

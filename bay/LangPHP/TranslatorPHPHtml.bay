@@ -23,12 +23,15 @@ use Runtime.re;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpFor;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 use Bayrell.Lang.OpCodes.OpHtmlContent;
 use Bayrell.Lang.OpCodes.OpHtmlItems;
 use Bayrell.Lang.OpCodes.OpHtmlTag;
 use Bayrell.Lang.OpCodes.OpHtmlValue;
+use Bayrell.Lang.OpCodes.OpIf;
 use Bayrell.Lang.OpCodes.OpString;
+use Bayrell.Lang.OpCodes.OpWhile;
 
 
 static class TranslatorPHPHtml
@@ -299,12 +302,17 @@ static class TranslatorPHPHtml
 			return [t, ""];
 		}
 		
+		int items_count = op_code.items.count();
 		string content = "";
 		if (var_name == "")
 		{
 			list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
 			content ~= t.s(var_name ~ " = \"\";");
 		}
+		
+		string save_html_var_name = t.html_var_name;
+		t <= html_var_name <= var_name;
+		
 		for (int i=0; i<op_code.items.count(); i++)
 		{
 			OpHtmlTag item = op_code.items.item(i);
@@ -338,6 +346,24 @@ static class TranslatorPHPHtml
 					item_value = "static::json_encode($ctx, " ~ item_value ~ ")";
 				}
 			}
+			else if (item instanceof OpFor)
+			{
+				list res = t.operator::OpFor(t, item); 
+				t = res[0]; content ~= res[1];
+				continue;
+			}
+			else if (item instanceof OpIf)
+			{
+				list res = t.operator::OpIf(t, item); 
+				t = res[0]; content ~= res[1];
+				continue;
+			}
+			else if (item instanceof OpWhile)
+			{
+				list res = t.operator::OpWhile(t, item); 
+				t = res[0]; content ~= res[1];
+				continue;
+			}
 			else
 			{
 				list res = t.expression::Expression(t, item); 
@@ -347,6 +373,8 @@ static class TranslatorPHPHtml
 			
 			content ~= t.s(var_name ~ " .= " ~ item_value ~ ";");
 		}
+		
+		t <= html_var_name <= save_html_var_name;
 		
 		list res = t::addSaveOpCode
 		(

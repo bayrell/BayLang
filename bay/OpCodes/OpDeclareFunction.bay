@@ -35,7 +35,7 @@ struct OpDeclareFunction extends BaseOpCode
 	Collection<string> vars = null;
 	BaseOpCode result_type = null;
 	BaseOpCode expression = null;
-	BaseOpCode value = null;
+	BaseOpCode items = null;
 	OpFlags flags = null;
 	bool is_context = true;
 	

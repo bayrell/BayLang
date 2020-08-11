@@ -892,7 +892,9 @@ static class TranslatorPHPExpression
 		}
 		else if (op_code instanceof OpHtmlItems)
 		{
+			t <= is_html <= true;
 			list res = t.html::OpHtmlItems(t, op_code); t = res[0]; content = res[1];
+			t <= is_html <= false;
 		}
 		else if (op_code instanceof OpPreprocessorIfDef)
 		{

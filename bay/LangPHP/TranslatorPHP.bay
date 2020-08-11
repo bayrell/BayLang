@@ -33,6 +33,8 @@ struct TranslatorPHP extends CoreTranslator
 	/* Work */
 	bool is_pipe = false;
 	string pipe_var_name = "";
+	string html_var_name = "";
+	bool is_html = false;
 	
 	/* Translators */
 	TranslatorPHPExpression expression = null;

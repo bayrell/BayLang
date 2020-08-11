@@ -358,19 +358,25 @@ class ParserBayBase
 		if (s == "#endswitch") return s;
 		
 		s = rs::substr(content.ref, pos, 7);
-		if (s == "#ifcode" or s == "#switch") return s;
+		if (s == "#ifcode" or s == "#switch" or s == "#elseif") return s;
 		
 		s = rs::substr(content.ref, pos, 6);
-		if (s == "#endif" or s == "#ifdef") return s;
+		if (s == "#endif" or s == "#ifdef" or s == "%while") return s;
 		
 		s = rs::substr(content.ref, pos, 5);
-		if (s == "#case") return s;
+		if (s == "#case" or s == "%else") return s;
 		
 		s = rs::substr(content.ref, pos, 4);
-		if (s == "@css") return s;
+		if (s == "@css" or s == "%for") return s;
 		
 		s = rs::substr(content.ref, pos, 3);
-		if (s == "!==" or s == "===" or s == "#if") return s;
+		if (
+			s == "!==" or
+			s == "===" or
+			s == "#if" or
+			s == "%if"
+		)
+			return s;
 		
 		s = rs::substr(content.ref, pos, 2);
 		if (
@@ -498,12 +504,12 @@ class ParserBayBase
 		
 		try
 		{
-			caret_start = static::skipChar(parser, parser.content, parser.caret.clone());
+			caret_start = static::skipChar(parser, parser.content, parser.caret);
 			caret_end = static::nextToken(parser, parser.content, caret_start);
 		}
 		catch (ParserEOF e)
 		{
-			if (caret_start == null) caret_start = parser.caret.clone();
+			if (caret_start == null) caret_start = parser.caret;
 			if (caret_end == null) caret_end = caret_start;
 			eof = true;
 		}
@@ -542,7 +548,7 @@ class ParserBayBase
 		
 		try
 		{
-			caret_start = static::skipChar(parser, content, parser.caret.clone());
+			caret_start = static::skipChar(parser, content, parser.caret);
 			int pos = caret_start.pos;
 			int x = caret_start.x;
 			int y = caret_start.y;
@@ -554,7 +560,7 @@ class ParserBayBase
 		}
 		catch (ParserEOF e)
 		{
-			if (caret_start == null) caret_start = parser.caret.clone();
+			if (caret_start == null) caret_start = parser.caret;
 			if (caret_end == null) caret_end = caret_start;
 			eof = true;
 		}
@@ -590,7 +596,7 @@ class ParserBayBase
 		list res = static::lookToken(parser, next_token); parser = res[0]; token = res[1]; bool find = res[2];
 		if (not find)
 		{
-			throw new ParserExpected(next_token, token.caret_start.clone(), parser.file_name);
+			throw new ParserExpected(next_token, token.caret_start, parser.file_name);
 		}
 		
 		return [parser, token];
@@ -603,7 +609,7 @@ class ParserBayBase
 	 */
 	pure list<ParserBay, CoreToken> matchString(ParserBay parser, string str1)
 	{
-		Caret caret = parser.caret.clone();
+		Caret caret = parser.caret;
 		int sz = rs::strlen(str1);
 		string str2 = rs::substr(parser.content.ref, caret.pos, sz);
 		
@@ -628,12 +634,12 @@ class ParserBayBase
 	pure list<ParserBay, OpNumber> readNumber(ParserBay parser)
 	{
 		CoreToken token = null;
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		
 		/* Read token */
 		list res = static::readToken(parser); parser = res[0]; token = res[1];
 		
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		if (token.content == "")
 		{
 			throw new ParserExpected("Number", caret_start, parser.file_name);
@@ -650,7 +656,7 @@ class ParserBayBase
 			{
 				"value": token.content,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
@@ -757,9 +763,9 @@ class ParserBayBase
 		ParserBay look = null;
 		
 		/* Read token */
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		string str_char = token.content;
 		
 		/* Read begin string char */
@@ -852,18 +858,18 @@ class ParserBayBase
 	 */
 	pure list<ParserBay, OpComment> readComment(ParserBay parser)
 	{
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		CoreToken token = null;
 		ParserBay look = null;
 		
 		parser <= skip_comments <= false;
-		list res = ParserBayBase::readToken(parser.clone()); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
+		list res = ParserBayBase::readToken(parser); look = res[0]; token = res[1];
+		Caret caret_start = token.caret_start;
 		parser <= skip_comments <= true;
 		
 		if (token.content == "/") /* */
 		{
-			parser = look.clone();
+			parser = look;
 			string content = look.content;
 			int content_sz = look.content_sz;
 			int pos = look.caret.pos;
@@ -928,7 +934,7 @@ class ParserBayBase
 	 */
 	pure list<ParserBay, OpIdentifier> readIdentifier(ParserBay parser, bool find_ident = false)
 	{
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		CoreToken token = null;
 		ParserBay look = null;
 		string name = "";
@@ -936,18 +942,18 @@ class ParserBayBase
 		list res = ParserBayBase::readToken(parser); parser = res[0]; token = res[1];
 		if (token.content == "")
 		{
-			throw new ParserExpected("Identifier", token.caret_start.clone(), parser.file_name);
+			throw new ParserExpected("Identifier", token.caret_start, parser.file_name);
 		}
 		if (not static::isIdentifier(token.content))
 		{
-			throw new ParserExpected("Identifier", token.caret_start.clone(), parser.file_name);
+			throw new ParserExpected("Identifier", token.caret_start, parser.file_name);
 		}
 		if (static::isReserved(token.content))
 		{
 			throw new ParserExpected
 			(
 				"Identifier " ~ token.content ~ " is reserverd",
-				token.caret_start.clone(), parser.file_name
+				token.caret_start, parser.file_name
 			);
 		}
 		
@@ -966,8 +972,8 @@ class ParserBayBase
 			{
 				"kind": kind,
 				"value": name,
-				"caret_start": token.caret_start.clone(),
-				"caret_end": token.caret_end.clone(),
+				"caret_start": token.caret_start,
+				"caret_end": token.caret_end,
 			}
 		];
 	}
@@ -986,12 +992,12 @@ class ParserBayBase
 		
 		list res = parser.parser_base::readIdentifier(parser, find_ident);
 		parser = res[0]; ident = res[1];
-		Caret caret_start = ident.caret_start.clone();
+		Caret caret_start = ident.caret_start;
 		
 		string name = ident.value;
 		names.push(name);
 		
-		list res = parser.parser_base::readToken(parser.clone());
+		list res = parser.parser_base::readToken(parser);
 		look = res[0]; token = res[1];
 		
 		while (not token.eof and token.content == ".")
@@ -1003,7 +1009,7 @@ class ParserBayBase
 			name = ident.value;
 			names.push(name);
 			
-			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
 		return 
@@ -1012,7 +1018,7 @@ class ParserBayBase
 			new OpEntityName
 			{
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 				"names": names.toCollection(),
 			}
 		];
@@ -1025,7 +1031,7 @@ class ParserBayBase
 	 */
 	pure list<ParserBay, BaseOpCode> readTypeIdentifier(ParserBay parser, bool find_ident = true)
 	{
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		ParserBay look = null;
 		CoreToken token = null;
 		BaseOpCode op_code = null;
@@ -1034,17 +1040,17 @@ class ParserBayBase
 		
 		list res = static::readEntityName(parser, find_ident);
 		parser = res[0]; entity_name = res[1];
-		Caret caret_start = entity_name.caret_start.clone();
+		Caret caret_start = entity_name.caret_start;
 		
 		bool flag_open_caret = false;
 		bool flag_end_caret = false;
-		list res = static::lookToken(parser.clone(), "<");
+		list res = static::lookToken(parser, "<");
 		look = res[0]; token = res[1]; flag_open_caret = res[2];
 		if (flag_open_caret)
 		{
 			template = new Vector<OpTypeIdentifier>();
 			list res = static::matchToken(parser, "<"); parser = res[0];
-			list res = static::lookToken(parser.clone(), ">");
+			list res = static::lookToken(parser, ">");
 			look = res[0]; token = res[1]; flag_end_caret = res[2];
 			
 			while (not token.eof and not flag_end_caret)
@@ -1055,12 +1061,12 @@ class ParserBayBase
 				
 				template.push(parser_value);
 				
-				list res = static::lookToken(parser.clone(), ">");
+				list res = static::lookToken(parser, ">");
 				look = res[0]; token = res[1]; flag_end_caret = res[2];
 				if (not flag_end_caret)
 				{
 					list res = static::matchToken(parser, ","); parser = res[0];
-					list res = static::lookToken(parser.clone(), ">");
+					list res = static::lookToken(parser, ">");
 					look = res[0]; token = res[1]; flag_end_caret = res[2];
 				}
 			}
@@ -1075,7 +1081,7 @@ class ParserBayBase
 				"entity_name": entity_name,
 				"template": template ? template.toCollection() : null,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
@@ -1087,7 +1093,7 @@ class ParserBayBase
 	 */
 	pure list<ParserBay, BaseOpCode> readCollection(ParserBay parser)
 	{
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		ParserBay look = null;
 		CoreToken token = null;
 		Vector<BaseOpCode> values = new Vector();
@@ -1095,9 +1101,9 @@ class ParserBayBase
 		bool flag_ifdef = false;
 		
 		list res = static::matchToken(parser, "["); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		while (not token.eof and token.content != "]")
 		{
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
@@ -1115,11 +1121,11 @@ class ParserBayBase
 			BaseOpCode parser_value = null;
 			list res = parser.parser_expression::readExpression(parser); parser = res[0]; parser_value = res[1];
 			
-			list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = static::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == ",")
 			{
-				parser = look.clone();
-				list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+				parser = look;
+				list res = static::readToken(parser); look = res[0]; token = res[1];
 			}
 			
 			if (flag_ifdef)
@@ -1151,7 +1157,7 @@ class ParserBayBase
 			{
 				"values": values.toCollection(),
 				"caret_start": caret_start,
-				"caret_end": token.caret_end.clone(),
+				"caret_end": token.caret_end,
 			}
 		];
 	}
@@ -1170,9 +1176,9 @@ class ParserBayBase
 		bool flag_ifdef = false;
 		
 		list res = static::matchToken(parser, "{"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		while (not token.eof and token.content != "}")
 		{
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
@@ -1222,7 +1228,7 @@ class ParserBayBase
 			{
 				"values": values.toCollection(),
 				"caret_start": caret_start,
-				"caret_end": token.caret_end.clone(),
+				"caret_end": token.caret_end,
 			}
 		];
 	}
@@ -1236,13 +1242,13 @@ class ParserBayBase
 	{
 		ParserBay look = null;
 		CoreToken token = null;
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		bool flag_negative = false;
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "")
 		{
-			throw new ParserExpected("Identifier", token.caret_start.clone(), look.file_name);
+			throw new ParserExpected("Identifier", token.caret_start, look.file_name);
 		}
 		
 		/* Negative number */
@@ -1279,8 +1285,8 @@ class ParserBayBase
 				new OpNumber
 				{
 					"value": token.content,
-					"caret_start": token.caret_start.clone(),
-					"caret_end": look.caret.clone(),
+					"caret_start": token.caret_start,
+					"caret_end": look.caret,
 					"negative": flag_negative,
 				}
 			];
@@ -1300,7 +1306,7 @@ class ParserBayBase
 		CoreToken token = null;
 		Vector<BaseOpCode> items = new Vector();
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "{")
 		{
 			list res = static::readDict(parser); parser = res[0]; OpDict d = res[1];
@@ -1309,19 +1315,19 @@ class ParserBayBase
 		else if (token.content == "(")
 		{
 			list res = static::matchToken(parser, "("); parser = res[0];
-			list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = static::readToken(parser); look = res[0]; token = res[1];
 			while (not token.eof and token.content != ")")
 			{
 				ParserBay parser_value = null;
 				list res = parser.parser_expression::readExpression(parser);
-				parser = res[0]; parser_value = res[1].clone();
+				parser = res[0]; parser_value = res[1];
 				items.push(parser_value);
 				
-				list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+				list res = static::readToken(parser); look = res[0]; token = res[1];
 				if (token.content == ",")
 				{
-					parser = look.clone();
-					list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+					parser = look;
+					list res = static::readToken(parser); look = res[0]; token = res[1];
 				}
 			}
 			
@@ -1344,17 +1350,17 @@ class ParserBayBase
 		
 		Collection<BaseOpCode> args = [];
 		list res = static::matchToken(parser, "new"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		list res = static::readTypeIdentifier(parser); parser = res[0]; op_code = res[1];
 		
-		list res = static::readToken(parser.clone()); token = res[1];
+		list res = static::readToken(parser); token = res[1];
 		if (token.content == "(" or token.content == "{")
 		{
 			list res = static::readCallArgs(parser); parser = res[0]; args = res[1];
 		}
 		else
 		{
-			static::matchToken(parser.clone(), "(");
+			static::matchToken(parser, "(");
 		}
 		
 		return 
@@ -1365,7 +1371,7 @@ class ParserBayBase
 				"args": args,
 				"value": op_code,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
@@ -1457,8 +1463,8 @@ class ParserBayBase
 		CoreToken token = null;
 		BaseOpCode op_code = null;
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
-		Caret caret_start = look.caret.clone();
+		list res = static::readToken(parser); look = res[0]; token = res[1];
+		Caret caret_start = look.caret;
 		if (token.content == "new")
 		{
 			list res = static::readNew(parser); parser = res[0]; op_code = res[1];
@@ -1497,7 +1503,7 @@ class ParserBayBase
 							"pattern": op_type,
 							"value": op_code,
 							"caret_start": caret_start,
-							"caret_end": parser.caret.clone(),
+							"caret_end": parser.caret,
 						}
 					];
 				}
@@ -1531,7 +1537,7 @@ class ParserBayBase
 		BaseOpCode op_code = null;
 		
 		list res = static::matchToken(parser, "classof"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		
 		list res = static::readEntityName(parser); parser = res[0]; op_code = res[1];
 		return 
@@ -1541,7 +1547,7 @@ class ParserBayBase
 			{
 				"entity_name": op_code,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
@@ -1558,7 +1564,7 @@ class ParserBayBase
 		BaseOpCode op_code = null;
 		
 		list res = static::matchToken(parser, "classref"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
+		Caret caret_start = token.caret_start;
 		
 		list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
 		return 
@@ -1568,7 +1574,7 @@ class ParserBayBase
 			{
 				"value": op_code,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
@@ -1600,22 +1606,22 @@ class ParserBayBase
 			s == "{" or s == "[" or s == "(" or s == "@"
 		;
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "await")
 		{
-			caret_start = token.caret_start.clone();
+			caret_start = token.caret_start;
 			is_await = true;
-			parser = look.clone();
+			parser = look;
 		}
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "@")
 		{
-			list res = static::readToken(look.clone()); ParserBay look2 = res[0]; CoreToken token2 = res[1];
+			list res = static::readToken(look); ParserBay look2 = res[0]; CoreToken token2 = res[1];
 			if (not f_next(token2.content))
 			{
 				if (static::isIdentifier(token2.content))
 				{
-					parser = look.clone();
+					parser = look;
 					is_context_call = false;
 				}
 			}
@@ -1623,13 +1629,13 @@ class ParserBayBase
 		list res = static::readBaseItem(parser); parser = res[0]; op_code = res[1];
 		
 		op_code_first = op_code;
-		if (caret_start == null) caret_start = op_code.caret_start.clone();		
+		if (caret_start == null) caret_start = op_code.caret_start;		
 		if (op_code.kind == OpIdentifier::KIND_CONTEXT or op_code.kind == OpIdentifier::KIND_SYS_FUNCTION)
 		{
 			is_context_call = false;
 		}
 		
-		list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (f_next(token.content))
 		{
 			if (op_code instanceof OpIdentifier)
@@ -1647,7 +1653,7 @@ class ParserBayBase
 					throw new ParserExpected
 					(
 						"Module or variable '" ~ op_code.value ~ "'",
-						op_code.caret_start.clone(), parser.file_name
+						op_code.caret_start, parser.file_name
 					);
 				}
 			}
@@ -1699,7 +1705,7 @@ class ParserBayBase
 				
 				if (token_content == "@")
 				{
-					parser = look.clone();
+					parser = look;
 					is_context_call = false;
 				}
 				
@@ -1722,7 +1728,7 @@ class ParserBayBase
 				string kind = "";
 				Vector<BaseOpCode> look_values = null;
 				BaseOpCode look_value = null;
-				parser = look.clone();
+				parser = look;
 				is_context_call = true;
 				
 				if (token_content == ".")
@@ -1779,7 +1785,7 @@ class ParserBayBase
 						list res = parser.parser_expression::readExpression(parser);
 						parser = res[0]; look_value = res[1];
 						look_values.push(look_value);
-						list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+						list res = static::readToken(parser); look = res[0]; token = res[1];
 					}
 					
 					list res = static::matchToken(parser, "]"); parser = res[0];
@@ -1790,10 +1796,10 @@ class ParserBayBase
 				}
 				else
 				{
-					list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+					list res = static::readToken(parser); look = res[0]; token = res[1];
 					if (token.content == "@")
 					{
-						parser = look.clone();
+						parser = look;
 						is_context_call = false;
 					}
 					list res = static::readIdentifier(parser); parser = res[0]; look_value = res[1];
@@ -1806,22 +1812,22 @@ class ParserBayBase
 					"attrs": look_values != null ? look_values.toCollection() : null,
 					"value": look_values == null ? look_value : null,
 					"caret_start": caret_start,
-					"caret_end": parser.caret.clone(),
+					"caret_end": parser.caret,
 				};
 			}
 			else
 			{
-				throw new ParserExpected("Next attr", token.caret_start.clone(), parser.file_name);
+				throw new ParserExpected("Next attr", token.caret_start, parser.file_name);
 			}
 			
-			list res = static::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = static::readToken(parser); look = res[0]; token = res[1];
 			if 
 			(
 				op_code instanceof OpAttr and op_code.kind == OpAttr::KIND_PIPE and
 				token.content != "(" and token.content != "{"
 			)
 			{
-				throw new ParserExpected("Call", token.caret_start.clone(), parser.file_name);
+				throw new ParserExpected("Call", token.caret_start, parser.file_name);
 			}
 			
 		}

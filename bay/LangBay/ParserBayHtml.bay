@@ -163,7 +163,7 @@ class ParserBayHtml extends CoreObject
 				css_str ~= s;
 				
 				/* Set pos, x, y */
-				caret_start = parser.caret.clone();
+				caret_start = parser.caret;
 				pos = parser.caret.pos;
 				x = parser.caret.x;
 				y = parser.caret.y;
@@ -184,7 +184,7 @@ class ParserBayHtml extends CoreObject
 				css_str ~= s1 ~ "{" ~ s2 ~ "}";
 				
 				/* Set pos, x, y */
-				caret_start = parser.caret.clone();
+				caret_start = parser.caret;
 				pos = parser.caret.pos;
 				x = parser.caret.x;
 				y = parser.caret.y;
@@ -206,7 +206,7 @@ class ParserBayHtml extends CoreObject
 				css_str ~= "{" ~ s ~ "}";
 				
 				/* Set pos, x, y */
-				caret_start = parser.caret.clone();
+				caret_start = parser.caret;
 				pos = parser.caret.pos;
 				x = parser.caret.x;
 				y = parser.caret.y;
@@ -239,7 +239,7 @@ class ParserBayHtml extends CoreObject
 	 */
 	pure list<ParserBay, BaseOpCode> readCss(ParserBay parser)
 	{
-		Caret caret_start = parser.caret.clone();
+		Caret caret_start = parser.caret;
 		
 		list res = parser.parser_base::matchToken(parser, "@css"); parser = res[0];
 		list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
@@ -256,7 +256,7 @@ class ParserBayHtml extends CoreObject
 		BaseOpCode op_code = new OpString
 		{
 			"caret_start": caret,
-			"caret_end": parser.caret.clone(),
+			"caret_end": parser.caret,
 			"value": css_str,
 		};
 		return [parser, op_code];
@@ -270,7 +270,7 @@ class ParserBayHtml extends CoreObject
 	pure list<ParserBay, BaseOpCode> readHTMLValue(ParserBay parser)
 	{
 		BaseOpCode item = null;
-		Caret caret = parser.caret.clone();
+		Caret caret = parser.caret;
 		Reference<string> content = parser.content;
 		int pos = parser.caret.pos;
 		int x = parser.caret.x;
@@ -318,7 +318,7 @@ class ParserBayHtml extends CoreObject
 					"kind": OpHtmlValue::KIND_RAW,
 					"value": item,
 					"caret_start": caret,
-					"caret_end": parser.caret.clone(),
+					"caret_end": parser.caret,
 				};
 			}
 			else if (ch4 == "json")
@@ -328,7 +328,7 @@ class ParserBayHtml extends CoreObject
 					"kind": OpHtmlValue::KIND_JSON,
 					"value": item,
 					"caret_start": caret,
-					"caret_end": parser.caret.clone(),
+					"caret_end": parser.caret,
 				};
 			}
 			else if (ch4 == "html")
@@ -338,7 +338,7 @@ class ParserBayHtml extends CoreObject
 					"kind": OpHtmlValue::KIND_HTML,
 					"value": item,
 					"caret_start": caret,
-					"caret_end": parser.caret.clone(),
+					"caret_end": parser.caret,
 				};
 			}
 			
@@ -361,10 +361,10 @@ class ParserBayHtml extends CoreObject
 		string key = "";
 		
 		/* Look token */
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "@")
 		{
-			parser = look.clone();
+			parser = look;
 			key = "@";
 		}
 		
@@ -372,21 +372,21 @@ class ParserBayHtml extends CoreObject
 		key ~= ident.value;
 		
 		/* Read attr */
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		while (token.content == "-")
 		{
-			list res = parser.parser_base::readIdentifier(look.clone()); parser = res[0]; ident = res[1];
+			list res = parser.parser_base::readIdentifier(look); parser = res[0]; ident = res[1];
 			key ~= "-" ~ ident.value;
 			
 			/* Look next token */
-			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
 		/* Look token */
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == ":")
 		{
-			parser = look.clone();
+			parser = look;
 			key ~= ":";
 			list res = parser.parser_base::readIdentifier(parser); parser = res[0]; ident = res[1];
 			key ~= ident.value;
@@ -408,7 +408,7 @@ class ParserBayHtml extends CoreObject
 		OpIdentifier ident = null;
 		
 		/* Look token */
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "{")
 		{
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
@@ -444,12 +444,12 @@ class ParserBayHtml extends CoreObject
 		
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz;
-		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret.clone());
+		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret);
 		string ch = rs::substr(content.ref, caret.pos, 1);
 		while (ch != "/" and ch != ">" and caret.pos < content_sz)
 		{
 			Caret caret_start = caret;
-			parser <= caret <= caret.clone();
+			parser <= caret <= caret;
 			list res = static::readHTMLAttrKey(parser); parser = res[0]; string key = res[1];
 			list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
 			list res = static::readHTMLAttrValue(parser); parser = res[0]; BaseOpCode value = res[1];
@@ -460,10 +460,10 @@ class ParserBayHtml extends CoreObject
 					"key": key,
 					"value": value,
 					"caret_start": caret_start,
-					"caret_end": parser.caret.clone(),
+					"caret_end": parser.caret,
 				}
 			);
-			caret = parser.parser_base::skipChar(parser, content, parser.caret.clone());
+			caret = parser.parser_base::skipChar(parser, content, parser.caret);
 			ch = rs::substr(content.ref, caret.pos, 1);
 			string ch2 = rs::substr(content.ref, caret.pos, 2);
 			if (ch2 == "/>") break;
@@ -484,7 +484,7 @@ class ParserBayHtml extends CoreObject
 		CoreToken token = null;
 		ParserBay look = null;
 		Caret caret = null;
-		Caret caret_start = parser.caret.clone();
+		Caret caret_start = parser.caret;
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz;
 		int pos = parser.caret.pos;
@@ -499,8 +499,11 @@ class ParserBayHtml extends CoreObject
 		while ( ( end_tag == "" or (end_tag != "" and ch2 != end_tag) ) and pos < content_sz)
 		{
 			string ch = rs::substr(content.ref, pos, 1);
+			string ch3 = rs::substr(content.ref, pos, 3);
+			string ch4 = rs::substr(content.ref, pos, 4);
+			string ch6 = rs::substr(content.ref, pos, 6);
 			
-			/* If html or  tag */
+			/* If html or tag */
 			if (ch == "<" or ch == "{" or ch == "@")
 			{
 				string value = rs::substr(content.ref, start_pos, pos - start_pos);
@@ -526,12 +529,45 @@ class ParserBayHtml extends CoreObject
 				items.push(item);
 				
 				/* Set pos, x, y */
-				caret_start = parser.caret.clone();
+				caret_start = parser.caret;
 				pos = parser.caret.pos;
 				x = parser.caret.x;
 				y = parser.caret.y;
 				start_pos = pos;
 			}
+			
+			/* If html operator */
+			else if (ch3 == "%if" or ch4 == "%for" or ch6 == "%while")
+			{
+				string value = rs::substr(content.ref, start_pos, pos - start_pos);
+				caret = new Caret{ "x": x, "y": y, "pos": pos };
+				value = rs::trim(value, "\t\r\n");
+				value = rs::trim(value, " ");
+				if (value != "")
+				{
+					item = new OpHtmlContent
+					{
+						"value": value,
+						"caret_start": caret_start,
+						"caret_end": caret,
+					}
+					items.push(item);
+				}
+				
+				/* Read HTML Operator */
+				parser <= caret <= caret;
+				list res = static::readHTMLOperator(parser);
+				parser = res[0]; item = res[1];
+				items.push(item);
+				
+				/* Set pos, x, y */
+				caret_start = parser.caret;
+				pos = parser.caret.pos;
+				x = parser.caret.x;
+				y = parser.caret.y;
+				start_pos = pos;
+			}
+			
 			else
 			{
 				if (first_html_tag and ch != " " and ch != "\t" and ch != "\r" and ch != "\n")
@@ -575,7 +611,7 @@ class ParserBayHtml extends CoreObject
 		ParserBay look = null;
 		OpIdentifier ident = null;
 		Caret caret_items_start = null, caret_items_end = null;
-		Caret caret_start = parser.caret.clone();
+		Caret caret_start = parser.caret;
 		Collection<BaseOpCode> items = null;
 		BaseOpCode op_code_name = null;
 		bool is_single_flag = false;
@@ -586,16 +622,16 @@ class ParserBayHtml extends CoreObject
 		list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
 		
 		/* Look token */
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "{")
 		{
 			op_code_flag = true;
-			Caret caret1 = parser.caret.clone();
+			Caret caret1 = parser.caret;
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; op_code_name = res[1];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-			Caret caret2 = parser.caret.clone();
+			Caret caret2 = parser.caret;
 			tag_name = rs::substr(parser.content.ref, caret1.pos, caret2.pos - caret1.pos);
 		}
 		else if (token.content == ">")
@@ -611,10 +647,10 @@ class ParserBayHtml extends CoreObject
 		}
 		
 		list res = static::readHTMLAttrs(parser); parser = res[0]; Collection<OpHtmlAttribute> attrs = res[1];
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "/")
 		{
-			parser = look.clone();
+			parser = look;
 			is_single_flag = true;
 		}
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
@@ -622,10 +658,10 @@ class ParserBayHtml extends CoreObject
 		if (not is_single_flag)
 		{
 			/* Read items */
-			caret_items_start = parser.caret.clone();
+			caret_items_start = parser.caret;
 			list res = static::readHTMLContent(parser, "</" ~ tag_name);
 			parser = res[0]; Collection<BaseOpCode> items = res[1];
-			caret_items_end = parser.caret.clone();
+			caret_items_end = parser.caret;
 			
 			/* Tag end */
 			if (op_code_flag)
@@ -656,7 +692,7 @@ class ParserBayHtml extends CoreObject
 			"tag_name": tag_name,
 			"op_code_name": op_code_name,
 			"caret_start": caret_start,
-			"caret_end": parser.caret.clone(),
+			"caret_end": parser.caret,
 			"items": (items != null) ? new OpHtmlItems
 			{
 				"caret_start": caret_items_start,
@@ -671,11 +707,42 @@ class ParserBayHtml extends CoreObject
 	
 	
 	/**
+	 * Read html operator
+	 */
+	pure list<ParserBay, BaseOpCode> readHTMLOperator(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+		
+		if (token.content == "%if")
+		{
+			return parser.parser_operator::readIf(parser);
+		}
+		else if (token.content == "%for")
+		{
+			return parser.parser_operator::readFor(parser);
+		}
+		else if (token.content == "%while")
+		{
+			return parser.parser_operator::readWhile(parser);
+		}
+		
+		return [parser, null];
+	}
+	
+	
+	
+	/**
 	 * Read html template
 	 */
 	pure list<ParserBay, BaseOpCode> readHTML(ParserBay parser)
 	{
 		Caret caret_start = parser.caret;
+		
+		/* Enable html flag */
+		bool save_is_html = parser.is_html;
+		parser <= is_html <= true;
 		
 		list res = static::readHTMLContent(parser, "");
 		parser = res[0]; Collection<BaseOpCode> items = res[1];
@@ -686,6 +753,9 @@ class ParserBayHtml extends CoreObject
 			"caret_end": parser.caret,
 			"items": items,
 		}
+		
+		/* Disable html flag */
+		parser <= is_html <= save_is_html;
 		
 		return [parser, op_code];
 	}

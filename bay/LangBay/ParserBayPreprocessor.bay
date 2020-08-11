@@ -35,11 +35,11 @@ static class ParserBayPreprocessor
 	 */
 	pure list<ParserBay, BaseOpCode> readPreprocessor(ParserBay parser)
 	{
-		ParserBay start = parser.clone();
+		ParserBay start = parser;
 		ParserBay look = null;
 		CoreToken token = null;
 
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "#switch")
 		{
 			return static::readPreprocessorSwitch(start);
@@ -78,18 +78,18 @@ static class ParserBayPreprocessor
 		);
 		
 		list res = parser.parser_base::matchToken(parser, "#switch"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start.clone();
-		list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+		Caret caret_start = token.caret_start;
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		
 		while (token.content == "#case")
 		{
-			parser = look.clone();
+			parser = look;
 			
 			/* Skip ifcode */
-			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == "ifcode")
 			{
-				parser = look.clone();
+				parser = look;
 			}
 			
 			/* Read condition */
@@ -103,19 +103,19 @@ static class ParserBayPreprocessor
 			
 			/* Read content */
 			string content = "";
-			Caret caret_content = parser.caret.clone();
+			Caret caret_content = parser.caret;
 			list res = parser.parser_base::readUntilStringArr(parser, ["#case", "#endswitch"], false);
 			parser = res[0]; content = res[1];
 			
 			/* Look content */
-			list res = parser.parser_base::readToken(parser.clone()); look = res[0]; token = res[1];
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			
 			OpPreprocessorIfCode ifcode = new OpPreprocessorIfCode
 			{
 				"condition": condition,
 				"content": content,
 				"caret_start": caret_content,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			};
 			items.push(ifcode);
 		}
@@ -133,7 +133,7 @@ static class ParserBayPreprocessor
 			{
 				"items": items.toCollection(),
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
@@ -161,7 +161,7 @@ static class ParserBayPreprocessor
 		
 		/* Read content */
 		string content = "";
-		Caret caret_content = parser.caret.clone();
+		Caret caret_content = parser.caret;
 		list res = parser.parser_base::readUntilStringArr(parser, ["#endif"], false);
 		parser = res[0]; content = res[1];
 		
@@ -236,7 +236,7 @@ static class ParserBayPreprocessor
 				"items": items,
 				"condition": condition,
 				"caret_start": caret_start,
-				"caret_end": parser.caret.clone(),
+				"caret_end": parser.caret,
 			}
 		];
 	}
