@@ -35,6 +35,8 @@ struct TranslatorES6 extends CoreTranslator
 	/* Work */
 	bool is_pipe = false;
 	string pipe_var_name = "";
+	string html_var_name = "";
+	bool is_html = false;
 	
 	/* Translators */
 	TranslatorES6AsyncAwait async_await = null;

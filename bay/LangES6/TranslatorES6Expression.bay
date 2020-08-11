@@ -969,7 +969,9 @@ struct TranslatorES6Expression extends CoreStruct
 		}
 		else if (op_code instanceof OpHtmlItems)
 		{
-			list res = t.html::OpHtml(t, op_code); t = res[0]; content = res[1];
+			t <= is_html <= true;
+			list res = t.html::OpHtmlItems(t, op_code); t = res[0]; content = res[1];
+			t <= is_html <= false;
 		}
 		else if (op_code instanceof OpPreprocessorIfDef)
 		{

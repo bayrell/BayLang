@@ -348,19 +348,19 @@ static class TranslatorPHPHtml
 			}
 			else if (item instanceof OpFor)
 			{
-				list res = t.operator::OpFor(t, item); 
+				list res = t.operator::OpFor(t, item);
 				t = res[0]; content ~= res[1];
 				continue;
 			}
 			else if (item instanceof OpIf)
 			{
-				list res = t.operator::OpIf(t, item); 
+				list res = t.operator::OpIf(t, item);
 				t = res[0]; content ~= res[1];
 				continue;
 			}
 			else if (item instanceof OpWhile)
 			{
-				list res = t.operator::OpWhile(t, item); 
+				list res = t.operator::OpWhile(t, item);
 				t = res[0]; content ~= res[1];
 				continue;
 			}
