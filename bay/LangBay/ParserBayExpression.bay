@@ -529,9 +529,9 @@ static class ParserBayExpression
 		parser <= is_pipe <= save_is_pipe;
 		
 		list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-		if (look_token.content == '|>' or look_token.content == '->')
+		if (look_token.content == '|>')
 		{
-			while (look_token.content == '->' or look_token.content == '|>' or look_token.content == ',')
+			while (look_token.content == '|>' or look_token.content == ',')
 			{
 				parser = look;
 				BaseOpCode value = null;
@@ -696,6 +696,11 @@ static class ParserBayExpression
 					parser <= is_pipe <= false;
 					parser <= find_ident <= save_find_ident;
 				}
+				else if (look_token.content == 'curry')
+				{
+					kind = OpPipe::KIND_CALL;
+					list res = parser.parser_base::readCurry(parser); parser = res[0]; value = res[1];
+				}
 				else
 				{
 					kind = OpPipe::KIND_CALL;
@@ -734,6 +739,10 @@ static class ParserBayExpression
 		if (token.content == "<")
 		{
 			return parser.parser_html::readHTML(parser);
+		}
+		else if (token.content == "curry")
+		{
+			return parser.parser_base::readCurry(parser);
 		}
 		else if (token.content == "@css")
 		{

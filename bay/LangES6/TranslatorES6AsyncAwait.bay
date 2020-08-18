@@ -662,9 +662,9 @@ struct TranslatorES6AsyncAwait extends CoreStruct
 		s1 ~= t.s("{");
 		t = t.levelInc();
 		
-		if (f.value)
+		if (f.items)
 		{
-			list res = t.operator::Operators(t, f.value); t = res[0];
+			list res = t.operator::Operators(t, f.items); t = res[0];
 			s1 ~= res[1];
 		}
 		else if (f.expression)

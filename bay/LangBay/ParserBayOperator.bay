@@ -975,13 +975,17 @@ static class ParserBayOperator
 	/**
 	 * Read function args
 	 */
-	pure list<ParserBay, Collection> readDeclareFunctionArgs(ParserBay parser, bool find_ident = true)
+	pure list<ParserBay, Collection> readDeclareFunctionArgs
+	(
+		ParserBay parser, bool find_ident = true, bool flag_match = true
+	)
 	{
+		list res = null
 		ParserBay look = null;
 		CoreToken token = null;
 		Vector<BaseOpCode> items = new Vector();
 		
-		list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
+		if (flag_match) { res = parser.parser_base::matchToken(parser, "("); parser = res[0]; }
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		while (not token.eof and token.content != ")")
 		{
@@ -1034,7 +1038,7 @@ static class ParserBayOperator
 			}
 		}
 		
-		list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
+		if (flag_match) { res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; }
 		return [parser, items.toCollection()];
 	}
 	

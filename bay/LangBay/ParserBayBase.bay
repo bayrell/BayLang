@@ -32,6 +32,8 @@ use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpClassOf;
 use Bayrell.Lang.OpCodes.OpClassRef;
 use Bayrell.Lang.OpCodes.OpCollection;
+use Bayrell.Lang.OpCodes.OpCurry;
+use Bayrell.Lang.OpCodes.OpCurryArg;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpDict;
@@ -367,7 +369,7 @@ class ParserBayBase
 		if (s == "#case" or s == "%else") return s;
 		
 		s = rs::substr(content.ref, pos, 4);
-		if (s == "@css" or s == "%for" or s == "%val") return s;
+		if (s == "@css" or s == "%for" or s == "%var") return s;
 		
 		s = rs::substr(content.ref, pos, 3);
 		if (
@@ -1455,6 +1457,69 @@ class ParserBayBase
 	
 	
 	/**
+	 * Read curry
+	 */
+	pure list<ParserBay, BaseOpCode> readCurry(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		BaseOpCode obj = null;
+		Vector<BaseOpCode> args = new Vector();
+		
+		list res = static::matchToken(parser, "curry"); parser = res[0]; token = res[1];
+		list res = static::readDynamic(parser, 14); parser = res[0]; obj = res[1];
+		list res = static::matchToken(parser, "("); parser = res[0];
+		list res = static::readToken(parser); look = res[0]; token = res[1];
+		while (not token.eof and token.content != ")")
+		{
+			BaseOpCode arg = null;
+			if (token.content == "?")
+			{
+				int pos = 0;
+				parser = look;
+				list res = static::readToken(look); look = res[0]; token = res[1];
+				if (static::isStringOfNumbers(token.content))
+				{
+					pos = (int)token.content;
+					parser = look;
+				}
+				arg = new OpCurryArg
+				{
+					"pos": pos,
+				};
+				args.push(arg);
+			}
+			else
+			{
+				list res = parser.parser_expression::readExpression(parser);
+				parser = res[0]; arg = res[1];
+				args.push(arg);
+			}
+			
+			list res = static::readToken(parser); look = res[0]; token = res[1];
+			if (token.content == ",")
+			{
+				parser = look;
+				list res = static::readToken(parser); look = res[0]; token = res[1];
+			}
+		}
+		
+		list res = static::matchToken(parser, ")"); parser = res[0];
+		
+		return
+		[
+			parser,
+			new OpCurry
+			{
+				"obj": obj,
+				"args": args,
+			}
+		];
+	}
+	
+	
+	
+	/**
 	 * Read base item
 	 */
 	pure list<ParserBay, BaseOpCode> readBaseItem(ParserBay parser)
@@ -1601,10 +1666,26 @@ class ParserBayBase
 		int flag_static = 4;
 		int flag_dynamic = 8;
 		
-		fn f_next = bool (string s) =>
-			s == "." or s == "::" or
-			s == "{" or s == "[" or s == "(" or s == "@"
-		;
+		fn f_next = bool (string s) use (dynamic_flags)
+		{
+			if (dynamic_flags & 1 == 1)
+			{
+				if (s == "{" or s == "(" or s == "@") return true;
+			}
+			if (dynamic_flags & 2 == 2)
+			{
+				if (s == ".") return true;
+			}
+			if (dynamic_flags & 4 == 4)
+			{
+				if (s == "::") return true;
+			}
+			if (dynamic_flags & 8 == 8)
+			{
+				if (s == "[") return true;
+			}
+			return false;
+		}
 		
 		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "await")

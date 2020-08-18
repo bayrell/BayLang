@@ -653,7 +653,7 @@ static class TranslatorPHPOperator
 			for (int i=0; i<op_code.items.count(); i++)
 			{
 				BaseOpCode item = op_code.items.item(i);
-				list res = t.html::Operator(t, item); t = res[0];
+				list res = static::Operator(t, item); t = res[0];
 				content ~= res[1];
 			}
 		}

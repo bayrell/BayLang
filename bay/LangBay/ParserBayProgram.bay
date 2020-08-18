@@ -150,6 +150,10 @@ static class ParserBayProgram
 				parser = res[0]; item = res[1];
 				if (item != null) items.push(item);
 			}
+			else if (token.content == "<")
+			{
+				break;
+			}
 			else
 			{
 				OpFlags flags = null;
@@ -458,6 +462,11 @@ static class ParserBayProgram
 			return [parser, null];
 		}
 		
+		if (token.content == "<")
+		{
+			return parser.parser_html::readUI(parser);
+		}
+		
 		while (not token.eof and (end_tag == "" or (end_tag != "" and token.content == end_tag)))
 		{
 			if (token.content == "/")
@@ -553,7 +562,6 @@ static class ParserBayProgram
 			parser <= skip_comments <= false;
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			parser <= skip_comments <= true;
-			
 		}
 		
 		items.appendVector(comments);

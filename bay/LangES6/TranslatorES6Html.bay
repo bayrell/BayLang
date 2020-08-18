@@ -447,7 +447,7 @@ class TranslatorES6Html
 		t = t.levelInc();
 		
 		content ~= t.s("var __vnull = null;");
-		content ~= t.s("var control_childs = [];");
+		content ~= t.s("var __control_childs = [];");
 		
 		list res = static::OpHtmlChilds(t, op_code, "__control");
 		t = res[0]; content ~= res[1];
