@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang.LangPHP;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
@@ -336,7 +336,7 @@ static class TranslatorPHPProgram
 				bool (OpAssign variable) => not variable.flags.isFlag("static") 
 			);
 			
-			if (t.current_class_full_name != "Runtime.CoreObject" and vars.count() > 0)
+			if (t.current_class_full_name != "Runtime.BaseObject" and vars.count() > 0)
 			{
 				content ~= t.s("function _init($ctx)");
 				content ~= t.s("{");
@@ -765,7 +765,7 @@ static class TranslatorPHPProgram
 		}
 		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
 		{
-			t <= current_class_extends_name <= "Runtime.CoreStruct";
+			t <= current_class_extends_name <= "Runtime.BaseStruct";
 		}
 		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
 		{

@@ -19,14 +19,14 @@
 namespace Bayrell.Lang;
 
 use Runtime.lib;
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpDeclareClass;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 
 
-struct CoreTranslator extends CoreStruct
+struct CoreTranslator extends BaseStruct
 {
 	
 	/* State */

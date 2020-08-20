@@ -18,10 +18,10 @@
  
 namespace Bayrell.Lang.OpCodes;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 
 
-struct OpFlags extends CoreStruct
+struct OpFlags extends BaseStruct
 {
 	public bool p_async = false;
 	public bool p_export = false;

@@ -18,8 +18,8 @@
 
 namespace Bayrell.Lang.LangBay;
 
-use Runtime.CoreObject;
-use Runtime.CoreStruct;
+use Runtime.BaseObject;
+use Runtime.BaseStruct;
 use Runtime.Reference;
 use Runtime.RuntimeUtils;
 use Bayrell.Lang.Caret;
@@ -46,7 +46,7 @@ use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
 
 
-class ParserBayHtml extends CoreObject
+class ParserBayHtml extends BaseObject
 {
 	
 	

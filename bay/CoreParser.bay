@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Runtime.FakeStruct;
 use Runtime.lib;
 use Runtime.rs;
@@ -31,7 +31,7 @@ use Bayrell.Lang.Exceptions.ParserExpected;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-class CoreParser extends CoreStruct
+class CoreParser extends BaseStruct
 {
 	/* Settings */
 	int tab_size = 4;

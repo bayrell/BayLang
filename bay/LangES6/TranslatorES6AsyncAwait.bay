@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang.LangES6;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangES6.AsyncAwait;
 use Bayrell.Lang.LangES6.TranslatorES6;
@@ -40,7 +40,7 @@ use Bayrell.Lang.OpCodes.OpTryCatchItem;
 use Bayrell.Lang.OpCodes.OpWhile;
 
 
-struct TranslatorES6AsyncAwait extends CoreStruct
+struct TranslatorES6AsyncAwait extends BaseStruct
 {
 	/*Collection<AsyncAwait> async_stack = null;*/
 	Collection<AsyncAwait> async_stack = new Collection<AsyncAwait>();

@@ -18,11 +18,11 @@
 
 namespace Bayrell.Lang;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Runtime.FakeStruct;
 
 
-class Caret extends CoreStruct
+class Caret extends BaseStruct
 {
 	
 	/**

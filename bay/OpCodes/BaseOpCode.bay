@@ -18,13 +18,13 @@
  
 namespace Bayrell.Lang.OpCodes;
 
-use Runtime.CoreObject;
-use Runtime.CoreStruct;
+use Runtime.BaseObject;
+use Runtime.BaseStruct;
 use Runtime.Interfaces.SerializeInterface;
 use Bayrell.Lang.Caret;
 
 
-struct BaseOpCode extends CoreStruct
+struct BaseOpCode extends BaseStruct
 {
 	static const string op = "";
 	Caret caret_start = null;

@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang.LangES6;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Runtime.re;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangES6.TranslatorES6;
@@ -51,7 +51,7 @@ use Bayrell.Lang.OpCodes.OpTypeConvert;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 
 
-struct TranslatorES6Expression extends CoreStruct
+struct TranslatorES6Expression extends BaseStruct
 {
 	
 	/**

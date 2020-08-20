@@ -18,11 +18,11 @@
 
 namespace Bayrell.Lang;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-struct SaveOpCode extends CoreStruct
+struct SaveOpCode extends BaseStruct
 {
 	string var_name = "";
 	string var_content = "";

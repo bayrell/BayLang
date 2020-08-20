@@ -18,10 +18,10 @@
 
 namespace Bayrell.Lang.LangES6;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 
 
-struct AsyncAwait extends CoreStruct
+struct AsyncAwait extends BaseStruct
 {
 	string start_pos = "";
 	string end_pos = "";

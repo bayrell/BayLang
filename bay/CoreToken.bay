@@ -18,14 +18,14 @@
 
 namespace Bayrell.Lang;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Runtime.rs;
 use Bayrell.Lang.Caret;
 use Bayrell.Lang.Exceptions.ParserEOF;
 use Bayrell.Lang.Exceptions.ParserExpected;
 
 
-struct CoreToken extends CoreStruct
+struct CoreToken extends BaseStruct
 {
 	
 	/**

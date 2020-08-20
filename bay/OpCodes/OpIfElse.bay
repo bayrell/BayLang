@@ -18,11 +18,11 @@
 
 namespace Bayrell.Lang.OpCodes;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-struct OpIfElse extends CoreStruct
+struct OpIfElse extends BaseStruct
 {
 	BaseOpCode condition = null;
 	BaseOpCode if_true = null;

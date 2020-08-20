@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang.LangBay;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.Caret;
 use Bayrell.Lang.CoreParser;
 use Bayrell.Lang.CoreToken;

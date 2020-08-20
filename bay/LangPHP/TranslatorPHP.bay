@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang.LangPHP;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.CoreTranslator;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangPHP.TranslatorPHPExpression;

@@ -18,11 +18,11 @@
  
 namespace Bayrell.Lang.OpCodes;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-struct OpDictPair extends CoreStruct
+struct OpDictPair extends BaseStruct
 {
 	string key = "";
 	BaseOpCode value = null;

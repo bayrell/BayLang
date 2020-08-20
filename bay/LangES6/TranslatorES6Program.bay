@@ -18,7 +18,7 @@
 
 namespace Bayrell.Lang.LangES6;
 
-use Runtime.CoreStruct;
+use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.OpCodes.BaseOpCode;
@@ -40,7 +40,7 @@ use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
 
 
-struct TranslatorES6Program extends CoreStruct
+struct TranslatorES6Program extends BaseStruct
 {
 	
 	/**
@@ -763,7 +763,7 @@ struct TranslatorES6Program extends CoreStruct
 				bool (OpAssign variable) => not variable.flags.isFlag("static") 
 			);
 			
-			if (t.current_class_full_name != "Runtime.CoreObject" and vars.count() > 0)
+			if (t.current_class_full_name != "Runtime.BaseObject" and vars.count() > 0)
 			{
 				content ~= t.s("_init: function(ctx)");
 				content ~= t.s("{");
@@ -1039,7 +1039,7 @@ struct TranslatorES6Program extends CoreStruct
 		}
 		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
 		{
-			t <= current_class_extends_name <= "Runtime.CoreStruct";
+			t <= current_class_extends_name <= "Runtime.BaseStruct";
 		}
 		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
 		{
