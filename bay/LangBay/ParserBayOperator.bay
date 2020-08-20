@@ -47,6 +47,7 @@ use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpPipe;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpReturn;
+use Bayrell.Lang.OpCodes.OpSafe;
 use Bayrell.Lang.OpCodes.OpThrow;
 use Bayrell.Lang.OpCodes.OpTryCatch;
 use Bayrell.Lang.OpCodes.OpTryCatchItem;
@@ -438,6 +439,33 @@ static class ParserBayOperator
 	
 	
 	/**
+	 * Read While
+	 */
+	pure list<ParserBay, BaseOpCode> readSafe(ParserBay parser)
+	{
+		Caret caret_start = parser.caret;
+		list res = parser.parser_base::matchToken(parser, "safe"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
+		list res = parser.parser_base::readDynamic(parser); parser = res[0]; BaseOpCode obj = res[1];
+		list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
+		list res = static::readOperators(parser); parser = res[0]; BaseOpCode items = res[1];
+		
+		return
+		[
+			parser,
+			new OpSafe
+			{
+				"obj": obj,
+				"items": items,
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+			}
+		];
+	}
+	
+	
+	
+	/**
 	 * Read assign
 	 */
 	pure list<ParserBay, BaseOpCode> readAssign(ParserBay parser)
@@ -805,6 +833,10 @@ static class ParserBayOperator
 		else if (token.content == "while")
 		{
 			return static::readWhile(parser);
+		}
+		else if (token.content == "safe")
+		{
+			return static::readSafe(parser);
 		}
 		
 		BaseOpCode op_code = null;

@@ -45,6 +45,7 @@ use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
 use Bayrell.Lang.OpCodes.OpReturn;
+use Bayrell.Lang.OpCodes.OpSafe;
 use Bayrell.Lang.OpCodes.OpThrow;
 use Bayrell.Lang.OpCodes.OpTryCatch;
 use Bayrell.Lang.OpCodes.OpTryCatchItem;
@@ -786,6 +787,10 @@ struct TranslatorES6Operator extends BaseStruct
 		else if (op_code instanceof OpComment)
 		{
 			list res = static::OpComment(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpSafe)
+		{
+			list res = static::Operators(t, op_code.items); t = res[0]; content = res[1];
 		}
 		
 		/* Output save op code */

@@ -62,3 +62,4 @@ attr
 monad
 as
 default
+safe
