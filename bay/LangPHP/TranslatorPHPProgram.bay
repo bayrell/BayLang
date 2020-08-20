@@ -213,7 +213,7 @@ static class TranslatorPHPProgram
 		list res = t.operator::Operators
 		(
 			t, 
-			op_code.fn_create.expression ? op_code.fn_create.expression : op_code.fn_create.value
+			op_code.fn_create.expression ? op_code.fn_create.expression : op_code.fn_create.items
 		);
 		t = res[0];
 		content ~= res[1];
