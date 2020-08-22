@@ -873,17 +873,61 @@ class ParserBayHtml extends BaseObject
 				{
 					string fn_name = item_attrs.get("name", "render");
 					string fn_args_str = item_attrs.get("args", "");
-					ParserBay parser2 = parser::setContent(parser, fn_args_str);
-					parser2 <= caret <= new Caret{};
+					Dict<bool> parser2_vars = {};
 					
-					/* Parse args */
 					Collection<OpDeclareFunctionArg> fn_args = null;
-					list res = parser.parser_operator::readDeclareFunctionArgs(parser2, false, false);
-					parser2 = res[0]; fn_args = res[1];
+					if (item_attrs.has("args"))
+					{
+						ParserBay parser2 = parser::setContent(parser, fn_args_str);
+						parser2 <= caret <= new Caret{};
+						
+						/* Parse args */
+						list res = parser.parser_operator::readDeclareFunctionArgs(parser2, false, false);
+						parser2 = res[0]; fn_args = res[1];
+						parser2_vars = parser2.vars;
+					}
+					else
+					{
+						fn_args =
+						[
+							new OpDeclareFunctionArg
+							{
+								"name": "layout",
+								"caret_start": caret_start,
+								"caret_end": parser.caret,
+							},
+							new OpDeclareFunctionArg
+							{
+								"name": "model",
+								"caret_start": caret_start,
+								"caret_end": parser.caret,
+							},
+							new OpDeclareFunctionArg
+							{
+								"name": "params",
+								"caret_start": caret_start,
+								"caret_end": parser.caret,
+							},
+							new OpDeclareFunctionArg
+							{
+								"name": "content",
+								"caret_start": caret_start,
+								"caret_end": parser.caret,
+							},
+						];
+						
+						/* Register variable in parser */
+						parser2_vars = parser2_vars
+							.setIm("layout", true)
+							.setIm("model", true)
+							.setIm("params", true)
+							.setIm("content", true)
+						;
+					}
 					
 					/* Read template content */
 					Dict<bool> save_vars = parser.vars;
-					parser <= vars <= parser.vars.concat(parser2.vars);
+					parser <= vars <= parser.vars.concat(parser2_vars);
 					list res = static::readHTML(parser, "</template"); parser = res[0];
 					BaseOpCode expression = res[1];
 					parser <= vars <= save_vars;
@@ -894,26 +938,24 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "template"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 					
-					items.push
-					(
-						new OpDeclareFunction
+					OpDeclareFunction f = new OpDeclareFunction
+					{
+						"args": fn_args,
+						"vars": [],
+						"flags": new OpFlags
 						{
-							"args": fn_args,
-							"vars": [],
-							"flags": new OpFlags
-							{
-								"p_static": true,
-								"p_pure": true,
-							},
-							"name": fn_name,
-							"is_context": false,
-							"result_type": "html",
-							"expression": expression,
-							"items": null,
-							"caret_start": caret_start,
-							"caret_end": parser.caret,
-						}
-					);
+							"p_static": true,
+							"p_pure": true,
+						},
+						"name": fn_name,
+						"result_type": "html",
+						"expression": expression,
+						"items": null,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					};
+					
+					items.push(f);
 				}
 				else if (item_name == "style")
 				{
@@ -926,31 +968,37 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 					
-					items.push
-					(
-						new OpDeclareFunction
-						{
-							"args": [],
-							"vars": [],
-							"flags": new OpFlags
+					OpDeclareFunction f = new OpDeclareFunction
+					{
+						"args":
+						[
+							new OpDeclareFunctionArg
 							{
-								"p_static": true,
-								"p_pure": true,
-							},
-							"name": "css",
-							"is_context": false,
-							"result_type": "html",
-							"expression": new OpString
-							{
+								"name": "vars",
 								"caret_start": caret_start,
 								"caret_end": parser.caret,
-								"value": css_body,
 							},
-							"items": null,
+						],
+						"vars": [],
+						"flags": new OpFlags
+						{
+							"p_static": true,
+							"p_pure": true,
+						},
+						"name": "css",
+						"result_type": "html",
+						"expression": new OpString
+						{
 							"caret_start": caret_start,
 							"caret_end": parser.caret,
-						}
-					);
+							"value": css_body,
+						},
+						"items": null,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					};
+					
+					items.push(f);
 				}
 				else if (item_name == "script")
 				{

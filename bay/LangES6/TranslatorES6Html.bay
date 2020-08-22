@@ -442,7 +442,7 @@ class TranslatorES6Html
 		t = t::clearSaveOpCode(t);
 		
 		string content = "";
-		content ~= "(control) =>";
+		content ~= "(__control) =>";
 		content ~= t.s("{");
 		t = t.levelInc();
 		
