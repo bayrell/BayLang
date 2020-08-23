@@ -128,7 +128,7 @@ class ParserBayHtml extends BaseObject
 			ch = rs::substr(content.ref, pos, 1);
 		}
 		string postfix = rs::substr(content.ref, start_pos, pos - start_pos);
-		string selector = "." ~ postfix ~ "-" ~ static::getCssHash(class_name);
+		string selector = "." ~ postfix ~ ".h-" ~ static::getCssHash(class_name);
 		Caret caret = new Caret{ "x": x, "y": y, "pos": pos };
 		parser <= caret <= caret;
 		return [parser, selector];
@@ -819,8 +819,8 @@ class ParserBayHtml extends BaseObject
 		Caret class_caret_start = parser.caret;
 		CoreToken token = null;
 		
-		string class_name = "", class_extends = "", class_version = "", item_name = "";
-		string short_name = "", full_name = "", is_component = "";
+		string class_name = "", class_extends = "", class_version = "", item_name = "", namespace_name = "";
+		string short_name = "", full_name = "", is_component = "", class_name_last = "";
 		
 		/* Content */
 		Reference<string> content = parser.content;
@@ -834,6 +834,14 @@ class ParserBayHtml extends BaseObject
 		class_extends = attrs.get("extends", "");
 		class_version = attrs.get("version", "");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		Collection class_name_arr = rs::split("\\.", class_name);
+		class_name_last = class_name_arr.last();
+		class_name_arr = class_name_arr.removeLastIm();
+		namespace_name = rs::join(".", class_name_arr);
+		
+		parser <= current_class_name <= class_name_last;
+		parser <= current_namespace_name <= namespace_name;
 		
 		OpTypeIdentifier class_extend_op_code = new OpTypeIdentifier
 		{
@@ -1095,10 +1103,6 @@ class ParserBayHtml extends BaseObject
 		/* Analyze class body */
 		Dict class_body = parser.parser_program::classBodyAnalyze(parser, items);
 		
-		Collection class_name_arr = rs::split("\\.", class_name);
-		class_name = class_name_arr.last();
-		class_name_arr = class_name_arr.removeLastIm();
-		
 		return
 		[
 			parser,
@@ -1109,12 +1113,12 @@ class ParserBayHtml extends BaseObject
 				[
 					new OpNamespace
 					{
-						"name": rs::join(".", class_name_arr),
+						"name": namespace_name,
 					},
 					new OpDeclareClass
 					{
 						"kind": OpDeclareClass::KIND_CLASS,
-						"name": class_name,
+						"name": class_name_last,
 						"is_static": true,
 						"is_declare": false,
 						"class_extends": class_extend_op_code,

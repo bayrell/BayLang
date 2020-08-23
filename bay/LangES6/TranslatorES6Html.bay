@@ -21,6 +21,7 @@ namespace Bayrell.Lang.LangES6;
 use Runtime.lib;
 use Runtime.re;
 use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.LangBay.ParserBayHtml;
 use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAssign;
@@ -107,6 +108,7 @@ class TranslatorES6Html
 				
 				string attr_key = attr.key;
 				string ch = rs::substr(attr_key, 0, 1);
+				/*
 				if (attr_key == "@class")
 				{
 					attr_class.push("this.getCssName(ctx, " ~ attr_value ~ ")");
@@ -120,9 +122,18 @@ class TranslatorES6Html
 					
 					return "";
 				}
-				else if (attr_key == "class")
+				*/
+				if (attr_key == "class")
 				{
 					attr_class.push(attr_value);
+					
+					if (not has_attr_key and attr.value instanceof OpString)
+					{
+						var arr = rs::split(" ", attr.value.value);
+						attr_key_value = t.expression::toString(arr[0] ~ "-" ~ item_pos);
+						has_attr_key = true;
+					}
+					
 					return "";
 				}
 				else if (attr_key == "@key")
@@ -164,9 +175,10 @@ class TranslatorES6Html
 		attrs = attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
+			attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );
 			attrs = attrs.pushIm
 			(
-				"\"class\":" ~ rs::join(" + \" \" + ", attr_class)
+				"\"class\":" ~ "[" ~ rs::join(", ", attr_class) ~ "].join(\" \")"
 			);
 		}
 		if (attr_key_value != "")
