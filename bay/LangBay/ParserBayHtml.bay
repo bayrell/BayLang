@@ -28,6 +28,7 @@ use Bayrell.Lang.CoreToken;
 use Bayrell.Lang.Exceptions.ParserError;
 use Bayrell.Lang.LangBay.ParserBay;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpCollection;
 use Bayrell.Lang.OpCodes.OpDeclareClass;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
@@ -814,11 +815,12 @@ class ParserBayHtml extends BaseObject
 	pure list<ParserBay, BaseOpCode> readUI(ParserBay parser)
 	{
 		Vector<BaseOpCode> items = new Vector();
+		Vector<string> components = new Vector();
 		Caret class_caret_start = parser.caret;
 		CoreToken token = null;
 		
 		string class_name = "", class_extends = "", class_version = "", item_name = "";
-		string short_name = "", full_name;
+		string short_name = "", full_name = "", is_component = "";
 		
 		/* Content */
 		Reference<string> content = parser.content;
@@ -861,8 +863,13 @@ class ParserBayHtml extends BaseObject
 			{
 				full_name = item_attrs.get("name", "");
 				short_name = item_attrs.get("as", "");
+				is_component = item_attrs.get("component", "false");
 				if (short_name == "") short_name = rs::explode(".", full_name).last();
 				parser <= uses <= parser.uses.setIm(short_name, full_name);
+				if (is_component == "true" or is_component == "1")
+				{
+					components.push(full_name);
+				}
 			}
 			
 			/* Read body */
@@ -1036,6 +1043,47 @@ class ParserBayHtml extends BaseObject
 			
 			caret = parser.parser_base::skipChar(parser, content, parser.caret);
 			ch2 = rs::substr(content.ref, caret.pos, 2);
+		}
+		
+		/* Add components function */
+		if (components.count() > 0)
+		{
+			OpDeclareFunction f = new OpDeclareFunction
+			{
+				"args": [],
+				"vars": [],
+				"flags": new OpFlags
+				{
+					"p_static": true,
+					"p_pure": true,
+				},
+				"name": "components",
+				"result_type": "var",
+				"expression": new OpCollection
+				{
+					"caret_start": parser.caret,
+					"caret_end": parser.caret,
+					"values":
+						components
+							.toCollection()
+							.map
+							(
+								OpString (string class_name) use (parser) =>
+									new OpString
+									{
+										"caret_start": parser.caret,
+										"caret_end": parser.caret,
+										"value": class_name,
+									}
+							)
+					,
+				},
+				"items": null,
+				"caret_start": parser.caret,
+				"caret_end": parser.caret,
+			};
+			
+			items.push(f);
 		}
 		
 		/* Read class footer */
