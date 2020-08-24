@@ -506,7 +506,7 @@ class TranslatorES6Html
 		
 		list res = static::OpHtmlChilds(t, op_code, "__control");
 		t = res[0]; content ~= res[1];
-		content ~= t.s("RenderDriver.p(__control, __control_childs);");
+		/*content ~= t.s("RenderDriver.p(__control, __control_childs);");*/
 		
 		content ~= t.s2("");
 		content ~= t.s("return __control_childs;");
