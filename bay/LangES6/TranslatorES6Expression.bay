@@ -855,9 +855,9 @@ struct TranslatorES6Expression extends BaseStruct
 					value ~= "." ~ op_item.value.obj.value.value;
 					value ~= ".bind(" ~ t.pipe_var_name ~ ".val)";
 					bool flag = false;
-					for (int i=0; i<op_item.value.args.count(); i++)
+					for (int j=0; j<op_item.value.args.count(); j++)
 					{
-						BaseOpCode item = op_item.value.args.item(i);
+						BaseOpCode item = op_item.value.args.item(j);
 						list res = t.expression::Expression(t, item); t = res[0]; string s_arg = res[1];
 						args ~= (flag ? ", " : "") ~ s_arg;
 						flag = true;

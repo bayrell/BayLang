@@ -259,7 +259,8 @@ static class TranslatorPHPHtml
 		attrs = attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );
+			attr_class.push( "static::getCssHash()" );
+			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			attrs = attrs.pushIm
 			(
 				"class=" ~ "\"'." ~ rs::join(".\" \".", attr_class) ~ ".'\""
