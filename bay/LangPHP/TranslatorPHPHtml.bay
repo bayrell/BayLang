@@ -25,6 +25,7 @@ use Bayrell.Lang.LangBay.ParserBayHtml;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAssign;
+use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpFor;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 use Bayrell.Lang.OpCodes.OpHtmlContent;
@@ -366,6 +367,11 @@ static class TranslatorPHPHtml
 				t = res[0]; content ~= res[1];
 				continue;
 			}
+			else if (item instanceof OpComment)
+			{
+				list res = t.operator::OpComment(t, item);
+				t = res[0]; content ~= res[1];
+			}
 			else if (item instanceof OpFor)
 			{
 				list res = t.operator::OpFor(t, item);
@@ -391,7 +397,7 @@ static class TranslatorPHPHtml
 				item_value = "static::escapeHtml($ctx, " ~ item_value ~ ")";
 			}
 			
-			content ~= t.s(var_name ~ " .= " ~ item_value ~ ";");
+			if (item_value != "") content ~= t.s(var_name ~ " .= " ~ item_value ~ ";");
 		}
 		
 		t <= html_var_name <= save_html_var_name;

@@ -373,6 +373,7 @@ class ParserBayBase
 		
 		s = rs::substr(content.ref, pos, 3);
 		if (
+			s == "!--" or
 			s == "!==" or
 			s == "===" or
 			s == "#if" or
