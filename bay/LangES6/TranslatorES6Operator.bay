@@ -900,7 +900,6 @@ struct TranslatorES6Operator extends BaseStruct
 		/* Save op codes */
 		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 		int save_op_code_inc = t.save_op_code_inc;
-		t = t::clearSaveOpCode(t);
 		
 		string content = "";
 		t = t.levelInc();

@@ -75,9 +75,7 @@ class TranslatorES6Html
 			{
 				list res = t.expression::Expression(t, op_code.value); 
 				t = res[0]; string value = res[1];
-				value = t.expression::useModuleName(t, "RenderHelper") ~
-					".json_encode(ctx, " ~ value ~ ")"
-				;
+				value = "this.json_encode(ctx, " ~ value ~ ")";
 				return [t, value];
 			}
 		}
