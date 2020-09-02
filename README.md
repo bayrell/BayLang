@@ -5,6 +5,12 @@ Bayrell Language
 
 Versions:
 
+[02 Sep 2020] 0.10.3 - Beta release
+
+[28 Aug 2020] 0.10.2 - Add ui template
+
+[21 Aug 2020] 0.10.2 - Add %if, %for, %while template
+
 [07 Aug 2020] 0.10.0 - Move Context to Runtime.Core, Clear Runtime library, Async/Await in NodeJS, Fix pipes, |> as pipe
 
 [25 Apr 2020] 0.9.1 - Run language on Raspberry PI
