@@ -225,7 +225,7 @@ struct TranslatorES6Program extends BaseStruct
 		s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 		s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 		s1 ~= t.s("var IntrospectionInfo = " ~
-			t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
+			t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";");
 		s1 ~= t.s("return new IntrospectionInfo(ctx, {");
 		t = t.levelInc();
 		s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_METHOD,");
@@ -439,7 +439,7 @@ struct TranslatorES6Program extends BaseStruct
 			s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 			s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 			s1 ~= t.s("var IntrospectionInfo = " ~
-				t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
+				t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";");
 			s1 ~= t.s("return new IntrospectionInfo(ctx, {");
 			t = t.levelInc();
 			s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_CLASS,");
@@ -552,7 +552,7 @@ struct TranslatorES6Program extends BaseStruct
 				content ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 				content ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 				content ~= t.s("var IntrospectionInfo = " ~
-					t.expression::useModuleName(t, "Runtime.Annotations.IntrospectionInfo") ~ ";");
+					t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";");
 				for (int i=0; i<op_code.vars.count(); i++)
 				{
 					OpAssign variable = op_code.vars.item(i);

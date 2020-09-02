@@ -103,9 +103,9 @@ static class TranslatorPHPProgram
 		if (f.annotations.count() == 0) return [t, content];
 		content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 		t = t.levelInc();
-		content ~= t.s("return new \\Runtime\\Annotations\\IntrospectionInfo($ctx, [");
+		content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
 		t = t.levelInc();
-		content ~= t.s("\"kind\"=>\\Runtime\\Annotations\\IntrospectionInfo::ITEM_METHOD,");
+		content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_METHOD,");
 		content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 		content ~= t.s("\"name\"=>" ~ t.expression::toString(f.name) ~ ",");
 		content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
@@ -524,9 +524,9 @@ static class TranslatorPHPProgram
 			content ~= t.s("{");
 			t = t.levelInc();
 			t = t::clearSaveOpCode(t);
-			content ~= t.s("return new \\Runtime\\Annotations\\IntrospectionInfo($ctx, [");
+			content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
 			t = t.levelInc();
-			content ~= t.s("\"kind\"=>\\Runtime\\Annotations\\IntrospectionInfo::ITEM_CLASS,");
+			content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_CLASS,");
 			content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 			content ~= t.s("\"name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 			content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
@@ -638,9 +638,9 @@ static class TranslatorPHPProgram
 					
 					t = t::clearSaveOpCode(t);
 					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-						"return new \\Runtime\\Annotations\\IntrospectionInfo($ctx, [");
+						"return new \\Runtime\\IntrospectionInfo($ctx, [");
 					t = t.levelInc();
-					content ~= t.s("\"kind\"=>\\Runtime\\Annotations\\IntrospectionInfo::ITEM_FIELD,");
+					content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
 					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 					content ~= t.s("\"name\"=> $field_name,");
 					content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
