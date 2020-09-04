@@ -526,6 +526,8 @@ class ParserBayHtml extends BaseObject
 	{
 		Vector<OpHtmlAttribute> items = new Vector();
 		
+		CoreToken token = null;
+		ParserBay look = null;
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz;
 		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret);
@@ -534,19 +536,40 @@ class ParserBayHtml extends BaseObject
 		{
 			Caret caret_start = caret;
 			parser <= caret <= caret;
-			list res = static::readHTMLAttrKey(parser); parser = res[0]; string key = res[1];
-			list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
-			list res = static::readHTMLAttrValue(parser); parser = res[0]; BaseOpCode value = res[1];
-			items.push
-			(
-				new OpHtmlAttribute
-				{
-					"key": key,
-					"value": value,
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-				}
-			);
+			
+			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+			if (token.content == "...")
+			{
+				OpIdentifier ident = null;
+				list res = parser.parser_base::matchToken(parser, "..."); parser = res[0];
+				list res = parser.parser_base::readIdentifier(look); parser = res[0]; ident = res[1];
+				items.push
+				(
+					new OpHtmlAttribute
+					{
+						"value": ident,
+						"is_spread": true,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					}
+				);
+			}
+			else
+			{
+				list res = static::readHTMLAttrKey(parser); parser = res[0]; string key = res[1];
+				list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
+				list res = static::readHTMLAttrValue(parser); parser = res[0]; BaseOpCode value = res[1];
+				items.push
+				(
+					new OpHtmlAttribute
+					{
+						"key": key,
+						"value": value,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					}
+				);
+			}
 			caret = parser.parser_base::skipChar(parser, content, parser.caret);
 			ch = rs::substr(content.ref, caret.pos, 1);
 			string ch2 = rs::substr(content.ref, caret.pos, 2);
@@ -586,6 +609,7 @@ class ParserBayHtml extends BaseObject
 			string ch3 = rs::substr(content.ref, pos, 3);
 			string ch4 = rs::substr(content.ref, pos, 4);
 			string ch6 = rs::substr(content.ref, pos, 6);
+			string ch7 = rs::substr(content.ref, pos, 7);
 			
 			/* Html comment */
 			if (ch4 == "<!--")
@@ -652,7 +676,7 @@ class ParserBayHtml extends BaseObject
 			}
 			
 			/* If html operator */
-			else if (ch3 == "%if" or ch4 == "%for" or ch4 == "%var" or ch6 == "%while")
+			else if (ch3 == "%if" or ch4 == "%for" or ch4 == "%var" or ch6 == "%while" or ch7 == "%render")
 			{
 				string value = rs::substr(content.ref, start_pos, pos - start_pos);
 				caret = new Caret{ "x": x, "y": y, "pos": pos };
@@ -847,6 +871,15 @@ class ParserBayHtml extends BaseObject
 			BaseOpCode op_code = null;
 			list res = parser.parser_base::matchToken(parser, "%var"); parser = res[0];
 			list res = parser.parser_operator::readAssign(parser); parser = res[0]; op_code = res[1];
+			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
+			return [parser, op_code];
+		}
+		else if (token.content == "%render")
+		{
+			BaseOpCode op_code = null;
+			list res = parser.parser_base::matchToken(parser, "%render"); parser = res[0];
+			list res = parser.parser_expression::readExpression(parser);
+			parser = res[0]; op_code = res[1];
 			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 			return [parser, op_code];
 		}

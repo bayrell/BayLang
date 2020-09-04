@@ -92,6 +92,13 @@ static class TranslatorPHPHtml
 			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
 		}
 		
+		BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@name") );
+		if (bind)
+		{
+			list res = t.expression::Expression(t, bind.value); t = res[0];
+			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
+		}
+		
 		content ~= t.s("/* Component '" ~ tag_name ~ "' */");
 		content ~= t.s(var_name~"_params = [];");
 		for (int i=0; i<op_code.attrs.count(); i++)
@@ -99,12 +106,20 @@ static class TranslatorPHPHtml
 			OpHtmlAttribute attr = op_code.attrs.item(i);
 			
 			if (attr.key == "@bind") continue;
+			if (attr.key == "@name") continue;
 			if (attr.key == "@model") continue;
 			if (attr.key == "@ref") continue;
-			list res = static::OpHtmlAttr(t, attr);
-			t = res[0]; string attr_value = res[1];
-
-			content ~= t.s(var_name~"_params[" ~ t.expression::toString(attr.key) ~ "] = " ~ attr_value ~ ";");
+			
+			if (attr.is_spread)
+			{
+				content ~= t.s("if($"~attr.value.value~"!=null)"~var_name~"_params = array_merge("~var_name~"_params,$"~attr.value.value~"->_map);");
+			}
+			else
+			{
+				list res = static::OpHtmlAttr(t, attr);
+				t = res[0]; string attr_value = res[1];
+				content ~= t.s(var_name~"_params[" ~ t.expression::toString(attr.key) ~ "] = " ~ attr_value ~ ";");
+			}
 		}
 		
 		content ~= t.s(var_name~"_content = \"\";");
@@ -179,23 +194,19 @@ static class TranslatorPHPHtml
 	/**
 	 * Translator html template
 	 */
-	pure list<TranslatorPHP, string> OpHtmlTag(TranslatorPHP t, OpHtmlTag op_code)
+	pure list<TranslatorPHP, string> OpHtmlAttrs(TranslatorPHP t, Collection<OpHtmlAttribute> attrs)
 	{
-		if (static::isComponent(op_code.tag_name))
-		{
-			return static::OpHtmlComponent(t, op_code);
-		}
-		
 		Vector<string> attr_class = new Vector<string>();
-		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
 		string attr_s = "";
 		string attr_key_value = "";
 		bool has_attr_key = false;
 		
-		Collection<string> attrs = op_code.attrs.map
+		Collection<string> res_attrs = attrs.map
 		(
-			string (OpHtmlAttribute attr) use (t, op_code, attr_class, attr_key_value, has_attr_key)
+			string (OpHtmlAttribute attr) use (t, attr_class, attr_key_value, has_attr_key)
 			{
+				if (attr.is_spread) return "";
+				
 				string attr_key = attr.key;
 				string attr_value = "";
 				
@@ -238,7 +249,7 @@ static class TranslatorPHPHtml
 					return "";
 				}
 				
-				if (attr_key == "@bind")
+				if (attr_key == "@bind" or attr_key == "@name")
 				{
 					attr_key = "value";
 					list res = t.expression::Expression(t, attr.value); t = res[0];
@@ -257,21 +268,48 @@ static class TranslatorPHPHtml
 				return attr_key ~ "=\"'.static::escapeAttr($ctx, " ~ attr_value ~ ").'\"";
 			}
 		);
-		attrs = attrs.filter( bool (string s) => s != "" );
+		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
 			attr_class.push( "static::getCssHash($ctx)" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
-			attrs = attrs.pushIm
+			res_attrs = res_attrs.pushIm
 			(
 				"class=" ~ "\"'." ~ rs::join(".\" \".", attr_class) ~ ".'\""
 			);
 		}
-		if (attrs.count() > 0)
+		if (res_attrs.count() > 0)
 		{
-			attr_s = " " ~ rs::join(" ", attrs);
+			attr_s = " " ~ rs::join(" ", res_attrs);
 		}
 		
+		/* Add spreads */
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpHtmlAttribute attr = attrs[i];
+			if (not attr.is_spread) continue;
+			attr_s ~= " ' . static::joinAttrs($ctx, $" ~ attr.value.value ~ ") . '";
+		}
+		
+		return [t, attr_s];
+	}
+	
+	
+	
+	/**
+	 * Translator html template
+	 */
+	pure list<TranslatorPHP, string> OpHtmlTag(TranslatorPHP t, OpHtmlTag op_code)
+	{
+		if (static::isComponent(op_code.tag_name))
+		{
+			return static::OpHtmlComponent(t, op_code);
+		}
+		
+		/* Output attrs */
+		list res = static::OpHtmlAttrs(t, op_code.attrs); t = res[0]; string attr_s = res[1];
+		
+		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
 		string content = "";
 		if (op_code.tag_name != "") content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
 		if (static::isSingleTag(op_code.tag_name))

@@ -360,7 +360,7 @@ class ParserBayBase
 		if (s == "#endswitch") return s;
 		
 		s = rs::substr(content.ref, pos, 7);
-		if (s == "#ifcode" or s == "#switch" or s == "#elseif") return s;
+		if (s == "#ifcode" or s == "#switch" or s == "#elseif" or s == "%render") return s;
 		
 		s = rs::substr(content.ref, pos, 6);
 		if (s == "#endif" or s == "#ifdef" or s == "%while") return s;
@@ -376,6 +376,7 @@ class ParserBayBase
 			s == "!--" or
 			s == "!==" or
 			s == "===" or
+			s == "..." or
 			s == "#if" or
 			s == "%if"
 		)

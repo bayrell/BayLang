@@ -99,10 +99,12 @@ class TranslatorES6Html
 		string attr_elem_name = "";
 		bool has_attr_key = false;
 		
-		Collection<string> attrs = attrs.map
+		Collection<string> res_attrs = attrs.map
 		(
 			string (OpHtmlAttribute attr) use (t, attr_class, attr_elem_name, attr_key_value, item_pos)
 			{
+				if (attr.is_spread) return "";
+				
 				list res = static::OpHtmlAttr(t, attr);
 				t = res[0]; string attr_value = res[1];
 				
@@ -141,49 +143,51 @@ class TranslatorES6Html
 					attr_key = "@eventAsync:" ~ event_name;
 					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
 				}
-				else if (attr_key == "@ref")
+				else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@name")
 				{
 					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
-				}
-				else if (attr_key == "@bind")
-				{
-					string s = "";
-					s = t.expression::toString(attr_key) ~ ":" ~
-						"[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]"
-					;
-					return s;
 				}
 				return t.expression::toString(attr_key) ~ ":" ~ attr_value;
 			}
 		);
-		attrs = attrs.filter( bool (string s) => s != "" );
+		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
 			attr_class.push( "this.getCssHash(ctx)" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
-			attrs = attrs.pushIm
+			res_attrs = res_attrs.pushIm
 			(
 				"\"class\":" ~ "[" ~ rs::join(", ", attr_class) ~ "].join(\" \")"
 			);
 		}
 		if (attr_key_value != "")
 		{
-			attrs = attrs.pushIm
+			res_attrs = res_attrs.pushIm
 			(
 				"\"@key\":" ~ attr_key_value
 			);
 		}
 		if (attr_elem_name != "")
 		{
-			attrs = attrs.pushIm
+			res_attrs = res_attrs.pushIm
 			(
 				"\"@elem_name\":" ~ attr_elem_name
 			);
 		}
-		if (attrs.count() > 0)
+		if (res_attrs.count() > 0)
 		{
-			attr_s = "{" ~ rs::join(",", attrs) ~ "}";
+			attr_s = "{" ~ rs::join(",", res_attrs) ~ "}";
 		}
+		else attr_s = "{}";
+		
+		/* Add spreads */
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpHtmlAttribute attr = attrs[i];
+			if (not attr.is_spread) continue;
+			attr_s = "Object.assign("~attr_s~","~attr.value.value~".toObject())";
+		}
+		
 		return [t, attr_s];
 	}
 	
