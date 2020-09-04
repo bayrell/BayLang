@@ -370,6 +370,7 @@ static class TranslatorPHPHtml
 		{
 			OpHtmlTag item = op_code.items.item(i);
 			string item_value = "";
+			string op_content = "";
 			
 			/* Save op codes */
 			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
@@ -406,27 +407,27 @@ static class TranslatorPHPHtml
 			else if (item instanceof OpAssign)
 			{
 				list res = t.operator::OpAssign(t, item);
-				t = res[0]; content ~= res[1];
+				t = res[0]; op_content ~= res[1];
 			}
 			else if (item instanceof OpComment)
 			{
 				list res = t.operator::OpComment(t, item);
-				t = res[0]; content ~= res[1];
+				t = res[0]; op_content ~= res[1];
 			}
 			else if (item instanceof OpFor)
 			{
 				list res = t.operator::OpFor(t, item);
-				t = res[0]; content ~= res[1];
+				t = res[0]; op_content ~= res[1];
 			}
 			else if (item instanceof OpIf)
 			{
 				list res = t.operator::OpIf(t, item);
-				t = res[0]; content ~= res[1];
+				t = res[0]; op_content ~= res[1];
 			}
 			else if (item instanceof OpWhile)
 			{
 				list res = t.operator::OpWhile(t, item);
-				t = res[0]; content ~= res[1];
+				t = res[0]; op_content ~= res[1];
 			}
 			else
 			{
@@ -438,6 +439,7 @@ static class TranslatorPHPHtml
 			/* Output save op code */
 			string save = t::outputSaveOpCode(t, save_op_codes.count());
 			if (save != "") content ~= save;
+			if (op_content != "") content ~= op_content;
 			
 			/* Restore save op codes */
 			t <= save_op_codes <= save_op_codes;
