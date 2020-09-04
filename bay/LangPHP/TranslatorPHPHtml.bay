@@ -260,7 +260,7 @@ static class TranslatorPHPHtml
 		attrs = attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.push( "static::getCssHash()" );
+			attr_class.push( "static::getCssHash($ctx)" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			attrs = attrs.pushIm
 			(
@@ -333,6 +333,10 @@ static class TranslatorPHPHtml
 			OpHtmlTag item = op_code.items.item(i);
 			string item_value = "";
 			
+			/* Save op codes */
+			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+			int save_op_code_inc = t.save_op_code_inc;
+			
 			if (item instanceof OpHtmlContent)
 			{
 				item_value = t.expression::toString(item.value);
@@ -365,7 +369,6 @@ static class TranslatorPHPHtml
 			{
 				list res = t.operator::OpAssign(t, item);
 				t = res[0]; content ~= res[1];
-				continue;
 			}
 			else if (item instanceof OpComment)
 			{
@@ -376,19 +379,16 @@ static class TranslatorPHPHtml
 			{
 				list res = t.operator::OpFor(t, item);
 				t = res[0]; content ~= res[1];
-				continue;
 			}
 			else if (item instanceof OpIf)
 			{
 				list res = t.operator::OpIf(t, item);
 				t = res[0]; content ~= res[1];
-				continue;
 			}
 			else if (item instanceof OpWhile)
 			{
 				list res = t.operator::OpWhile(t, item);
 				t = res[0]; content ~= res[1];
-				continue;
 			}
 			else
 			{
@@ -396,6 +396,14 @@ static class TranslatorPHPHtml
 				t = res[0]; item_value = res[1];
 				item_value = "static::escapeHtml($ctx, " ~ item_value ~ ")";
 			}
+			
+			/* Output save op code */
+			string save = t::outputSaveOpCode(t, save_op_codes.count());
+			if (save != "") content ~= save;
+			
+			/* Restore save op codes */
+			t <= save_op_codes <= save_op_codes;
+			t <= save_op_code_inc <= save_op_code_inc;
 			
 			if (item_value != "") content ~= t.s(var_name ~ " .= " ~ item_value ~ ";");
 		}

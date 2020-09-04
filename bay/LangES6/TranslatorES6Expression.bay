@@ -167,7 +167,7 @@ struct TranslatorES6Expression extends BaseStruct
 	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
 		if (op_code.value == "@") return [t, "ctx"];
-		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
+		if (op_code.value == "_") return [t, "ctx.translate"];
 		if (op_code.value == "log") return [t, "console.log"];
 		
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
@@ -715,7 +715,7 @@ struct TranslatorES6Expression extends BaseStruct
 		string content = s;
 		if (op_code.obj instanceof OpIdentifier and op_code.obj.value == "_")
 		{
-			content ~= (flag ? ", " : "") ~ "ctx, ctx";
+			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
 		}
 		else if (t.current_function.is_context and op_code.is_context)

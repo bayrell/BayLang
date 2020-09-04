@@ -159,7 +159,7 @@ class TranslatorES6Html
 		attrs = attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.push( "this.getCssHash()" );
+			attr_class.push( "this.getCssHash(ctx)" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			attrs = attrs.pushIm
 			(
@@ -493,7 +493,6 @@ class TranslatorES6Html
 		TranslatorES6 save_t = t;
 		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 		int save_op_code_inc = t.save_op_code_inc;
-		t = t::clearSaveOpCode(t);
 		
 		string content = "";
 		content ~= "(__control) =>";
