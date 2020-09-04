@@ -1141,8 +1141,10 @@ static class ParserBayOperator
 		OpFlags flags = null
 		
 		/* Clear vars */
+		bool save_is_html = parser.is_html;
 		Dict<bool> save_vars = parser.vars;
 		parser <= vars <= new Dict<bool>();
+		parser <= is_html <= false;
 		
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "async")
@@ -1209,6 +1211,7 @@ static class ParserBayOperator
 		
 		/* Restore vars */
 		parser <= vars <= save_vars;
+		parser <= is_html <= save_is_html;
 		
 		return 
 		[

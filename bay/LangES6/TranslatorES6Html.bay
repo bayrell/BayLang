@@ -185,7 +185,7 @@ class TranslatorES6Html
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "Object.assign("~attr_s~","~attr.value.value~".toObject())";
+			attr_s = "this.mergeAttrs(ctx, "~attr_s~","~attr.value.value~")";
 		}
 		
 		return [t, attr_s];
