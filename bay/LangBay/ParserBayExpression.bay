@@ -583,7 +583,8 @@ static class ParserBayExpression
 				else if (look_token.content == 'default')
 				{
 					BaseOpCode arg1, arg2;
-					kind = OpPipe::KIND_MONAD;
+					kind = OpPipe::KIND_CALL;
+					is_monad = true;
 					
 					try
 					{
