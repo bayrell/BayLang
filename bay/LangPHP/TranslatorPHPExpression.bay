@@ -620,6 +620,7 @@ static class TranslatorPHPExpression
 	{
 		string content = "";
 		string s = "";
+		Vector<string> args_use = new Vector();
 		
 		Collection<OpCurryArg> args = op_code.args
 			.filter( bool (BaseOpCode arg) => arg instanceof OpCurryArg )
@@ -638,6 +639,17 @@ static class TranslatorPHPExpression
 			}
 		}
 		
+		int args_sz = op_code.args.count();
+		for (int i=0; i<args_sz; i++)
+		{
+			OpCurryArg arg = op_code.args.item(i);
+			if (arg instanceof OpCurryArg) continue;
+			if (arg instanceof OpIdentifier)
+			{
+				args_use.push("$" ~ arg.value);
+			}
+		}
+		
 		int args_sz = args.count();
 		for (int i=0; i<args_sz; i++)
 		{
@@ -645,6 +657,7 @@ static class TranslatorPHPExpression
 			
 			string s_use = "";
 			Vector<string> arr_use = new Vector();
+			arr_use.appendVector(args_use);
 			for (int j=0; j<i; j++)
 			{
 				OpCurryArg arg_use = args.item(j);
@@ -661,11 +674,11 @@ static class TranslatorPHPExpression
 			
 			if (args_sz - 1 == i)
 			{
-				content ~= "function ($ctx, $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{";
+				content ~= "function ($ctx, $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{return ";
 			}
 			else
 			{
-				content ~= "function ($__ctx" ~ arg.pos ~ ", $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{";
+				content ~= "function ($__ctx" ~ arg.pos ~ ", $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{return ";
 			}
 		}
 		
