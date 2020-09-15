@@ -214,15 +214,18 @@ class ParserBayHtml extends BaseObject
 				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 				
 				/* Add expr op code */
-				if (op_code == null) op_code = expr;
-				else op_code = new OpMath
+				if (expr != null)
 				{
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-					"value1": op_code,
-					"value2": expr,
-					"math": "~",
-				};
+					if (op_code == null) op_code = expr;
+					else op_code = new OpMath
+					{
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+						"value1": op_code,
+						"value2": expr,
+						"math": "~",
+					};
+				}
 				
 				/* Set pos, x, y */
 				caret_start = parser.caret;
@@ -307,15 +310,18 @@ class ParserBayHtml extends BaseObject
 				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 				
 				/* Add expr op code */
-				if (op_code == null) op_code = expr;
-				else op_code = new OpMath
+				if (expr != null)
 				{
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-					"value1": op_code,
-					"value2": expr,
-					"math": "~",
-				};
+					if (op_code == null) op_code = expr;
+					else op_code = new OpMath
+					{
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+						"value1": op_code,
+						"value2": expr,
+						"math": "~",
+					};
+				}
 				
 				/* Set pos, x, y */
 				caret_start = parser.caret;
@@ -385,6 +391,16 @@ class ParserBayHtml extends BaseObject
 		
 		list res = static::readCssBody(parser);
 		parser = res[0]; BaseOpCode op_code = res[1];
+		
+		if (op_code == null)
+		{
+			op_code = new OpString
+			{
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+				"value": "",
+			};
+		}
 		
 		return [parser, op_code];
 	}

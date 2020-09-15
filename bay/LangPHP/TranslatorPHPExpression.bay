@@ -661,25 +661,25 @@ static class TranslatorPHPExpression
 			
 			if (args_sz - 1 == i)
 			{
-				content ~= "function ($ctx, $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{return ";
+				content ~= "function ($ctx, $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{";
 			}
 			else
 			{
-				content ~= "function ($__ctx" ~ arg.pos ~ ", $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{return ";
+				content ~= "function ($__ctx" ~ arg.pos ~ ", $__varg" ~ arg.pos ~ ")" ~ s_use ~ "{";
 			}
 		}
 		
 		bool flag = false;
-		list res = static::Dynamic(t, op_code.obj, op_code); t = res[0]; content ~= res[1];
+		list res = static::Dynamic(t, op_code.obj, op_code); t = res[0]; s = res[1];
 		if (s == "parent")
 		{
 			string f_name = t.current_function.name;
 			if (f_name == "constructor") f_name = "__construct";
-			s = "parent::" ~ f_name ~ "(";
+			s = "parent::" ~ f_name;
 			content ~= s;
 		}
-		else content ~= "(";
-		content ~= "$ctx"; flag = true;
+		else content ~= "(" ~ s ~ ")";
+		content ~= "($ctx"; flag = true;
 		
 		for (int i=0; i<op_code.args.count(); i++)
 		{
