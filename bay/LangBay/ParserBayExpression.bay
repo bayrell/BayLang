@@ -684,6 +684,7 @@ static class ParserBayExpression
 					
 					if (look_token.content == '.')
 					{
+						kind = OpPipe::KIND_METHOD;
 						parser <= pipe_kind <= OpAttr::KIND_ATTR;
 					}
 					else

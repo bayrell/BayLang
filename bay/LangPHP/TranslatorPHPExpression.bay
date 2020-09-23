@@ -355,6 +355,7 @@ static class TranslatorPHPExpression
 					);
 					t = res[0];
 					s = res[1];
+					prev_kind = "static";
 				}
 				else
 				{
@@ -388,7 +389,23 @@ static class TranslatorPHPExpression
 				
 				if (attr.kind == OpAttr::KIND_ATTR)
 				{
-					s ~= "->" ~ attr.value.value;
+					/* Pipe */
+					if (t.is_pipe and not (next_op_code instanceof OpCall))
+					{
+						if (i == attrs_sz - 1)
+						{
+							string val2 = static::toString(attr.value.value);
+							s = "new \\Runtime\\Callback(" ~ s ~ ", " ~ val2 ~ ")";
+						}
+						else
+						{
+							s ~= "->" ~ attr.value.value;
+						}
+					}
+					else
+					{
+						s ~= "->" ~ attr.value.value;
+					}
 				}
 				else if (attr.kind == OpAttr::KIND_STATIC)
 				{
@@ -843,11 +860,21 @@ static class TranslatorPHPExpression
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ "->attr($ctx, " ~ value ~ ")";
 			}
+			else if (op_item.kind == OpPipe::KIND_METHOD)
+			{
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				s2 = "try{ ";
+				s2 ~= var_name~"=("~var_name~"->val!=null && "~var_name~"->err==null) ? new \\Runtime\\Monad($ctx, "~value~") : "~var_name~";";
+				s2 ~= " } catch (Exception $err) { ";
+				s2 ~= var_name~"=new \\Runtime\\Monad($ctx, null, $err);";
+				s2 ~= " }";
+			}
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				t <= is_pipe <= true;
 				
 				string args = "";
+				/*
 				bool is_instance_method = false;
 				if (
 					op_item.value instanceof OpCall and
@@ -856,8 +883,19 @@ static class TranslatorPHPExpression
 				)
 				{
 					is_instance_method = true;
-					value = t.pipe_var_name ~ "->val";
-					value ~= "->" ~ op_item.value.obj.value.value;
+					value = "new \\Runtime\\Callback("
+					if (op_item.value.obj.obj.value == "")
+					{
+						value ~= t.pipe_var_name ~ "->val";
+					}
+					else
+					{
+						list res = static::Expression(t, op_item.value.obj.obj);
+						t = res[0]; value ~= res[1];
+					}
+					value ~= ",";
+					value ~= static::toString(op_item.value.obj.value.value);
+					value ~= ")";
 					bool flag = false;
 					for (int j=0; j<op_item.value.args.count(); j++)
 					{
@@ -866,11 +904,37 @@ static class TranslatorPHPExpression
 						args ~= (flag ? ", " : "") ~ s_arg;
 						flag = true;
 					}
+					args = ", [" ~ args ~ "]";
+				}
+				*/
+				/*
+				if (op_item.value instanceof OpAttr)
+				{
+					value = "new \\Runtime\\Callback("
+					if (op_item.value.kind == OpAttr::KIND_ATTR and op_item.value.obj.value == "")
+					{
+						value ~= t.pipe_var_name ~ "->val";
+					}
+					else if (op_item.value.kind == OpAttr::KIND_STATIC and op_item.value.obj.value == "")
+					{
+						value ~= "static::class";
+					}
+					else
+					{
+						list res = static::Expression(t, op_item.value.obj);
+						t = res[0]; value ~= res[1];
+					}
+					value ~= ",";
+					value ~= static::toString(op_item.value.value.value);
+					value ~= ")";
 				}
 				else
 				{
 					list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				}
+				*/
+				
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				
 				if (not op_item.is_async or not t.enable_async_await)
 				{
@@ -880,8 +944,7 @@ static class TranslatorPHPExpression
 					}
 					else
 					{
-						if (is_instance_method) s1 = var_name ~ "->callMethod(ctx, " ~ value ~ ", [" ~ args ~ "])";
-						else s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+						s1 = var_name ~ "->call($ctx, " ~ value ~ args ~ ")";
 					}
 				}
 				else if (op_item.is_async and t.current_function.isFlag("async"))
@@ -892,9 +955,7 @@ static class TranslatorPHPExpression
 					}
 					else
 					{
-						if (is_instance_method) s1 = var_name ~ "->callMethodAsync(ctx, " ~
-							value ~ ", [" ~ args ~ "])";
-						else s1 = var_name ~ "->callAsync($ctx, " ~ value ~ ")";
+						s1 = var_name ~ "->callAsync($ctx, " ~ value ~ args ~ ")";
 					}
 				}
 				
@@ -910,6 +971,18 @@ static class TranslatorPHPExpression
 						"content": 
 							t.s(var_name ~ " = " ~ s1 ~ ";")
 						,
+					}
+				);
+				t = res[0];
+			}
+			
+			if (s2 != "")
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"content": t.s(s2),
 					}
 				);
 				t = res[0];
@@ -935,7 +1008,7 @@ static class TranslatorPHPExpression
 	
 	
 	/**
-	 * OpTernary
+	 * OpDeclareFunction
 	 */
 	pure list<TranslatorPHP, string> OpDeclareFunction(TranslatorPHP t, OpDeclareFunction op_code)
 	{

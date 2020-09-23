@@ -731,6 +731,8 @@ static class TranslatorPHPOperator
 	pure list<TranslatorPHP, string> OpDeclareFunctionBody(TranslatorPHP t, OpDeclareFunction f)
 	{
 		TranslatorPHP save_t = t;
+		t <= is_pipe <= false;
+		t <= is_html <= false;
 		
 		string content = "";
 		t = t.levelInc();

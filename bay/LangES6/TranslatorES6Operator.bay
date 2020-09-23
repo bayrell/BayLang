@@ -891,6 +891,8 @@ struct TranslatorES6Operator extends BaseStruct
 	pure list<TranslatorES6, string> OpDeclareFunctionBody(TranslatorES6 t, OpDeclareFunction f)
 	{
 		TranslatorES6 save_t = t;
+		t <= is_pipe <= false;
+		t <= is_html <= false;
 		
 		if (f.isFlag("async") and t.isEmulateAsyncAwait())
 		{

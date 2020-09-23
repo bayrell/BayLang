@@ -838,22 +838,43 @@ struct TranslatorES6Expression extends BaseStruct
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ ".attr(ctx, " ~ value ~ ")";
 			}
+			else if (op_item.kind == OpPipe::KIND_METHOD)
+			{
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				s2 = "try{ ";
+				s2 ~= var_name~"=("~var_name~".val!=null && "~var_name~".err==null) ? new "~monad_name~"(ctx, "~value~") : "~var_name~";";
+				s2 ~= " } catch (err) { ";
+				s2 ~= var_name~"=new "~monad_name~"(ctx, null, err);";
+				s2 ~= " }";
+			}
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				t <= is_pipe <= true;
 				
 				string args = "";
+				/*
 				bool is_instance_method = false;
 				if (
 					op_item.value instanceof OpCall and
 					op_item.value.obj instanceof OpAttr and
-					op_item.value.obj.kind == OpAttr::KIND_ATTR
+					op_item.value.obj.kind == OpAttr::KIND_ATTR and
+					op_item.value.obj.obj.value == ""
 				)
 				{
+					string value1 = "";
 					is_instance_method = true;
-					value = t.pipe_var_name ~ ".val";
+					if (op_item.value.obj.obj.value == "")
+					{
+						value1 = t.pipe_var_name ~ ".val";
+					}
+					else
+					{
+						list res = static::Expression(t, op_item.value.obj.obj);
+						t = res[0]; value1 = res[1];
+					}
+					value = value1;
 					value ~= "." ~ op_item.value.obj.value.value;
-					value ~= ".bind(" ~ t.pipe_var_name ~ ".val)";
+					value ~= ".bind(" ~ value1 ~ ")";
 					bool flag = false;
 					for (int j=0; j<op_item.value.args.count(); j++)
 					{
@@ -862,11 +883,10 @@ struct TranslatorES6Expression extends BaseStruct
 						args ~= (flag ? ", " : "") ~ s_arg;
 						flag = true;
 					}
+					args = ", [" ~ args ~ "]";
 				}
-				else
-				{
-					list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				}
+				*/
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				
 				if (not op_item.is_async or not t.enable_async_await)
 				{
@@ -876,8 +896,7 @@ struct TranslatorES6Expression extends BaseStruct
 					}
 					else
 					{
-						if (is_instance_method) s1 = var_name ~ ".callMethod(ctx, " ~ value ~ ", [" ~ args ~ "])";
-						else s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
+						s1 = var_name ~ ".call(ctx, " ~ value ~ args ~ ")";
 					}
 				}
 				else if (op_item.is_async and t.current_function.isFlag("async"))
@@ -890,9 +909,7 @@ struct TranslatorES6Expression extends BaseStruct
 						}
 						else
 						{
-							if (is_instance_method) s2 = var_name ~ ".callMethodAsync(ctx, " ~ value ~
-								", [" ~ args ~ "])";
-							else s2 = var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+							s2 = var_name ~ ".callAsync(ctx, " ~ value ~ args ~ ")";
 						}
 					}
 					else if (t.isAsyncAwait())
@@ -903,9 +920,7 @@ struct TranslatorES6Expression extends BaseStruct
 						}
 						else
 						{
-							if (is_instance_method) s1 = "await " ~ var_name ~ ".callMethodAsync(ctx, " ~
-								value ~ ", [" ~ args ~ "])";
-							else s1 = "await " ~ var_name ~ ".callAsync(ctx, " ~ value ~ ")";
+							s1 = "await " ~ var_name ~ ".callAsync(ctx, " ~ value ~ args ~ ")";
 						}
 					}
 				}
@@ -926,6 +941,20 @@ struct TranslatorES6Expression extends BaseStruct
 				);
 				t = res[0];
 			}
+			
+			if (s2 != "")
+			{
+				list res = t::addSaveOpCode
+				(
+					t,
+					{
+						"content": t.s(s2),
+					}
+				);
+				t = res[0];
+			}
+			
+			/*
 			if (s2 != "")
 			{
 				list res = t.async_await::nextPos(t); t = res[0]; string next_pos = res[1];
@@ -954,6 +983,7 @@ struct TranslatorES6Expression extends BaseStruct
 				);
 				t = res[0];
 			}
+			*/
 		}
 		
 		return [t, var_name ~ ".value(ctx)"];
@@ -977,18 +1007,20 @@ struct TranslatorES6Expression extends BaseStruct
 	
 	
 	/**
-	 * OpTernary
+	 * OpDeclareFunction
 	 */
 	pure list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
 	{
 		string content = "";
+		string is_async = "";
+		if (op_code.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
 		
 		/* Set function name */
 		OpDeclareFunction save_f = t.current_function;
 		t <= current_function <= op_code;
 		
 		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
-		content ~= "(" ~ args ~ ") => ";
+		content ~= is_async ~ "(" ~ args ~ ") => ";
 		list res = t.operator::OpDeclareFunctionBody(t, op_code);
 		content ~= res[1];
 		
