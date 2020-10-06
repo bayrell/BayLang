@@ -5,6 +5,8 @@ Bayrell Language
 
 Versions:
 
+[30 Sep 2020] 0.10.4 - Tested PHP translator
+
 [02 Sep 2020] 0.10.3 - Beta release
 
 [28 Aug 2020] 0.10.2 - Add ui template
