@@ -636,12 +636,17 @@ static class TranslatorPHPProgram
 							"$field_name == " ~ t.expression::toString(var_name)
 					);
 					
+					string var_type =
+						rs::join(".", t.expression::findModuleNames(t, variable.pattern.entity_name.names))
+					;
+					
 					t = t::clearSaveOpCode(t);
 					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
 						"return new \\Runtime\\IntrospectionInfo($ctx, [");
 					t = t.levelInc();
 					content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
 					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+					content ~= t.s("\"t\"=> " ~ t.expression::toString(var_type) ~ ",");
 					content ~= t.s("\"name\"=> $field_name,");
 					content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
 					t = t.levelInc();

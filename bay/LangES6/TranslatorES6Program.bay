@@ -552,7 +552,8 @@ struct TranslatorES6Program extends BaseStruct
 				content ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 				content ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 				content ~= t.s("var IntrospectionInfo = " ~
-					t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";");
+					t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";")
+				;
 				for (int i=0; i<op_code.vars.count(); i++)
 				{
 					OpAssign variable = op_code.vars.item(i);
@@ -563,12 +564,17 @@ struct TranslatorES6Program extends BaseStruct
 							"field_name == " ~ t.expression::toString(var_name)
 					);
 					
+					string var_type =
+						rs::join(".", t.expression::findModuleNames(t, variable.pattern.entity_name.names))
+					;
+					
 					t = t::clearSaveOpCode(t);
 					string s1 = "";
 					s1 ~= t.s("if (" ~ rs::join(" or ", v) ~ ") return new IntrospectionInfo(ctx, {");
 					t = t.levelInc();
 					s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_FIELD,");
 					s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
+					s1 ~= t.s("\"t\": " ~ t.expression::toString(var_type) ~ ",");
 					s1 ~= t.s("\"name\": field_name,");
 					s1 ~= t.s("\"annotations\": Collection.from([");
 					t = t.levelInc();

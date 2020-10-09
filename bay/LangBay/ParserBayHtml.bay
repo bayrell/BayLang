@@ -1086,7 +1086,8 @@ class ParserBayHtml extends BaseObject
 		Caret class_caret_start = parser.caret;
 		CoreToken token = null;
 		
-		string class_name = "", class_extends = "", class_version = "", item_name = "", namespace_name = "";
+		string class_name = "", class_extends = "", class_version = "", class_model = "",
+			item_name = "", namespace_name = "";
 		string short_name = "", full_name = "", is_component = "", class_name_last = "";
 		
 		/* Content */
@@ -1100,7 +1101,19 @@ class ParserBayHtml extends BaseObject
 		class_name = attrs.get("name", "");
 		class_extends = attrs.get("extends", "");
 		class_version = attrs.get("version", "");
+		class_model = attrs.get("model", "");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		fn getClassShortName = string (string class_name) => class_name |> curry rs::split("\\.", ?) |> .last();
+		if (class_name != "")
+			parser <= uses <= parser.uses.setIm( getClassShortName(class_name), class_name )
+		;
+		if (class_extends != "")
+			parser <= uses <= parser.uses.setIm( getClassShortName(class_extends), class_extends )
+		;
+		if (class_model != "")
+			parser <= uses <= parser.uses.setIm( getClassShortName(class_model), class_model )
+		;
 		
 		Collection class_name_arr = rs::split("\\.", class_name);
 		class_name_last = class_name_arr.last();

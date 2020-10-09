@@ -18,12 +18,8 @@
 
 namespace Bayrell.Lang;
 
-use Runtime.Interfaces.AssetsInterface;
-use Runtime.Interfaces.ContextInterface;
-use Runtime.Interfaces.ModuleDescriptionInterface;
 
-
-class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
+static class ModuleDescription
 {
 
 	
@@ -39,7 +35,7 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleVersion() => "0.10.4";
+	pure string getModuleVersion() => "0.10.5";
 	
 	
 	
@@ -55,92 +51,8 @@ class ModuleDescription implements ModuleDescriptionInterface, AssetsInterface
 	
 	
 	/**
-	 * Returns module files load order
-	 * @return Collection<string>
-	 */
-	pure Collection<string> assets() => 
-	[
-		"Bayrell.Lang/Caret",
-		"Bayrell.Lang/CoreParser",
-		"Bayrell.Lang/CoreToken",
-		"Bayrell.Lang/CoreTranslator",
-		"Bayrell.Lang/LangConstant",
-		"Bayrell.Lang/LangUtils",
-		"Bayrell.Lang/SaveOpCode",
-		"Bayrell.Lang/ModuleDescription",
-		"Bayrell.Lang/Exceptions/ParserUnknownError",
-		"Bayrell.Lang/Exceptions/ParserError",
-		"Bayrell.Lang/Exceptions/ParserEOF",
-		"Bayrell.Lang/Exceptions/ParserExpected",
-		"Bayrell.Lang/LangBay/ParserBay",
-		"Bayrell.Lang/LangBay/ParserBayBase",
-		"Bayrell.Lang/LangBay/ParserBayExpression",
-		"Bayrell.Lang/LangBay/ParserBayOperator",
-		"Bayrell.Lang/LangBay/ParserBayPreprocessor",
-		"Bayrell.Lang/LangBay/ParserBayProgram",
-		"Bayrell.Lang/LangES6/TranslatorES6",
-		"Bayrell.Lang/LangES6/TranslatorES6Expression",
-		"Bayrell.Lang/LangES6/TranslatorES6Operator",
-		"Bayrell.Lang/LangES6/TranslatorES6Program",
-		"Bayrell.Lang/OpCodes/BaseOpCode",
-		"Bayrell.Lang/OpCodes/OpAnnotation",
-		"Bayrell.Lang/OpCodes/OpAssign",
-		"Bayrell.Lang/OpCodes/OpAssignValue",
-		"Bayrell.Lang/OpCodes/OpAttr",
-		"Bayrell.Lang/OpCodes/OpBreak",
-		"Bayrell.Lang/OpCodes/OpCall",
-		"Bayrell.Lang/OpCodes/OpClassOf",
-		"Bayrell.Lang/OpCodes/OpClassRef",
-		"Bayrell.Lang/OpCodes/OpCollection",
-		"Bayrell.Lang/OpCodes/OpComment",
-		"Bayrell.Lang/OpCodes/OpContinue",
-		"Bayrell.Lang/OpCodes/OpDeclareClass",
-		"Bayrell.Lang/OpCodes/OpDeclareFunction",
-		"Bayrell.Lang/OpCodes/OpDeclareFunctionArg",
-		"Bayrell.Lang/OpCodes/OpDict",
-		"Bayrell.Lang/OpCodes/OpDictPair",
-		"Bayrell.Lang/OpCodes/OpEntityName",
-		"Bayrell.Lang/OpCodes/OpFlags",
-		"Bayrell.Lang/OpCodes/OpFor",
-		"Bayrell.Lang/OpCodes/OpIdentifier",
-		"Bayrell.Lang/OpCodes/OpIf",
-		"Bayrell.Lang/OpCodes/OpIfElse",
-		"Bayrell.Lang/OpCodes/OpInc",
-		"Bayrell.Lang/OpCodes/OpItems",
-		"Bayrell.Lang/OpCodes/OpMath",
-		"Bayrell.Lang/OpCodes/OpMethod",
-		"Bayrell.Lang/OpCodes/OpModule",
-		"Bayrell.Lang/OpCodes/OpNamespace",
-		"Bayrell.Lang/OpCodes/OpNew",
-		"Bayrell.Lang/OpCodes/OpNumber",
-		"Bayrell.Lang/OpCodes/OpPreprocessorIfCode",
-		"Bayrell.Lang/OpCodes/OpPreprocessorIfDef",
-		"Bayrell.Lang/OpCodes/OpPreprocessorSwitch",
-		"Bayrell.Lang/OpCodes/OpReturn",
-		"Bayrell.Lang/OpCodes/OpSafe",
-		"Bayrell.Lang/OpCodes/OpString",
-		"Bayrell.Lang/OpCodes/OpTernary",
-		"Bayrell.Lang/OpCodes/OpThrow",
-		"Bayrell.Lang/OpCodes/OpTypeConvert",
-		"Bayrell.Lang/OpCodes/OpTypeIdentifier",
-		"Bayrell.Lang/OpCodes/OpUse",
-		"Bayrell.Lang/OpCodes/OpWhile",
-	];
-	pure Collection<string> getAssetsFiles() => static::assets();
-	
-	
-	
-	/**
 	 * Returns enities
 	 */
 	pure Collection<Dict> entities() => null;
-	
-	
-	
-	/**
-	 * Returns enities
-	 */
-	pure Collection<Dict> resources() => null;
-	
 	
 }

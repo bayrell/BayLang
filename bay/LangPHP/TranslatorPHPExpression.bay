@@ -62,6 +62,7 @@ static class TranslatorPHPExpression
 		s = re::replace('\n', '\\n', s);
 		s = re::replace('\r', '\\r', s);
 		s = re::replace('\t', '\\t', s);
+		s = re::replace('\\$', '\\$', s);
 		return '"' ~ s ~ '"';
 	}
 	
