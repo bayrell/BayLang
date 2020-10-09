@@ -43,8 +43,8 @@ struct TranslatorPHP extends CoreTranslator
 	TranslatorPHPProgram program = null;
 	
 	/* Flags */
-	bool frontend = true;
-	bool backend = false;
+	bool frontend = false;
+	bool backend = true;
 	bool enable_context = true;
 	bool enable_check_types = false;
 	

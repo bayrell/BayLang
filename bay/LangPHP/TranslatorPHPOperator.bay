@@ -415,7 +415,7 @@ static class TranslatorPHPOperator
 	pure list<TranslatorPHP, string> OpPreprocessorIfCode(TranslatorPHP t, OpPreprocessorIfCode op_code)
 	{
 		string content = "";
-		if (t.preprocessor_flags.has(op_code.condition.value))
+		if (t.preprocessor_flags[op_code.condition.value] == true)
 		{
 			content = rs::trim(op_code.content);
 		}
@@ -432,7 +432,7 @@ static class TranslatorPHPOperator
 		TranslatorPHP t, OpPreprocessorIfDef op_code, string kind
 	)
 	{
-		if (not t.preprocessor_flags.has(op_code.condition.value)) return [t, ""];
+		if (not t.preprocessor_flags[op_code.condition.value] == true) return [t, ""];
 		
 		if (kind == OpPreprocessorIfDef::KIND_OPERATOR)
 		{

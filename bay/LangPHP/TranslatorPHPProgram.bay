@@ -137,7 +137,7 @@ static class TranslatorPHPProgram
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
 		{
-			if (t.preprocessor_flags.has(item.condition.value))
+			if (t.preprocessor_flags[item.condition.value] == true)
 			{
 				for (int i=0; i<item.items.count(); i++)
 				{
@@ -164,7 +164,7 @@ static class TranslatorPHPProgram
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
 		{
-			if (t.preprocessor_flags.has(item.condition.value))
+			if (t.preprocessor_flags[item.condition.value] == true)
 			{
 				for (int i=0; i<item.items.count(); i++)
 				{

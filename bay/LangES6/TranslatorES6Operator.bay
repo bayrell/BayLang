@@ -577,7 +577,7 @@ struct TranslatorES6Operator extends BaseStruct
 	pure list<TranslatorES6, string> OpPreprocessorIfCode(TranslatorES6 t, OpPreprocessorIfCode op_code)
 	{
 		string content = "";
-		if (t.preprocessor_flags.has(op_code.condition.value))
+		if (t.preprocessor_flags[op_code.condition.value] == true)
 		{
 			content = rs::trim(op_code.content);
 		}
@@ -594,7 +594,7 @@ struct TranslatorES6Operator extends BaseStruct
 		TranslatorES6 t, OpPreprocessorIfDef op_code, string kind
 	)
 	{
-		if (not t.preprocessor_flags.has(op_code.condition.value)) return [t, ""];
+		if (not t.preprocessor_flags[op_code.condition.value] == true) return [t, ""];
 		
 		if (kind == OpPreprocessorIfDef::KIND_OPERATOR)
 		{
