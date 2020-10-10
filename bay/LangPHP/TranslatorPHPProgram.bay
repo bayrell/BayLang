@@ -639,6 +639,15 @@ static class TranslatorPHPProgram
 					string var_type =
 						rs::join(".", t.expression::findModuleNames(t, variable.pattern.entity_name.names))
 					;
+					Collection<string> var_sub_types = (variable.pattern.template != null) ?
+						variable.pattern.template.map
+						(
+							string (OpTypeIdentifier op_code) use (t) =>
+								rs::join(".", t.expression::findModuleNames(t, op_code.entity_name.names))
+						)
+						: []
+					;
+					var_sub_types = var_sub_types.map( t.expression::toString );
 					
 					t = t::clearSaveOpCode(t);
 					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
@@ -647,6 +656,7 @@ static class TranslatorPHPProgram
 					content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
 					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 					content ~= t.s("\"t\"=> " ~ t.expression::toString(var_type) ~ ",");
+					if (var_sub_types.count() > 0) content ~= t.s("\"s\"=> [" ~ rs::join(", ", var_sub_types) ~ "],");
 					content ~= t.s("\"name\"=> $field_name,");
 					content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
 					t = t.levelInc();

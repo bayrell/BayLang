@@ -567,6 +567,15 @@ struct TranslatorES6Program extends BaseStruct
 					string var_type =
 						rs::join(".", t.expression::findModuleNames(t, variable.pattern.entity_name.names))
 					;
+					Collection<string> var_sub_types = (variable.pattern.template != null) ?
+						variable.pattern.template.map
+						(
+							string (OpTypeIdentifier op_code) use (t) =>
+								rs::join(".", t.expression::findModuleNames(t, op_code.entity_name.names))
+						)
+						: []
+					;
+					var_sub_types = var_sub_types.map( t.expression::toString );
 					
 					t = t::clearSaveOpCode(t);
 					string s1 = "";
@@ -575,6 +584,7 @@ struct TranslatorES6Program extends BaseStruct
 					s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_FIELD,");
 					s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
 					s1 ~= t.s("\"t\": " ~ t.expression::toString(var_type) ~ ",");
+					if (var_sub_types.count() > 0) s1 ~= t.s("\"s\": [" ~ rs::join(", ", var_sub_types) ~ "],");
 					s1 ~= t.s("\"name\": field_name,");
 					s1 ~= t.s("\"annotations\": Collection.from([");
 					t = t.levelInc();
