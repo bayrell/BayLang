@@ -379,9 +379,10 @@ struct TranslatorES6Expression extends BaseStruct
 						s ~= ".constructor." ~ attr.value.value;
 						first_item ~= ".constructor";
 					}
-					else if (prev_kind == "parent" and not t.current_function.isStatic())
+					else if (prev_kind == "parent")
 					{
-						s ~= ".prototype." ~ attr.value.value ~ ".bind(this)";
+						if (t.current_function.isStatic()) s ~= "." ~ attr.value.value ~ ".bind(this)";
+						else s ~= ".prototype." ~ attr.value.value ~ ".bind(this)";
 					}
 					else s ~= "." ~ attr.value.value;
 					
