@@ -160,6 +160,7 @@ class ParserBayHtml extends BaseObject
 		Caret caret_start = parser.caret;
 		Caret caret_last = parser.caret;
 		
+		bool is_first_selector = true;
 		BaseOpCode op_code = null;
 		string css_str = "";
 		Reference<string> content = parser.content;
@@ -172,6 +173,7 @@ class ParserBayHtml extends BaseObject
 		
 		string ch = rs::substr(content.ref, pos, 1);
 		string ch2 = rs::substr(content.ref, pos, 2);
+		string ch6 = rs::substr(content.ref, pos, 6);
 		while (pos < content_sz and (ch != "}" or ch == "}" and bracket_level > 0) and ch != "<")
 		{
 			/* Read expression */
@@ -237,10 +239,93 @@ class ParserBayHtml extends BaseObject
 				/* Set css str */
 				css_str = "";
 				caret_last = caret;
+				is_first_selector = true;
+			}
+			
+			/* Read media css */
+			else if (ch6 == "@media")
+			{
+				while (pos < content_sz and ch != "{")
+				{
+					x = parser.parser_base::nextX(parser, ch, x);
+					y = parser.parser_base::nextY(parser, ch, y);
+					pos = pos + 1;
+					ch = rs::substr(content.ref, pos, 1);
+				}
+				
+				/* Add value */
+				string value = rs::substr(content.ref, start_pos, pos - start_pos);
+				if (value != "") css_str ~= value;
+				css_str ~= "{";
+				
+				/* Add css op code */
+				css_str = rs::replace("\t", "", css_str);
+				css_str = rs::replace("\n", "", css_str);
+				if (css_str != "")
+				{
+					OpString css_str_op_code = new OpString
+					{
+						"caret_start": caret_last,
+						"caret_end": parser.caret,
+						"value": css_str,
+					};
+					if (op_code == null) op_code = css_str_op_code;
+					else op_code = new OpMath
+					{
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+						"value1": op_code,
+						"value2": css_str_op_code,
+						"math": "~",
+					};
+				}
+				
+				/* Read CSS Block */
+				Caret caret = new Caret{ "x": x, "y": y, "pos": pos };
+				parser <= caret <= caret;
+				list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+				list res = static::readCssBody
+				(
+					parser,
+					{
+						"css_selector": true,
+					}
+				);
+				parser = res[0]; BaseOpCode expr = res[1];
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+				
+				/* Add expr op code */
+				if (expr != null)
+				{
+					if (op_code == null) op_code = expr;
+					else op_code = new OpMath
+					{
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+						"value1": op_code,
+						"value2": expr,
+						"math": "~",
+					};
+				}
+				
+				/* Set pos, x, y */
+				caret_start = parser.caret;
+				pos = parser.caret.pos;
+				x = parser.caret.x;
+				y = parser.caret.y;
+				start_pos = pos;
+				
+				/* Set css str */
+				css_str = "}";
+				caret_last = caret;
+				is_first_selector = true;
 			}
 			
 			/* If html or tag */
-			else if (ch == "%" and flags["css_selector"] == true)
+			else if (
+				(ch == "%" or (parser.is_local_css and ch == "." and is_first_selector)) and
+				flags["css_selector"] == true
+			)
 			{
 				x = parser.parser_base::nextX(parser, ch, x);
 				y = parser.parser_base::nextY(parser, ch, y);
@@ -263,6 +348,7 @@ class ParserBayHtml extends BaseObject
 				x = parser.caret.x;
 				y = parser.caret.y;
 				start_pos = pos;
+				is_first_selector = false;
 			}
 			
 			/* Read css block */
@@ -333,16 +419,19 @@ class ParserBayHtml extends BaseObject
 				/* Set css str */
 				css_str = "}";
 				caret_last = caret;
+				is_first_selector = true;
 			}
 			else
 			{
 				x = parser.parser_base::nextX(parser, ch, x);
 				y = parser.parser_base::nextY(parser, ch, y);
 				pos = pos + 1;
+				if (ch == " " or ch == "," or ch == "{") is_first_selector = true;
 			}
 			
 			ch = rs::substr(content.ref, pos, 1);
 			ch2 = rs::substr(content.ref, pos, 2);
+			ch6 = rs::substr(content.ref, pos, 6);
 		}
 		
 		/* Push item */
@@ -1086,7 +1175,8 @@ class ParserBayHtml extends BaseObject
 		Caret class_caret_start = parser.caret;
 		CoreToken token = null;
 		
-		string class_name = "", class_extends = "", class_version = "", item_name = "", namespace_name = "";
+		string class_name = "", class_extends = "", class_version = "", class_model = "",
+			item_name = "", namespace_name = "";
 		string short_name = "", full_name = "", is_component = "", class_name_last = "";
 		
 		/* Content */
@@ -1098,9 +1188,25 @@ class ParserBayHtml extends BaseObject
 		list res = parser.parser_base::matchToken(parser, "class"); parser = res[0];
 		list res = static::readAttrs(parser); parser = res[0]; Dict attrs = res[1];
 		class_name = attrs.get("name", "");
-		class_extends = attrs.get("extends", "");
-		class_version = attrs.get("version", "");
+		class_extends = attrs.get("extends", "Runtime.Web.Component");
+		class_version = attrs.get("version", "1.0");
+		class_model = attrs.get("model", "Runtime.Dict");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		fn getClassShortName = string (string class_name) => class_name |> curry rs::split("\\.", ?) |> .last();
+		if (class_name != "")
+		{
+			parser <= uses <= parser.uses.setIm( getClassShortName(class_name), class_name );
+		}
+		if (class_extends != "")
+		{
+			parser <= uses <= parser.uses.setIm( getClassShortName(class_extends), class_extends );
+			if (class_extends != "Runtime.Web.Component") components.push(class_extends);
+		}
+		if (class_model != "" and class_model != "Runtime.Dict")
+		{
+			parser <= uses <= parser.uses.setIm( getClassShortName(class_model), class_model );
+		}
 		
 		Collection class_name_arr = rs::split("\\.", class_name);
 		class_name_last = class_name_arr.last();
@@ -1256,7 +1362,16 @@ class ParserBayHtml extends BaseObject
 					/* Save vars */
 					Dict<bool> save_vars = parser.vars;
 					parser <= vars <= parser.vars.setIm("vars", true);
+					parser <= is_local_css <= true;
 					
+					/* Check if local css */
+					string is_global = item_attrs.get("global", "");
+					if (is_global == "true")
+					{
+						parser <= is_local_css <= false;
+					}
+					
+					/* Read css */
 					list res = static::readCssBody(parser);
 					parser = res[0]; BaseOpCode css_op_code = res[1];
 					

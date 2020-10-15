@@ -49,6 +49,7 @@ class ParserBay extends CoreParser
 	string pipe_kind = "";
 	bool is_pipe = false;
 	bool is_html = false;
+	bool is_local_css = false;
 	
 	
 	/* Parsers */

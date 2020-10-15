@@ -1362,10 +1362,6 @@ class ParserBayBase
 		{
 			list res = static::readCallArgs(parser); parser = res[0]; args = res[1];
 		}
-		else
-		{
-			static::matchToken(parser, "(");
-		}
 		
 		return 
 		[

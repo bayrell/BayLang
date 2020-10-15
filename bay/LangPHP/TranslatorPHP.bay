@@ -42,13 +42,19 @@ struct TranslatorPHP extends CoreTranslator
 	TranslatorPHPOperator operator = null;
 	TranslatorPHPProgram program = null;
 	
+	/* Flags */
+	bool frontend = false;
+	bool backend = true;
+	bool enable_context = true;
+	bool enable_check_types = true;
 	
 	
 	/**
 	 * Reset translator
 	 */
 	pure TranslatorPHP reset(TranslatorPHP t) =>
-		t.copy({
+		t.copy
+		{
 			"value": "",
 			"current_namespace_name": "",
 			"modules": new Dict<string>(),
@@ -61,10 +67,13 @@ struct TranslatorPHP extends CoreTranslator
 			"save_op_code_inc": 0,
 			"preprocessor_flags": 
 			{
-				"BACKEND": true,
 				"PHP": true,
+				"FRONTEND": t.frontend,
+				"BACKEND": t.backend,
+				"ENABLE_CONTEXT": t.enable_context,
+				"ENABLE_CHECK_TYPES": t.enable_check_types,
 			},
-		})
+		}
 	;
 	
 	

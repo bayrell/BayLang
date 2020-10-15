@@ -62,6 +62,7 @@ static class TranslatorPHPExpression
 		s = re::replace('\n', '\\n', s);
 		s = re::replace('\r', '\\r', s);
 		s = re::replace('\t', '\\t', s);
+		s = re::replace('\\$', '\\$', s);
 		return '"' ~ s ~ '"';
 	}
 	
@@ -259,7 +260,7 @@ static class TranslatorPHPExpression
 		(
 			string (OpDictPair pair, string key) use (t)
 			{
-				if (pair.condition != null and not t.preprocessor_flags.has(pair.condition.value)) return "";
+				if (pair.condition != null and t.preprocessor_flags[pair.condition.value] != true) return "";
 				list res = static::Expression(t, pair.value); t = res[0]; string s = res[1];
 				return static::toString(pair.key) ~ "=>" ~ s;
 			}

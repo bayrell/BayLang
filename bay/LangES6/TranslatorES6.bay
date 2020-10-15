@@ -46,10 +46,14 @@ struct TranslatorES6 extends CoreTranslator
 	TranslatorES6Program program = null;
 	
 	/* Flags */
+	bool frontend = true;
+	bool backend = false;
 	bool use_module_name = false;
 	bool use_strict = true;
 	bool enable_async_await = true;
 	bool emulate_async_await = true;
+	bool enable_context = true;
+	bool enable_check_types = true;
 	
 	
 	/**
@@ -70,7 +74,8 @@ struct TranslatorES6 extends CoreTranslator
 	 * Reset translator
 	 */
 	pure TranslatorES6 reset(TranslatorES6 t) =>
-		t.copy({
+		t.copy
+		{
 			"value": "",
 			"current_namespace_name": "",
 			"modules": new Dict<string>(),
@@ -84,11 +89,18 @@ struct TranslatorES6 extends CoreTranslator
 			"save_op_code_inc": 0,
 			"preprocessor_flags": 
 			{
-				"FRONTEND": true,
 				"ES6": true,
 				"JAVASCRIPT": true,
+				"FRONTEND": t.frontend,
+				"BACKEND": t.backend,
+				"USE_MODULE_NAME": t.use_module_name,
+				"USE_STRICT": t.use_strict,
+				"ENABLE_ASYNC_AWAIT": t.enable_async_await,
+				"EMULATE_ASYNC_AWAIT": t.emulate_async_await,
+				"ENABLE_CONTEXT": t.enable_context,
+				"ENABLE_CHECK_TYPES": t.enable_check_types,
 			},
-		})
+		}
 	;
 	
 	
