@@ -866,7 +866,7 @@ static class TranslatorPHPExpression
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				s2 = "try{ ";
 				s2 ~= var_name~"=("~var_name~"->val!=null && "~var_name~"->err==null) ? new \\Runtime\\Monad($ctx, "~value~") : "~var_name~";";
-				s2 ~= " } catch (Exception $err) { ";
+				s2 ~= " } catch (\\Exception $err) { ";
 				s2 ~= var_name~"=new \\Runtime\\Monad($ctx, null, $err);";
 				s2 ~= " }";
 			}
