@@ -1423,6 +1423,40 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "script"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 				}
+				
+				else if (item_name == "meta")
+				{
+					list res = parser.parser_base::readCollection(parser);
+					parser = res[0]; BaseOpCode arr = res[1];
+					
+					OpDeclareFunction f = new OpDeclareFunction
+					{
+						"args":
+						[
+						],
+						"vars": [],
+						"flags": new OpFlags
+						{
+							"p_static": true,
+							"p_pure": true,
+						},
+						"name": "meta",
+						"result_type": "Collection",
+						"expression": arr,
+						"items": null,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					};
+					
+					items.push(f);
+					
+					/* Read meta footer */
+					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, "meta"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+				}
+				
 				else
 				{
 					throw new ParserError
@@ -1432,6 +1466,7 @@ class ParserBayHtml extends BaseObject
 					);
 				}
 			}
+			
 			else if (token.content == "/")
 			{
 				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
