@@ -51,9 +51,9 @@ struct TranslatorES6 extends CoreTranslator
 	bool use_module_name = false;
 	bool use_strict = true;
 	bool enable_async_await = true;
-	bool emulate_async_await = true;
+	bool emulate_async_await = false;
 	bool enable_context = true;
-	bool enable_check_types = true;
+	bool enable_check_types = false;
 	
 	
 	/**

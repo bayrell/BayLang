@@ -905,6 +905,17 @@ static class TranslatorPHPProgram
 			}
 		}
 		
+		content = rs::trim(content);
+		
+		/* Disable context */
+		if (t.enable_context == false)
+		{
+			content = rs::replace("\\(\\$ctx\\)", "()", content);
+			content = rs::replace("\\(\\$ctx, ", "(", content);
+			content = rs::replace("\\(\\$ctx,", "(", content);
+			content = rs::replace("\\,\\$ctx,", ",", content);
+		}
+		
 		return [t, content];
 	}
 	
