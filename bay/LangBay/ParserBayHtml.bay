@@ -18,6 +18,7 @@
 
 namespace Bayrell.Lang.LangBay;
 
+use Runtime.re;
 use Runtime.BaseObject;
 use Runtime.BaseStruct;
 use Runtime.Reference;
@@ -1015,11 +1016,29 @@ class ParserBayHtml extends BaseObject
 		
 		if (not is_single_flag)
 		{
-			/* Read items */
-			caret_items_start = parser.caret;
-			list res = static::readHTMLContent(parser, "</" ~ tag_name);
-			parser = res[0]; Collection<BaseOpCode> items = res[1];
-			caret_items_end = parser.caret;
+			if (tag_name == "svg")
+			{
+				list res = parser.parser_base::readUntilStringArr(parser, ["</svg>"], false); parser = res[0];
+				string content = res[1];
+				content = re::replace("[\t\n]", "", content);
+				Collection<BaseOpCode> items =
+				[
+					new OpHtmlContent
+					{
+						"value": content,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					}
+				];
+			}
+			else
+			{
+				/* Read items */
+				caret_items_start = parser.caret;
+				list res = static::readHTMLContent(parser, "</" ~ tag_name);
+				parser = res[0]; Collection<BaseOpCode> items = res[1];
+				caret_items_end = parser.caret;
+			}
 			
 			/* Tag end */
 			if (op_code_flag)
@@ -1038,7 +1057,7 @@ class ParserBayHtml extends BaseObject
 				list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
 				if (ident != null)
 				{
-					list res = parser.parser_base::matchToken(parser, ident.value); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, tag_name); parser = res[0];
 				}
 				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 			}
@@ -1428,7 +1447,7 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = parser.parser_base::readCollection(parser);
 					parser = res[0]; BaseOpCode arr = res[1];
-					
+					/*
 					OpDeclareFunction f = new OpDeclareFunction
 					{
 						"args":
@@ -1449,7 +1468,7 @@ class ParserBayHtml extends BaseObject
 					};
 					
 					items.push(f);
-					
+					*/
 					/* Read meta footer */
 					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
