@@ -169,19 +169,25 @@ static class TranslatorPHPOperator
 				}
 				else
 				{
-					if (op_code.kind == OpAssign::KIND_DECLARE) s = "$" ~ item.var_name;
+					if (item.op_code != null and item.op_code.value == "@" and t.enable_context == false)
+					{
+						s = "\\Runtime\\rtl::setContext(" ~ item_expression ~ ")";
+					}
 					else
 					{
-						list res = t.expression::OpIdentifier(t, item.op_code);
-						t = res[0]; s = res[1];
+						if (op_code.kind == OpAssign::KIND_DECLARE) s = "$" ~ item.var_name;
+						else
+						{
+							list res = t.expression::OpIdentifier(t, item.op_code);
+							t = res[0]; s = res[1];
+						}
 					}
-					
 					if (item_expression != "")
 					{
+						if (op == "~=") s ~= " .= " ~ item_expression;
+						else s ~= " " ~ op ~ " " ~ item_expression;
+						index_s = s ~ ";";
 					}
-					if (op == "~=") s ~= " .= " ~ item_expression;
-					else s ~= " " ~ op ~ " " ~ item_expression;
-					index_s = s ~ ";";
 				}
 				
 				if (item.var_name != "" and t.save_vars.indexOf(item.var_name) == -1)

@@ -235,9 +235,8 @@ class TranslatorES6Html
 			content ~= t.s(var_name ~ ".e(\"text\")");
 			t = t.levelInc();
 			content ~= t.s(".c(" ~ item_value ~ ")");
-			/* content ~= t.s(".p()"); */
+			content ~= t.s(".r();");
 			t = t.levelDec();
-			content ~= t.s(";");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -262,9 +261,8 @@ class TranslatorES6Html
 				content ~= t.s(var_name ~ ".e(\"raw\")");
 				t = t.levelInc();
 				content ~= t.s(".c(" ~ item_value ~ ")");
-				/* content ~= t.s(".p()"); */
+				content ~= t.s(".r();");
 				t = t.levelDec();
-				content ~= t.s(";");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
@@ -272,9 +270,8 @@ class TranslatorES6Html
 				content ~= t.s(var_name ~ ".e(\"html\")");
 				t = t.levelInc();
 				content ~= t.s(".c(" ~ item_value ~ ")");
-				/* content ~= t.s(".p()"); */
+				content ~= t.s(".r();");
 				t = t.levelDec();
-				content ~= t.s(";");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
@@ -283,9 +280,8 @@ class TranslatorES6Html
 				content ~= t.s(var_name ~ ".e(\"text\")");
 				t = t.levelInc();
 				content ~= t.s(".c(" ~ item_value ~ ")");
-				/* content ~= t.s(".p()"); */
+				content ~= t.s(".r();");
 				t = t.levelDec();
-				content ~= t.s(";");
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -304,11 +300,11 @@ class TranslatorES6Html
 				{
 					list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
 					content ~= t.s("/* Items */");
-					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(\"empty\");");
+					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(\"empty\").r();");
 				}
 				else
 				{
-					content ~= t.s(var_name ~ ".e(\"empty\").p();");
+					content ~= t.s(var_name ~ ".e(\"empty\").r();");
 				}
 			}
 			else if (is_component)
@@ -329,9 +325,8 @@ class TranslatorES6Html
 					list res = static::OpHtmlItems(t, op_code.items);
 					t = res[0]; string f = res[1];
 					content ~= t.s(".c(" ~ f ~ ")");
-					/* content ~= t.s(".p()"); */
+					content ~= t.s(".r();");
 					t = t.levelDec();
-					content ~= t.s(";");
 					has_childs = false;
 				}
 				else
@@ -340,35 +335,46 @@ class TranslatorES6Html
 					content ~= t.s(var_name ~ ".e(\"component\", " ~ tag_name ~ ")");
 					t = t.levelInc();
 					if (attrs != "{}") content ~= t.s(".a(" ~ attrs ~ ")");
-					/* content ~= t.s(".p()"); */
+					content ~= t.s(".r();");
 					t = t.levelDec();
-					content ~= t.s(";");
 				}
 			}
 			else
 			{
 				string tag_name = t.expression::toString(op_code.tag_name);
-				if (has_childs)
+				string attr_class_name = static::getOpHtmlAttrsClassName(op_code.attrs);
+				attr_class_name = rs::replace("\s", ".", attr_class_name);
+				if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
+				
+				content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
+				if (op_code.tag_name == 'svg')
 				{
-					string attr_class_name = static::getOpHtmlAttrsClassName(op_code.attrs);
-					attr_class_name = rs::replace("\s", ".", attr_class_name);
-					if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
+					string svg_content = op_code["items", "items", 0, "value", "value"] |> default string "";
+					svg_content = t.expression::toString(svg_content);
+					content ~= t.s(var_name ~ ".e(\"element\", " ~ tag_name ~ ")");
+					t = t.levelInc();
+					if (attrs != "{}") content ~= t.s(".a(" ~ attrs ~ ")");
+					content ~= t.s(".c(" ~ svg_content  ~ ")");
+					content ~= t.s(".r();");
+					t = t.levelDec();
+					has_childs = false;
+				}
+				else if (has_childs)
+				{
 					list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
-					content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
 					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(\"element\", " ~ tag_name ~ ")");
 					t = t.levelInc();
 					if (attrs != "{}") content ~= t.s(".a(" ~ attrs ~ ")");
+					content ~= t.s(".r();");
 					t = t.levelDec();
-					content ~= t.s(";");
 				}
 				else
 				{
 					content ~= t.s(var_name ~ ".e(\"element\", " ~ tag_name ~ ")");
 					t = t.levelInc();
 					if (attrs != "{}") content ~= t.s(".a(" ~ attrs ~ ")");
-					/* content ~= t.s(".p()"); */
+					content ~= t.s(".r();");
 					t = t.levelDec();
-					content ~= t.s(";");
 				}
 			}
 			
@@ -407,6 +413,7 @@ class TranslatorES6Html
 			content ~= t.s(var_name ~ ".e(\"text\")");
 			t = t.levelInc();
 			content ~= t.s(".c(" ~ item_value ~ ")");
+			content ~= t.s(".r();");
 			t = t.levelDec();
 			content ~= t.s(";");
 		}

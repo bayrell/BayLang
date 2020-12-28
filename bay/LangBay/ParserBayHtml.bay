@@ -1021,15 +1021,23 @@ class ParserBayHtml extends BaseObject
 				list res = parser.parser_base::readUntilStringArr(parser, ["</svg>"], false); parser = res[0];
 				string content = res[1];
 				content = re::replace("[\t\n]", "", content);
+				
 				Collection<BaseOpCode> items =
 				[
-					new OpHtmlContent
+					new OpHtmlValue
 					{
-						"value": content,
+						"kind": OpHtmlValue::KIND_RAW,
+						"value": new OpString
+						{
+							"caret_start": parser.caret,
+							"caret_end": parser.caret,
+							"value": content,
+						},
 						"caret_start": caret_start,
 						"caret_end": parser.caret,
 					}
 				];
+				
 			}
 			else
 			{
