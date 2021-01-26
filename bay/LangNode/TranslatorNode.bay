@@ -46,6 +46,7 @@ struct TranslatorNode extends TranslatorES6
 	bool use_module_name = true;
 	bool enable_async_await = true;
 	bool emulate_async_await = false;
+	bool enable_introspection = false;
 	
 	
 	

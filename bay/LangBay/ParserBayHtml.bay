@@ -1453,7 +1453,7 @@ class ParserBayHtml extends BaseObject
 				
 				else if (item_name == "meta")
 				{
-					list res = parser.parser_base::readCollection(parser);
+					list res = parser.parser_base::readDict(parser);
 					parser = res[0]; BaseOpCode arr = res[1];
 					/*
 					OpDeclareFunction f = new OpDeclareFunction

@@ -47,6 +47,7 @@ struct TranslatorPHP extends CoreTranslator
 	bool backend = true;
 	bool enable_context = true;
 	bool enable_check_types = true;
+	bool enable_introspection = false;
 	
 	
 	/**

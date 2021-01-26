@@ -103,9 +103,27 @@ static class TranslatorPHPProgram
 		if (f.annotations.count() == 0) return [t, content];
 		content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 		t = t.levelInc();
-		content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
+		
+		if (t.enable_introspection)
+		{
+			content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
+		}
+		else
+		{
+			content ~= t.s("return new \\Runtime\\Dict::from([");
+		}
+		
 		t = t.levelInc();
-		content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_METHOD,");
+		
+		if (t.enable_introspection)
+		{
+			content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_METHOD,");
+		}
+		else
+		{
+			content ~= t.s("\"kind\"=>\"method\",");
+		}
+		
 		content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 		content ~= t.s("\"name\"=>" ~ t.expression::toString(f.name) ~ ",");
 		content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
@@ -122,7 +140,9 @@ static class TranslatorPHPProgram
 		t = t.levelDec();
 		content ~= t.s("]),");
 		t = t.levelDec();
+		
 		content ~= t.s("]);");
+		
 		t = t.levelDec();
 		return [t, content];
 	}
@@ -524,9 +544,27 @@ static class TranslatorPHPProgram
 			content ~= t.s("{");
 			t = t.levelInc();
 			t = t::clearSaveOpCode(t);
-			content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
+			
+			if (t.enable_introspection)
+			{
+				content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
+			}
+			else
+			{
+				content ~= t.s("return new \\Runtime\\Dict::from([");
+			}
+			
 			t = t.levelInc();
-			content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_CLASS,");
+			
+			if (t.enable_introspection)
+			{
+				content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_CLASS,");
+			}
+			else
+			{
+				content ~= t.s("\"kind\"=>\"class\",");
+			}
+			
 			content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 			content ~= t.s("\"name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 			content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
@@ -543,7 +581,9 @@ static class TranslatorPHPProgram
 			t = t.levelDec();
 			content ~= t.s("]),");
 			t = t.levelDec();
+			
 			content ~= t.s("]);");
+			
 			t = t.levelDec();
 			content ~= t.s("}");
 			
@@ -650,10 +690,29 @@ static class TranslatorPHPProgram
 					var_sub_types = var_sub_types.map( t.expression::toString );
 					
 					t = t::clearSaveOpCode(t);
-					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-						"return new \\Runtime\\IntrospectionInfo($ctx, [");
+					
+					if (t.enable_introspection)
+					{
+						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+							"return new \\Runtime\\IntrospectionInfo($ctx, [");
+					}
+					else
+					{
+						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+							"return new \\Runtime\\Dict::from([");
+					}
+					
 					t = t.levelInc();
-					content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
+					
+					if (t.enable_introspection)
+					{
+						content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
+					}
+					else
+					{
+						content ~= t.s("\"kind\"=>\"field\",");
+					}
+					
 					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
 					content ~= t.s("\"t\"=> " ~ t.expression::toString(var_type) ~ ",");
 					if (var_sub_types.count() > 0) content ~= t.s("\"s\"=> [" ~ rs::join(", ", var_sub_types) ~ "],");
@@ -672,6 +731,7 @@ static class TranslatorPHPProgram
 					t = t.levelDec();
 					content ~= t.s("]),");
 					t = t.levelDec();
+					
 					content ~= t.s("]);");
 				}
 			}
