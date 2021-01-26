@@ -171,7 +171,7 @@ static class TranslatorPHPOperator
 				{
 					if (item.op_code != null and item.op_code.value == "@" and t.enable_context == false)
 					{
-						s = "\\Runtime\\rtl::setContext(" ~ item_expression ~ ")";
+						index_s = "\\Runtime\\rtl::setContext(" ~ item_expression ~ ");";
 					}
 					else
 					{
@@ -181,12 +181,12 @@ static class TranslatorPHPOperator
 							list res = t.expression::OpIdentifier(t, item.op_code);
 							t = res[0]; s = res[1];
 						}
-					}
-					if (item_expression != "")
-					{
-						if (op == "~=") s ~= " .= " ~ item_expression;
-						else s ~= " " ~ op ~ " " ~ item_expression;
-						index_s = s ~ ";";
+						if (item_expression != "")
+						{
+							if (op == "~=") s ~= " .= " ~ item_expression;
+							else s ~= " " ~ op ~ " " ~ item_expression;
+							index_s = s ~ ";";
+						}
 					}
 				}
 				
