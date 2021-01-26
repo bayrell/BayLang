@@ -110,7 +110,7 @@ static class TranslatorPHPProgram
 		}
 		else
 		{
-			content ~= t.s("return new \\Runtime\\Dict::from([");
+			content ~= t.s("return \\Runtime\\Dict::from([");
 		}
 		
 		t = t.levelInc();
@@ -551,7 +551,7 @@ static class TranslatorPHPProgram
 			}
 			else
 			{
-				content ~= t.s("return new \\Runtime\\Dict::from([");
+				content ~= t.s("return \\Runtime\\Dict::from([");
 			}
 			
 			t = t.levelInc();
@@ -699,7 +699,7 @@ static class TranslatorPHPProgram
 					else
 					{
 						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-							"return new \\Runtime\\Dict::from([");
+							"return \\Runtime\\Dict::from([");
 					}
 					
 					t = t.levelInc();
