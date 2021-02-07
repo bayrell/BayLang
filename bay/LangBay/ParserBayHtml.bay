@@ -1411,32 +1411,64 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 					
-					OpDeclareFunction f = new OpDeclareFunction
+					int find_pos = -1;
+					for (int items_i=0; items_i<items.count(); items_i++)
 					{
-						"args":
-						[
-							new OpDeclareFunctionArg
-							{
-								"name": "vars",
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-						],
-						"vars": [],
-						"flags": new OpFlags
+						OpDeclareFunction f = items[items_i];
+						if (f instanceof OpDeclareFunction)
 						{
-							"p_static": true,
-							"p_pure": true,
-						},
-						"name": "css",
-						"result_type": "html",
-						"expression": css_op_code,
-						"items": null,
-						"caret_start": caret_start,
-						"caret_end": parser.caret,
-					};
+							if (f.name == "css")
+							{
+								find_pos = items_i;
+								break;
+							}
+						}
+					}
 					
-					items.push(f);
+					if (find_pos == -1)
+					{
+						OpDeclareFunction f = new OpDeclareFunction
+						{
+							"args":
+							[
+								new OpDeclareFunctionArg
+								{
+									"name": "vars",
+									"caret_start": caret_start,
+									"caret_end": parser.caret,
+								},
+							],
+							"vars": [],
+							"flags": new OpFlags
+							{
+								"p_static": true,
+								"p_pure": true,
+							},
+							"name": "css",
+							"result_type": "html",
+							"expression": css_op_code,
+							"items": null,
+							"caret_start": caret_start,
+							"caret_end": parser.caret,
+						};
+						
+						items.push(f);
+					}
+					else
+					{
+						OpDeclareFunction f = items[find_pos];
+						
+						f <= expression <= new OpMath
+						{
+							"caret_start": caret_start,
+							"caret_end": parser.caret,
+							"math": "~",
+							"value1": f.expression,
+							"value2": css_op_code,
+						};
+						
+						items.set(find_pos, f);
+					}
 				}
 				else if (item_name == "script")
 				{
