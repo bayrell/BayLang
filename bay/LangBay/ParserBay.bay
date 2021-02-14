@@ -44,6 +44,8 @@ class ParserBay extends CoreParser
 	string current_namespace_name = "";
 	string current_class_name = "";
 	string current_class_kind = "";
+	bool current_class_abstract = false;
+	bool current_class_declare = false;
 	bool find_identifier = true;
 	bool skip_comments = true;
 	string pipe_kind = "";

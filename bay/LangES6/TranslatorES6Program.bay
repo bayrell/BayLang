@@ -20,6 +20,7 @@ namespace Bayrell.Lang.LangES6;
 
 use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.Exceptions.DeclaredClass;
 use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAnnotation;
@@ -1092,8 +1093,14 @@ struct TranslatorES6Program extends BaseStruct
 	 */
 	pure list<TranslatorES6, string> OpDeclareClass(TranslatorES6 t, OpDeclareClass op_code)
 	{
+		if (op_code.is_abstract)
+		{
+			return [t, ""];
+		}
+		
 		if (op_code.is_declare)
 		{
+			throw new DeclaredClass();
 			return [t, ""];
 		}
 		

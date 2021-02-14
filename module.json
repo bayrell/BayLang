@@ -13,6 +13,7 @@
 		"Exceptions/ParserError",
 		"Exceptions/ParserEOF",
 		"Exceptions/ParserExpected",
+		"Exceptions/DeclaredClass",
 		"LangBay/ParserBay",
 		"LangBay/ParserBayBase",
 		"LangBay/ParserBayExpression",

@@ -20,6 +20,7 @@ namespace Bayrell.Lang.LangPHP;
 
 use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.Exceptions.DeclaredClass;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAnnotation;
@@ -812,8 +813,14 @@ static class TranslatorPHPProgram
 	 */
 	pure list<TranslatorPHP, string> OpDeclareClass(TranslatorPHP t, OpDeclareClass op_code)
 	{
+		if (op_code.is_abstract)
+		{
+			return [t, ""];
+		}
+		
 		if (op_code.is_declare)
 		{
+			throw new DeclaredClass();
 			return [t, ""];
 		}
 		

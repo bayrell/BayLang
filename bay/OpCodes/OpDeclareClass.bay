@@ -48,6 +48,7 @@ struct OpDeclareClass extends BaseOpCode
 	Collection<OpAssign> vars = null;
 	Collection<OpDeclareFunction> functions = null;
 	Collection<BaseOpCode> items = null;
+	bool is_abstract = false;
 	bool is_static = false;
 	bool is_declare = false;
 }
