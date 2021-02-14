@@ -240,6 +240,10 @@ struct TranslatorES6Program extends BaseStruct
 			t = t.levelInc();
 		}
 		
+		if (f.flags.isFlag("async"))
+		{
+			s1 ~= t.s("\"async\": true,");
+		}
 		s1 ~= t.s("\"annotations\": Collection.from([");
 		t = t.levelInc();
 		
@@ -476,9 +480,16 @@ struct TranslatorES6Program extends BaseStruct
 				OpAnnotation annotation = op_code.annotations.item(j);
 				list res = t.expression::OpTypeIdentifier(t, annotation.name);
 				t = res[0]; string name = res[1];
-				list res = t.expression::OpDict(t, annotation.params, true);
-				t = res[0]; string params = res[1];
-				s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
+				if (annotation.params != null)
+				{
+					list res = t.expression::OpDict(t, annotation.params, true);
+					t = res[0]; string params = res[1];
+					s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
+				}
+				else
+				{
+					s1 ~= t.s("new " ~ name ~ "(ctx),");
+				}
 			}
 			
 			t = t.levelDec();

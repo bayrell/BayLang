@@ -30,6 +30,7 @@ use Bayrell.Lang.Exceptions.ParserError;
 use Bayrell.Lang.Exceptions.ParserExpected;
 use Bayrell.Lang.LangBay.ParserBay;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAnnotation;
 use Bayrell.Lang.OpCodes.OpCollection;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpDeclareClass;
@@ -1169,8 +1170,10 @@ class ParserBayHtml extends BaseObject
 	 */
 	pure list<ParserBay, Dict> readAttrs(ParserBay parser)
 	{
+		ParserBay look = null;
 		BaseOpCode op_code = null;
 		CoreToken token = null;
+		CoreToken look_token = null;
 		Map items = new Map();
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz
@@ -1180,8 +1183,22 @@ class ParserBayHtml extends BaseObject
 		{
 			list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
 			list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
-			list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];
-			items.set(token.content, op_code.value);
+			string attr_name = token.content;
+			
+			/* Look token */
+			list res = parser.parser_base::readToken(parser); look_token = res[1];
+			if (look_token.content == "{")
+			{
+				list res = parser.parser_base::readDict(parser); parser = res[0]; op_code = res[1];
+				caret = parser.caret;
+				items.set(attr_name, op_code);
+			}
+			else
+			{
+				list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];
+				items.set(attr_name, op_code.value);
+			}
+			
 			caret = parser.parser_base::skipChar(parser, content, parser.caret);
 			ch = rs::substr(content.ref, caret.pos, 1);
 			string ch2 = rs::substr(content.ref, caret.pos, 2);
@@ -1205,6 +1222,7 @@ class ParserBayHtml extends BaseObject
 		string class_name = "", class_extends = "", class_version = "", class_model = "",
 			item_name = "", namespace_name = "";
 		string short_name = "", full_name = "", is_component = "", class_name_last = "";
+		Vector class_annotations = new Vector();
 		
 		/* Content */
 		Reference<string> content = parser.content;
@@ -1279,7 +1297,26 @@ class ParserBayHtml extends BaseObject
 			
 			list res = static::readAttrs(parser); parser = res[0]; Dict item_attrs = res[1];
 			
-			if (item_name == "use")
+			if (item_name == "annotation")
+			{
+				string annotation_name = item_attrs.get("name", "");
+				BaseOpCode annotation_op_code = item_attrs.get("value", null);
+				class_annotations.push
+				(
+					new OpAnnotation
+					{
+						"name": new OpTypeIdentifier
+						{
+							"entity_name": new OpEntityName
+							{
+								"names": rs::split("\\.", annotation_name),
+							},
+						},
+						"params": annotation_op_code,
+					}
+				);
+			}
+			else if (item_name == "use")
 			{
 				full_name = item_attrs.get("name", "");
 				short_name = item_attrs.get("as", "");
@@ -1612,6 +1649,7 @@ class ParserBayHtml extends BaseObject
 					"annotations": [],
 					"template": null,
 					"vars": class_body.item("vars"),
+					"annotations": class_annotations.toCollection(),
 					"functions": class_body.item("functions"),
 					"fn_create": class_body.item("fn_create"),
 					"fn_destroy": class_body.item("fn_destroy"),
