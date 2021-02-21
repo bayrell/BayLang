@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -130,14 +130,14 @@ static class TranslatorPHPHtml
 		if (op_code.op_code_name)
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render($ctx, $layout," ~ v_model ~
+			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::renderComponent($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}
 		else
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render($ctx, $layout," ~ v_model ~
+			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::renderComponent($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}

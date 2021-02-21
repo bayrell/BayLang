@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -271,21 +271,28 @@ struct TranslatorES6Operator extends BaseStruct
 				}
 				else
 				{
-					if (op_code.kind == OpAssign::KIND_DECLARE)
+					if (item.op_code != null and item.op_code.value == "@" and t.enable_context == false)
 					{
-						if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait()) s = item.var_name;
-						else s = "var " ~ item.var_name;
+						s = t.expression::useModuleName(t, "rtl") ~ ".setContext(" ~ item_expression ~ ")";
 					}
 					else
 					{
-						list res = t.expression::OpIdentifier(t, item.op_code);
-						t = res[0]; s = res[1];
-					}
-					
-					if (item_expression != "")
-					{
-						if (op == "~=") s ~= " += " ~ item_expression;
-						else s ~= " " ~ op ~ " " ~ item_expression;
+						if (op_code.kind == OpAssign::KIND_DECLARE)
+						{
+							if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait()) s = item.var_name;
+							else s = "var " ~ item.var_name;
+						}
+						else
+						{
+							list res = t.expression::OpIdentifier(t, item.op_code);
+							t = res[0]; s = res[1];
+						}
+						
+						if (item_expression != "")
+						{
+							if (op == "~=") s ~= " += " ~ item_expression;
+							else s ~= " " ~ op ~ " " ~ item_expression;
+						}
 					}
 				}
 				

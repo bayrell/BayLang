@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ namespace Bayrell.Lang.LangPHP;
 
 use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
+use Bayrell.Lang.Exceptions.DeclaredClass;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAnnotation;
@@ -103,13 +104,27 @@ static class TranslatorPHPProgram
 		if (f.annotations.count() == 0) return [t, content];
 		content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 		t = t.levelInc();
-		content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
-		t = t.levelInc();
-		content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_METHOD,");
-		content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-		content ~= t.s("\"name\"=>" ~ t.expression::toString(f.name) ~ ",");
+		
+		if (t.enable_introspection)
+		{
+			content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
+			t = t.levelInc();
+			content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+			content ~= t.s("\"name\"=>" ~ t.expression::toString(f.name) ~ ",");
+		}
+		else
+		{
+			content ~= t.s("return \\Runtime\\Dict::from([");
+			t = t.levelInc();
+		}
+		
+		if (f.flags.isFlag("async"))
+		{
+			content ~= t.s("\"async\"=>true,");
+		}
 		content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
 		t = t.levelInc();
+		
 		for (int j=0; j<f.annotations.count(); j++)
 		{
 			OpAnnotation annotation = f.annotations.item(j);
@@ -119,10 +134,12 @@ static class TranslatorPHPProgram
 			t = res[0]; string params = res[1];
 			content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
 		}
+		
 		t = t.levelDec();
 		content ~= t.s("]),");
 		t = t.levelDec();
 		content ~= t.s("]);");
+		
 		t = t.levelDec();
 		return [t, content];
 	}
@@ -377,9 +394,8 @@ static class TranslatorPHPProgram
 				content ~= t.s("}");
 			}
 			
-			
 			/* Struct */
-			if (class_kind == OpDeclareClass::KIND_STRUCT)
+			if (class_kind == OpDeclareClass::KIND_STRUCT and (t.flag_struct_check_types or t.enable_introspection))
 			{
 				/* Assign Object */
 				content ~= t.s("function assignObject($ctx,$o)");
@@ -524,26 +540,46 @@ static class TranslatorPHPProgram
 			content ~= t.s("{");
 			t = t.levelInc();
 			t = t::clearSaveOpCode(t);
-			content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
-			t = t.levelInc();
-			content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_CLASS,");
-			content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-			content ~= t.s("\"name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+			
+			if (t.enable_introspection)
+			{
+				content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
+				t = t.levelInc();
+				content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_CLASS,");
+				content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+				content ~= t.s("\"name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+			}
+			else
+			{
+				content ~= t.s("return \\Runtime\\Dict::from([");
+				t = t.levelInc();
+			}
+			
 			content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
 			t = t.levelInc();
+			
 			for (int j=0; j<op_code.annotations.count(); j++)
 			{
 				OpAnnotation annotation = op_code.annotations.item(j);
 				list res = t.expression::OpTypeIdentifier(t, annotation.name);
 				t = res[0]; string name = res[1];
-				list res = t.expression::OpDict(t, annotation.params, true);
-				t = res[0]; string params = res[1];
-				content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
+				if (annotation.params != null)
+				{
+					list res = t.expression::OpDict(t, annotation.params, true);
+					t = res[0]; string params = res[1];
+					content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
+				}
+				else
+				{
+					content ~= t.s("new " ~ name ~ "($ctx),");
+				}
 			}
+			
 			t = t.levelDec();
 			content ~= t.s("]),");
 			t = t.levelDec();
 			content ~= t.s("]);");
+			
 			t = t.levelDec();
 			content ~= t.s("}");
 			
@@ -598,14 +634,14 @@ static class TranslatorPHPProgram
 				vars.each(
 					void (Vector<string> v, string flag) use (t, content)
 					{
-						content ~= t.s("if (($f|"~flag~")=="~flag~")");
+						content ~= t.s("if (($f&"~flag~")=="~flag~")");
 						content ~= t.s("{");
 						t = t.levelInc();
 						v.each
 						(
 							void (string varname) use (t, content)
 							{
-								content ~= t.s("$a[] = " ~ t.expression::toString(varname) ~ ";");
+								content ~= t.s("$a[]=" ~ t.expression::toString(varname) ~ ";");
 							}
 						);
 						t = t.levelDec();
@@ -650,16 +686,28 @@ static class TranslatorPHPProgram
 					var_sub_types = var_sub_types.map( t.expression::toString );
 					
 					t = t::clearSaveOpCode(t);
-					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-						"return new \\Runtime\\IntrospectionInfo($ctx, [");
-					t = t.levelInc();
-					content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
-					content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-					content ~= t.s("\"t\"=> " ~ t.expression::toString(var_type) ~ ",");
+					
+					if (t.enable_introspection)
+					{
+						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+							"return new \\Runtime\\IntrospectionInfo($ctx, [");
+						t = t.levelInc();
+						content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
+						content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
+						content ~= t.s("\"name\"=>$field_name,");
+					}
+					else
+					{
+						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+							"return \\Runtime\\Dict::from([");
+						t = t.levelInc();
+					}
+					
+					content ~= t.s("\"t\"=>" ~ t.expression::toString(var_type) ~ ",");
 					if (var_sub_types.count() > 0) content ~= t.s("\"s\"=> [" ~ rs::join(", ", var_sub_types) ~ "],");
-					content ~= t.s("\"name\"=> $field_name,");
 					content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
 					t = t.levelInc();
+					
 					for (int j=0; j<variable.annotations.count(); j++)
 					{
 						OpAnnotation annotation = variable.annotations.item(j);
@@ -669,6 +717,7 @@ static class TranslatorPHPProgram
 						t = res[0]; string params = res[1];
 						content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
 					}
+					
 					t = t.levelDec();
 					content ~= t.s("]),");
 					t = t.levelDec();
@@ -681,10 +730,11 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Get methods list of the function */
-			content ~= t.s("static function getMethodsList($ctx)");
+			content ~= t.s("static function getMethodsList($ctx,$f=0)");
 			content ~= t.s("{");
 			t = t.levelInc();
-			content ~= t.s("$a = [");
+			content ~= t.s("$a = [];");
+			content ~= t.s("if (($f&4)==4) $a=[");
 			t = t.levelInc();
 			if (op_code.functions != null)
 			{
@@ -763,8 +813,14 @@ static class TranslatorPHPProgram
 	 */
 	pure list<TranslatorPHP, string> OpDeclareClass(TranslatorPHP t, OpDeclareClass op_code)
 	{
+		if (op_code.is_abstract)
+		{
+			return [t, ""];
+		}
+		
 		if (op_code.is_declare)
 		{
+			throw new DeclaredClass();
 			return [t, ""];
 		}
 		
@@ -903,6 +959,17 @@ static class TranslatorPHPProgram
 				if (s == "") continue;
 				content ~= s;
 			}
+		}
+		
+		content = rs::trim(content);
+		
+		/* Disable context */
+		if (t.enable_context == false)
+		{
+			content = rs::replace("\\(\\$ctx\\)", "()", content);
+			content = rs::replace("\\(\\$ctx, ", "(", content);
+			content = rs::replace("\\(\\$ctx,", "(", content);
+			content = rs::replace("\\,\\$ctx,", ",", content);
 		}
 		
 		return [t, content];

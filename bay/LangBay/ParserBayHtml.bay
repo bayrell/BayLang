@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@
 
 namespace Bayrell.Lang.LangBay;
 
+use Runtime.re;
 use Runtime.BaseObject;
 use Runtime.BaseStruct;
 use Runtime.Reference;
@@ -29,6 +30,7 @@ use Bayrell.Lang.Exceptions.ParserError;
 use Bayrell.Lang.Exceptions.ParserExpected;
 use Bayrell.Lang.LangBay.ParserBay;
 use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAnnotation;
 use Bayrell.Lang.OpCodes.OpCollection;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpDeclareClass;
@@ -1015,11 +1017,37 @@ class ParserBayHtml extends BaseObject
 		
 		if (not is_single_flag)
 		{
-			/* Read items */
-			caret_items_start = parser.caret;
-			list res = static::readHTMLContent(parser, "</" ~ tag_name);
-			parser = res[0]; Collection<BaseOpCode> items = res[1];
-			caret_items_end = parser.caret;
+			if (tag_name == "svg")
+			{
+				list res = parser.parser_base::readUntilStringArr(parser, ["</svg>"], false); parser = res[0];
+				string content = res[1];
+				content = re::replace("[\t\n]", "", content);
+				
+				Collection<BaseOpCode> items =
+				[
+					new OpHtmlValue
+					{
+						"kind": OpHtmlValue::KIND_RAW,
+						"value": new OpString
+						{
+							"caret_start": parser.caret,
+							"caret_end": parser.caret,
+							"value": content,
+						},
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					}
+				];
+				
+			}
+			else
+			{
+				/* Read items */
+				caret_items_start = parser.caret;
+				list res = static::readHTMLContent(parser, "</" ~ tag_name);
+				parser = res[0]; Collection<BaseOpCode> items = res[1];
+				caret_items_end = parser.caret;
+			}
 			
 			/* Tag end */
 			if (op_code_flag)
@@ -1038,7 +1066,7 @@ class ParserBayHtml extends BaseObject
 				list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
 				if (ident != null)
 				{
-					list res = parser.parser_base::matchToken(parser, ident.value); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, tag_name); parser = res[0];
 				}
 				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 			}
@@ -1142,8 +1170,10 @@ class ParserBayHtml extends BaseObject
 	 */
 	pure list<ParserBay, Dict> readAttrs(ParserBay parser)
 	{
+		ParserBay look = null;
 		BaseOpCode op_code = null;
 		CoreToken token = null;
+		CoreToken look_token = null;
 		Map items = new Map();
 		Reference<string> content = parser.content;
 		int content_sz = parser.content_sz
@@ -1153,8 +1183,22 @@ class ParserBayHtml extends BaseObject
 		{
 			list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
 			list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
-			list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];
-			items.set(token.content, op_code.value);
+			string attr_name = token.content;
+			
+			/* Look token */
+			list res = parser.parser_base::readToken(parser); look_token = res[1];
+			if (look_token.content == "{")
+			{
+				list res = parser.parser_base::readDict(parser); parser = res[0]; op_code = res[1];
+				caret = parser.caret;
+				items.set(attr_name, op_code);
+			}
+			else
+			{
+				list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];
+				items.set(attr_name, op_code.value);
+			}
+			
 			caret = parser.parser_base::skipChar(parser, content, parser.caret);
 			ch = rs::substr(content.ref, caret.pos, 1);
 			string ch2 = rs::substr(content.ref, caret.pos, 2);
@@ -1178,6 +1222,7 @@ class ParserBayHtml extends BaseObject
 		string class_name = "", class_extends = "", class_version = "", class_model = "",
 			item_name = "", namespace_name = "";
 		string short_name = "", full_name = "", is_component = "", class_name_last = "";
+		Vector class_annotations = new Vector();
 		
 		/* Content */
 		Reference<string> content = parser.content;
@@ -1252,7 +1297,26 @@ class ParserBayHtml extends BaseObject
 			
 			list res = static::readAttrs(parser); parser = res[0]; Dict item_attrs = res[1];
 			
-			if (item_name == "use")
+			if (item_name == "annotation")
+			{
+				string annotation_name = item_attrs.get("name", "");
+				BaseOpCode annotation_op_code = item_attrs.get("value", null);
+				class_annotations.push
+				(
+					new OpAnnotation
+					{
+						"name": new OpTypeIdentifier
+						{
+							"entity_name": new OpEntityName
+							{
+								"names": rs::split("\\.", annotation_name),
+							},
+						},
+						"params": annotation_op_code,
+					}
+				);
+			}
+			else if (item_name == "use")
 			{
 				full_name = item_attrs.get("name", "");
 				short_name = item_attrs.get("as", "");
@@ -1384,32 +1448,64 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 					
-					OpDeclareFunction f = new OpDeclareFunction
+					int find_pos = -1;
+					for (int items_i=0; items_i<items.count(); items_i++)
 					{
-						"args":
-						[
-							new OpDeclareFunctionArg
-							{
-								"name": "vars",
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-						],
-						"vars": [],
-						"flags": new OpFlags
+						OpDeclareFunction f = items[items_i];
+						if (f instanceof OpDeclareFunction)
 						{
-							"p_static": true,
-							"p_pure": true,
-						},
-						"name": "css",
-						"result_type": "html",
-						"expression": css_op_code,
-						"items": null,
-						"caret_start": caret_start,
-						"caret_end": parser.caret,
-					};
+							if (f.name == "css")
+							{
+								find_pos = items_i;
+								break;
+							}
+						}
+					}
 					
-					items.push(f);
+					if (find_pos == -1)
+					{
+						OpDeclareFunction f = new OpDeclareFunction
+						{
+							"args":
+							[
+								new OpDeclareFunctionArg
+								{
+									"name": "vars",
+									"caret_start": caret_start,
+									"caret_end": parser.caret,
+								},
+							],
+							"vars": [],
+							"flags": new OpFlags
+							{
+								"p_static": true,
+								"p_pure": true,
+							},
+							"name": "css",
+							"result_type": "html",
+							"expression": css_op_code,
+							"items": null,
+							"caret_start": caret_start,
+							"caret_end": parser.caret,
+						};
+						
+						items.push(f);
+					}
+					else
+					{
+						OpDeclareFunction f = items[find_pos];
+						
+						f <= expression <= new OpMath
+						{
+							"caret_start": caret_start,
+							"caret_end": parser.caret,
+							"math": "~",
+							"value1": f.expression,
+							"value2": css_op_code,
+						};
+						
+						items.set(find_pos, f);
+					}
 				}
 				else if (item_name == "script")
 				{
@@ -1423,6 +1519,40 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "script"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 				}
+				
+				else if (item_name == "meta")
+				{
+					list res = parser.parser_base::readDict(parser);
+					parser = res[0]; BaseOpCode arr = res[1];
+					/*
+					OpDeclareFunction f = new OpDeclareFunction
+					{
+						"args":
+						[
+						],
+						"vars": [],
+						"flags": new OpFlags
+						{
+							"p_static": true,
+							"p_pure": true,
+						},
+						"name": "meta",
+						"result_type": "Collection",
+						"expression": arr,
+						"items": null,
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					};
+					
+					items.push(f);
+					*/
+					/* Read meta footer */
+					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, "meta"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+				}
+				
 				else
 				{
 					throw new ParserError
@@ -1432,6 +1562,7 @@ class ParserBayHtml extends BaseObject
 					);
 				}
 			}
+			
 			else if (token.content == "/")
 			{
 				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
@@ -1518,6 +1649,7 @@ class ParserBayHtml extends BaseObject
 					"annotations": [],
 					"template": null,
 					"vars": class_body.item("vars"),
+					"annotations": class_annotations.toCollection(),
 					"functions": class_body.item("functions"),
 					"fn_create": class_body.item("fn_create"),
 					"fn_destroy": class_body.item("fn_destroy"),

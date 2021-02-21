@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -174,6 +174,17 @@ static class TranslatorPHPExpression
 	 */
 	pure list<TranslatorPHP, string> OpIdentifier(TranslatorPHP t, OpIdentifier op_code)
 	{
+		if (op_code.value == "@")
+		{
+			if (t.enable_context == false) return [t, "\\Runtime\\rtl::getContext()"];
+			else return [t, "$ctx"];
+		}
+		if (op_code.value == "_")
+		{
+			if (t.enable_context == false) return [t, "\\Runtime\\rtl::getContext()->translate"];
+			else return [t, "$ctx->translate"];
+		}
+		
 		if (op_code.value == "@") return [t, "$ctx"];
 		if (op_code.value == "_") return [t, "$ctx->translate"];
 		if (op_code.value == "log") return [t, "var_dump"];
@@ -866,7 +877,7 @@ static class TranslatorPHPExpression
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				s2 = "try{ ";
 				s2 ~= var_name~"=("~var_name~"->val!=null && "~var_name~"->err==null) ? new \\Runtime\\Monad($ctx, "~value~") : "~var_name~";";
-				s2 ~= " } catch (Exception $err) { ";
+				s2 ~= " } catch (\\Exception $err) { ";
 				s2 ~= var_name~"=new \\Runtime\\Monad($ctx, null, $err);";
 				s2 ~= " }";
 			}

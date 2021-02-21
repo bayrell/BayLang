@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -143,7 +143,8 @@ class TranslatorES6Html
 					attr_key = "@eventAsync:" ~ event_name;
 					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
 				}
-				else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@name")
+				else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
+					attr_key == "@name" or attr_key == "@watch")
 				{
 					attr_value = "[" ~ t.expression::toString(t.current_class_full_name) ~ "," ~ attr_value ~ "]";
 				}
@@ -232,11 +233,11 @@ class TranslatorES6Html
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s(
-				"[__vnull, " ~ var_name ~ "_childs] = " ~
-				"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-				", \"text\", {\"content\": " ~ item_value ~ "});"
-			);
+			content ~= t.s(var_name ~ ".e(ctx, \"text\")");
+			t = t.levelInc();
+			content ~= t.s(".c(ctx, " ~ item_value ~ ")");
+			content ~= t.s(".r(ctx);");
+			t = t.levelDec();
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -258,27 +259,30 @@ class TranslatorES6Html
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
 				content ~= t.s("/* Raw */");
-				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-					", \"raw\", {\"content\": " ~ item_value ~ "});"
-				);
+				content ~= t.s(var_name ~ ".e(ctx, \"raw\")");
+				t = t.levelInc();
+				content ~= t.s(".c(ctx, " ~ item_value ~ ")");
+				content ~= t.s(".r(ctx);");
+				t = t.levelDec();
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
 				content ~= t.s("/* Html */");
-				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-					", \"html\", {\"content\": " ~ item_value ~ "});"
-				);
+				content ~= t.s(var_name ~ ".e(ctx, \"html\")");
+				t = t.levelInc();
+				content ~= t.s(".c(ctx, " ~ item_value ~ ")");
+				content ~= t.s(".r(ctx);");
+				t = t.levelDec();
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
 				item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
-				content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-					"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-					", \"text\", {\"content\": " ~ item_value ~ "});"
-				);
+				content ~= t.s(var_name ~ ".e(ctx, \"text\")");
+				t = t.levelInc();
+				content ~= t.s(".c(ctx, " ~ item_value ~ ")");
+				content ~= t.s(".r(ctx);");
+				t = t.levelDec();
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -297,18 +301,11 @@ class TranslatorES6Html
 				{
 					list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
 					content ~= t.s("/* Items */");
-					content ~= t.s("var " ~ new_var_name ~ "; var " ~ new_var_name ~ "_childs = [];");
-					content ~= t.s("[" ~ new_var_name ~ ", " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"empty\", null);"
-					);
+					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"empty\").r(ctx);");
 				}
 				else
 				{
-					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"empty\", null);"
-					);
+					content ~= t.s(var_name ~ ".e(ctx, \"empty\").r(ctx);");
 				}
 			}
 			else if (is_component)
@@ -322,49 +319,63 @@ class TranslatorES6Html
 				else tag_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
 				if (has_childs)
 				{
+					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
+					content ~= t.s(var_name ~ ".e(ctx, \"component\", " ~ tag_name ~ ")");
+					t = t.levelInc();
+					if (attrs != "{}") content ~= t.s(".a(ctx, " ~ attrs ~ ")");
 					list res = static::OpHtmlItems(t, op_code.items);
 					t = res[0]; string f = res[1];
-					
-					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"component\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~
-						", \"layout\": layout, \"content\": " ~ f ~ "});"
-					);
+					content ~= t.s(".c(ctx, " ~ f ~ ")");
+					content ~= t.s(".r(ctx);");
+					t = t.levelDec();
 					has_childs = false;
 				}
 				else
 				{
-					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"component\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~
-						", \"layout\": layout});"
-					);
+					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
+					content ~= t.s(var_name ~ ".e(ctx, \"component\", " ~ tag_name ~ ")");
+					t = t.levelInc();
+					if (attrs != "{}") content ~= t.s(".a(ctx, " ~ attrs ~ ")");
+					content ~= t.s(".r(ctx);");
+					t = t.levelDec();
 				}
 			}
 			else
 			{
 				string tag_name = t.expression::toString(op_code.tag_name);
-				if (has_childs)
+				string attr_class_name = static::getOpHtmlAttrsClassName(op_code.attrs);
+				attr_class_name = rs::replace("\s", ".", attr_class_name);
+				if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
+				
+				content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
+				if (op_code.tag_name == 'svg')
 				{
-					string attr_class_name = static::getOpHtmlAttrsClassName(op_code.attrs);
-					attr_class_name = rs::replace("\s", ".", attr_class_name);
-					if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
-					
+					string svg_content = op_code["items", "items", 0, "value", "value"] |> default string "";
+					svg_content = t.expression::toString(svg_content);
+					content ~= t.s(var_name ~ ".e(ctx, \"element\", " ~ tag_name ~ ")");
+					t = t.levelInc();
+					if (attrs != "{}") content ~= t.s(".a(ctx, " ~ attrs ~ ")");
+					content ~= t.s(".c(ctx, " ~ svg_content  ~ ")");
+					content ~= t.s(".r(ctx);");
+					t = t.levelDec();
+					has_childs = false;
+				}
+				else if (has_childs)
+				{
 					list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
-					content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
-					content ~= t.s("var " ~ new_var_name ~ "; var " ~ new_var_name ~ "_childs = [];");
-					content ~= t.s("[" ~ new_var_name ~ ", " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"element\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~ "});"
-					);
+					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"element\", " ~ tag_name ~ ")");
+					t = t.levelInc();
+					if (attrs != "{}") content ~= t.s(".a(ctx, " ~ attrs ~ ")");
+					content ~= t.s(".r(ctx);");
+					t = t.levelDec();
 				}
 				else
 				{
-					content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-						"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-						", \"element\", {\"name\": "~tag_name~",\"attrs\": " ~ attrs ~ "});"
-					);
+					content ~= t.s(var_name ~ ".e(ctx, \"element\", " ~ tag_name ~ ")");
+					t = t.levelInc();
+					if (attrs != "{}") content ~= t.s(".a(ctx, " ~ attrs ~ ")");
+					content ~= t.s(".r(ctx);");
+					t = t.levelDec();
 				}
 			}
 			
@@ -373,7 +384,8 @@ class TranslatorES6Html
 				content ~= t.s2("");
 				list res = static::OpHtmlChilds(t, op_code.items, new_var_name);
 				t = res[0]; content ~= res[1];
-				content ~= t.s("RenderDriver.p(" ~ new_var_name ~ ", " ~ new_var_name ~ "_childs);");
+				content ~= t.s(new_var_name ~ ".p(ctx);");
+				/* content ~= t.s("RenderDriver.p(" ~ new_var_name ~ ", " ~ new_var_name ~ "_childs);"); */
 			}
 			
 			if (op_code.tag_name == "")
@@ -399,10 +411,12 @@ class TranslatorES6Html
 			t <= save_op_code_inc <= save_op_code_inc;
 			
 			content ~= t.s("/* Text */");
-			content ~= t.s("[__vnull, " ~ var_name ~ "_childs] = " ~
-				"RenderDriver.e(" ~ var_name ~ ", " ~ var_name ~ "_childs" ~
-				", \"text\", {\"content\": " ~ item_value ~ "});"
-			);
+			content ~= t.s(var_name ~ ".e(ctx, \"text\")");
+			t = t.levelInc();
+			content ~= t.s(".c(ctx, " ~ item_value ~ ")");
+			content ~= t.s(".r(ctx);");
+			t = t.levelDec();
+			content ~= t.s(";");
 		}
 		
 		return [t, content];
@@ -514,12 +528,12 @@ class TranslatorES6Html
 		int save_op_code_inc = t.save_op_code_inc;
 		
 		string content = "";
-		content ~= "(__control) =>";
+		content ~= "(ctx, __control) =>";
 		content ~= t.s("{");
 		t = t.levelInc();
 		
-		content ~= t.s("var __vnull = null;");
-		content ~= t.s("var __control_childs = [];");
+		/* content ~= t.s("var __vnull = null;"); */
+		/* content ~= t.s("var __control_childs = [];"); */
 		content ~= t.s2("");
 		
 		list res = static::OpHtmlChilds(t, op_code, "__control");
@@ -527,7 +541,7 @@ class TranslatorES6Html
 		/*content ~= t.s("RenderDriver.p(__control, __control_childs);");*/
 		
 		content ~= t.s2("");
-		content ~= t.s("return __control_childs;");
+		/* content ~= t.s("return __control_childs;"); */
 		
 		t = t.levelDec();
 		content ~= t.s("}");

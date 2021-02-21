@@ -7,7 +7,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      https://www.bayrell.org/licenses/APACHE-LICENSE-2.0.html
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -1266,7 +1266,12 @@ static class ParserBayOperator
 			list res = static::readDeclareFunctionArgs(parser, false); parser = res[0];
 			list res = static::readDeclareFunctionUse(parser, null, false); parser = res[0];
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (flags != null and flags.p_declare or parser.current_class_kind == "interface")
+			if (
+				flags != null and flags.p_declare or
+				parser.current_class_abstract or
+				parser.current_class_declare or
+				parser.current_class_kind == "interface"
+			)
 			{
 				if (token.content != ";")
 				{

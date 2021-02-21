@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  Bayrell Parser Library.
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,49 +16,17 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace Bayrell.Lang.Exceptions;
 
-use Runtime.BaseStruct;
-use Runtime.rs;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.Exceptions.ParserEOF;
-use Bayrell.Lang.Exceptions.ParserExpected;
+use Runtime.Exceptions.RuntimeException;
 
 
-struct CoreToken extends BaseStruct
+class DeclaredClass extends RuntimeException
 {
 	
-	/**
-	 * Token type
-	 */
-	string kind = "";
-	
-	
-	
-	/**
-	 * Token content
-	 */
-	string content = "";
-	
-	
-	
-	/**
-	 * Start pos of the token
-	 */
-	Caret caret_start = null;
-	
-	
-	
-	/**
-	 * End pos of the token
-	 */
-	Caret caret_end = null;
-	
-	
-	
-	/**
-	 * Is eof
-	 */
-	bool eof = false;
+	void constructor(Object prev = null)
+	{
+		parent("Declared class", -1, prev);
+	}
 	
 }
