@@ -5,6 +5,18 @@ Bayrell Language
 
 Versions:
 
+[21 Feb 2021] 0.10.9 - Add declare, annotations to ui, add watch model
+
+[02 Feb 2021] 0.10.8 - New render function, add svg support. Remove AssignObject, AssignValue, takeValue
+
+[05 Dec 2020] 0.10.7 - Add meta information to ui
+
+[28 Nov 2020] 0.10.6 - php pipe try catch fix
+
+[15 Oct 2020] 0.10.5 - add enable_check_types flag
+
+[30 Sep 2020] 0.10.4 - pipe fix, add render to ui, add spreads to ui
+
 [02 Sep 2020] 0.10.3 - Beta release
 
 [28 Aug 2020] 0.10.2 - Add ui template
