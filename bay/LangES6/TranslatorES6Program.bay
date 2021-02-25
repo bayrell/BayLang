@@ -840,11 +840,20 @@ struct TranslatorES6Program extends BaseStruct
 				/* Clear save op codes */
 				Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 				int save_op_code_inc = t.save_op_code_inc;
-				
+				/*
 				if (class_kind == OpDeclareClass::KIND_STRUCT)
 				{
 					content ~= t.s("var defProp = use('Runtime.rtl').defProp;");
 					content ~= t.s("var a = Object.getOwnPropertyNames(this);");
+				}
+				*/
+				if (t.current_class_extends_name != "")
+				{
+					content ~= t.s
+					(
+						t.expression::useModuleName(t, t.current_class_extends_name) ~
+							".prototype._init.call(this,ctx);"
+					);
 				}
 				
 				string s1 = "";
@@ -897,15 +906,6 @@ struct TranslatorES6Program extends BaseStruct
 						}
 						
 					}
-				}
-				
-				if (t.current_class_extends_name != "")
-				{
-					s1 ~= t.s
-					(
-						t.expression::useModuleName(t, t.current_class_extends_name) ~ 
-							".prototype._init.call(this,ctx);"
-					);
 				}
 				
 				/* Output save op code */
