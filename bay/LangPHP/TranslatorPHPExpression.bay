@@ -330,6 +330,18 @@ static class TranslatorPHPExpression
 				list res = static::OpNew(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
 				first_item_complex = true;
 			}
+			else if (op_code_next instanceof OpCollection)
+			{
+				prev_kind = "var";
+				list res = static::OpCollection(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
+			}
+			else if (op_code_next instanceof OpDict)
+			{
+				prev_kind = "var";
+				list res = static::OpDict(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
+			}
 			else if (op_code_next instanceof OpIdentifier)
 			{
 				if (op_code_next.kind == OpIdentifier::KIND_CLASSREF)

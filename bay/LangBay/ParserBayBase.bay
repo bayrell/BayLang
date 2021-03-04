@@ -1740,7 +1740,7 @@ class ParserBayBase
 					);
 				}
 			}
-			else if (op_code instanceof OpNew){}
+			else if (op_code instanceof OpNew or op_code instanceof OpCollection or op_code instanceof OpDict){}
 			else
 			{
 				throw new ParserExpected

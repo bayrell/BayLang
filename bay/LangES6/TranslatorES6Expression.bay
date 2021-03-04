@@ -302,6 +302,18 @@ struct TranslatorES6Expression extends BaseStruct
 				list res = static::OpNew(t, op_code_first); t = res[0]; s = "(" ~ res[1] ~ ")";
 				first_item_complex = true;
 			}
+			else if (op_code_first instanceof OpCollection)
+			{
+				prev_kind = "var";
+				list res = static::OpCollection(t, op_code_first); t = res[0]; s = res[1];
+				first_item_complex = true;
+			}
+			else if (op_code_first instanceof OpDict)
+			{
+				prev_kind = "var";
+				list res = static::OpDict(t, op_code_first); t = res[0]; s = res[1];
+				first_item_complex = true;
+			}
 			else if (op_code_first instanceof OpIdentifier)
 			{
 				if (op_code_first.kind == OpIdentifier::KIND_CLASSREF)
