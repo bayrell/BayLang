@@ -235,7 +235,7 @@ class TranslatorES6Html
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", null, " ~ item_value ~ ");");
+			content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -257,18 +257,18 @@ class TranslatorES6Html
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
 				content ~= t.s("/* Raw */");
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"r\", null, " ~ item_value ~ ");");
+				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"r\", \"\", null, " ~ item_value ~ ");");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
 				content ~= t.s("/* Html */");
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"h\", null, " ~ item_value ~ ");");
+				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"h\", \"\", null, " ~ item_value ~ ");");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
 				item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", null, " ~ item_value ~ ");");
+				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -369,7 +369,7 @@ class TranslatorES6Html
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
 			content ~= t.s("/* Text */");
-			content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", null, " ~ item_value ~ ");");
+			content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 		}
 		
 		return [t, content];
