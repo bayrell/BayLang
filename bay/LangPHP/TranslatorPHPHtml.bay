@@ -85,11 +85,14 @@ static class TranslatorPHPHtml
 			module_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
 		}
 		
+		content ~= t.s("/* Component '" ~ tag_name ~ "' */");
+		content ~= t.s(var_name~"_params = [];");
 		BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
 		if (bind)
 		{
 			list res = t.expression::Expression(t, bind.value); t = res[0];
 			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
+			content ~= t.s(var_name~"_params[\"@model_path\"] = static::concatAttr($ctx, $params, \"@model_path\", " ~ res[1] ~ ");");
 		}
 		
 		BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@name") );
@@ -97,10 +100,9 @@ static class TranslatorPHPHtml
 		{
 			list res = t.expression::Expression(t, bind.value); t = res[0];
 			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
+			content ~= t.s(var_name~"_params[\"@model_path\"] = static::concatAttr($ctx, $params, \"@model_path\", " ~ res[1] ~ ");");
 		}
 		
-		content ~= t.s("/* Component '" ~ tag_name ~ "' */");
-		content ~= t.s(var_name~"_params = [];");
 		for (int i=0; i<op_code.attrs.count(); i++)
 		{
 			OpHtmlAttribute attr = op_code.attrs.item(i);

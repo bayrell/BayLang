@@ -99,78 +99,90 @@ class TranslatorES6Html
 		string attr_elem_name = "";
 		bool has_attr_key = false;
 		
-		Collection<string> res_attrs = attrs.map
-		(
-			string (OpHtmlAttribute attr) use (t, attr_class, attr_elem_name, attr_key_value, item_pos)
+		Vector<string> res_attrs = new Vector();
+		
+		for (int attrs_i = 0; attrs_i<attrs.count(); attrs_i++)
+		{
+			OpHtmlAttribute attr = attrs[attrs_i];
+		
+			if (attr.is_spread) continue;
+			
+			list res = static::OpHtmlAttr(t, attr);
+			t = res[0]; string attr_value = res[1];
+			
+			string attr_key = attr.key;
+			string ch = rs::substr(attr_key, 0, 1);
+			
+			if (attr_key == "class")
 			{
-				if (attr.is_spread) return "";
+				attr_class.push(attr_value);
 				
-				list res = static::OpHtmlAttr(t, attr);
-				t = res[0]; string attr_value = res[1];
+				if (attr_elem_name == "" and attr.value instanceof OpString)
+				{
+					var arr = rs::split(" ", attr.value.value);
+					attr_elem_name = t.expression::toString(arr[0]);
+				}
 				
-				string attr_key = attr.key;
-				string ch = rs::substr(attr_key, 0, 1);
-				
-				if (attr_key == "class")
-				{
-					attr_class.push(attr_value);
-					
-					if (attr_elem_name == "" and attr.value instanceof OpString)
-					{
-						var arr = rs::split(" ", attr.value.value);
-						attr_elem_name = t.expression::toString(arr[0]);
-					}
-					
-					return "";
-				}
-				else if (attr_key == "@key")
-				{
-					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_key_value = attr_value;
-					return "";
-				}
-				else if (rs::substr(attr_key, 0, 7) == "@event:")
-				{
-					string event_name = rs::substr(attr_key, 7);
-					event_name = t.expression::findModuleName(t, event_name);
-					attr_key = "@event:" ~ event_name;
-					attr_value = "[this.getCurrentClassName()," ~ attr_value ~ "]";
-				}
-				else if (rs::substr(attr_key, 0, 12) == "@eventAsync:")
-				{
-					string event_name = rs::substr(attr_key, 12);
-					event_name = t.expression::findModuleName(t, event_name);
-					attr_key = "@eventAsync:" ~ event_name;
-					attr_value = "[this.getCurrentClassName()," ~ attr_value ~ "]";
-				}
-				else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
-					attr_key == "@name" or attr_key == "@watch")
-				{
-					attr_value = "[this.getCurrentClassName()," ~ attr_value ~ "]";
-				}
-				return t.expression::toString(attr_key) ~ ":" ~ attr_value;
+				continue;
 			}
-		);
+			else if (attr_key == "@key")
+			{
+				list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
+				attr_key_value = attr_value;
+				
+				continue;
+			}
+			else if (rs::substr(attr_key, 0, 7) == "@event:")
+			{
+				string event_name = rs::substr(attr_key, 7);
+				event_name = t.expression::findModuleName(t, event_name);
+				attr_key = "@event:" ~ event_name;
+				attr_value = "[params.get(\"@path_id\")," ~ attr_value ~ "]";
+			}
+			else if (rs::substr(attr_key, 0, 12) == "@eventAsync:")
+			{
+				string event_name = rs::substr(attr_key, 12);
+				event_name = t.expression::findModuleName(t, event_name);
+				attr_key = "@eventAsync:" ~ event_name;
+				attr_value = "[params.get(\"@path_id\")," ~ attr_value ~ "]";
+			}
+			else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
+				attr_key == "@name" or attr_key == "@watch")
+			{
+				res_attrs.push
+				(
+					t.expression::toString("@model_path") ~ ": this.concatAttr(ctx, params, \"@model_path\", " ~
+						attr_value ~ ")"
+				);
+				attr_value = "[params.get(\"@path_id\")," ~ attr_value ~ "]";
+			}
+			
+			res_attrs.push
+			(
+				t.expression::toString(attr_key) ~ ":" ~ attr_value,
+			);
+		}
+			
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
 			attr_class.push( "this.getCssHash(ctx)" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
-			res_attrs = res_attrs.pushIm
+			res_attrs.push
 			(
 				"\"class\":" ~ "[" ~ rs::join(", ", attr_class) ~ "].join(\" \")"
 			);
 		}
 		if (attr_key_value != "")
 		{
-			res_attrs = res_attrs.pushIm
+			res_attrs.push
 			(
 				"\"@key\":" ~ attr_key_value
 			);
 		}
 		if (attr_elem_name != "")
 		{
-			res_attrs = res_attrs.pushIm
+			res_attrs.push
 			(
 				"\"@elem_name\":" ~ attr_elem_name
 			);
