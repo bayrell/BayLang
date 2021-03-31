@@ -1067,7 +1067,9 @@ static class TranslatorPHPExpression
 	pure list<TranslatorPHP, string> Expression(TranslatorPHP t, BaseOpCode op_code)
 	{
 		string content = "";
+		bool save_is_pipe = t.is_pipe;
 		t <= opcode_level <= 100;
+		t <= is_pipe <= false;
 		
 		if (op_code instanceof OpIdentifier)
 		{
@@ -1154,6 +1156,7 @@ static class TranslatorPHPExpression
 			t = res[0]; content = res[1];
 		}
 		
+		t <= is_pipe <= save_is_pipe;
 		return [t, content];
 	}
 	

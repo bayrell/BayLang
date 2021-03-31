@@ -1362,7 +1362,7 @@ class ParserBayHtml extends BaseObject
 							},
 							new OpDeclareFunctionArg
 							{
-								"name": "model",
+								"name": "model_path",
 								"caret_start": caret_start,
 								"caret_end": parser.caret,
 							},
