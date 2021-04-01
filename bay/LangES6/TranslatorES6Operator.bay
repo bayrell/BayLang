@@ -280,6 +280,7 @@ struct TranslatorES6Operator extends BaseStruct
 						if (op_code.kind == OpAssign::KIND_DECLARE)
 						{
 							if (t.current_function.isFlag("async") and t.isEmulateAsyncAwait()) s = item.var_name;
+							else if (t.is_html) s = "let " ~ item.var_name;
 							else s = "var " ~ item.var_name;
 						}
 						else

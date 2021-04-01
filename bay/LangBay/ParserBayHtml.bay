@@ -1383,7 +1383,7 @@ class ParserBayHtml extends BaseObject
 						/* Register variable in parser */
 						parser2_vars = parser2_vars
 							.setIm("layout", true)
-							.setIm("model", true)
+							.setIm("model_path", true)
 							.setIm("params", true)
 							.setIm("content", true)
 						;
