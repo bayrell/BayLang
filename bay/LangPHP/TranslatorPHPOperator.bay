@@ -686,7 +686,7 @@ static class TranslatorPHPOperator
 			if (save != "") content = save;
 			
 			/* Output content */
-			if (res[1] != "") content ~= t.s("static::p(" ~ save_html_var_name ~ ", " ~ res[1] ~ ");");
+			if (res[1] != "") content ~= t.s("\\Runtime\\Web\\RenderDriver::p(" ~ save_html_var_name ~ ", " ~ res[1] ~ ");");
 			
 			t <= save_op_codes <= save_op_codes;
 			t <= save_op_code_inc <= save_op_code_inc;

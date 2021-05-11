@@ -75,7 +75,7 @@ class TranslatorES6Html
 			{
 				list res = t.expression::Expression(t, op_code.value); 
 				t = res[0]; string value = res[1];
-				value = "this.json_encode(ctx, " ~ value ~ ")";
+				value = "Runtime.rtl.json_encode(ctx, " ~ value ~ ")";
 				return [t, value];
 			}
 		}
@@ -198,7 +198,7 @@ class TranslatorES6Html
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "this.mergeAttrs(ctx, "~attr_s~","~attr.value.value~")";
+			attr_s = "Runtime.Web.RenderDriver.mergeAttrs(ctx, "~attr_s~","~attr.value.value~")";
 		}
 		
 		return [t, attr_s];
@@ -279,7 +279,7 @@ class TranslatorES6Html
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
-				item_value = "this.json_encode(ctx, " ~ item_value ~ ")";
+				item_value = "Runtime.rtl.json_encode(ctx, " ~ item_value ~ ")";
 				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 			}
 		}
