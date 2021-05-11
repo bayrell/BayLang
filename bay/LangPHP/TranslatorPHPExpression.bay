@@ -829,7 +829,7 @@ static class TranslatorPHPExpression
 		list res = static::Expression(t, op_code.if_false); t = res[0]; string if_false = res[1];
 		
 		content ~= "(" ~ condition ~ ") ? (" ~ if_true ~ ") : (" ~ if_false ~ ")";
-		t <= opcode_level <= 11;
+		t <= opcode_level <= 0;
 		
 		/* OpTernary */
 		return [t, content];

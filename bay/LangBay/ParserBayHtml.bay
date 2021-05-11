@@ -1154,6 +1154,7 @@ class ParserBayHtml extends BaseObject
 		/* Enable html flag */
 		bool save_is_html = parser.is_html;
 		parser <= is_html <= true;
+		parser <= skip_comments <= false;
 		
 		list res = static::readHTMLContent(parser, end_tag);
 		parser = res[0]; Collection<BaseOpCode> items = res[1];
@@ -1167,6 +1168,7 @@ class ParserBayHtml extends BaseObject
 		
 		/* Disable html flag */
 		parser <= is_html <= save_is_html;
+		parser <= skip_comments <= true;
 		
 		return [parser, op_code];
 	}
