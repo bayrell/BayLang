@@ -897,7 +897,7 @@ class ParserBayHtml extends BaseObject
 			}
 			
 			/* If html operator */
-			else if (ch3 == "%if" or ch4 == "%for" or ch4 == "%var" or ch6 == "%while" or ch7 == "%render")
+			else if (ch3 == "%if" or ch4 == "%for" or ch4 == "%var" or ch4 == "%set" or ch6 == "%while" or ch7 == "%render")
 			{
 				string value = rs::substr(content.ref, start_pos, pos - start_pos);
 				caret = new Caret{ "x": x, "y": y, "pos": pos };
@@ -1117,6 +1117,14 @@ class ParserBayHtml extends BaseObject
 		{
 			BaseOpCode op_code = null;
 			list res = parser.parser_base::matchToken(parser, "%var"); parser = res[0];
+			list res = parser.parser_operator::readAssign(parser); parser = res[0]; op_code = res[1];
+			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
+			return [parser, op_code];
+		}
+		else if (token.content == "%set")
+		{
+			BaseOpCode op_code = null;
+			list res = parser.parser_base::matchToken(parser, "%set"); parser = res[0];
 			list res = parser.parser_operator::readAssign(parser); parser = res[0]; op_code = res[1];
 			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 			return [parser, op_code];
