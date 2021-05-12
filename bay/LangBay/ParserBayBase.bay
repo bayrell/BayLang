@@ -1382,15 +1382,19 @@ class ParserBayBase
 	/**
 	 * Read new instance
 	 */
-	pure list<ParserBay, BaseOpCode> readNew(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readNew(ParserBay parser, bool match_new = true)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
 		BaseOpCode op_code = null;
+		Caret caret_start = parser.caret;
 		
 		Collection<BaseOpCode> args = [];
-		list res = static::matchToken(parser, "new"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		if (match_new)
+		{
+			list res = static::matchToken(parser, "new"); parser = res[0]; token = res[1];
+			caret_start = token.caret_start;
+		}
 		list res = static::readTypeIdentifier(parser); parser = res[0]; op_code = res[1];
 		
 		list res = static::readToken(parser); token = res[1];

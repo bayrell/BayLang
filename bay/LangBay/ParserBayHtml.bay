@@ -508,6 +508,7 @@ class ParserBayHtml extends BaseObject
 		ParserBay look = null;
 		Caret caret_start = parser.caret;
 		
+		parser <= skip_comments <= false;
 		list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
 		list res = parser.parser_base::matchToken(parser, "!--"); parser = res[0];
 		
@@ -552,6 +553,8 @@ class ParserBayHtml extends BaseObject
 		/* Return result */
 		string value_str = rs::substr(content.ref, pos_start, pos_end - pos_start);
 		Caret caret_end = new Caret{ "x": x, "y": y, "pos": pos };
+		
+		parser <= skip_comments <= true;
 		
 		return
 		[
@@ -705,7 +708,7 @@ class ParserBayHtml extends BaseObject
 	/**
 	 * Read html attribute value
 	 */
-	pure list<ParserBay, BaseOpCode> readHTMLAttrValue(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readHTMLAttrValue(ParserBay parser, string attr_key)
 	{
 		CoreToken token = null;
 		ParserBay look = null;
@@ -729,6 +732,10 @@ class ParserBayHtml extends BaseObject
 		else if (token.content == "[")
 		{
 			list res = parser.parser_base::readCollection(parser); parser = res[0]; op_code = res[1];
+		}
+		else if (rs::substr(attr_key, 0, 8) == "@signal:")
+		{
+			list res = parser.parser_base::readNew(parser, false); parser = res[0]; op_code = res[1];
 		}
 		else
 		{
@@ -779,7 +786,7 @@ class ParserBayHtml extends BaseObject
 			{
 				list res = static::readHTMLAttrKey(parser); parser = res[0]; string key = res[1];
 				list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
-				list res = static::readHTMLAttrValue(parser); parser = res[0]; BaseOpCode value = res[1];
+				list res = static::readHTMLAttrValue(parser, key); parser = res[0]; BaseOpCode value = res[1];
 				items.push
 				(
 					new OpHtmlAttribute
@@ -1154,7 +1161,6 @@ class ParserBayHtml extends BaseObject
 		/* Enable html flag */
 		bool save_is_html = parser.is_html;
 		parser <= is_html <= true;
-		parser <= skip_comments <= false;
 		
 		list res = static::readHTMLContent(parser, end_tag);
 		parser = res[0]; Collection<BaseOpCode> items = res[1];
@@ -1168,7 +1174,6 @@ class ParserBayHtml extends BaseObject
 		
 		/* Disable html flag */
 		parser <= is_html <= save_is_html;
-		parser <= skip_comments <= true;
 		
 		return [parser, op_code];
 	}
