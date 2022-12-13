@@ -118,7 +118,7 @@ class TranslatorES6Html
 			
 			if (attr_key == "class")
 			{
-				attr_class.push(attr_value);
+				attr_class.pushValue(attr_value);
 				
 				if (attr_elem_name == "" and attr.value instanceof OpString)
 				{
@@ -162,7 +162,7 @@ class TranslatorES6Html
 				attr_value = "[this.getCurrentClassName()," ~ attr_value ~ "]";
 			}
 			
-			res_attrs.push
+			res_attrs.pushValue
 			(
 				t.expression::toString(attr_key) ~ ":" ~ attr_value,
 			);
@@ -171,23 +171,23 @@ class TranslatorES6Html
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.push( "this.getCssHash(ctx)" );
+			attr_class.pushValue( "this.getCssHash(ctx)" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
-			res_attrs.push
+			res_attrs.pushValue
 			(
 				"\"class\":" ~ "[" ~ rs::join(", ", attr_class) ~ "].join(\" \")"
 			);
 		}
 		if (attr_key_value != "")
 		{
-			res_attrs.push
+			res_attrs.pushValue
 			(
 				"\"@key\":" ~ attr_key_value
 			);
 		}
 		if (attr_elem_name != "")
 		{
-			res_attrs.push
+			res_attrs.pushValue
 			(
 				"\"@elem_name\":" ~ attr_elem_name
 			);
@@ -227,7 +227,7 @@ class TranslatorES6Html
 				{
 					if (attr.value instanceof OpString)
 					{
-						class_names.push(attr.value.value);
+						class_names.pushValue(attr.value.value);
 					}
 				}
 			}
@@ -295,7 +295,9 @@ class TranslatorES6Html
 				(op_code.items.items.count() > 0)
 			;
 			bool is_component = static::isComponent(op_code.tag_name);
-			list res = static::OpHtmlAttrs(t, op_code.attrs, item_pos); t = res[0]; string attrs = res[1];
+			
+			list res = static::OpHtmlAttrs(t, op_code.attrs, item_pos);
+			t = res[0]; string attrs = res[1];
 			
 			if (op_code.tag_name == "")
 			{
