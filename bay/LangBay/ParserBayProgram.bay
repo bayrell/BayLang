@@ -159,7 +159,9 @@ static class ParserBayProgram
 				OpFlags flags = null;
 				list res = parser.parser_operator::readFlags(parser); parser = res[0]; flags = res[1];
 				
-				if (parser.parser_operator::tryReadFunction(parser, true, flags))
+				bool is_function = parser.parser_operator::tryReadFunction(parser, true, flags);
+				
+				if (is_function)
 				{
 					list res = parser.parser_operator::readDeclareFunction(parser, true);
 					parser = res[0]; item = res[1];
@@ -167,11 +169,15 @@ static class ParserBayProgram
 					{
 						list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 					}
+					
+					flags <= p_static <= true;
 				}
 				else
 				{
-					list res = parser.parser_operator::readAssign(parser); parser = res[0]; item = res[1];
-					list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
+					list res = parser.parser_operator::readAssign(parser);
+					parser = res[0]; item = res[1];
+					list res = parser.parser_base::matchToken(parser, ";");
+					parser = res[0];
 				}
 				
 				item <= flags <= flags;

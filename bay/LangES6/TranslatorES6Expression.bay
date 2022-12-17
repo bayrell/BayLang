@@ -265,7 +265,11 @@ struct TranslatorES6Expression extends BaseStruct
 	/**
 	 * Dynamic
 	 */
-	pure list<TranslatorES6, string> Dynamic(TranslatorES6 t, BaseOpCode op_code, bool is_call = false)
+	pure list<TranslatorES6, string> Dynamic(
+		TranslatorES6 t,
+		BaseOpCode op_code,
+		bool is_call = false
+	)
 	{
 		if (op_code instanceof OpIdentifier)
 		{
@@ -279,6 +283,7 @@ struct TranslatorES6Expression extends BaseStruct
 			string first_item = "";
 			string prev_kind = "";
 			string s = "";
+			Vector s_arr = new Vector();
 			bool first_item_complex = false;
 			
 			while (op_code_first instanceof OpAttr)
@@ -293,25 +298,29 @@ struct TranslatorES6Expression extends BaseStruct
 			if (op_code_first instanceof OpCall)
 			{
 				prev_kind = "var";
-				list res = static::OpCall(t, op_code_first); t = res[0]; s = res[1];
+				list res = static::OpCall(t, op_code_first); t = res[0];
+				s_arr.pushValue(res[1]);
 				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpNew)
 			{
 				prev_kind = "var";
-				list res = static::OpNew(t, op_code_first); t = res[0]; s = "(" ~ res[1] ~ ")";
+				list res = static::OpNew(t, op_code_first); t = res[0];
+				s_arr.pushValue( "(" ~ res[1] ~ ")" );
 				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpCollection)
 			{
 				prev_kind = "var";
-				list res = static::OpCollection(t, op_code_first); t = res[0]; s = res[1];
+				list res = static::OpCollection(t, op_code_first); t = res[0];
+				s_arr.pushValue( res[1] );
 				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpDict)
 			{
 				prev_kind = "var";
-				list res = static::OpDict(t, op_code_first); t = res[0]; s = res[1];
+				list res = static::OpDict(t, op_code_first); t = res[0];
+				s_arr.pushValue( res[1] );
 				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpIdentifier)
@@ -320,35 +329,40 @@ struct TranslatorES6Expression extends BaseStruct
 				{
 					if (op_code_first.value == "static")
 					{
-						s = "this" ~ (not t.is_static_function ? ".constructor" : "");
+						s_arr.pushValue( "this" ~ (not t.is_static_function ? ".constructor" : "") );
 						prev_kind = "static";
 					}
 					else if (op_code_first.value == "parent")
 					{
-						s = static::useModuleName(t, t.current_class_extends_name);
+						s_arr.pushValue( static::useModuleName(t, t.current_class_extends_name) );
 						prev_kind = "parent";
 					}
 					else if (op_code_first.value == "self")
 					{
 						prev_kind = "static";
-						s = t.current_class_full_name;
+						s_arr.pushValue( t.current_class_full_name );
 					}
 					else if (op_code_first.value == "this")
 					{
 						prev_kind = "var";
-						s = "this";
+						s_arr.pushValue( "this" );
 					}
 				}
 				else if (op_code_first.kind == OpIdentifier::KIND_PIPE)
 				{
 					prev_kind = "var";
-					s = t.pipe_var_name ~ ".val";
+					s_arr.pushValue( t.pipe_var_name ~ ".val" );
 				}
 				else
 				{
-					list res = static::OpIdentifier(t, op_code_first); t = res[0]; s = res[1];
+					list res = static::OpIdentifier(t, op_code_first);
+					t = res[0];
+					s_arr.pushValue( res[1] );
 					prev_kind = "var";
-					if (t.modules.has(op_code_first.value) or op_code_first.kind == OpIdentifier::KIND_SYS_TYPE)
+					if (
+						t.modules.has(op_code_first.value) or
+						op_code_first.kind == OpIdentifier::KIND_SYS_TYPE
+					)
 					{
 						prev_kind = "static";
 					}
@@ -367,7 +381,7 @@ struct TranslatorES6Expression extends BaseStruct
 				);
 				t = res[0];
 				first_item = res[1];
-				s = first_item;
+				s_arr.pushValue( first_item );
 			}
 			
 			int attrs_sz = attrs.count();
@@ -377,18 +391,28 @@ struct TranslatorES6Expression extends BaseStruct
 				
 				if (attr.kind == OpAttr::KIND_ATTR)
 				{
-					s ~= "." ~ attr.value.value;
+					bool is_class = attr.obj instanceof OpIdentifier and
+						attr.obj.kind == OpIdentifier::KIND_CLASS
+					;
+					if (is_call and i == attrs_sz - 1 and not is_class)
+					{
+						s_arr.pushValue( ".constructor." ~ attr.value.value );
+					}
+					else
+					{
+						s_arr.pushValue( "." ~ attr.value.value );
+					}
 					
 					/* Pipe */
 					if (t.is_pipe and not is_call)
 					{
 						if (i == attrs_sz - 1)
 						{
-							s ~= ".bind(" ~ first_item ~ ")";
+							s_arr.pushValue( ".bind(" ~ first_item ~ ")" );
 						}
 						else
 						{
-							first_item = s;
+							first_item = rs::join("", s_arr);
 						}
 					}
 				}
@@ -396,26 +420,35 @@ struct TranslatorES6Expression extends BaseStruct
 				{
 					if (prev_kind == "var")
 					{
-						s ~= ".constructor." ~ attr.value.value;
+						s_arr.pushValue( ".constructor." ~ attr.value.value );
 						first_item ~= ".constructor";
 					}
 					else if (prev_kind == "parent")
 					{
-						if (t.current_function.isStatic()) s ~= "." ~ attr.value.value ~ ".bind(this)";
-						else s ~= ".prototype." ~ attr.value.value ~ ".bind(this)";
+						if (t.current_function.isStatic())
+						{
+							s_arr.pushValue( "." ~ attr.value.value ~ ".bind(this)" );
+						}
+						else
+						{
+							s_arr.pushValue( ".prototype." ~ attr.value.value ~ ".bind(this)" );
+						}
 					}
-					else s ~= "." ~ attr.value.value;
+					else
+					{
+						s_arr.pushValue( "." ~ attr.value.value );
+					}
 					
 					/* Pipe */
 					if (t.is_pipe and prev_kind != "parent" and not is_call)
 					{
 						if (i == attrs_sz - 1)
 						{
-							s ~= ".bind(" ~ first_item ~ ")";
+							s_arr.pushValue( ".bind(" ~ first_item ~ ")" );
 						}
 						else
 						{
-							first_item = s;
+							first_item = rs::join("", s_arr);
 						}
 					}
 					prev_kind = "static";
@@ -424,8 +457,7 @@ struct TranslatorES6Expression extends BaseStruct
 				{
 					list res = static::Expression(t, attr.value);
 					t = res[0];
-					/* s ~= "[" ~ res[1] ~ "]"; */
-					s = "Runtime.rtl.get(ctx, " ~ s ~ ", " ~ res[1] ~ ")";
+					s_arr.pushValue( "Runtime.rtl.get(ctx, " ~ s ~ ", " ~ res[1] ~ ")" );
 				}
 				else if (attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 				{
@@ -439,11 +471,14 @@ struct TranslatorES6Expression extends BaseStruct
 							items.push(res[1]);
 						}
 					}
-					s = "Runtime.rtl.attr(ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
+					s_arr.pushValue(
+						"Runtime.rtl.attr(ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])"
+					);
 				}
 			}
 			
-			return [t, s];
+			s = rs::join("", s_arr);
+			return [t, s, s_arr];
 		}
 		else if (op_code instanceof OpCurry)
 		{
@@ -457,13 +492,13 @@ struct TranslatorES6Expression extends BaseStruct
 			);
 			t = res[0];
 			string var_name = res[1];
-			return [t, var_name];
+			return [t, var_name, null];
 		}
 		else if (op_code instanceof OpCall)
 		{
 			return static::OpCall(t, op_code);
 		}
-		return [t, ""];
+		return [t, "", null];
 	}
 	
 	
@@ -711,16 +746,30 @@ struct TranslatorES6Expression extends BaseStruct
 	/**
 	 * OpCall
 	 */
-	pure list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
+	pure list<TranslatorES6, string> OpCall(
+		TranslatorES6 t,
+		OpCall op_code,
+		bool is_expression = true
+	)
 	{
 		if (t.current_function.isFlag("async") and op_code.is_await and t.isEmulateAsyncAwait())
 		{
 			return t.async_await::OpCall(t, op_code, is_expression);
 		}
 		
+		bool is_old_call = t.is_call;
+		t <= is_call <= true;
+		
+		string next_save_op_code = t::nextSaveOpCode(t);
+		
+		/* Read dynamic expression */
 		string s = "";
 		bool flag = false;
-		list res = t.expression::Dynamic(t, op_code.obj, true); t = res[0]; s = res[1];
+		list res = t.expression::Dynamic(t, op_code.obj, true);
+		t = res[0];
+		s = res[1];
+		Vector s_arr = res[2];
+		
 		if (s == "parent")
 		{
 			s = static::useModuleName(t, t.current_class_extends_name);
@@ -744,6 +793,21 @@ struct TranslatorES6Expression extends BaseStruct
 			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
 		}
+		
+		/* If instance call */
+		if (op_code.obj.kind == OpAttr::KIND_ATTR)
+		{
+			bool is_class = op_code.obj.obj instanceof OpIdentifier and
+				op_code.obj.obj.kind == OpIdentifier::KIND_CLASS
+			;
+			if (!is_class)
+			{
+				string obj_name = s_arr.slice(0, s_arr.count() - 1);
+				content ~= (flag ? ", " : "") ~ rs::join("", obj_name);
+				flag = true;
+			}
+		}
+		
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
@@ -757,6 +821,21 @@ struct TranslatorES6Expression extends BaseStruct
 		{
 			content = "await " ~ content;
 		}
+		
+		if (is_old_call)
+		{
+			list res = t::addSaveOpCode
+			(
+				t,
+				{
+					"var_content": content,
+				}
+			);
+			t = res[0];
+			content = res[1];
+		}
+		
+		t <= is_call <= is_old_call;
 		
 		return [t, content];
 	}

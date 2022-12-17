@@ -508,7 +508,7 @@ static class TranslatorPHPProgram
 			
 			
 			/* Get current namespace function */
-			content ~= t.s("static function getCurrentNamespace()");
+			content ~= t.s("static function getNamespace()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -517,7 +517,7 @@ static class TranslatorPHPProgram
 			
 			
 			/* Get current class name function */
-			content ~= t.s("static function getCurrentClassName()");
+			content ~= t.s("static function getClassName()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");

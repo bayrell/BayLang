@@ -422,7 +422,7 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
 			
 			/* Get current namespace function */
-			content ~= t.s("getCurrentNamespace: function()");
+			content ~= t.s("getNamespace: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -431,7 +431,7 @@ struct TranslatorES6Program extends BaseStruct
 			
 			
 			/* Get current class name function */
-			content ~= t.s("getCurrentClassName: function()");
+			content ~= t.s("getClassName: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -747,7 +747,7 @@ struct TranslatorES6Program extends BaseStruct
 		else
 		{
 			/* Get current namespace function */
-			content ~= t.s("getCurrentNamespace: function()");
+			content ~= t.s("getNamespace: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -755,7 +755,7 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("},");
 			
 			/* Get current class name function */
-			content ~= t.s("getCurrentClassName: function()");
+			content ~= t.s("getClassName: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -1054,13 +1054,14 @@ struct TranslatorES6Program extends BaseStruct
 		}
 		
 		/* Get class name function */
+		/*
 		content ~= t.s("getClassName: function(ctx)");
 		content ~= t.s("{");
 		t = t.levelInc();
 		content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
 		t = t.levelDec();
 		content ~= t.s("},");
-		
+		*/
 		
 		t = t.levelDec();
 		content ~= t.s("});");

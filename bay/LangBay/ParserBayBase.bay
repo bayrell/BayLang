@@ -103,6 +103,7 @@ class ParserBayBase
 	pure memorize bool isSystemType (string name)
 	{
 		if (name == "var") return true;
+		if (name == "fn") return true;
 		if (name == "void") return true;
 		if (name == "bool") return true;
 		if (name == "byte") return true;
@@ -177,7 +178,7 @@ class ParserBayBase
 		}
 		else if (parser.uses.has(name))
 		{
-			kind = OpIdentifier::KIND_MODULE;
+			kind = OpIdentifier::KIND_CLASS;
 		}
 		else if (static::isSystemType(name))
 		{
@@ -1764,7 +1765,7 @@ class ParserBayBase
 					op_code.kind != OpIdentifier::KIND_SYS_TYPE and
 					op_code.kind != OpIdentifier::KIND_SYS_FUNCTION and
 					op_code.kind != OpIdentifier::KIND_VARIABLE and
-					op_code.kind != OpIdentifier::KIND_MODULE and
+					op_code.kind != OpIdentifier::KIND_CLASS and
 					op_code.kind != OpIdentifier::KIND_CLASSREF and
 					op_code.kind != OpIdentifier::KIND_CONTEXT
 				)

@@ -1017,6 +1017,9 @@ static class ParserBayOperator
 		CoreToken token = null;
 		Vector<BaseOpCode> items = new Vector();
 		
+		bool is_first = true;
+		bool is_self = false;
+		
 		if (flag_match) { res = parser.parser_base::matchToken(parser, "("); parser = res[0]; }
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		while (not token.eof and token.content != ")")
@@ -1025,15 +1028,34 @@ static class ParserBayOperator
 			BaseOpCode arg_pattern = null;
 			BaseOpCode arg_expression = null;
 			ParserBay arg_start = parser;
+			string arg_name = "";
 			
-			/* Arg type */
-			list res = parser.parser_base::readTypeIdentifier(parser, find_ident);
-			parser = res[0]; arg_pattern = res[1];
+			/* Check if first is self */
+			if (is_first)
+			{
+				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+				arg_pattern = token;
+				
+				if (token.content == "self")
+				{
+					is_self = true;
+					parser = look;
+				}
+				
+				arg_name = "self";
+			}
 			
-			/* Arg name */
-			list res = parser.parser_base::readIdentifier(parser);
-			parser = res[0]; arg_value = res[1];
-			string arg_name = arg_value.value;
+			if (!is_self or !is_first)
+			{
+				/* Arg type */
+				list res = parser.parser_base::readTypeIdentifier(parser, find_ident);
+				parser = res[0]; arg_pattern = res[1];
+				
+				/* Arg name */
+				list res = parser.parser_base::readIdentifier(parser);
+				parser = res[0]; arg_value = res[1];
+				arg_name = arg_value.value;
+			}
 			
 			/* Arg expression */
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
@@ -1068,10 +1090,16 @@ static class ParserBayOperator
 				parser = look;
 				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			}
+			
+			is_first = false;
 		}
 		
 		if (flag_match) { res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; }
-		return [parser, items.toCollection()];
+		return [
+			parser,
+			items.toCollection(),
+			is_self
+		];
 	}
 	
 	
@@ -1169,17 +1197,22 @@ static class ParserBayOperator
 		
 		if (has_name)
 		{
-			list res = parser.parser_base::readIdentifier(parser); parser = res[0]; parser_value = res[1];
+			list res = parser.parser_base::readIdentifier(parser);
+			parser = res[0]; parser_value = res[1];
 			string name = parser_value.value;
 		}
 		
 		/* Read function arguments */
 		Collection<OpDeclareFunctionArg> args = null;
-		list res = static::readDeclareFunctionArgs(parser); parser = res[0]; args = res[1];
+		list res = static::readDeclareFunctionArgs(parser);
+		parser = res[0];
+		args = res[1];
+		bool is_self = res[2];
 		
 		/* Read function variables */
 		Collection<OpDeclareFunctionArg> vars = null;
-		list res = static::readDeclareFunctionUse(parser, save_vars); parser = res[0]; vars = res[1];
+		list res = static::readDeclareFunctionUse(parser, save_vars);
+		parser = res[0]; vars = res[1];
 		
 		/* Add variables */
 		vars.each
@@ -1228,6 +1261,7 @@ static class ParserBayOperator
 				"items": op_code,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
+				"is_self": is_self,
 			}
 		];
 	}
@@ -1242,6 +1276,7 @@ static class ParserBayOperator
 		ParserBay look = null;
 		BaseOpCode parser_value = null;
 		BaseOpCode token = null;
+		string fn_name = "";
 		
 		/* Clear vars */
 		Dict<bool> save_vars = parser.vars;
@@ -1254,17 +1289,29 @@ static class ParserBayOperator
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == "async") parser = look;
 			
+			/* Read type */
 			list res = parser.parser_base::readTypeIdentifier(parser, false);
 			parser = res[0]; parser_value = res[1];
 			Caret caret_start = parser_value.caret_start;
+			
+			/* Read @ context */
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == "@") parser = look;
+			
+			/* Read function name */
 			if (has_name)
 			{
 				list res = parser.parser_base::readIdentifier(parser); parser = res[0];
+				fn_name = res[1].value;
 			}
+			
+			/* Read function args */
 			list res = static::readDeclareFunctionArgs(parser, false); parser = res[0];
+			
+			/* Read function use */
 			list res = static::readDeclareFunctionUse(parser, null, false); parser = res[0];
+			
+			/* Read next token */
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (
 				flags != null and flags.p_declare or

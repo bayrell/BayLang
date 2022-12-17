@@ -137,7 +137,7 @@ static class TranslatorPHPHtml
 		}
 		
 		content ~= t.s(var_name~"_content = [];");
-		fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
+		fn f = rtl::method(static::getClassName(), "OpHtmlItems");
 		list res = t::saveOpCodeCall(t, f, [op_code.items, var_name~"_content"]); t = res[0];
 		content ~= res[1];
 		
@@ -342,7 +342,7 @@ static class TranslatorPHPHtml
 			bool flag_value = false;
 			if (not flag_value)
 			{
-				fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
+				fn f = rtl::method(static::getClassName(), "OpHtmlItems");
 				list res = t::saveOpCodeCall(t, f, [op_code.items, var_name]); t = res[0];
 				content ~= res[1];
 			}

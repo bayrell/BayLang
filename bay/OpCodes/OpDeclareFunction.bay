@@ -38,7 +38,7 @@ struct OpDeclareFunction extends BaseOpCode
 	BaseOpCode items = null;
 	OpFlags flags = null;
 	bool is_context = true;
-	
+	bool is_self = false;
 	
 	
 	/**
