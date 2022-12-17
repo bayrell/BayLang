@@ -391,18 +391,6 @@ struct TranslatorES6Expression extends BaseStruct
 				
 				if (attr.kind == OpAttr::KIND_ATTR)
 				{
-					bool is_class = attr.obj instanceof OpIdentifier and
-						attr.obj.kind == OpIdentifier::KIND_CLASS
-					;
-					if (is_call and i == attrs_sz - 1 and not is_class)
-					{
-						s_arr.pushValue( ".constructor." ~ attr.value.value );
-					}
-					else
-					{
-						s_arr.pushValue( "." ~ attr.value.value );
-					}
-					
 					/* Pipe */
 					if (t.is_pipe and not is_call)
 					{
@@ -413,6 +401,21 @@ struct TranslatorES6Expression extends BaseStruct
 						else
 						{
 							first_item = rs::join("", s_arr);
+						}
+					}
+					else
+					{
+						/* Is instance class call */
+						bool is_class = attr.obj instanceof OpIdentifier and
+							attr.obj.kind == OpIdentifier::KIND_CLASS
+						;
+						if (is_call and i == attrs_sz - 1 and not is_class)
+						{
+							s_arr.pushValue( ".constructor." ~ attr.value.value );
+						}
+						else
+						{
+							s_arr.pushValue( "." ~ attr.value.value );
 						}
 					}
 				}
@@ -800,7 +803,7 @@ struct TranslatorES6Expression extends BaseStruct
 			bool is_class = op_code.obj.obj instanceof OpIdentifier and
 				op_code.obj.obj.kind == OpIdentifier::KIND_CLASS
 			;
-			if (!is_class)
+			if (!is_class and s_arr != null)
 			{
 				string obj_name = s_arr.slice(0, s_arr.count() - 1);
 				content ~= (flag ? ", " : "") ~ rs::join("", obj_name);

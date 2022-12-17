@@ -294,11 +294,15 @@ static class TranslatorPHPExpression
 	/**
 	 * Dynamic
 	 */
-	pure list<TranslatorPHP, string> Dynamic(TranslatorPHP t, BaseOpCode op_code, BaseOpCode next_op_code = null)
+	pure list<TranslatorPHP, string> Dynamic(
+		TranslatorPHP t,
+		BaseOpCode op_code,
+		BaseOpCode next_op_code = null
+	)
 	{
 		if (op_code instanceof OpIdentifier)
 		{
-			return static::OpIdentifier(t, op_code);
+			return static::OpIdentifier(t, op_code, null);
 		}
 		else if (op_code instanceof OpAttr)
 		{
@@ -307,6 +311,7 @@ static class TranslatorPHPExpression
 			BaseOpCode op_code_next = op_code;
 			string prev_kind = "";
 			string s = "";
+			Vector s_arr = new Vector();
 			bool first_item_complex = false;
 			
 			while (op_code_next instanceof OpAttr)
@@ -321,25 +326,30 @@ static class TranslatorPHPExpression
 			if (op_code_next instanceof OpCall)
 			{
 				prev_kind = "var";
-				list res = static::OpCall(t, op_code_next); t = res[0]; s = res[1];
+				list res = static::OpCall(t, op_code_next);
+				t = res[0];
+				s_arr.pushValue( res[1] );
 				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpNew)
 			{
 				prev_kind = "var";
-				list res = static::OpNew(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				list res = static::OpNew(t, op_code_next);
+				t = res[0]; s_arr.pushValue( "(" ~ res[1] ~ ")" );
 				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpCollection)
 			{
 				prev_kind = "var";
-				list res = static::OpCollection(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				list res = static::OpCollection(t, op_code_next);
+				t = res[0]; s_arr.pushValue( "(" ~ res[1] ~ ")" );
 				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpDict)
 			{
 				prev_kind = "var";
-				list res = static::OpDict(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				list res = static::OpDict(t, op_code_next);
+				t = res[0]; s_arr.pushValue( "(" ~ res[1] ~ ")" );
 				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpIdentifier)
@@ -348,23 +358,23 @@ static class TranslatorPHPExpression
 				{
 					if (op_code_next.value == "static")
 					{
-						s = "static";
+						s_arr.pushValue( "static" );
 						prev_kind = "static";
 					}
 					else if (op_code_next.value == "parent")
 					{
-						s = "parent";
+						s_arr.pushValue( "parent" );
 						prev_kind = "static";
 					}
 					else if (op_code_next.value == "self")
 					{
 						prev_kind = "static";
-						s = static::getModuleName(t, t.current_class_full_name);
+						s_arr.pushValue( static::getModuleName(t, t.current_class_full_name) );
 					}
 					else if (op_code_next.value == "this")
 					{
 						prev_kind = "var";
-						s = "$this";
+						s_arr.pushValue( "$this" );
 					}
 				}
 				else if (op_code_next.kind == OpIdentifier::KIND_PIPE)
@@ -378,14 +388,19 @@ static class TranslatorPHPExpression
 						}
 					);
 					t = res[0];
-					s = res[1];
+					s_arr.pushValue( res[1] );
 					prev_kind = "static";
 				}
 				else
 				{
-					list res = static::OpIdentifier(t, op_code_next); t = res[0]; s = res[1];
+					list res = static::OpIdentifier(t, op_code_next);
+					t = res[0];
+					s_arr.pushValue( res[1] );
 					prev_kind = "var";
-					if (t.modules.has(op_code_next.value) or op_code_next.kind == OpIdentifier::KIND_SYS_TYPE)
+					if (
+						t.modules.has(op_code_next.value) or
+						op_code_next.kind == OpIdentifier::KIND_SYS_TYPE
+					)
 					{
 						prev_kind = "static";
 					}
@@ -402,7 +417,7 @@ static class TranslatorPHPExpression
 					}
 				);
 				t = res[0];
-				s = res[1];
+				s_arr.pushValue( res[1] );
 			}
 			
 			int attrs_sz = attrs.count();
@@ -413,22 +428,35 @@ static class TranslatorPHPExpression
 				
 				if (attr.kind == OpAttr::KIND_ATTR)
 				{
+					bool is_call = next_op_code instanceof OpCall;
+					
 					/* Pipe */
-					if (t.is_pipe and not (next_op_code instanceof OpCall))
+					if (t.is_pipe and not is_call)
 					{
 						if (i == attrs_sz - 1)
 						{
 							string val2 = static::toString(attr.value.value);
-							s = "new \\Runtime\\Callback(" ~ s ~ ", " ~ val2 ~ ")";
+							s_arr.pushValue( "new \\Runtime\\Callback(" ~ s ~ ", " ~ val2 ~ ")" );
 						}
 						else
 						{
-							s ~= "->" ~ attr.value.value;
+							s_arr.pushValue( "->" ~ attr.value.value );
 						}
 					}
 					else
 					{
-						s ~= "->" ~ attr.value.value;
+						/* Is instance class call */
+						bool is_class = attr.obj instanceof OpIdentifier and
+							attr.obj.kind == OpIdentifier::KIND_CLASS
+						;
+						if (is_call and i == attrs_sz - 1)
+						{
+							s_arr.pushValue( "::" ~ attr.value.value );
+						}
+						else
+						{
+							s_arr.pushValue( "->" ~ attr.value.value );
+						}
 					}
 				}
 				else if (attr.kind == OpAttr::KIND_STATIC)
@@ -438,11 +466,11 @@ static class TranslatorPHPExpression
 						string attr_val = attr.value.value;
 						if (i == attrs_sz - 1 and next_op_code instanceof OpCall)
 						{
-							s ~= "::" ~ attr_val;
+							s_arr.pushValue( "::" ~ attr_val );
 						}
 						else if (rs::strtoupper(attr_val) == attr_val)
 						{
-							s ~= "::" ~ attr_val;
+							s_arr.pushValue( "::" ~ attr_val );
 						}
 						else
 						{
@@ -451,12 +479,12 @@ static class TranslatorPHPExpression
 							/*else val1 = static::toString(s);*/
 							else val1 = s ~ "::class";
 							string val2 = static::toString(attr_val);
-							s = "new \\Runtime\\Callback(" ~ val1 ~ ", " ~ val2 ~ ")";
+							s_arr.pushValue( "new \\Runtime\\Callback(" ~ val1 ~ ", " ~ val2 ~ ")" );
 						}
 					}
 					else
 					{
-						s = s ~ "::" ~ attr.value.value;
+						s_arr.pushValue( "::" ~ attr.value.value );
 					}
 					prev_kind = "static";
 				}
@@ -464,7 +492,7 @@ static class TranslatorPHPExpression
 				{
 					list res = static::Expression(t, attr.value);
 					t = res[0]; /* s ~= "[" ~ res[1] ~ "]"; */
-					s = "\\Runtime\\rtl::get($ctx, " ~ s ~ ", " ~ res[1] ~ ")";
+					s_arr.pushValue( "\\Runtime\\rtl::get($ctx, " ~ s ~ ", " ~ res[1] ~ ")" );
 				}
 				else if (attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 				{
@@ -477,11 +505,16 @@ static class TranslatorPHPExpression
 							items.push(res[1]);
 						}
 					}
-					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
+					s_arr.pushValue(
+						"\\Runtime\\rtl::attr($ctx, " ~ s ~
+						", [" ~ rs::join(", ", items) ~ "])"
+					);
 				}
 			}
 			
-			return [t, s];
+			s = rs::join("", s_arr);
+			
+			return [t, s, s_arr];
 		}
 		else if (op_code instanceof OpCurry)
 		{
@@ -495,13 +528,13 @@ static class TranslatorPHPExpression
 			);
 			t = res[0];
 			string var_name = res[1];
-			return [t, var_name];
+			return [t, var_name, null];
 		}
 		else if (op_code instanceof OpCall)
 		{
 			return static::OpCall(t, op_code);
 		}
-		return [t, ""];
+		return [t, "", null];
 	}
 	
 	
@@ -770,7 +803,17 @@ static class TranslatorPHPExpression
 		string s = "";
 		bool flag = false;
 		
-		list res = static::Dynamic(t, op_code.obj, op_code); t = res[0]; s = res[1];
+		bool is_old_call = t.is_call;
+		t <= is_call <= true;
+		
+		string next_save_op_code = t::nextSaveOpCode(t);
+		
+		/* Read dynamic expression */
+		list res = static::Dynamic(t, op_code.obj, op_code);
+		t = res[0];
+		s = res[1];
+		Vector s_arr = res[2];
+		
 		if (s == "parent")
 		{
 			string f_name = t.current_function.name;
@@ -790,6 +833,21 @@ static class TranslatorPHPExpression
 			content ~= (flag ? ", " : "") ~ "$ctx";
 			flag = true;
 		}
+		
+		/* If instance call */
+		if (op_code.obj.kind == OpAttr::KIND_ATTR)
+		{
+			bool is_class = op_code.obj.obj instanceof OpIdentifier and
+				op_code.obj.obj.kind == OpIdentifier::KIND_CLASS
+			;
+			if (!is_class and s_arr != null)
+			{
+				string obj_name = s_arr.slice(0, s_arr.count() - 1);
+				content ~= (flag ? ", " : "") ~ rs::join("", obj_name);
+				flag = true;
+			}
+		}
+		
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
@@ -798,6 +856,21 @@ static class TranslatorPHPExpression
 			flag = true;
 		}
 		content ~= ")";
+		
+		if (is_old_call)
+		{
+			list res = t::addSaveOpCode
+			(
+				t,
+				{
+					"var_content": content,
+				}
+			);
+			t = res[0];
+			content = res[1];
+		}
+		
+		t <= is_call <= is_old_call;
 		
 		return [t, content];
 	}
