@@ -31,6 +31,7 @@ use Bayrell.Lang.OpCodes.OpInc;
 use Bayrell.Lang.OpCodes.OpMath;
 use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpPipeDefault;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTernary;
@@ -544,35 +545,42 @@ static class ParserBayExpression
 					is_next_attr = true;
 				}
 				
-				list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+				list res = parser.parser_base::readToken(parser);
+				look = res[0]; look_token = res[1];
+				
 				if (look_token.content == 'await')
 				{
 					is_async = true;
 					parser = look;
-					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+					list res = parser.parser_base::readToken(parser);
+					look = res[0]; look_token = res[1];
 				}
 				if (look_token.content == 'monad')
 				{
 					is_monad = true;
 					parser = look;
-					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
+					list res = parser.parser_base::readToken(parser);
+					look = res[0]; look_token = res[1];
 				}
 				
 				if (look_token.content == 'attr')
 				{
 					parser = look;
-					list res = static::readTernary(parser); parser = res[0]; value = res[1];
+					list res = static::readTernary(parser)
+					 parser = res[0]; value = res[1];
 					kind = OpPipe::KIND_ATTR;
 				}
 				else if (look_token.content == '"' or look_token.content == "'")
 				{
-					list res = static::readTernary(parser); parser = res[0]; value = res[1];
+					list res = static::readTernary(parser);
+					parser = res[0]; value = res[1];
 					kind = OpPipe::KIND_ATTR;
 				}
 				else if (look_token.content == '{')
 				{
 					parser = look;
-					list res = static::readTernary(parser); parser = res[0]; value = res[1];
+					list res = static::readTernary(parser);
+					parser = res[0]; value = res[1];
 					kind = OpPipe::KIND_ATTR;
 					list res = parser.parser_base::matchToken(parser, '}'); parser = res[0];
 				}
@@ -583,50 +591,24 @@ static class ParserBayExpression
 				else if (look_token.content == 'default')
 				{
 					BaseOpCode arg1, arg2;
-					kind = OpPipe::KIND_CALL;
+					kind = OpPipe::KIND_DEFAULT;
 					is_monad = true;
 					
 					try
 					{
-						list res = parser.parser_base::readIdentifier(look); parser = res[0]; arg1 = res[1];
-						list res = static::readTernary(parser); parser = res[0]; arg2 = res[1];
+						list res = parser.parser_base::readIdentifier(look);
+						parser = res[0]; arg1 = res[1];
 						
-						arg1 = new OpString
-						{
-							"value": parser::findModuleName(parser, arg1.value),
-							"caret_start": arg1.caret_start,
-							"caret_end": arg1.caret_end,
-						};
+						list res = static::readTernary(parser);
+						parser = res[0]; arg2 = res[1];
 						
-						value = new OpCall
+						value = new OpPipeDefault
 						{
-							"args":
-							[
-								arg1,
-								arg2
-							],
-							"obj": new OpAttr
-							{
-								"kind": OpAttr::KIND_STATIC,
-								"obj": new OpIdentifier
-								{
-									"kind": OpIdentifier::KIND_SYS_TYPE,
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "rtl",
-								},
-								"value": new OpIdentifier
-								{
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "m_to",
-								},
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							"caret_start": caret_start,
+							"type_name": parser::findModuleName(parser, arg1.value),
+							"value": arg2,
+							"caret_start":caret_start,
 							"caret_end": parser.caret,
-						}
+						};
 					}
 					catch (ParserError err)
 					{
@@ -635,36 +617,16 @@ static class ParserBayExpression
 					
 					if (value == null)
 					{
-						list res = static::readTernary(look); parser = res[0]; arg2 = res[1];
+						list res = static::readTernary(look);
+						parser = res[0]; arg2 = res[1];
 						
-						value = new OpCall
+						value = new OpPipeDefault
 						{
-							"args":
-							[
-								arg2
-							],
-							"obj": new OpAttr
-							{
-								"kind": OpAttr::KIND_STATIC,
-								"obj": new OpIdentifier
-								{
-									"kind": OpIdentifier::KIND_SYS_TYPE,
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "rtl",
-								},
-								"value": new OpIdentifier
-								{
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "m_def",
-								},
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							"caret_start": caret_start,
+							"type_def": null,
+							"value": arg2,
+							"caret_start":caret_start,
 							"caret_end": parser.caret,
-						}
+						};
 					}
 					
 				}
@@ -692,7 +654,8 @@ static class ParserBayExpression
 						parser <= pipe_kind <= OpAttr::KIND_STATIC;
 					}
 					
-					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					list res = parser.parser_base::readDynamic(parser);
+					parser = res[0]; value = res[1];
 					
 					/* Restore parser */
 					parser <= is_pipe <= false;
@@ -701,12 +664,14 @@ static class ParserBayExpression
 				else if (look_token.content == 'curry')
 				{
 					kind = OpPipe::KIND_CALL;
-					list res = parser.parser_base::readCurry(parser); parser = res[0]; value = res[1];
+					list res = parser.parser_base::readCurry(parser);
+					parser = res[0]; value = res[1];
 				}
 				else
 				{
 					kind = OpPipe::KIND_CALL;
-					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					list res = parser.parser_base::readDynamic(parser);
+					parser = res[0]; value = res[1];
 				}
 				
 				op_code = new OpPipe

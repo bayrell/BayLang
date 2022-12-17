@@ -44,6 +44,7 @@ use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
 use Bayrell.Lang.OpCodes.OpPipe;
+use Bayrell.Lang.OpCodes.OpPipeDefault;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTernary;
@@ -168,12 +169,14 @@ struct TranslatorES6Expression extends BaseStruct
 	{
 		if (op_code.value == "@")
 		{
-			if (t.enable_context == false) return [t, static::useModuleName(t, "rtl") ~ ".getContext()"];
+			if (t.enable_context == false)
+				return [t, static::useModuleName(t, "rtl") ~ ".getContext()"];
 			else return [t, "ctx"];
 		}
 		if (op_code.value == "_")
 		{
-			if (t.enable_context == false) return [t, static::useModuleName(t, "rtl") ~ ".getContext().translate"];
+			if (t.enable_context == false)
+				return [t, static::useModuleName(t, "rtl") ~ ".getContext().translate"];
 			else return [t, "ctx.translate"];
 		}
 		if (op_code.value == "log") return [t, "console.log"];
@@ -351,7 +354,8 @@ struct TranslatorES6Expression extends BaseStruct
 				else if (op_code_first.kind == OpIdentifier::KIND_PIPE)
 				{
 					prev_kind = "var";
-					s_arr.pushValue( t.pipe_var_name ~ ".val" );
+					s_arr.pushValue( t.pipe_var_name );
+					/* s_arr.pushValue( t.pipe_var_name ~ ".val" ); */
 				}
 				else
 				{
@@ -881,7 +885,11 @@ struct TranslatorES6Expression extends BaseStruct
 	/**
 	 * OpPipe
 	 */
-	pure list<TranslatorES6, string> OpPipe(TranslatorES6 t, OpPipe op_code, bool is_expression = true)
+	pure list<TranslatorES6, string> OpPipe(
+		TranslatorES6 t,
+		OpPipe op_code,
+		bool is_expression = true
+	)
 	{
 		string content = "";
 		string var_name = "";
@@ -922,7 +930,7 @@ struct TranslatorES6Expression extends BaseStruct
 			t,
 			{
 				"content": 
-					t.s("var " ~ var_name ~ " = new " ~ monad_name~ "(ctx, " ~ value ~ ");")
+					t.s("var " ~ var_name ~ " = " ~ value ~ ";")
 				,
 			}
 		);
@@ -941,94 +949,69 @@ struct TranslatorES6Expression extends BaseStruct
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
 				s1 = var_name ~ ".attr(ctx, " ~ value ~ ")";
 			}
-			else if (op_item.kind == OpPipe::KIND_METHOD)
+			
+			else if (op_item.kind == OpPipe::KIND_METHOD or op_item.kind == OpPipe::KIND_CALL)
 			{
+				s2 = "if (!(" ~ var_name ~ " instanceof " ~ monad_name ~ "))";
+				s2 ~= t.s("{");
+				t = t.levelInc();
+				s2 ~= t.s("try");
+				s2 ~= t.s("{");
+				t = t.levelInc();
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s2 = "try{ ";
-				s2 ~= var_name~"=("~var_name~".val!=null && "~var_name~".err==null) ? new "~monad_name~"(ctx, "~value~") : "~var_name~";";
-				s2 ~= " } catch (err) { ";
-				s2 ~= var_name~"=new "~monad_name~"(ctx, null, err);";
-				s2 ~= " }";
-			}
-			else if (op_item.kind == OpPipe::KIND_CALL)
-			{
-				t <= is_pipe <= true;
 				
-				string args = "";
-				/*
-				bool is_instance_method = false;
 				if (
-					op_item.value instanceof OpCall and
-					op_item.value.obj instanceof OpAttr and
-					op_item.value.obj.kind == OpAttr::KIND_ATTR and
-					op_item.value.obj.obj.value == ""
+					op_item.kind == OpPipe::KIND_CALL and
+					t.current_function.isFlag("async") and
+					op_item.is_async
 				)
 				{
-					string value1 = "";
-					is_instance_method = true;
-					if (op_item.value.obj.obj.value == "")
-					{
-						value1 = t.pipe_var_name ~ ".val";
-					}
-					else
-					{
-						list res = static::Expression(t, op_item.value.obj.obj);
-						t = res[0]; value1 = res[1];
-					}
-					value = value1;
-					value ~= "." ~ op_item.value.obj.value.value;
-					value ~= ".bind(" ~ value1 ~ ")";
-					bool flag = false;
-					for (int j=0; j<op_item.value.args.count(); j++)
-					{
-						BaseOpCode item = op_item.value.args.item(j);
-						list res = t.expression::Expression(t, item); t = res[0]; string s_arg = res[1];
-						args ~= (flag ? ", " : "") ~ s_arg;
-						flag = true;
-					}
-					args = ", [" ~ args ~ "]";
+					s2 ~= t.s(var_name ~ " = await " ~ value ~ ";");
 				}
-				*/
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				
-				if (not op_item.is_async or not t.enable_async_await)
+				else
 				{
-					if (op_item.is_monad)
-					{
-						s1 = var_name ~ ".monad(ctx, " ~ value ~ ")";
-					}
-					else
-					{
-						s1 = var_name ~ ".call(ctx, " ~ value ~ args ~ ")";
-					}
-				}
-				else if (op_item.is_async and t.current_function.isFlag("async"))
-				{
-					if (t.isEmulateAsyncAwait())
-					{
-						if (op_item.is_monad)
-						{
-							s2 = var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
-						}
-						else
-						{
-							s2 = var_name ~ ".callAsync(ctx, " ~ value ~ args ~ ")";
-						}
-					}
-					else if (t.isAsyncAwait())
-					{
-						if (op_item.is_monad)
-						{
-							s1 = "await " ~ var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
-						}
-						else
-						{
-							s1 = "await " ~ var_name ~ ".callAsync(ctx, " ~ value ~ args ~ ")";
-						}
-					}
+					s2 ~= t.s(var_name ~ " = " ~ value ~ ";");
 				}
 				
-				t <= is_pipe <= false;
+				t = t.levelDec();
+				s2 ~= t.s("}");
+				s2 ~= t.s("catch (__err)");
+				s2 ~= t.s("{");
+				t = t.levelInc();
+				s2 ~= t.s(var_name ~ "=new " ~ monad_name ~"({e:__err});");
+				t = t.levelDec();
+				s2 ~= t.s("}");
+				t = t.levelDec();
+				s2 ~= t.s("}");
+			}
+			
+			else if (op_item.kind == OpPipe::KIND_DEFAULT)
+			{
+				s2 = "if (" ~ var_name ~ " instanceof " ~ monad_name ~
+					" || " ~ var_name ~ " == null || " ~ var_name ~ " == undefined)";
+				s2 ~= t.s("{");
+				t = t.levelInc();
+				
+				s2 ~= t.s("try");
+				s2 ~= t.s("{");
+				t = t.levelInc();
+				
+				list res = static::Expression(t, op_item.value.value);
+				t = res[0]; value = res[1];
+				
+				s2 ~= t.s(var_name ~ "=" ~ value ~ ";");
+				
+				t = t.levelDec();
+				s2 ~= t.s("}");
+				s2 ~= t.s("catch (err)");
+				s2 ~= t.s("{");
+				t = t.levelInc();
+				s2 ~= t.s(var_name ~ "=new " ~ monad_name ~"({e:__err});");
+				t = t.levelDec();
+				s2 ~= t.s("}");
+				
+				t = t.levelDec();
+				s2 ~= t.s("}");
 			}
 			
 			if (s1 != "")
@@ -1057,39 +1040,12 @@ struct TranslatorES6Expression extends BaseStruct
 				t = res[0];
 			}
 			
-			/*
-			if (s2 != "")
-			{
-				list res = t.async_await::nextPos(t); t = res[0]; string next_pos = res[1];
-				string async_t = t.async_await.async_t;
-				string s3 = t.s
-				(
-					"return " ~ async_t ~
-					".jump(ctx, " ~ next_pos ~ ")" ~
-					".call(ctx, " ~ s2 ~ "," ~ t.expression::toString(var_name) ~ ");"
-				);
-				t = t.levelDec();
-				s3 ~= t.s("}");
-				s3 ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ next_pos ~ ")");
-				s3 ~= t.s("{");
-				t = t.levelInc();
-				s3 ~= t.s(
-					"var " ~ var_name ~ " = " ~ async_t ~ 
-					".getVar(ctx, " ~ t.expression::toString(var_name) ~ ");"
-				);
-				list res = t::addSaveOpCode
-				(
-					t,
-					{
-						"content": s3,
-					}
-				);
-				t = res[0];
-			}
-			*/
 		}
 		
-		return [t, var_name ~ ".value(ctx)"];
+		string res = var_name ~ " instanceof " ~ monad_name ~ " ? " ~
+			var_name ~ ".val() : " ~ var_name;
+		
+		return [t, res];
 	}
 	
 	

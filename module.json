@@ -74,6 +74,7 @@
 		"OpCodes/OpNew",
 		"OpCodes/OpNumber",
 		"OpCodes/OpPipe",
+		"OpCodes/OpPipeDefault",
 		"OpCodes/OpPreprocessorIfCode",
 		"OpCodes/OpPreprocessorIfDef",
 		"OpCodes/OpPreprocessorSwitch",

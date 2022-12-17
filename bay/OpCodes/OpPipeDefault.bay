@@ -21,17 +21,10 @@ namespace Bayrell.Lang.OpCodes;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-struct OpPipe extends BaseOpCode
+struct OpPipeDefault extends BaseOpCode
 {
-	static const string KIND_ATTR = "attr";
-	static const string KIND_CALL = "call";
-	static const string KIND_METHOD = "method";
-	static const string KIND_DEFAULT = "default";
-	
-	string op = "op_pipe";
+	string op = "op_pipe_defautl";
 	string kind = "";
-	BaseOpCode obj = null;
+	BaseOpCode type_name = null;
 	BaseOpCode value = null;
-	bool is_async = false;
-	bool is_monad = false;
 }
