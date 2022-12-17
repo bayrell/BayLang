@@ -947,7 +947,7 @@ struct TranslatorES6Expression extends BaseStruct
 			if (op_item.kind == OpPipe::KIND_ATTR)
 			{
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
-				s1 = var_name ~ ".attr(ctx, " ~ value ~ ")";
+				s1 = "Runtime.rtl.attr(ctx, " ~ var_name ~ ", " ~ value ~ ")";
 			}
 			
 			else if (op_item.kind == OpPipe::KIND_METHOD or op_item.kind == OpPipe::KIND_CALL)
