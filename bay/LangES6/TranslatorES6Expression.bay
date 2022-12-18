@@ -464,7 +464,9 @@ struct TranslatorES6Expression extends BaseStruct
 				{
 					list res = static::Expression(t, attr.value);
 					t = res[0];
-					s_arr.pushValue( "Runtime.rtl.get(ctx, " ~ s ~ ", " ~ res[1] ~ ")" );
+					string s1 = rs::join("", s_arr);
+					s_arr = new Vector();
+					s_arr.pushValue( "Runtime.rtl.get(ctx, " ~ s1 ~ ", " ~ res[1] ~ ")" );
 				}
 				else if (attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 				{
@@ -759,7 +761,11 @@ struct TranslatorES6Expression extends BaseStruct
 		bool is_expression = true
 	)
 	{
-		if (t.current_function.isFlag("async") and op_code.is_await and t.isEmulateAsyncAwait())
+		if (
+			t.current_function != null and
+			t.current_function.isFlag("async") and
+			op_code.is_await and t.isEmulateAsyncAwait()
+		)
 		{
 			return t.async_await::OpCall(t, op_code, is_expression);
 		}
@@ -795,7 +801,7 @@ struct TranslatorES6Expression extends BaseStruct
 			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
 		}
-		else if (t.current_function.is_context and op_code.is_context)
+		else if ((t.current_function == null or t.current_function.is_context) and op_code.is_context)
 		{
 			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
@@ -824,7 +830,11 @@ struct TranslatorES6Expression extends BaseStruct
 		}
 		content ~= ")";
 		
-		if (t.current_function.isFlag("async") and op_code.is_await and t.isAsyncAwait())
+		if (
+			t.current_function != null and
+			t.current_function.isFlag("async") and
+			op_code.is_await and t.isAsyncAwait()
+		)
 		{
 			content = "await " ~ content;
 		}
