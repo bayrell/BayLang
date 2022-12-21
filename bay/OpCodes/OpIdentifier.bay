@@ -32,6 +32,7 @@ struct OpIdentifier extends BaseOpCode
 	static const string KIND_CONSTANT = "const";
 	static const string KIND_CLASS = "class";
 	static const string KIND_CLASSREF = "classref";
+	static const string KIND_THIS = "this";
 	
 	string op = "op_identifier";
 	string value = "";

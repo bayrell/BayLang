@@ -214,6 +214,7 @@ static class TranslatorPHPProgram
 		
 		/* Set function name */
 		t <= current_function <= op_code.fn_create;
+		t <= is_init_function <= true;
 		
 		/* Clear save op codes */
 		t = t::clearSaveOpCode(t);
@@ -241,6 +242,8 @@ static class TranslatorPHPProgram
 		else content = open ~ content;
 		t = t.levelDec();
 		content ~= t.s("}");
+		
+		t <= is_init_function <= false;
 		
 		return [save_t, content];
 	}
@@ -498,14 +501,14 @@ static class TranslatorPHPProgram
 		
 		if (class_kind != OpDeclareClass::KIND_INTERFACE)
 		{
-			/* Get class name function */
+			/* Get class name function
 			content ~= t.s("function getClassName()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
 			t = t.levelDec();
 			content ~= t.s("}");
-			
+			*/
 			
 			/* Get current namespace function */
 			content ~= t.s("static function getNamespace()");
@@ -970,6 +973,7 @@ static class TranslatorPHPProgram
 			content = rs::replace("\\(\\$ctx, ", "(", content);
 			content = rs::replace("\\(\\$ctx,", "(", content);
 			content = rs::replace("\\,\\$ctx,", ",", content);
+			content = rs::replace("\\$this::", "static::", content);
 		}
 		
 		return [t, content];

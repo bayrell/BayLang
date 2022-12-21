@@ -96,7 +96,8 @@ struct TranslatorES6Program extends BaseStruct
 		string content = "";
 		
 		if (op_code.isFlag("declare")) return [t, ""];
-		if (not is_static and is_static_function or is_static and not is_static_function) return [t, ""];
+		if (not is_static and is_static_function or is_static and not is_static_function)
+			return [t, ""];
 		
 		/* Set current function */
 		t <= current_function <= op_code;
@@ -121,7 +122,10 @@ struct TranslatorES6Program extends BaseStruct
 	/**
 	 * OpDeclareClass
 	 */
-	pure list<TranslatorES6, string> OpDeclareClassConstructor(TranslatorES6 t, OpDeclareClass op_code)
+	pure list<TranslatorES6, string> OpDeclareClassConstructor(
+		TranslatorES6 t,
+		OpDeclareClass op_code
+	)
 	{
 		string open = "";
 		string content = "";
@@ -129,6 +133,7 @@ struct TranslatorES6Program extends BaseStruct
 		
 		/* Set function name */
 		t <= current_function <= op_code.fn_create;
+		t <= is_init_function <= true;
 		
 		/* Clear save op codes */
 		t = t::clearSaveOpCode(t);
@@ -170,7 +175,8 @@ struct TranslatorES6Program extends BaseStruct
 				{
 					OpDeclareFunctionArg arg = op_code.fn_create.args.item(i);
 					if (arg.expression == null) continue;
-					list res = t.expression::Expression(t, arg.expression); t = res[0]; string s = res[1];
+					list res = t.expression::Expression(t, arg.expression);
+					t = res[0]; string s = res[1];
 					s = "if (" ~ arg.name ~ " == undefined) " ~ arg.name ~ " = " ~ s ~ ";";
 					content ~= t.s(s);
 				}
@@ -179,7 +185,8 @@ struct TranslatorES6Program extends BaseStruct
 			list res = t.operator::Operators
 			(
 				t, 
-				op_code.fn_create.expression ? op_code.fn_create.expression : op_code.fn_create.items
+				op_code.fn_create.expression ?
+					op_code.fn_create.expression : op_code.fn_create.items
 			);
 			t = res[0];
 			content ~= res[1];
@@ -189,6 +196,8 @@ struct TranslatorES6Program extends BaseStruct
 		content = open ~ content;
 		t = t.levelDec();
 		content ~= t.s("};");
+		
+		t <= is_init_function <= false;
 		
 		return [save_t, content];
 	}
@@ -203,7 +212,9 @@ struct TranslatorES6Program extends BaseStruct
 		string content = "";
 		if (item instanceof OpPreprocessorIfDef)
 		{
-			list res = t.operator::OpPreprocessorIfDef(t, item, OpPreprocessorIfDef::KIND_CLASS_BODY);
+			list res = t.operator::OpPreprocessorIfDef(
+				t, item, OpPreprocessorIfDef::KIND_CLASS_BODY
+			);
 			content ~= res[1];
 		}
 		return [t, content];

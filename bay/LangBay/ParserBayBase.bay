@@ -172,7 +172,27 @@ class ParserBayBase
 	pure string findIdentifier(ParserBay parser, string name, Caret caret)
 	{
 		string kind = "";
-		if (parser.vars.has(name))
+		if (name == "this")
+		{
+			kind = OpIdentifier::KIND_THIS;
+		}
+		else if (name == "static" or name == "parent")
+		{
+			kind = OpIdentifier::KIND_CLASSREF;
+		}
+		else if (name == "null" or name == "true" or name == "false")
+		{
+			kind = OpIdentifier::KIND_CONSTANT;
+		}
+		else if (name == "fn")
+		{
+			kind = OpIdentifier::KIND_FUNCTION;
+		}
+		else if (name == "@" or name == "_")
+		{
+			kind = OpIdentifier::KIND_CONTEXT;
+		}
+		else if (parser.vars.has(name))
 		{
 			kind = OpIdentifier::KIND_VARIABLE;
 		}
@@ -191,22 +211,6 @@ class ParserBayBase
 		else if (name == "window" or name == "document")
 		{
 			kind = OpIdentifier::KIND_VARIABLE;
-		}
-		else if (name == "null" or name == "true" or name == "false")
-		{
-			kind = OpIdentifier::KIND_CONSTANT;
-		}
-		else if (name == "fn")
-		{
-			kind = OpIdentifier::KIND_FUNCTION;
-		}
-		else if (name == "@" or name == "_")
-		{
-			kind = OpIdentifier::KIND_CONTEXT;
-		}
-		else if (name == "static" or name == "self" or name == "this" or name == "parent")
-		{
-			kind = OpIdentifier::KIND_CLASSREF;
 		}
 		return kind;
 	}
@@ -999,11 +1003,14 @@ class ParserBayBase
 		}
 		
 		name = token.content;
-		bool kind = static::findIdentifier(parser, name, token.caret_start);
+		string kind = static::findIdentifier(parser, name, token.caret_start);
 		
 		if (parser.find_ident and find_ident and kind == "")
 		{
-			throw new ParserError("Unknown identifier '" ~ name ~ "'", token.caret_start, parser.file_name);
+			throw new ParserError(
+				"Unknown identifier '" ~ name ~ "'",
+				token.caret_start, parser.file_name
+			);
 		}
 		
 		return 
@@ -1767,7 +1774,8 @@ class ParserBayBase
 					op_code.kind != OpIdentifier::KIND_VARIABLE and
 					op_code.kind != OpIdentifier::KIND_CLASS and
 					op_code.kind != OpIdentifier::KIND_CLASSREF and
-					op_code.kind != OpIdentifier::KIND_CONTEXT
+					op_code.kind != OpIdentifier::KIND_CONTEXT and
+					op_code.kind != OpIdentifier::KIND_THIS
 				)
 				{
 					throw new ParserExpected

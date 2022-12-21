@@ -43,6 +43,7 @@ struct CoreTranslator extends BaseStruct
 	int save_op_code_inc = 0;
 	
 	/* Work */
+	bool is_init_function = false;
 	bool is_static_function = false;
 	bool is_operation = false;
 	int opcode_level = 0;

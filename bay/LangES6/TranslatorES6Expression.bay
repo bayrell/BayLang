@@ -167,6 +167,11 @@ struct TranslatorES6Expression extends BaseStruct
 	 */
 	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
+		if (op_code.kind == OpIdentifier::KIND_THIS)
+		{
+			if (t.is_init_function) return [t, "this"];
+			return [t, "_this"];
+		}
 		if (op_code.value == "@")
 		{
 			if (t.enable_context == false)
@@ -988,7 +993,7 @@ struct TranslatorES6Expression extends BaseStruct
 				s2 ~= t.s("catch (__err)");
 				s2 ~= t.s("{");
 				t = t.levelInc();
-				s2 ~= t.s(var_name ~ "=new " ~ monad_name ~"({e:__err});");
+				s2 ~= t.s(var_name ~ "=new " ~ monad_name ~"(ctx,null,__err);");
 				t = t.levelDec();
 				s2 ~= t.s("}");
 				t = t.levelDec();
@@ -1016,7 +1021,7 @@ struct TranslatorES6Expression extends BaseStruct
 				s2 ~= t.s("catch (err)");
 				s2 ~= t.s("{");
 				t = t.levelInc();
-				s2 ~= t.s(var_name ~ "=new " ~ monad_name ~"({e:__err});");
+				s2 ~= t.s(var_name ~ "=new " ~ monad_name ~"(ctx,null,__err);");
 				t = t.levelDec();
 				s2 ~= t.s("}");
 				
@@ -1053,7 +1058,7 @@ struct TranslatorES6Expression extends BaseStruct
 		}
 		
 		string res = var_name ~ " instanceof " ~ monad_name ~ " ? " ~
-			var_name ~ ".val() : " ~ var_name;
+			var_name ~ ".value() : " ~ var_name;
 		
 		return [t, res];
 	}

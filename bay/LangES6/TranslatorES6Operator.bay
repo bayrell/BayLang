@@ -884,6 +884,7 @@ struct TranslatorES6Operator extends BaseStruct
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);
 				string name = arg.name;
+				if (name == "this" and not t.is_init_function) name = "_this";
 				content ~= (flag ? ", " : "") ~ name;
 				flag = true;
 			}

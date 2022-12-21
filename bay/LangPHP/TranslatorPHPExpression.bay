@@ -174,6 +174,11 @@ static class TranslatorPHPExpression
 	 */
 	pure list<TranslatorPHP, string> OpIdentifier(TranslatorPHP t, OpIdentifier op_code)
 	{
+		if (op_code.kind == OpIdentifier::KIND_THIS)
+		{
+			if (t.is_init_function) return [t, "$this"];
+			return [t, "$_this"];
+		}
 		if (op_code.value == "@")
 		{
 			if (t.enable_context == false) return [t, "\\Runtime\\rtl::getContext()"];
@@ -996,7 +1001,7 @@ static class TranslatorPHPExpression
 				s2 ~= t.s("catch (\\Exception $__err)");
 				s2 ~= t.s("{");
 				t = t.levelInc();
-				s2 ~= t.s(var_name ~ "=new \\Runtime\\Monad(['e'=>$__err]);");
+				s2 ~= t.s(var_name ~ "=new \\Runtime\\Monad($ctx,null, $__err);");
 				t = t.levelDec();
 				s2 ~= t.s("}");
 				t = t.levelDec();
@@ -1025,7 +1030,7 @@ static class TranslatorPHPExpression
 				s2 ~= t.s("catch (err)");
 				s2 ~= t.s("{");
 				t = t.levelInc();
-				s2 ~= t.s(var_name ~ "=new \\Runtime\\Monad(['e'=>$__err]);");
+				s2 ~= t.s(var_name ~ "=new \\Runtime\\Monad($ctx,null, $__err);");
 				t = t.levelDec();
 				s2 ~= t.s("}");
 				
@@ -1061,7 +1066,7 @@ static class TranslatorPHPExpression
 		}
 		
 		string res = var_name ~ " instanceof \\Runtime\\Monad ? " ~
-			var_name ~ "->val() : " ~ var_name;
+			var_name ~ "->value() : " ~ var_name;
 		
 		return [t, res];
 	}

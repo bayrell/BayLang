@@ -718,6 +718,7 @@ static class TranslatorPHPOperator
 				OpDeclareFunctionArg arg = f.args.item(i);
 				string name = arg.name;
 				string expr = "";
+				if (name == "this" and not t.is_init_function) name = "_this";
 				if (arg.expression != null)
 				{
 					list res = t.expression::Expression(t, arg.expression); t = res[0]; expr = res[1];
