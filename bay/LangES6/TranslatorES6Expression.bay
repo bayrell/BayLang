@@ -485,8 +485,10 @@ struct TranslatorES6Expression extends BaseStruct
 							items.push(res[1]);
 						}
 					}
+					string s1 = rs::join("", s_arr);
+					s_arr = new Vector();
 					s_arr.pushValue(
-						"Runtime.rtl.attr(ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])"
+						"Runtime.rtl.attr(ctx, " ~ s1 ~ ", [" ~ rs::join(", ", items) ~ "])"
 					);
 				}
 			}

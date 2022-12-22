@@ -516,8 +516,10 @@ static class TranslatorPHPExpression
 							items.push(res[1]);
 						}
 					}
+					string s1 = rs::join("", s_arr);
+					s_arr = new Vector();
 					s_arr.pushValue(
-						"\\Runtime\\rtl::attr($ctx, " ~ s ~
+						"\\Runtime\\rtl::attr($ctx, " ~ s1 ~
 						", [" ~ rs::join(", ", items) ~ "])"
 					);
 				}
