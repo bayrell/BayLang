@@ -879,12 +879,20 @@ struct TranslatorES6Operator extends BaseStruct
 		if (f.args != null)
 		{
 			bool flag = false;
-			if (f.is_context) { content ~= "ctx"; flag = true; }
+			if (f.is_context)
+			{
+				content ~= "ctx";
+				flag = true;
+			}
+			if (not t.is_init_function and not f.flags.p_static)
+			{
+				content ~= (flag ? ", " : "") ~ "_this";
+				flag = true;
+			}
 			for (int i=0; i<f.args.count(i); i++)
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);
 				string name = arg.name;
-				if (name == "this" and not t.is_init_function) name = "_this";
 				content ~= (flag ? ", " : "") ~ name;
 				flag = true;
 			}

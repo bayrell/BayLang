@@ -1018,7 +1018,6 @@ static class ParserBayOperator
 		Vector<BaseOpCode> items = new Vector();
 		
 		bool is_first = true;
-		bool is_this = false;
 		
 		if (flag_match) { res = parser.parser_base::matchToken(parser, "("); parser = res[0]; }
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
@@ -1030,22 +1029,7 @@ static class ParserBayOperator
 			ParserBay arg_start = parser;
 			string arg_name = "";
 			
-			/* Check if first is this */
-			if (is_first)
-			{
-				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-				arg_pattern = token;
-				
-				if (token.content == "this")
-				{
-					is_this = true;
-					parser = look;
-				}
-				
-				arg_name = "this";
-			}
-			
-			if (!is_this or !is_first)
+			if (!is_first)
 			{
 				/* Arg type */
 				list res = parser.parser_base::readTypeIdentifier(parser, find_ident);
@@ -1095,11 +1079,7 @@ static class ParserBayOperator
 		}
 		
 		if (flag_match) { res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; }
-		return [
-			parser,
-			items.toCollection(),
-			is_this
-		];
+		return [ parser, items.toCollection() ];
 	}
 	
 	
@@ -1207,7 +1187,6 @@ static class ParserBayOperator
 		list res = static::readDeclareFunctionArgs(parser);
 		parser = res[0];
 		args = res[1];
-		bool is_this = res[2];
 		
 		/* Read function variables */
 		Collection<OpDeclareFunctionArg> vars = null;
@@ -1261,7 +1240,6 @@ static class ParserBayOperator
 				"items": op_code,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
-				"is_this": is_this,
 			}
 		];
 	}

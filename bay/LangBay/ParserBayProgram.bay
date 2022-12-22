@@ -169,8 +169,6 @@ static class ParserBayProgram
 					{
 						list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 					}
-					
-					flags <= p_static <= true;
 				}
 				else
 				{

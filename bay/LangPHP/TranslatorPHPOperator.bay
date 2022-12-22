@@ -712,13 +712,21 @@ static class TranslatorPHPOperator
 		if (f.args != null)
 		{
 			bool flag = false;
-			if (f.is_context) { content ~= "$ctx"; flag = true; }
+			if (f.is_context)
+			{
+				content ~= "$ctx";
+				flag = true;
+			}
+			if (not t.is_init_function and not f.flags.p_static)
+			{
+				content ~= (flag ? ", " : "") ~ "$_this";
+				flag = true;
+			}
 			for (int i=0; i<f.args.count(i); i++)
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);
 				string name = arg.name;
 				string expr = "";
-				if (name == "this" and not t.is_init_function) name = "_this";
 				if (arg.expression != null)
 				{
 					list res = t.expression::Expression(t, arg.expression); t = res[0]; expr = res[1];

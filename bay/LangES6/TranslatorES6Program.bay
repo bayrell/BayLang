@@ -96,8 +96,10 @@ struct TranslatorES6Program extends BaseStruct
 		string content = "";
 		
 		if (op_code.isFlag("declare")) return [t, ""];
+		/*
 		if (not is_static and is_static_function or is_static and not is_static_function)
 			return [t, ""];
+		*/
 		
 		/* Set current function */
 		t <= current_function <= op_code;
@@ -395,14 +397,14 @@ struct TranslatorES6Program extends BaseStruct
 			/* Static Functions */
 			if (op_code.functions != null)
 			{
-				t <= is_static_function <= true;
 				for (int i=0; i<op_code.functions.count(); i++)
 				{
 					OpDeclareFunction f = op_code.functions.item(i);
 					if (f.flags.isFlag("declare")) continue;
-					if (not f.isStatic()) continue;
+					/* if (not f.isStatic()) continue; */
 					
 					/* Set function name */
+					t <= is_static_function <= f.isStatic();
 					t <= current_function <= f;
 					
 					string is_async = "";
@@ -1153,7 +1155,7 @@ struct TranslatorES6Program extends BaseStruct
 		}
 		
 		/* Class body */
-		list res = static::OpDeclareClassBody(t, op_code); content ~= res[1];
+		/* list res = static::OpDeclareClassBody(t, op_code); content ~= res[1]; */
 		
 		/* Class static functions */
 		list res = static::OpDeclareClassBodyStatic(t, op_code); content ~= res[1];

@@ -75,6 +75,7 @@ static class TranslatorPHPProgram
 		}
 		else
 		{
+			s1 ~= "static ";
 			t <= is_static_function <= false;
 		}
 		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
@@ -602,7 +603,8 @@ static class TranslatorPHPProgram
 					bool is_static = variable.flags.isFlag("static");
 					bool is_serializable = variable.flags.isFlag("serializable");
 					bool is_assignable = variable.flags.isFlag("assignable");
-					bool has_annotation = variable.annotations != null and variable.annotations.count() > 0;
+					bool has_annotation = variable.annotations != null
+						and variable.annotations.count() > 0;
 					
 					if (is_static) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
@@ -973,8 +975,9 @@ static class TranslatorPHPProgram
 			content = rs::replace("\\(\\$ctx, ", "(", content);
 			content = rs::replace("\\(\\$ctx,", "(", content);
 			content = rs::replace("\\,\\$ctx,", ",", content);
-			content = rs::replace("\\$this::", "static::", content);
 		}
+		
+		content = rs::replace("\\$this::", "static::", content);
 		
 		return [t, content];
 	}
