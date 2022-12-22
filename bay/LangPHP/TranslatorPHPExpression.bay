@@ -1101,7 +1101,13 @@ static class TranslatorPHPExpression
 		content ~= "function (" ~ args ~ ")";
 		if (op_code.vars != null and op_code.vars.count() > 0)
 		{
-			Collection<string> vars = op_code.vars.map( string (string s) => "&$" ~ s );
+			Collection<string> vars = op_code.vars.map(
+				string (string s)
+				{
+					if (s == "this") s = "_this";
+					return "&$" ~ s;
+				}
+			);
 			content ~= " use (" ~ rs::join(",", vars) ~ ")";
 		}
 		list res = t.operator::OpDeclareFunctionBody(t, op_code);

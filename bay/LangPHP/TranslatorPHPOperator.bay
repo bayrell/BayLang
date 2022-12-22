@@ -717,7 +717,10 @@ static class TranslatorPHPOperator
 				content ~= "$ctx";
 				flag = true;
 			}
-			if (not t.is_init_function and not f.flags.p_static)
+			if (
+				not t.is_init_function and
+				f.flags != null and not f.flags.p_static and not f.flags.p_pure
+			)
 			{
 				content ~= (flag ? ", " : "") ~ "$_this";
 				flag = true;

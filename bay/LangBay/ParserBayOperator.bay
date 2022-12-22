@@ -1017,9 +1017,12 @@ static class ParserBayOperator
 		CoreToken token = null;
 		Vector<BaseOpCode> items = new Vector();
 		
-		bool is_first = true;
+		if (flag_match)
+		{
+			res = parser.parser_base::matchToken(parser, "(");
+			parser = res[0];
+		}
 		
-		if (flag_match) { res = parser.parser_base::matchToken(parser, "("); parser = res[0]; }
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		while (not token.eof and token.content != ")")
 		{
@@ -1029,17 +1032,14 @@ static class ParserBayOperator
 			ParserBay arg_start = parser;
 			string arg_name = "";
 			
-			if (!is_first)
-			{
-				/* Arg type */
-				list res = parser.parser_base::readTypeIdentifier(parser, find_ident);
-				parser = res[0]; arg_pattern = res[1];
-				
-				/* Arg name */
-				list res = parser.parser_base::readIdentifier(parser);
-				parser = res[0]; arg_value = res[1];
-				arg_name = arg_value.value;
-			}
+			/* Arg type */
+			list res = parser.parser_base::readTypeIdentifier(parser, find_ident);
+			parser = res[0]; arg_pattern = res[1];
+			
+			/* Arg name */
+			list res = parser.parser_base::readIdentifier(parser);
+			parser = res[0]; arg_value = res[1];
+			arg_name = arg_value.value;
 			
 			/* Arg expression */
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
@@ -1074,8 +1074,6 @@ static class ParserBayOperator
 				parser = look;
 				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			}
-			
-			is_first = false;
 		}
 		
 		if (flag_match) { res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; }
@@ -1105,12 +1103,15 @@ static class ParserBayOperator
 			while (not token.eof and token.content != ")")
 			{
 				BaseOpCode ident = null;
-				list res = parser.parser_base::readIdentifier(parser); parser = res[0]; ident = res[1];
+				
+				list res = parser.parser_base::readIdentifier(parser);
+				parser = res[0]; ident = res[1];
+				
 				string name = ident.value;
 				
 				if (vars != null and find_ident)
 				{
-					if (not vars.has(name))
+					if (not vars.has(name) and name != "this")
 					{
 						throw new ParserError
 						(
