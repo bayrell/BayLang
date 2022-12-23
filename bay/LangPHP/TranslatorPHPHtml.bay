@@ -227,7 +227,8 @@ static class TranslatorPHPHtml
 				if (attr_key == "@class")
 				{
 					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.push( "\\Runtime\\Web\\RenderDriver::getCssName($ctx, " ~ attr_value ~ ")" );
+					attr_class.pushValue( "\\Runtime\\Web\\RenderDriver::getCssName($ctx, " ~
+						attr_value ~ ")" );
 					
 					if (not has_attr_key and attr.value instanceof OpString)
 					{
@@ -243,7 +244,7 @@ static class TranslatorPHPHtml
 				{
 					t <= opcode_level <= 1000;
 					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.push(attr_value);
+					attr_class.pushValue(attr_value);
 					
 					if (not has_attr_key and attr.value instanceof OpString)
 					{
@@ -284,8 +285,9 @@ static class TranslatorPHPHtml
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.push( "static::getCssHash($ctx)" );
-			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
+			attr_class.pushValue( "static::getCssHash($ctx)" );
+			/*attr_class.pushValue( t.expression::toString("h-" ~
+				ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			res_attrs = res_attrs.pushIm
 			(
 				"class=" ~ "\"'." ~ rs::join(".\" \".", attr_class) ~ ".'\""

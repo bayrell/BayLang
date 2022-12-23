@@ -283,7 +283,7 @@ struct TranslatorES6Expression extends BaseStruct
 			
 			while (op_code_first instanceof OpAttr)
 			{
-				attrs.push(op_code_first);
+				attrs.pushValue(op_code_first);
 				op_code_item = op_code_first;
 				op_code_first = op_code_first.obj;
 			}
@@ -436,7 +436,7 @@ struct TranslatorES6Expression extends BaseStruct
 						{
 							list res = static::Expression(t, attr.attrs[j]);
 							t = res[0];
-							items.push(res[1]);
+							items.pushValue(res[1]);
 						}
 					}
 					s = "Runtime.rtl.attr(ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -828,7 +828,7 @@ struct TranslatorES6Expression extends BaseStruct
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.push(op_code_item);
+			items.pushValue(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
 		items = items.reverseIm();

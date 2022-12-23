@@ -34,6 +34,7 @@ struct TranslatorES6 extends CoreTranslator
 {
 	/* Work */
 	bool is_pipe = false;
+	bool is_call = false;
 	string pipe_var_name = "";
 	string html_var_name = "";
 	bool is_html = false;

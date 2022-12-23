@@ -422,7 +422,7 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
 			
 			/* Get current namespace function */
-			content ~= t.s("getCurrentNamespace: function()");
+			content ~= t.s("getNamespace: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -431,7 +431,7 @@ struct TranslatorES6Program extends BaseStruct
 			
 			
 			/* Get current class name function */
-			content ~= t.s("getCurrentClassName: function()");
+			content ~= t.s("getClassName: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -544,12 +544,12 @@ struct TranslatorES6Program extends BaseStruct
 					
 					if (flag != 0)
 					{
-						if (not vars.has(flag)) vars.set(flag, new Vector<string>());
+						if (not vars.has(flag)) vars.setValue(flag, new Vector<string>());
 						Vector<string> v = vars.item(flag);
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
-							v.push(value.var_name);
+							v.pushValue(value.var_name);
 						}
 					}
 				}
@@ -747,7 +747,7 @@ struct TranslatorES6Program extends BaseStruct
 		else
 		{
 			/* Get current namespace function */
-			content ~= t.s("getCurrentNamespace: function()");
+			content ~= t.s("getNamespace: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -755,7 +755,7 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("},");
 			
 			/* Get current class name function */
-			content ~= t.s("getCurrentClassName: function()");
+			content ~= t.s("getClassName: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -1052,15 +1052,6 @@ struct TranslatorES6Program extends BaseStruct
 			}
 			
 		}
-		
-		/* Get class name function */
-		content ~= t.s("getClassName: function(ctx)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
 		
 		t = t.levelDec();
 		content ~= t.s("});");

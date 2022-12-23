@@ -311,7 +311,7 @@ static class TranslatorPHPExpression
 			
 			while (op_code_next instanceof OpAttr)
 			{
-				attrs.push(op_code_next);
+				attrs.pushValue(op_code_next);
 				op_code_item = op_code_next;
 				op_code_next = op_code_next.obj;
 			}
@@ -474,7 +474,7 @@ static class TranslatorPHPExpression
 						for (int j=0; j<attr.attrs.count(); j++)
 						{
 							list res = static::Expression(t, attr.attrs[j]); t = res[0];
-							items.push(res[1]);
+							items.pushValue(res[1]);
 						}
 					}
 					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -687,7 +687,7 @@ static class TranslatorPHPExpression
 			if (arg instanceof OpCurryArg) continue;
 			if (arg instanceof OpIdentifier)
 			{
-				args_use.push("$" ~ arg.value);
+				args_use.pushValue("$" ~ arg.value);
 			}
 		}
 		
@@ -702,11 +702,11 @@ static class TranslatorPHPExpression
 			for (int j=0; j<i; j++)
 			{
 				OpCurryArg arg_use = args.item(j);
-				arr_use.push("$__varg" ~ arg_use.pos);
+				arr_use.pushValue("$__varg" ~ arg_use.pos);
 			}
 			if (use_obj_item != "")
 			{
-				arr_use.push(use_obj_item);
+				arr_use.pushValue(use_obj_item);
 			}
 			if (arr_use.count() > 0)
 			{
@@ -854,7 +854,7 @@ static class TranslatorPHPExpression
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.push(op_code_item);
+			items.pushValue(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
 		items = items.reverseIm();
