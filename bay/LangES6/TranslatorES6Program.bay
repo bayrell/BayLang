@@ -372,7 +372,6 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= t.s("{");
 		t = t.levelInc();
 		
-		
 		/* Static variables */
 		if (op_code.vars != null)
 		{
@@ -401,7 +400,7 @@ struct TranslatorES6Program extends BaseStruct
 				{
 					OpDeclareFunction f = op_code.functions.item(i);
 					if (f.flags.isFlag("declare")) continue;
-					/* if (not f.isStatic()) continue; */
+					if (not f.isStatic()) continue;
 					
 					/* Set function name */
 					t <= is_static_function <= f.isStatic();
@@ -433,215 +432,6 @@ struct TranslatorES6Program extends BaseStruct
 			}
 			
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
-			
-			/* Init variables */
-			if (class_kind != OpDeclareClass::KIND_INTERFACE and op_code.vars != null)
-			{
-				Collection<OpAssign> vars = op_code.vars.filter
-				(
-					bool (OpAssign variable) => not variable.flags.isFlag("static")
-				);
-				
-				if (t.current_class_full_name != "Runtime.BaseObject" and vars.count() > 0)
-				{
-					content ~= t.s("_init: function(ctx, _this)");
-					content ~= t.s("{");
-					t = t.levelInc();
-					
-					/* Clear save op codes */
-					Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-					int save_op_code_inc = t.save_op_code_inc;
-					
-					if (t.current_class_extends_name != "")
-					{
-						content ~= t.s
-						(
-							t.expression::useModuleName(t, t.current_class_extends_name) ~
-								"._init(ctx,_this);"
-						);
-					}
-					
-					string s1 = "";
-					for (int i=0; i<op_code.vars.count(); i++)
-					{
-						OpAssign variable = op_code.vars.item(i);
-						bool is_static = variable.flags.isFlag("static");
-						
-						if (is_static) continue;
-						if (variable.kind != OpAssign::KIND_DECLARE) continue;
-						
-						string prefix = "";
-						if (class_kind == OpDeclareClass::KIND_STRUCT)
-						{
-							/* prefix = "__"; */
-							prefix = "";
-						}
-						else if (class_kind == OpDeclareClass::KIND_CLASS)
-						{
-							prefix = "";
-						}
-						
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							list res = t.expression::Expression(t, value.expression); t = res[0];
-							string s = (value.expression != null) ? res[1] : "null";
-							s1 ~= t.s("_this." ~ prefix ~ value.var_name ~ " = " ~ s ~ ";");
-							
-							if (class_kind == OpDeclareClass::KIND_STRUCT)
-							{
-								string var_name = t.expression::toString(value.var_name);
-							}
-							
-						}
-					}
-					
-					/* Output save op code */
-					string save = t::outputSaveOpCode(t, save_op_codes.count());
-					if (save != "") content ~= save;
-					
-					/* Restore save op codes */
-					t <= save_op_codes <= save_op_codes;
-					t <= save_op_code_inc <= save_op_code_inc;
-					
-					/* Add content */
-					content ~= s1;
-					
-					t = t.levelDec();
-					content ~= t.s("},");
-				}
-				
-				/* Struct */
-				if (
-					class_kind == OpDeclareClass::KIND_STRUCT and
-					(t.flag_struct_check_types or t.enable_introspection)
-				)
-				{
-					bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
-					/* string var_prefix = is_struct ? "__" : ""; */
-					string var_prefix = "";
-					
-					/* Assign Object */
-					content ~= t.s("assignObject: function(ctx,o)");
-					content ~= t.s("{");
-					t = t.levelInc();
-					content ~= t.s("if (o instanceof " ~
-						t.expression::useModuleName(t, t.current_class_full_name) ~
-					")");
-					content ~= t.s("{");
-					t = t.levelInc();
-					for (int i=0; i<op_code.vars.count(); i++)
-					{
-						OpAssign variable = op_code.vars.item(i);
-						if (variable.kind != OpAssign::KIND_DECLARE) continue;
-						bool is_const = variable.flags.isFlag("const");
-						bool is_static = variable.flags.isFlag("static");
-						if (is_const or is_static) continue;
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							content ~= t.s("_this." ~ var_prefix ~ value.var_name ~ " = o." ~
-								var_prefix ~ value.var_name ~ ";");
-						}
-					}
-					t = t.levelDec();
-					content ~= t.s("}");
-					if (t.current_class_extends_name != "")
-					{
-						content ~= t.s
-						(
-							t.expression::useModuleName(t, t.current_class_extends_name) ~
-								".prototype.assignObject.call(this,ctx,o);"
-						);
-					}
-					t = t.levelDec();
-					content ~= t.s("},");
-					
-					/* Assign Value */
-					content ~= t.s("assignValue: function(ctx,k,v)");
-					content ~= t.s("{");
-					t = t.levelInc();
-					bool flag = false;
-					for (int i=0; i<op_code.vars.count(); i++)
-					{
-						OpAssign variable = op_code.vars.item(i);
-						if (variable.kind != OpAssign::KIND_DECLARE) continue;
-						bool is_const = variable.flags.isFlag("const");
-						bool is_static = variable.flags.isFlag("static");
-						if (is_const or is_static) continue;
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							if (t.flag_struct_check_types)
-							{
-								content ~= t.s
-								(
-									(flag ? "else " : "") ~
-									"if (k == " ~ t.expression::toString(value.var_name) ~ ")"~
-									"_this." ~ var_prefix ~ value.var_name ~ " = Runtime.rtl.to(v, null, " ~ static::toPattern(t, variable.pattern) ~ ");"
-								);
-							}
-							else
-							{
-								content ~= t.s
-								(
-									(flag ? "else " : "") ~
-									"if (k == " ~ t.expression::toString(value.var_name) ~ ")" ~
-									"_this." ~ var_prefix ~ value.var_name ~ " = v;"
-								);
-							}
-							flag = true;
-						}
-					}
-					if (t.current_class_extends_name != "")
-					{
-						content ~= t.s(
-							(flag ? "else " : "") ~
-							t.expression::useModuleName(t, t.current_class_extends_name) ~
-								".prototype.assignValue.call(this,ctx,k,v);"
-						);
-					}
-					t = t.levelDec();
-					content ~= t.s("},");
-					
-					/* Take Value */
-					content ~= t.s("takeValue: function(ctx,k,d)");
-					content ~= t.s("{");
-					t = t.levelInc();
-					content ~= t.s("if (d == undefined) d = null;");
-					bool flag = false;
-					for (int i=0; i<op_code.vars.count(); i++)
-					{
-						OpAssign variable = op_code.vars.item(i);
-						if (variable.kind != OpAssign::KIND_DECLARE) continue;
-						bool is_const = variable.flags.isFlag("const");
-						bool is_static = variable.flags.isFlag("static");
-						if (is_const or is_static) continue;
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							content ~= t.s
-							(
-								(flag ? "else " : "") ~
-								"if (k == " ~ t.expression::toString(value.var_name) ~
-									") return _this." ~ var_prefix ~ value.var_name ~ ";"
-							);
-							flag = true;
-						}
-					}
-					if (t.current_class_extends_name != "")
-					{
-						content ~= t.s
-						(
-							"return " ~ t.expression::useModuleName(t, t.current_class_extends_name) ~
-								".prototype.takeValue.call(this,ctx,k,d);"
-						);
-					}
-					t = t.levelDec();
-					content ~= t.s("},");
-				}
-				
-			}
 			
 			/* Get current namespace function */
 			content ~= t.s("getNamespace: function()");
@@ -1019,15 +809,241 @@ struct TranslatorES6Program extends BaseStruct
 			}
 		}
 		
-		/* Get class name function */
-		/*
-		content ~= t.s("getClassName: function(ctx)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
-		t = t.levelDec();
-		content ~= t.s("},");
-		*/
+		/* Init variables */
+		if (class_kind != OpDeclareClass::KIND_INTERFACE and op_code.vars != null)
+		{
+			Collection<OpAssign> vars = op_code.vars.filter
+			(
+				bool (OpAssign variable) => not variable.flags.isFlag("static")
+			);
+			
+			if (t.current_class_full_name != "Runtime.BaseObject" and vars.count() > 0)
+			{
+				content ~= t.s("_init: function(ctx)");
+				content ~= t.s("{");
+				t = t.levelInc();
+				
+				/* Clear save op codes */
+				Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+				int save_op_code_inc = t.save_op_code_inc;
+				
+				if (t.current_class_extends_name != "")
+				{
+					content ~= t.s
+					(
+						t.expression::useModuleName(t, t.current_class_extends_name) ~
+							".prototype._init.call(this,ctx);"
+					);
+				}
+				
+				string s1 = "";
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					bool is_static = variable.flags.isFlag("static");
+					
+					if (is_static) continue;
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					
+					string prefix = "";
+					if (class_kind == OpDeclareClass::KIND_STRUCT)
+					{
+						/* prefix = "__"; */
+						prefix = "";
+					}
+					else if (class_kind == OpDeclareClass::KIND_CLASS)
+					{
+						prefix = "";
+					}
+					
+					for (int j=0; j<variable.values.count(); j++)
+					{
+						OpAssignValue value = variable.values.item(j);
+						list res = t.expression::Expression(t, value.expression); t = res[0];
+						string s = (value.expression != null) ? res[1] : "null";
+						s1 ~= t.s("this." ~ prefix ~ value.var_name ~ " = " ~ s ~ ";");
+						
+						if (class_kind == OpDeclareClass::KIND_STRUCT)
+						{
+							string var_name = t.expression::toString(value.var_name);
+						}
+						
+					}
+				}
+				
+				/* Output save op code */
+				string save = t::outputSaveOpCode(t, save_op_codes.count());
+				if (save != "") content ~= save;
+				
+				/* Restore save op codes */
+				t <= save_op_codes <= save_op_codes;
+				t <= save_op_code_inc <= save_op_code_inc;
+				
+				/* Add content */
+				content ~= s1;
+				
+				t = t.levelDec();
+				content ~= t.s("},");
+			}
+			
+			/* Static Functions */
+			if (op_code.functions != null)
+			{
+				for (int i=0; i<op_code.functions.count(); i++)
+				{
+					OpDeclareFunction f = op_code.functions.item(i);
+					if (f.flags.isFlag("declare")) continue;
+					if (f.isStatic()) continue;
+					
+					/* Set function name */
+					t <= is_static_function <= f.isStatic();
+					t <= current_function <= f;
+					
+					string is_async = "";
+					if (f.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
+					
+					string s = "";
+					list res = t.operator::OpDeclareFunctionArgs(t, f); string args = res[1];
+					s ~= f.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
+					list res = t.operator::OpDeclareFunctionBody(t, f); s ~= res[1];
+					s ~= ",";
+					
+					/* Function comments */
+					list res = t.operator::AddComments(t, f.comments, t.s(s)); content ~= res[1];
+				}
+			}
+			
+			/* Struct */
+			if (
+				class_kind == OpDeclareClass::KIND_STRUCT and
+				(t.flag_struct_check_types or t.enable_introspection)
+			)
+			{
+				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
+				/* string var_prefix = is_struct ? "__" : ""; */
+				string var_prefix = "";
+				
+				/* Assign Object */
+				content ~= t.s("assignObject: function(ctx,o)");
+				content ~= t.s("{");
+				t = t.levelInc();
+				content ~= t.s("if (o instanceof " ~
+					t.expression::useModuleName(t, t.current_class_full_name) ~
+				")");
+				content ~= t.s("{");
+				t = t.levelInc();
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					if (is_const or is_static) continue;
+					for (int j=0; j<variable.values.count(); j++)
+					{
+						OpAssignValue value = variable.values.item(j);
+						content ~= t.s("this." ~ var_prefix ~ value.var_name ~ " = o." ~
+							var_prefix ~ value.var_name ~ ";");
+					}
+				}
+				t = t.levelDec();
+				content ~= t.s("}");
+				if (t.current_class_extends_name != "")
+				{
+					content ~= t.s
+					(
+						t.expression::useModuleName(t, t.current_class_extends_name) ~
+							".prototype.assignObject.call(this,ctx,o);"
+					);
+				}
+				t = t.levelDec();
+				content ~= t.s("},");
+				
+				/* Assign Value */
+				content ~= t.s("assignValue: function(ctx,k,v)");
+				content ~= t.s("{");
+				t = t.levelInc();
+				bool flag = false;
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					if (is_const or is_static) continue;
+					for (int j=0; j<variable.values.count(); j++)
+					{
+						OpAssignValue value = variable.values.item(j);
+						if (t.flag_struct_check_types)
+						{
+							content ~= t.s
+							(
+								(flag ? "else " : "") ~
+								"if (k == " ~ t.expression::toString(value.var_name) ~ ")"~
+								"this." ~ var_prefix ~ value.var_name ~ " = Runtime.rtl.to(v, null, " ~ static::toPattern(t, variable.pattern) ~ ");"
+							);
+						}
+						else
+						{
+							content ~= t.s
+							(
+								(flag ? "else " : "") ~
+								"if (k == " ~ t.expression::toString(value.var_name) ~ ")" ~
+								"this." ~ var_prefix ~ value.var_name ~ " = v;"
+							);
+						}
+						flag = true;
+					}
+				}
+				if (t.current_class_extends_name != "")
+				{
+					content ~= t.s(
+						(flag ? "else " : "") ~
+						t.expression::useModuleName(t, t.current_class_extends_name) ~
+							".prototype.assignValue.call(this,ctx,k,v);"
+					);
+				}
+				t = t.levelDec();
+				content ~= t.s("},");
+				
+				/* Take Value */
+				content ~= t.s("takeValue: function(ctx,k,d)");
+				content ~= t.s("{");
+				t = t.levelInc();
+				content ~= t.s("if (d == undefined) d = null;");
+				bool flag = false;
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					if (is_const or is_static) continue;
+					for (int j=0; j<variable.values.count(); j++)
+					{
+						OpAssignValue value = variable.values.item(j);
+						content ~= t.s
+						(
+							(flag ? "else " : "") ~
+							"if (k == " ~ t.expression::toString(value.var_name) ~
+								") return this." ~ var_prefix ~ value.var_name ~ ";"
+						);
+						flag = true;
+					}
+				}
+				if (t.current_class_extends_name != "")
+				{
+					content ~= t.s
+					(
+						"return " ~ t.expression::useModuleName(t, t.current_class_extends_name) ~
+							".prototype.takeValue.call(this,ctx,k,d);"
+					);
+				}
+				t = t.levelDec();
+				content ~= t.s("},");
+			}
+			
+		}
 		
 		t = t.levelDec();
 		content ~= t.s("});");

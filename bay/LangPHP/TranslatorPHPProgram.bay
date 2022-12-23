@@ -75,7 +75,6 @@ static class TranslatorPHPProgram
 		}
 		else
 		{
-			s1 ~= "static ";
 			t <= is_static_function <= false;
 		}
 		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
@@ -359,12 +358,12 @@ static class TranslatorPHPProgram
 			
 			if (t.current_class_full_name != "Runtime.BaseObject" and vars.count() > 0)
 			{
-				content ~= t.s("static function _init($ctx, $_this)");
+				content ~= t.s("function _init($ctx)");
 				content ~= t.s("{");
 				t = t.levelInc();
 				if (t.current_class_extends_name != "")
 				{
-					content ~= t.s("parent::_init($ctx, $_this);");
+					content ~= t.s("parent::_init($ctx);");
 				}
 				
 				for (int i=0; i<op_code.vars.count(); i++)
@@ -390,7 +389,7 @@ static class TranslatorPHPProgram
 						OpAssignValue value = variable.values.item(j);
 						list res = t.expression::Expression(t, value.expression);
 						string s = (value.expression != null) ? res[1] : "null";
-						content ~= t.s("$_this->" ~ prefix ~ value.var_name ~ " = " ~ s ~ ";");
+						content ~= t.s("$this->" ~ prefix ~ value.var_name ~ " = " ~ s ~ ";");
 					}
 				}
 				
