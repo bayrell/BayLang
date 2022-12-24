@@ -915,8 +915,7 @@ struct TranslatorES6Program extends BaseStruct
 			
 			/* Struct */
 			if (
-				class_kind == OpDeclareClass::KIND_STRUCT and
-				(t.flag_struct_check_types or t.enable_introspection)
+				class_kind == OpDeclareClass::KIND_STRUCT or t.enable_introspection
 			)
 			{
 				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
