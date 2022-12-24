@@ -42,8 +42,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	{
 		if (op_code.kind == OpIdentifier::KIND_THIS)
 		{
-			if (t.is_init_function) return [t, "this"];
-			return [t, "_this"];
+			return [t, "this"];
 		}
 		if (op_code.value == "@") return [t, "ctx"];
 		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
