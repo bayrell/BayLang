@@ -995,7 +995,7 @@ static class ParserBayOperator
 		while (not token.eof and current_flags.indexOf(token.content) >= 0)
 		{
 			string flag = token.content;
-			values.set("p_"~flag, true);
+			values.setValue("p_"~flag, true);
 			parser = look;
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}

@@ -53,27 +53,18 @@ struct TranslatorNode extends TranslatorES6
 	/**
 	 * Reset translator
 	 */
-	pure TranslatorES6 reset(TranslatorES6 t) =>
-		t.copy({
-			"value": "",
-			"current_namespace_name": "",
-			"modules": new Dict<string>(),
-			"async_await": new TranslatorES6AsyncAwait(),
-			"expression": new TranslatorNodeExpression(),
-			"html": new TranslatorES6Html(),
-			"operator": new TranslatorES6Operator(),
-			"program": new TranslatorNodeProgram(),
-			"save_vars": new Collection<string>(),
-			"save_op_codes": new Collection<SaveOpCode>(),
-			"save_op_code_inc": 0,
-			"preprocessor_flags": 
-			{
-				"BACKEND": true,
-				"NODEJS": true,
-				"JAVASCRIPT": true,
-			},
-		})
-	;
+	pure TranslatorES6 reset(TranslatorES6 t)
+	{
+		t = parent::reset(t);
+		t <= expression <= new TranslatorNodeExpression();
+		t <= program <= new TranslatorNodeProgram();
+		t <= preprocessor_flags <= t.preprocessor_flags.copy({
+			"BACKEND": true,
+			"NODEJS": true,
+			"ES6": false,
+		});
+		return t;
+	}
 	
 	
 	
