@@ -92,5 +92,12 @@
 		"LangNode/TranslatorNodeExpression",
 		"LangNode/TranslatorNodeProgram",
 		"ModuleDescription"
-	]
+	],
+	"src": "./bay",
+	"dest":
+	{
+		"php": "./php",
+		"es6": "./es6",
+		"nodejs": "./nodejs"
+	}
 }

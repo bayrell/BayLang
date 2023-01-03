@@ -16,31 +16,15 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace Bayrell.Lang.Compiler;
 
 use Runtime.BaseStruct;
-use Runtime.FakeStruct;
 
 
-class Caret extends BaseStruct
+class Module extends BaseStruct
 {
-	
-	/**
-	 * Caret pos in file
-	 */
-	int pos = 0;
-	
-	
-	/**
-	 * Caret pos X
-	 */
-	int x = 0;
-	
-	
-	
-	/**
-	 * Caret pos Y
-	 */
-	int y = 0;
+	string name = "";
+	string path = "";
+	Dict config = {};
 	
 }

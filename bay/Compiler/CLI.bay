@@ -16,31 +16,61 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace Bayrell.Lang.Compiler;
 
-use Runtime.BaseStruct;
-use Runtime.FakeStruct;
+use Bayrell.Lang.Compiler.Module;
+use Bayrell.Lang.Compiler.SettingsProvider;
 
 
-class Caret extends BaseStruct
+class CLI
 {
 	
 	/**
-	 * Caret pos in file
+	 * Init CLI
 	 */
-	int pos = 0;
+	async static void init()
+	{
+		SettingsProvider provider = new SettingsProvider();
+		await provider.readSettings();
+		@.addProvider(classof SettingsProvider, provider);
+	}
+	
 	
 	
 	/**
-	 * Caret pos X
+	 * Returns modules
 	 */
-	int x = 0;
+	static Collection<Module> getModules()
+	{
+		SettingsProvider provider = @.getProvider(classof SettingsProvider);
+		return provider.modules;
+	}
 	
 	
 	
 	/**
-	 * Caret pos Y
+	 * Compile file
 	 */
-	int y = 0;
+	static void compileFile(string file_name)
+	{
+		
+	}
 	
+	
+	/**
+	 * Compile module
+	 */
+	static void compileModule(string module_name)
+	{
+		
+	}
+	
+	
+	/**
+	 * Make es6 bundle
+	 */
+	static void makeES6Bundle(string module_name)
+	{
+		
+	}
 }
