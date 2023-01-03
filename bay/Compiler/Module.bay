@@ -18,6 +18,9 @@
 
 namespace Bayrell.Lang.Compiler;
 
+use Runtime.fs;
+use Runtime.re;
+use Runtime.rs;
 use Runtime.BaseStruct;
 
 
@@ -26,5 +29,43 @@ class Module extends BaseStruct
 	string name = "";
 	string path = "";
 	Dict config = {};
+	
+	
+	/**
+	 * Resolve destination file
+	 */
+	string resolveDestFile(string project_path, string relative_file_name, string lang)
+	{
+		string dest = this.config["dest", lang] |> default string "";
+		string dest_path = "";
+		bool is_local = rs::substr(dest, 0, 2) == "./";
+		
+		if (is_local)
+		{
+			dest_path = fs::join([ this.path, dest, relative_file_name ]);
+		}
+		else
+		{
+			dest_path = fs::join([ project_path, dest, relative_file_name ]);
+		}
+		
+		if (lang == "php")
+		{
+			dest_path = re::replace("\\.bay$", ".php", dest_path);
+			dest_path = re::replace("\\.ui$", ".php", dest_path);
+		}
+		else if (lang == "es6")
+		{
+			dest_path = re::replace("\\.bay$", ".js", dest_path);
+			dest_path = re::replace("\\.ui$", ".js", dest_path);
+		}
+		else if (lang == "nodejs")
+		{
+			dest_path = re::replace("\\.bay$", ".js", dest_path);
+			dest_path = re::replace("\\.ui$", ".js", dest_path);
+		}
+		
+		return dest_path;
+	}
 	
 }

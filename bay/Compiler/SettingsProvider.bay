@@ -19,6 +19,7 @@
 namespace Bayrell.Lang.Compiler;
 
 use Runtime.fs;
+use Runtime.re;
 use Runtime.BaseObject;
 use Runtime.Exceptions.RuntimeException;
 use Bayrell.Lang.Compiler.Module;
@@ -159,5 +160,107 @@ class SettingsProvider extends BaseObject
 		}
 		
 		return modules.toCollection();
+	}
+	
+	
+	
+	/**
+	 * Find module by module name
+	 */
+	Module findModuleByFileName(string file_name)
+	{
+		Collection<string> module_names = this.modules.keys();
+		for (int i=0; i<module_names.count(); i++)
+		{
+			string module_name = module_names[i];
+			Module module = this.modules[module_name];
+			if (rs::indexOf(file_name, module.path) == 0)
+			{
+				return module;
+			}
+		}
+		
+		return null;
+	}
+	
+	
+	
+	/**
+	 * Resolve file
+	 */
+	async var resolveFile(string file_name)
+	{
+		if (not await fs::isFile(file_name))
+			return null;
+		
+		Module module = this.findModuleByFileName(file_name);
+		if (!module)
+			return null;
+		
+		string module_src = module["config", "src"] |> default string "";
+		string module_src_path = fs::join([ module.path, module_src ]);
+		
+		if (rs::indexOf(file_name, module_src_path) != 0)
+			return null;
+		
+		string module_file_name = rs::substr(file_name, rs::strlen(module_src_path));
+		module_file_name = fs::removeFirstSlash(module_file_name);
+		
+		string module_ext_name = rs::extname(module_file_name);
+		
+		/* Check whitelist */
+		Collection<string> module_whitelist = module["config", "whitelist"];
+		if (module_whitelist and module_whitelist instanceof Collection)
+		{
+			bool whitelist_res = false;
+			for (int i=0; i<module_whitelist.count(); i++)
+			{
+				string whitelist = module_whitelist[i] |> default string "";
+				if (whitelist != "")
+				{
+					var res = re::match(whitelist, module_file_name);
+					whitelist_res = whitelist_res or res;
+					if (res)
+					{
+						break;
+					}
+				}
+			}
+			if (!whitelist_res)
+			{
+				return null;
+			}
+		}
+		
+		/* Check blacklist */
+		Collection<string> module_blacklist = module["config", "blacklist"];
+		if (module_blacklist and module_blacklist instanceof Collection)
+		{
+			bool blacklist_res = false;
+			for (int i=0; i<module_blacklist.count(); i++)
+			{
+				string blacklist = module_blacklist[i] |> default string "";
+				if (blacklist != "")
+				{
+					var res = re::match(blacklist, module_file_name);
+					blacklist_res = blacklist_res and res;
+					if (res)
+					{
+						break;
+					}
+				}
+			}
+			if (blacklist_res)
+			{
+				return null;
+			}
+		}
+		
+		return {
+			"file_name": module_file_name,
+			"ext_name": module_ext_name,
+			"src_path": module_src_path,
+			"module": module,
+		};
 	}
 }

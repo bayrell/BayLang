@@ -18,8 +18,17 @@
 
 namespace Bayrell.Lang.Compiler;
 
+use Runtime.fs;
 use Bayrell.Lang.Compiler.Module;
 use Bayrell.Lang.Compiler.SettingsProvider;
+use Bayrell.Lang.Exceptions.ParserUnknownError;
+use Bayrell.Lang.LangBay.ParserBay;
+use Bayrell.Lang.LangES6.TranslatorES6;
+use Bayrell.Lang.LangNode.TranslatorNode;
+use Bayrell.Lang.LangPHP.TranslatorPHP;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.CoreTranslator;
+use Bayrell.Lang.LangUtils;
 
 
 class CLI
@@ -28,7 +37,7 @@ class CLI
 	/**
 	 * Init CLI
 	 */
-	async static void init()
+	static async void init()
 	{
 		SettingsProvider provider = new SettingsProvider();
 		await provider.readSettings();
@@ -49,12 +58,146 @@ class CLI
 	
 	
 	/**
+	 * Create translator
+	 */
+	static CoreTranslator createTranslator(string lang = "")
+	{
+		CoreTranslator t = null;
+		
+		if (lang == "php")
+		{
+			t = new TranslatorPHP();
+		}
+		if (lang == "es6")
+		{
+			t = new TranslatorES6();
+		}
+		if (lang == "nodejs")
+		{
+			t = new TranslatorNode();
+		}
+		
+		return t;
+	}
+	
+	
+	
+	/**
 	 * Compile file
 	 */
-	static void compileFile(string file_name)
+	static async void compileFile(string file_path, fn log_message = null)
 	{
+		SettingsProvider provider = @.getProvider(classof SettingsProvider);
 		
+		Dict file_info = await provider.resolveFile(file_path);
+		if (not file_info)
+			return;
+		
+		if (log_message)
+			log_message(file_path);
+		
+		string ext_name = file_info["ext_name"];
+		Map container = {
+			"op_code": null,
+			"success": false,
+			"content": "",
+			"result": "",
+			"lang": "",
+		};
+		
+		container <= content <= await fs::readFile(file_path);
+		
+		if (ext_name == "bay")
+		{
+			ParserBay parser = new ParserBay();
+			BaseOpCode op_code = LangUtils::parse(parser, container["content"]);
+			container <= op_code <= op_code;
+		}
+		
+		fn is_lang = bool (string ext_name, string lang)
+		{
+			/* ES6 */
+			if (ext_name == "es6" and lang == "es6") return true;
+			if (ext_name == "js" and lang == "es6") return true;
+			
+			/* NodeJS */
+			if (ext_name == "node" and lang == "nodejs") return true;
+			if (ext_name == "nodejs" and lang == "nodejs") return true;
+			if (ext_name == "js" and lang == "nodejs") return true;
+			
+			/* PHP */
+			if (ext_name == "php" and lang == "php") return true;
+			
+			return false;
+		}
+		
+		fn save_file = async void (string file_info, string container) use (provider, log_message)
+		{
+			string file_name = file_info["file_name"];
+			Module module = file_info["module"];
+			
+			string dest_path = module.resolveDestFile(
+				provider.project_path,
+				file_name,
+				container["lang"]
+			);
+			
+			if (dest_path == "") return false;
+			
+			/* Create directory if does not exists */
+			string dir_name = rs::dirname( dest_path );
+			if (not await fs::isDir(dir_name))
+			{
+				await fs::mkdir(dir_name);
+			}
+			
+			/* Save file */
+			await fs::saveFile(dest_path, container["result"]);
+			
+			if (log_message)
+				log_message("=> " ~ dest_path);
+			
+			return true;
+		};
+		
+		Collection<string> languages = provider.config["languages"] |> default Collection [];
+		for (int i=0; i<languages.count(); i++)
+		{
+			string lang_name = languages[i] |> default string "";
+			BaseOpCode op_code = container["op_code"];
+			
+			container <= success <= false;
+			container <= lang <= lang_name;
+			container <= result <= "";
+			
+			if (ext_name == "bay")
+			{
+				if (op_code)
+				{
+					CoreTranslator t = static::createTranslator(lang_name);
+					if (t)
+					{
+						container <= result <= LangUtils::translate(t, op_code);
+						container <= success <= true;
+					}
+				}
+			}
+			else if ( is_lang(ext_name, lang_name) )
+			{
+				container <= result <= container["content"];
+				container <= success <= true;
+			}
+			
+			if (container["success"])
+			{
+				await save_file(file_info, container, lang_name);
+			}
+		}
+		
+		if (log_message)
+			log_message("Ok");
 	}
+	
 	
 	
 	/**
@@ -66,6 +209,7 @@ class CLI
 	}
 	
 	
+	
 	/**
 	 * Make es6 bundle
 	 */
@@ -73,4 +217,5 @@ class CLI
 	{
 		
 	}
+	
 }
