@@ -20,12 +20,12 @@ namespace Bayrell.Lang.Compiler;
 
 use Runtime.fs;
 use Runtime.re;
-use Runtime.BaseObject;
+use Runtime.BaseProvider;
 use Runtime.Exceptions.RuntimeException;
 use Bayrell.Lang.Compiler.Module;
 
 
-class SettingsProvider extends BaseObject
+class SettingsProvider extends BaseProvider
 {
 	string project_path = "";
 	Dict config = {};
@@ -33,10 +33,11 @@ class SettingsProvider extends BaseObject
 	
 	
 	/**
-	 * Read settings from file located in @.base_path
+	 * Start provider
 	 */
-	async void readSettings()
+	async void start()
 	{
+		/* Read settings from file located in @.base_path */
 		await this.readSettingsFromFile( fs::join([ @.base_path, "project.json" ]) );
 	}
 	

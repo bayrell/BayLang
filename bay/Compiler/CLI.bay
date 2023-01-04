@@ -19,6 +19,7 @@
 namespace Bayrell.Lang.Compiler;
 
 use Runtime.fs;
+use Runtime.Context;
 use Bayrell.Lang.Compiler.Module;
 use Bayrell.Lang.Compiler.SettingsProvider;
 use Bayrell.Lang.Exceptions.ParserUnknownError;
@@ -33,26 +34,15 @@ use Bayrell.Lang.LangUtils;
 
 class CLI
 {
-	
-	/**
-	 * Init CLI
-	 */
-	static async void init()
-	{
-		SettingsProvider provider = new SettingsProvider();
-		await provider.readSettings();
-		@.addProvider(classof SettingsProvider, provider);
-	}
-	
+	SettingsProvider settings = null;
 	
 	
 	/**
 	 * Returns modules
 	 */
-	static Collection<Module> getModules()
+	Dict<Module> getModules()
 	{
-		SettingsProvider provider = @.getProvider(classof SettingsProvider);
-		return provider.modules;
+		return this.settings.modules;
 	}
 	
 	
@@ -60,7 +50,7 @@ class CLI
 	/**
 	 * Create translator
 	 */
-	static CoreTranslator createTranslator(string lang = "")
+	CoreTranslator createTranslator(string lang = "")
 	{
 		CoreTranslator t = null;
 		
@@ -85,16 +75,16 @@ class CLI
 	/**
 	 * Compile file
 	 */
-	static async void compileFile(string file_path, fn log_message = null)
+	async void compileFile(string file_path, bool log_message = true)
 	{
-		SettingsProvider provider = @.getProvider(classof SettingsProvider);
+		var output = @.provider("output");
 		
-		Dict file_info = await provider.resolveFile(file_path);
+		Dict file_info = await this.settings.resolveFile(file_path);
 		if (not file_info)
 			return;
 		
 		if (log_message)
-			log_message(file_path);
+			output.print(file_path);
 		
 		string ext_name = file_info["ext_name"];
 		Map container = {
@@ -131,13 +121,14 @@ class CLI
 			return false;
 		}
 		
-		fn save_file = async void (string file_info, string container) use (provider, log_message)
+		fn save_file = async void (string file_info, string container)
+			use (log_message, output)
 		{
 			string file_name = file_info["file_name"];
 			Module module = file_info["module"];
 			
 			string dest_path = module.resolveDestFile(
-				provider.project_path,
+				this.settings.project_path,
 				file_name,
 				container["lang"]
 			);
@@ -155,12 +146,12 @@ class CLI
 			await fs::saveFile(dest_path, container["result"]);
 			
 			if (log_message)
-				log_message("=> " ~ dest_path);
+				output.print("=> " ~ dest_path);
 			
 			return true;
 		};
 		
-		Collection<string> languages = provider.config["languages"] |> default Collection [];
+		Collection<string> languages = this.settings.config["languages"] |> default Collection [];
 		for (int i=0; i<languages.count(); i++)
 		{
 			string lang_name = languages[i] |> default string "";
@@ -195,7 +186,7 @@ class CLI
 		}
 		
 		if (log_message)
-			log_message("Ok");
+			output.print("Ok");
 	}
 	
 	
@@ -203,9 +194,17 @@ class CLI
 	/**
 	 * Compile module
 	 */
-	static void compileModule(string module_name)
+	void compileModule(string module_name, string lang = "")
 	{
+		var output = @.provider("output");
 		
+		if (not this.settings.modules.has(module_name))
+		{
+			output.print_error("Module " + module_name + " not found");
+			return -1;
+		}
+		
+		log (module_name);
 	}
 	
 	
@@ -213,9 +212,159 @@ class CLI
 	/**
 	 * Make es6 bundle
 	 */
-	static void makeES6Bundle(string module_name)
+	void makeES6Bundle(string module_name)
 	{
 		
 	}
 	
+	
+	
+	/**
+	 * Show modules
+	 */
+	void showModules(bool verbose)
+	{
+		var output = @.provider("output");
+		
+		Dict<Module> modules = static::getModules();
+		Collection<string> modules_names = modules.keys().sort();
+		for (int i=0; i<modules_names.count(); i++)
+		{
+			string module_name = modules_names[i];
+			Module module = modules[module_name];
+			
+			if (verbose)
+			{
+				output.print( (i + 1) ~ ") " ~
+					output.color("yellow", module_name) ~ " - " ~
+					module.path
+				);
+			}
+			else
+			{
+				output.print( module_name );
+			}
+		}
+	}
+	
+	
+	
+	/**
+	 * Init app
+	 */
+	async void init(Context c)
+	{
+		return c;
+	}
+	
+	
+	
+	/**
+	 * Start app
+	 */
+	async void start()
+	{
+		/* Create settings provider */
+		this.settings = new SettingsProvider();
+		await this.settings.start();
+	}
+	
+	
+	
+	/**
+	 * Main entry point
+	 */
+	async int main()
+	{
+		string cmd = @.cli_args[1];
+		var output = @.provider("output");
+		
+		if (rtl::isEmpty(cmd))
+		{
+			output.print("Methods:");
+			output.print("  watch");
+			output.print("  make");
+			output.print("  modules");
+			output.print("  version");
+			return 0;
+		}
+		
+		else if (cmd == "version")
+		{
+			fn runtime_version = rtl::method("Runtime.ModuleDescription", "getModuleVersion");
+			fn lang_version = rtl::method("Bayrell.Lang.ModuleDescription", "getModuleVersion");
+			
+			output.print("Lang version: " ~ lang_version());
+			output.print("Runtime version: " ~ runtime_version());
+			return 0;
+		}
+		
+		else if (cmd == "modules")
+		{
+			this.showModules(true);
+			return 0;
+		}
+		
+		else if (cmd == "make")
+		{
+			string module_name = @.cli_args[2];
+			string lang = @.cli_args[3];
+			
+			if (rtl::isEmpty(module_name))
+			{
+				this.showModules();
+				return 0;
+			}
+			
+			return await this.compileModule(module_name, lang);
+		}
+		
+		else if (cmd == "watch")
+		{
+			#ifcode NODEJS then
+			
+			let on_change_file = async (ctx, changed_file_path) =>
+			{
+				try
+				{
+					await this.compileFile(ctx, changed_file_path, true);
+				}
+				catch (e)
+				{
+					let ParserUnknownError = use("Bayrell.Lang.Exceptions.ParserUnknownError");
+					if (e instanceof ParserUnknownError)
+					{
+						output.print_error(ctx, "Error: " + e.getMessage());
+					}
+					else
+					{
+						output.print(ctx, e);
+					}
+					return;
+				}
+			};
+			
+			let watch_dir = (ctx) =>
+			{
+				let chokidar = require('chokidar');
+				return new Promise(() => {
+					
+					output.print(ctx, "Start watch");
+					chokidar
+						.watch(ctx.base_path)
+						.on('change', (path, stat) => {
+							setTimeout(()=>{ on_change_file(ctx, path); }, 500);
+						})
+					;
+					
+				});
+			};
+			
+			await watch_dir(ctx);
+			
+			#endif
+		}
+		
+		return 0;
+	}
 }
