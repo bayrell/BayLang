@@ -75,16 +75,22 @@ class CLI
 	/**
 	 * Compile file
 	 */
-	async void compileFile(string file_path, bool log_message = true)
+	async void compileFile(string file_path, string lang, int log_level = 0)
 	{
 		var output = @.provider("output");
 		
 		Dict file_info = await this.settings.resolveFile(file_path);
 		if (not file_info)
-			return;
+			return null;
 		
-		if (log_message)
+		if (log_level & 2 == 2)
+		{
 			output.print(file_path);
+		}
+		else if (log_level & 1 == 1)
+		{
+			output.print( file_info["file_name"] );
+		}
 		
 		string ext_name = file_info["ext_name"];
 		Map container = {
@@ -122,7 +128,7 @@ class CLI
 		}
 		
 		fn save_file = async void (string file_info, string container)
-			use (log_message, output)
+			use (log_level, output)
 		{
 			string file_name = file_info["file_name"];
 			Module module = file_info["module"];
@@ -145,13 +151,23 @@ class CLI
 			/* Save file */
 			await fs::saveFile(dest_path, container["result"]);
 			
-			if (log_message)
+			if (log_level & 2 == 2)
 				output.print("=> " ~ dest_path);
 			
 			return true;
 		};
 		
-		Collection<string> languages = this.settings.config["languages"] |> default Collection [];
+		Collection<string> languages = [];
+		
+		if (lang == "")
+		{
+			languages = this.settings.config["languages"] |> default Collection [];
+		}
+		else
+		{
+			languages = [ lang ];
+		}
+		
 		for (int i=0; i<languages.count(); i++)
 		{
 			string lang_name = languages[i] |> default string "";
@@ -165,7 +181,7 @@ class CLI
 			{
 				if (op_code)
 				{
-					CoreTranslator t = static::createTranslator(lang_name);
+					CoreTranslator t = this.createTranslator(lang_name);
 					if (t)
 					{
 						container <= result <= LangUtils::translate(t, op_code);
@@ -185,8 +201,10 @@ class CLI
 			}
 		}
 		
-		if (log_message)
+		if (log_level & 2 == 2)
 			output.print("Ok");
+		
+		return file_info;
 	}
 	
 	
@@ -194,7 +212,7 @@ class CLI
 	/**
 	 * Compile module
 	 */
-	void compileModule(string module_name, string lang = "")
+	async void compileModule(string module_name, string lang = "")
 	{
 		var output = @.provider("output");
 		
@@ -204,17 +222,134 @@ class CLI
 			return -1;
 		}
 		
-		log (module_name);
+		Module module = this.settings.modules[module_name];
+		string module_src_path = module.getSourcePath();
+		bool is_success = true;
+		
+		Collection<string> files = await fs::listDirRecursive(module_src_path);
+		for (int i=0; i<files.count(); i++)
+		{
+			string file_name = files[i];
+			string file_path = fs::join([ module_src_path, file_name ]);
+			
+			if ( not await fs::isFile(file_path) )
+				continue;
+			
+			try
+			{
+				await this.compileFile(file_path, lang, 1);
+			}
+			catch (ParserUnknownError e)
+			{
+				output.print_error(e.getMessage());
+				is_success = false;
+			}
+			catch (var e)
+			{
+				output.print_error(e);
+				is_success = false;
+			}
+		}
+		
+		if (is_success)
+		{
+			await this.makeAssets(module_name);
+		}
 	}
 	
 	
 	
 	/**
-	 * Make es6 bundle
+	 * Make assets
 	 */
-	void makeES6Bundle(string module_name)
+	async void makeBundle(Dict assets)
 	{
+		var output = @.provider("output");
 		
+		Collection modules = assets["modules"] |> default Collection [];
+		string assets_path_relative = assets["dest"] |> default string "";
+		
+		if (assets_path_relative == "")
+			return;
+		
+		string assets_path = fs::join([ this.settings.project_path, assets_path_relative ]);
+		string assets_content = "";
+		
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules[i];
+			Module module = this.settings.modules[module_name];
+			if (not module)
+				continue;
+			
+			Dict files = module.config["assets"] |> default Collection [];
+			for (int j=0; j<files.count(); j++)
+			{
+				string file_name = files[j];
+				string file_path = fs::join([ module.path, file_name ]);
+				
+				string dest_path = module.resolveDestFile(
+					this.settings.project_path,
+					file_name,
+					"es6"
+				);
+				
+				if (await fs::isFile(dest_path))
+				{
+					string content = await fs::readFile(dest_path);
+					assets_content ~= content ~ "\n";
+				}
+			}
+		}
+		
+		/* Create directory if does not exists */
+		string dir_name = rs::dirname( assets_path );
+		if (not await fs::isDir(dir_name))
+		{
+			await fs::mkdir(dir_name);
+		}
+		
+		/* Save file */
+		await fs::saveFile(assets_path, assets_content);
+		
+		output.print("Bundle to => " ~ assets_path_relative);
+	}
+	
+	
+	
+	/**
+	 * Make assets
+	 */
+	async void makeAssets(string module_name)
+	{
+		var output = @.provider("output");
+		
+		Collection languages = this.settings.config["languages"] |> default Collection [];
+		if (languages.indexOf("es6") == -1)
+		{
+			return -1;
+		}
+		
+		if (not this.settings.modules.has(module_name))
+		{
+			output.print_error("Module " + module_name + " not found");
+			return -1;
+		}
+		
+		Module module = this.settings.modules[module_name];
+		
+		Collection assets = this.settings.config["assets"] |> default Collection [];
+		for (int i=0; i<assets.count(); i++)
+		{
+			Dict a = assets[i];
+			Collection modules = a["modules"] |> default Collection [];
+			if (modules.indexOf(module_name) >= 0)
+			{
+				await this.makeBundle(a);
+			}
+		}
+		
+		return 0;
 	}
 	
 	
@@ -226,7 +361,7 @@ class CLI
 	{
 		var output = @.provider("output");
 		
-		Dict<Module> modules = static::getModules();
+		Dict<Module> modules = this.getModules();
 		Collection<string> modules_names = modules.keys().sort();
 		for (int i=0; i<modules_names.count(); i++)
 		{
@@ -282,10 +417,11 @@ class CLI
 		if (rtl::isEmpty(cmd))
 		{
 			output.print("Methods:");
-			output.print("  watch");
+			output.print("  assets");
 			output.print("  make");
 			output.print("  modules");
 			output.print("  version");
+			output.print("  watch");
 			return 0;
 		}
 		
@@ -319,6 +455,20 @@ class CLI
 			return await this.compileModule(module_name, lang);
 		}
 		
+		else if (cmd == "assets")
+		{
+			string module_name = @.cli_args[2];
+			string lang = @.cli_args[3];
+			
+			if (rtl::isEmpty(module_name))
+			{
+				this.showModules();
+				return 0;
+			}
+			
+			return await this.makeAssets(module_name);
+		}
+		
 		else if (cmd == "watch")
 		{
 			#ifcode NODEJS then
@@ -327,7 +477,12 @@ class CLI
 			{
 				try
 				{
-					await this.compileFile(ctx, changed_file_path, true);
+					let file_info = await this.compileFile(ctx, changed_file_path, "", 3);
+					if (file_info)
+					{
+						let module = file_info.get(ctx, "module");
+						await this.makeAssets(ctx, module.name);
+					}
 				}
 				catch (e)
 				{
@@ -338,7 +493,7 @@ class CLI
 					}
 					else
 					{
-						output.print(ctx, e);
+						output.print_error(ctx, e);
 					}
 					return;
 				}

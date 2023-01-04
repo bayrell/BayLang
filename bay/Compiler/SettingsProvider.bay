@@ -198,8 +198,7 @@ class SettingsProvider extends BaseProvider
 		if (!module)
 			return null;
 		
-		string module_src = module["config", "src"] |> default string "";
-		string module_src_path = fs::join([ module.path, module_src ]);
+		string module_src_path = module.getSourcePath();
 		
 		if (rs::indexOf(file_name, module_src_path) != 0)
 			return null;
