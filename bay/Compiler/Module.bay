@@ -43,6 +43,16 @@ class Module extends BaseStruct
 	
 	
 	/**
+	 * Resolve source file.
+	 * Returns file_path
+	 */
+	var resolveSourceFile(string file_name)
+	{
+		return fs::join([ this.path, file_name ]);
+	}
+	
+	
+	/**
 	 * Resolve destination file
 	 */
 	string resolveDestFile(string project_path, string relative_file_name, string lang)

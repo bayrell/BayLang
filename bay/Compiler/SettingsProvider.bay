@@ -114,7 +114,7 @@ class SettingsProvider extends BaseProvider
 	 * Read module from folder
 	 */
 	async Module readModule(string module_path)
-	{		
+	{
 		string module_json_path = fs::join([ module_path, "module.json" ]);
 		bool is_file = await fs::isFile(module_json_path);
 		if (!is_file)
@@ -187,9 +187,10 @@ class SettingsProvider extends BaseProvider
 	
 	
 	/**
-	 * Resolve file
+	 * Resolve source file.
+	 * Returns file_name, ext_name and module by file
 	 */
-	async var resolveFile(string file_name)
+	async var resolveSourceFile(string file_name)
 	{
 		if (not await fs::isFile(file_name))
 			return null;
@@ -207,6 +208,13 @@ class SettingsProvider extends BaseProvider
 		module_file_name = fs::removeFirstSlash(module_file_name);
 		
 		string module_ext_name = rs::extname(module_file_name);
+		
+		Dict d = {
+			"file_name": module_file_name,
+			"ext_name": module_ext_name,
+			"module": module,
+			"success": false,
+		};
 		
 		/* Check whitelist */
 		Collection<string> module_whitelist = module["config", "whitelist"];
@@ -228,7 +236,7 @@ class SettingsProvider extends BaseProvider
 			}
 			if (!whitelist_res)
 			{
-				return null;
+				return d;
 			}
 		}
 		
@@ -252,15 +260,12 @@ class SettingsProvider extends BaseProvider
 			}
 			if (blacklist_res)
 			{
-				return null;
+				return d;
 			}
 		}
 		
-		return {
-			"file_name": module_file_name,
-			"ext_name": module_ext_name,
-			"src_path": module_src_path,
-			"module": module,
-		};
+		d <= success <= true;
+		
+		return d;
 	}
 }

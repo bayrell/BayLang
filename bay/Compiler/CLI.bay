@@ -19,6 +19,7 @@
 namespace Bayrell.Lang.Compiler;
 
 use Runtime.fs;
+use Runtime.io;
 use Runtime.Context;
 use Bayrell.Lang.Compiler.Module;
 use Bayrell.Lang.Compiler.SettingsProvider;
@@ -77,19 +78,17 @@ class CLI
 	 */
 	async void compileFile(string file_path, string lang, int log_level = 0)
 	{
-		var output = @.provider("output");
-		
-		Dict file_info = await this.settings.resolveFile(file_path);
-		if (not file_info)
-			return null;
+		Dict file_info = await this.settings.resolveSourceFile(file_path);
+		if (not file_info["success"])
+			return file_info;
 		
 		if (log_level & 2 == 2)
 		{
-			output.print(file_path);
+			io::print(file_path);
 		}
 		else if (log_level & 1 == 1)
 		{
-			output.print( file_info["file_name"] );
+			io::print( file_info["file_name"] );
 		}
 		
 		string ext_name = file_info["ext_name"];
@@ -128,7 +127,7 @@ class CLI
 		}
 		
 		fn save_file = async void (string file_info, string container)
-			use (log_level, output)
+			use (log_level)
 		{
 			string file_name = file_info["file_name"];
 			Module module = file_info["module"];
@@ -152,7 +151,7 @@ class CLI
 			await fs::saveFile(dest_path, container["result"]);
 			
 			if (log_level & 2 == 2)
-				output.print("=> " ~ dest_path);
+				io::print("=> " ~ dest_path);
 			
 			return true;
 		};
@@ -202,7 +201,7 @@ class CLI
 		}
 		
 		if (log_level & 2 == 2)
-			output.print("Ok");
+			io::print("Ok");
 		
 		return file_info;
 	}
@@ -214,11 +213,9 @@ class CLI
 	 */
 	async void compileModule(string module_name, string lang = "")
 	{
-		var output = @.provider("output");
-		
 		if (not this.settings.modules.has(module_name))
 		{
-			output.print_error("Module " + module_name + " not found");
+			io::print_error("Module " + module_name + " not found");
 			return -1;
 		}
 		
@@ -241,12 +238,12 @@ class CLI
 			}
 			catch (ParserUnknownError e)
 			{
-				output.print_error(e.getMessage());
+				io::print_error(e.getMessage());
 				is_success = false;
 			}
 			catch (var e)
 			{
-				output.print_error(e);
+				io::print_error(e);
 				is_success = false;
 			}
 		}
@@ -264,8 +261,6 @@ class CLI
 	 */
 	async void makeBundle(Dict assets)
 	{
-		var output = @.provider("output");
-		
 		Collection modules = assets["modules"] |> default Collection [];
 		string assets_path_relative = assets["dest"] |> default string "";
 		
@@ -286,17 +281,21 @@ class CLI
 			for (int j=0; j<files.count(); j++)
 			{
 				string file_name = files[j];
-				string file_path = fs::join([ module.path, file_name ]);
-				
-				string dest_path = module.resolveDestFile(
+				string file_source_path = module.resolveSourceFile(file_name);
+				string file_dest_path = module.resolveDestFile(
 					this.settings.project_path,
 					file_name,
 					"es6"
 				);
 				
-				if (await fs::isFile(dest_path))
+				if (await fs::isFile(file_dest_path))
 				{
-					string content = await fs::readFile(dest_path);
+					string content = await fs::readFile(file_dest_path);
+					assets_content ~= content ~ "\n";
+				}
+				else if (await fs::isFile(file_source_path))
+				{
+					string content = await fs::readFile(file_source_path);
 					assets_content ~= content ~ "\n";
 				}
 			}
@@ -312,7 +311,7 @@ class CLI
 		/* Save file */
 		await fs::saveFile(assets_path, assets_content);
 		
-		output.print("Bundle to => " ~ assets_path_relative);
+		io::print("Bundle to => " ~ assets_path_relative);
 	}
 	
 	
@@ -322,8 +321,6 @@ class CLI
 	 */
 	async void makeAssets(string module_name)
 	{
-		var output = @.provider("output");
-		
 		Collection languages = this.settings.config["languages"] |> default Collection [];
 		if (languages.indexOf("es6") == -1)
 		{
@@ -332,7 +329,7 @@ class CLI
 		
 		if (not this.settings.modules.has(module_name))
 		{
-			output.print_error("Module " + module_name + " not found");
+			io::print_error("Module " + module_name + " not found");
 			return -1;
 		}
 		
@@ -359,8 +356,6 @@ class CLI
 	 */
 	void showModules(bool verbose)
 	{
-		var output = @.provider("output");
-		
 		Dict<Module> modules = this.getModules();
 		Collection<string> modules_names = modules.keys().sort();
 		for (int i=0; i<modules_names.count(); i++)
@@ -370,17 +365,26 @@ class CLI
 			
 			if (verbose)
 			{
-				output.print( (i + 1) ~ ") " ~
-					output.color("yellow", module_name) ~ " - " ~
+				io::print( (i + 1) ~ ") " ~
+					io::color("yellow", module_name) ~ " - " ~
 					module.path
 				);
 			}
 			else
 			{
-				output.print( module_name );
+				io::print( module_name );
 			}
 		}
 	}
+	
+	
+	
+	/**
+	 * App modules
+	 */
+	pure Collection<string> modules() => [
+		"Bayrell.Lang",
+	];
 	
 	
 	
@@ -412,16 +416,15 @@ class CLI
 	async int main()
 	{
 		string cmd = @.cli_args[1];
-		var output = @.provider("output");
 		
 		if (rtl::isEmpty(cmd))
 		{
-			output.print("Methods:");
-			output.print("  assets");
-			output.print("  make");
-			output.print("  modules");
-			output.print("  version");
-			output.print("  watch");
+			io::print("Methods:");
+			io::print("  assets");
+			io::print("  make");
+			io::print("  modules");
+			io::print("  version");
+			io::print("  watch");
 			return 0;
 		}
 		
@@ -430,8 +433,8 @@ class CLI
 			fn runtime_version = rtl::method("Runtime.ModuleDescription", "getModuleVersion");
 			fn lang_version = rtl::method("Bayrell.Lang.ModuleDescription", "getModuleVersion");
 			
-			output.print("Lang version: " ~ lang_version());
-			output.print("Runtime version: " ~ runtime_version());
+			io::print("Lang version: " ~ lang_version());
+			io::print("Runtime version: " ~ runtime_version());
 			return 0;
 		}
 		
@@ -475,13 +478,20 @@ class CLI
 			
 			let on_change_file = async (ctx, changed_file_path) =>
 			{
+				let io = use("Runtime.io");
 				try
 				{
 					let file_info = await this.compileFile(ctx, changed_file_path, "", 3);
 					if (file_info)
 					{
 						let module = file_info.get(ctx, "module");
-						await this.makeAssets(ctx, module.name);
+						let assets = module.config.get(ctx, "assets");
+						let file_name = file_info.get(ctx, "file_name");
+						
+						if (assets.indexOf(ctx, file_name) >= 0)
+						{
+							await this.makeAssets(ctx, module.name);
+						}
 					}
 				}
 				catch (e)
@@ -489,11 +499,11 @@ class CLI
 					let ParserUnknownError = use("Bayrell.Lang.Exceptions.ParserUnknownError");
 					if (e instanceof ParserUnknownError)
 					{
-						output.print_error(ctx, "Error: " + e.getMessage());
+						io.print_error(ctx, "Error: " + e.getMessage());
 					}
 					else
 					{
-						output.print_error(ctx, e);
+						io.print_error(ctx, e);
 					}
 					return;
 				}
@@ -501,10 +511,11 @@ class CLI
 			
 			let watch_dir = (ctx) =>
 			{
+				let io = use("Runtime.io");
 				let chokidar = require('chokidar');
 				return new Promise(() => {
 					
-					output.print(ctx, "Start watch");
+					io.print(ctx, "Start watch");
 					chokidar
 						.watch(ctx.base_path)
 						.on('change', (path, stat) => {
