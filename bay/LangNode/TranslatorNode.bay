@@ -47,7 +47,7 @@ struct TranslatorNode extends TranslatorES6
 	bool enable_async_await = true;
 	bool emulate_async_await = false;
 	bool enable_introspection = false;
-	
+	bool enable_context = true;
 	
 	
 	/**
