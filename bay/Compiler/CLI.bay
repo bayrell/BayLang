@@ -49,31 +49,6 @@ class CLI
 	
 	
 	/**
-	 * Create translator
-	 */
-	CoreTranslator createTranslator(string lang = "")
-	{
-		CoreTranslator t = null;
-		
-		if (lang == "php")
-		{
-			t = new TranslatorPHP();
-		}
-		if (lang == "es6")
-		{
-			t = new TranslatorES6();
-		}
-		if (lang == "nodejs")
-		{
-			t = new TranslatorNode();
-		}
-		
-		return t;
-	}
-	
-	
-	
-	/**
 	 * Compile file
 	 */
 	async void compileFile(string file_path, string lang, int log_level = 0)
@@ -180,7 +155,7 @@ class CLI
 			{
 				if (op_code)
 				{
-					CoreTranslator t = this.createTranslator(lang_name);
+					CoreTranslator t = static::createTranslator(lang_name);
 					if (t)
 					{
 						container <= result <= LangUtils::translate(t, op_code);
@@ -238,7 +213,7 @@ class CLI
 			}
 			catch (ParserUnknownError e)
 			{
-				io::print_error(e.getMessage());
+				io::print_error(e.getErrorMessage());
 				is_success = false;
 			}
 			catch (var e)
@@ -499,7 +474,7 @@ class CLI
 					let ParserUnknownError = use("Bayrell.Lang.Exceptions.ParserUnknownError");
 					if (e instanceof ParserUnknownError)
 					{
-						io.print_error(ctx, "Error: " + e.getMessage());
+						io.print_error(ctx, "Error: " + e.getErrorMessage());
 					}
 					else
 					{

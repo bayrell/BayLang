@@ -1255,7 +1255,12 @@ class ParserBayHtml extends BaseObject
 		class_model = attrs.get("model", "Runtime.Dict");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 		
-		fn getClassShortName = string (string class_name) => class_name |> curry rs::split("\\.", ?) |> .last();
+		fn getClassShortName = string (string class_name) =>
+			class_name |>
+			curry rs::split("\\.", ?) |>
+			.last()
+		;
+		
 		if (class_name != "")
 		{
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_name), class_name );
