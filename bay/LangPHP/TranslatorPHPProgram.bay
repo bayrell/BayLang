@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -498,17 +498,8 @@ static class TranslatorPHPProgram
 		
 		if (class_kind != OpDeclareClass::KIND_INTERFACE)
 		{
-			/* Get class name function */
-			content ~= t.s("function getClassName()");
-			content ~= t.s("{");
-			t = t.levelInc();
-			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
-			t = t.levelDec();
-			content ~= t.s("}");
-			
-			
 			/* Get current namespace function */
-			content ~= t.s("static function getCurrentNamespace()");
+			content ~= t.s("static function getNamespace()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -517,7 +508,7 @@ static class TranslatorPHPProgram
 			
 			
 			/* Get current class name function */
-			content ~= t.s("static function getCurrentClassName()");
+			content ~= t.s("static function getClassName()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -621,12 +612,12 @@ static class TranslatorPHPProgram
 					
 					if (flag != 0)
 					{
-						if (not vars.has(flag)) vars.set(flag, new Vector<string>());
+						if (not vars.has(flag)) vars.setValue(flag, new Vector<string>());
 						Vector<string> v = vars.item(flag);
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
-							v.push(value.var_name);
+							v.pushValue(value.var_name);
 						}
 					}
 				}

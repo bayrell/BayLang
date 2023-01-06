@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ static class ParserBayOperator
 				"caret_start": item_caret_start,
 				"caret_end": parser.caret,
 			};
-			items.push(item);
+			items.pushValue(item);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
@@ -314,7 +314,7 @@ static class ParserBayOperator
 				list res = static::readThen(parser); parser = res[0];
 				list res = static::readOperators(parser); parser = res[0]; ifelse_block = res[1];
 				
-				if_else.push
+				if_else.pushValue
 				(
 					new OpIfElse
 					{
@@ -523,7 +523,7 @@ static class ParserBayOperator
 				}
 				else
 				{
-					arr.push( name );
+					arr.pushValue( name );
 				}
 			}
 			
@@ -553,8 +553,13 @@ static class ParserBayOperator
 			kind = OpAssign::KIND_DECLARE;
 			values = new Vector<OpAssignValue>();
 			parser = start;
-			list res = parser.parser_base::readTypeIdentifier(parser); parser = res[0]; pattern = res[1];
-			list res = parser.parser_base::readIdentifier(parser); parser = res[0]; var_op_code = res[1];
+			
+			list res = parser.parser_base::readTypeIdentifier(parser);
+			parser = res[0]; pattern = res[1];
+			
+			list res = parser.parser_base::readIdentifier(parser);
+			parser = res[0]; var_op_code = res[1];
+			
 			var_name = var_op_code.value;
 			
 			/* Read expression */
@@ -570,7 +575,7 @@ static class ParserBayOperator
 			}
 			
 			parser <= vars <= parser.vars.setIm(var_name, true);
-			values.push
+			values.pushValue
 			(
 				new OpAssignValue
 				{
@@ -602,7 +607,7 @@ static class ParserBayOperator
 				}
 				
 				parser <= vars <= parser.vars.setIm(var_name, true);
-				values.push
+				values.pushValue
 				(
 					new OpAssignValue
 					{
@@ -897,7 +902,7 @@ static class ParserBayOperator
 			list res = static::readOperator(parser); parser = res[0]; parser_value = res[1];
 			if (parser_value != null)
 			{
-				arr.push(parser_value);
+				arr.pushValue(parser_value);
 			}
 			
 			parser <= skip_comments <= false;
@@ -990,7 +995,7 @@ static class ParserBayOperator
 		while (not token.eof and current_flags.indexOf(token.content) >= 0)
 		{
 			string flag = token.content;
-			values.set("p_"~flag, true);
+			values.setValue("p_"~flag, true);
 			parser = look;
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
@@ -1050,7 +1055,7 @@ static class ParserBayOperator
 			/* Register variable in parser */
 			parser <= vars <= parser.vars.setIm(arg_name, true);
 			
-			items.push
+			items.pushValue
 			(
 				new OpDeclareFunctionArg
 				{
@@ -1112,7 +1117,7 @@ static class ParserBayOperator
 						);
 					}
 				}
-				items.push(name);
+				items.pushValue(name);
 				
 				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 				if (token.content == ",")

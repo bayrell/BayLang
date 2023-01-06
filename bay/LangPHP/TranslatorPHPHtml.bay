@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -85,22 +85,35 @@ static class TranslatorPHPHtml
 			module_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
 		}
 		
-		BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
-		if (bind)
-		{
-			list res = t.expression::Expression(t, bind.value); t = res[0];
-			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
-		}
-		
-		BaseOpCode bind = op_code.attrs.findItem( lib::equalAttr("key", "@name") );
-		if (bind)
-		{
-			list res = t.expression::Expression(t, bind.value); t = res[0];
-			v_model = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
-		}
-		
 		content ~= t.s("/* Component '" ~ tag_name ~ "' */");
 		content ~= t.s(var_name~"_params = [];");
+		
+		BaseOpCode attr_name = op_code.attrs.findItem( lib::equalAttr("key", "@name") );
+		BaseOpCode attr_bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
+		BaseOpCode attr_model = op_code.attrs.findItem( lib::equalAttr("key", "@model") );
+		BaseOpCode attr_model_path = op_code.attrs.findItem( lib::equalAttr("key", "@model_path") );
+		
+		if (attr_name)
+		{
+			list res = t.expression::Expression(t, attr_name.value); t = res[0];
+			v_model = "static::_concatArr($ctx, $model_path, " ~ res[1] ~ ")";
+		}
+		else if (attr_bind)
+		{
+			list res = t.expression::Expression(t, attr_bind.value); t = res[0];
+			v_model = "static::_concatArr($ctx, $model_path, " ~ res[1] ~ ")";
+		}
+		else if (attr_model)
+		{
+			list res = t.expression::Expression(t, attr_model.value); t = res[0];
+			v_model = "static::_concatArr($ctx, $model_path, " ~ res[1] ~ ")";
+		}
+		else if (attr_model_path)
+		{
+			list res = t.expression::Expression(t, attr_model_path.value); t = res[0];
+			v_model = "static::_concatArr($ctx, [], " ~ res[1] ~ ")";
+		}
+		
 		for (int i=0; i<op_code.attrs.count(); i++)
 		{
 			OpHtmlAttribute attr = op_code.attrs.item(i);
@@ -108,6 +121,7 @@ static class TranslatorPHPHtml
 			if (attr.key == "@bind") continue;
 			if (attr.key == "@name") continue;
 			if (attr.key == "@model") continue;
+			if (attr.key == "@model_path") continue;
 			if (attr.key == "@ref") continue;
 			
 			if (attr.is_spread)
@@ -123,21 +137,21 @@ static class TranslatorPHPHtml
 		}
 		
 		content ~= t.s(var_name~"_content = [];");
-		fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
+		fn f = rtl::method(static::getClassName(), "OpHtmlItems");
 		list res = t::saveOpCodeCall(t, f, [op_code.items, var_name~"_content"]); t = res[0];
 		content ~= res[1];
 		
 		if (op_code.op_code_name)
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::renderComponent($ctx, $layout," ~ v_model ~
+			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render2($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}
 		else
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::renderComponent($ctx, $layout," ~ v_model ~
+			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render2($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}
@@ -177,7 +191,7 @@ static class TranslatorPHPHtml
 			{
 				list res = t.expression::Expression(t, attr.value.value); 
 				t = res[0]; string value = res[1];
-				value = "static::json_encode($ctx, " ~ value ~ ")";
+				value = "\\Runtime\\rtl::json_encode($ctx, " ~ value ~ ")";
 				return [t, value];
 			}
 		}
@@ -213,7 +227,8 @@ static class TranslatorPHPHtml
 				if (attr_key == "@class")
 				{
 					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.push( "static::getCssName($ctx, " ~ attr_value ~ ")" );
+					attr_class.pushValue( "static::_getCssName($ctx, " ~
+						attr_value ~ ")" );
 					
 					if (not has_attr_key and attr.value instanceof OpString)
 					{
@@ -229,7 +244,7 @@ static class TranslatorPHPHtml
 				{
 					t <= opcode_level <= 1000;
 					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.push(attr_value);
+					attr_class.pushValue(attr_value);
 					
 					if (not has_attr_key and attr.value instanceof OpString)
 					{
@@ -264,14 +279,15 @@ static class TranslatorPHPHtml
 					t = res[0]; attr_value = res[1];
 				}
 				
-				return attr_key ~ "=\"'.static::escapeAttr($ctx, " ~ attr_value ~ ").'\"";
+				return attr_key ~ "=\"'.static::_escapeAttr($ctx, " ~ attr_value ~ ").'\"";
 			}
 		);
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.push( "static::getCssHash($ctx)" );
-			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
+			attr_class.pushValue( "static::getCssHash($ctx)" );
+			/*attr_class.pushValue( t.expression::toString("h-" ~
+				ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			res_attrs = res_attrs.pushIm
 			(
 				"class=" ~ "\"'." ~ rs::join(".\" \".", attr_class) ~ ".'\""
@@ -287,7 +303,7 @@ static class TranslatorPHPHtml
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s ~= " ' . static::joinAttrs($ctx, $" ~ attr.value.value ~ ") . '";
+			attr_s ~= " ' . static::_joinAttrs($ctx, $" ~ attr.value.value ~ ") . '";
 		}
 		
 		return [t, attr_s];
@@ -328,12 +344,12 @@ static class TranslatorPHPHtml
 			bool flag_value = false;
 			if (not flag_value)
 			{
-				fn f = rtl::method(static::getCurrentClassName(), "OpHtmlItems");
+				fn f = rtl::method(static::getClassName(), "OpHtmlItems");
 				list res = t::saveOpCodeCall(t, f, [op_code.items, var_name]); t = res[0];
 				content ~= res[1];
 			}
 			if (op_code.tag_name != "")
-				content ~= t.s("static::p(" ~ var_name ~ ", '</" ~
+				content ~= t.s("static::_p(" ~ var_name ~ ", '</" ~
 					op_code.tag_name ~ ">');");
 		}
 		
@@ -402,13 +418,13 @@ static class TranslatorPHPHtml
 				{
 					list res = t.expression::Expression(t, item.value); 
 					t = res[0]; item_value = res[1];
-					item_value = "static::toHtml($ctx, " ~ item_value ~ ")";
+					item_value = "static::_toHtml($ctx, " ~ item_value ~ ")";
 				}
 				else if (item.kind == OpHtmlValue::KIND_JSON)
 				{
 					list res = t.expression::Expression(t, item.value); 
 					t = res[0]; item_value = res[1];
-					item_value = "static::json_encode($ctx, " ~ item_value ~ ")";
+					item_value = "\\Runtime\\rtl::json_encode($ctx, " ~ item_value ~ ")";
 				}
 			}
 			else if (item instanceof OpAssign)
@@ -440,7 +456,7 @@ static class TranslatorPHPHtml
 			{
 				list res = t.expression::Expression(t, item); 
 				t = res[0]; item_value = res[1];
-				item_value = "static::escapeHtml($ctx, " ~ item_value ~ ")";
+				item_value = "static::_escapeHtml($ctx, " ~ item_value ~ ")";
 			}
 			
 			/* Output save op code */
@@ -452,7 +468,7 @@ static class TranslatorPHPHtml
 			t <= save_op_codes <= save_op_codes;
 			t <= save_op_code_inc <= save_op_code_inc;
 			
-			if (item_value != "") content ~= t.s("static::p(" ~ var_name ~
+			if (item_value != "") content ~= t.s("static::_p(" ~ var_name ~
 				", " ~ item_value ~ ");");
 		}
 		

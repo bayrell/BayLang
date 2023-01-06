@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -311,7 +311,7 @@ static class TranslatorPHPExpression
 			
 			while (op_code_next instanceof OpAttr)
 			{
-				attrs.push(op_code_next);
+				attrs.pushValue(op_code_next);
 				op_code_item = op_code_next;
 				op_code_next = op_code_next.obj;
 			}
@@ -328,6 +328,18 @@ static class TranslatorPHPExpression
 			{
 				prev_kind = "var";
 				list res = static::OpNew(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
+			}
+			else if (op_code_next instanceof OpCollection)
+			{
+				prev_kind = "var";
+				list res = static::OpCollection(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
+			}
+			else if (op_code_next instanceof OpDict)
+			{
+				prev_kind = "var";
+				list res = static::OpDict(t, op_code_next); t = res[0]; s = "(" ~ res[1] ~ ")";
 				first_item_complex = true;
 			}
 			else if (op_code_next instanceof OpIdentifier)
@@ -462,7 +474,7 @@ static class TranslatorPHPExpression
 						for (int j=0; j<attr.attrs.count(); j++)
 						{
 							list res = static::Expression(t, attr.attrs[j]); t = res[0];
-							items.push(res[1]);
+							items.pushValue(res[1]);
 						}
 					}
 					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -675,7 +687,7 @@ static class TranslatorPHPExpression
 			if (arg instanceof OpCurryArg) continue;
 			if (arg instanceof OpIdentifier)
 			{
-				args_use.push("$" ~ arg.value);
+				args_use.pushValue("$" ~ arg.value);
 			}
 		}
 		
@@ -690,11 +702,11 @@ static class TranslatorPHPExpression
 			for (int j=0; j<i; j++)
 			{
 				OpCurryArg arg_use = args.item(j);
-				arr_use.push("$__varg" ~ arg_use.pos);
+				arr_use.pushValue("$__varg" ~ arg_use.pos);
 			}
 			if (use_obj_item != "")
 			{
-				arr_use.push(use_obj_item);
+				arr_use.pushValue(use_obj_item);
 			}
 			if (arr_use.count() > 0)
 			{
@@ -817,7 +829,7 @@ static class TranslatorPHPExpression
 		list res = static::Expression(t, op_code.if_false); t = res[0]; string if_false = res[1];
 		
 		content ~= "(" ~ condition ~ ") ? (" ~ if_true ~ ") : (" ~ if_false ~ ")";
-		t <= opcode_level <= 11;
+		t <= opcode_level <= 0;
 		
 		/* OpTernary */
 		return [t, content];
@@ -842,7 +854,7 @@ static class TranslatorPHPExpression
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.push(op_code_item);
+			items.pushValue(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
 		items = items.reverseIm();
@@ -1055,7 +1067,9 @@ static class TranslatorPHPExpression
 	pure list<TranslatorPHP, string> Expression(TranslatorPHP t, BaseOpCode op_code)
 	{
 		string content = "";
+		bool save_is_pipe = t.is_pipe;
 		t <= opcode_level <= 100;
+		t <= is_pipe <= false;
 		
 		if (op_code instanceof OpIdentifier)
 		{
@@ -1142,6 +1156,7 @@ static class TranslatorPHPExpression
 			t = res[0]; content = res[1];
 		}
 		
+		t <= is_pipe <= save_is_pipe;
 		return [t, content];
 	}
 	

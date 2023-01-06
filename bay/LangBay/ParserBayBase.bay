@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ class ParserBayBase
 		}
 		else if (parser.uses.has(name))
 		{
-			kind = OpIdentifier::KIND_MODULE;
+			kind = OpIdentifier::KIND_CLASS;
 		}
 		else if (static::isSystemType(name))
 		{
@@ -280,16 +280,19 @@ class ParserBayBase
 	/**
 	 * Open comment
 	 */
-	pure bool isCommentOpen(string str, bool skip_comments) =>
-		skip_comments and str == "/*" /* */
-	;
+	pure bool isCommentOpen(ParserBay parser, string str) =>
+		parser.skip_comments and
+			( parser.is_html ? str == "<!--" : str == "/*" )
+		;
 	
 	
 	
 	/**
 	 * Close comment
 	 */
-	pure bool isCommentClose(string str) => str == "*/";
+	pure bool isCommentClose(ParserBay parser, string str) =>
+		parser.is_html ? str == "-->" : str == "*/"
+	;
 	
 	
 	
@@ -311,12 +314,17 @@ class ParserBayBase
 		
 		string ch = rs::charAt(content.ref, pos);
 		string ch2 = rs::substr(content.ref, pos, 2);
-		while ((static::isSkipChar(ch) or static::isCommentOpen(ch2, skip_comments)) and pos < parser.content_sz)
+		string ch4 = rs::substr(content.ref, pos, 4);
+		while
+		(
+			(static::isSkipChar(ch) or static::isCommentOpen(parser, ch2) or static::isCommentOpen(parser, ch4)) and
+			pos < parser.content_sz
+		)
 		{
-			if (static::isCommentOpen(ch2, skip_comments))
+			if (static::isCommentOpen(parser, ch2))
 			{
 				ch2 = rs::substr(content.ref, pos, 2);
-				while (not static::isCommentClose(ch2) and pos < parser.content_sz)
+				while (not static::isCommentClose(parser, ch2) and pos < parser.content_sz)
 				{
 					x = static::nextX(parser, ch, x);
 					y = static::nextY(parser, ch, y);
@@ -328,12 +336,35 @@ class ParserBayBase
 					ch = rs::charAt(content.ref, pos);
 					ch2 = rs::substr(content.ref, pos, 2);
 				}
-				if (static::isCommentClose(ch2))
+				if (static::isCommentClose(parser, ch2))
 				{
 					x = x + 2;
 					pos = pos + 2;
 				}
 			}
+			
+			else if (static::isCommentOpen(parser, ch4))
+			{
+				string ch3 = rs::substr(content.ref, pos, 3);
+				while (not static::isCommentClose(parser, ch3) and pos < parser.content_sz)
+				{
+					x = static::nextX(parser, ch, x);
+					y = static::nextY(parser, ch, y);
+					pos = pos + 1;
+					if (pos >= parser.content_sz)
+					{
+						break;
+					}
+					ch = rs::charAt(content.ref, pos);
+					ch3 = rs::substr(content.ref, pos, 3);
+				}
+				if (static::isCommentClose(parser, ch3))
+				{
+					x = x + 3;
+					pos = pos + 3;
+				}
+			}
+			
 			else
 			{
 				x = static::nextX(parser, ch, x);
@@ -346,6 +377,7 @@ class ParserBayBase
 			}
 			ch = rs::charAt(content.ref, pos);
 			ch2 = rs::substr(content.ref, pos, 2);
+			ch4 = rs::substr(content.ref, pos, 4);
 		}
 		return new Caret{ "pos": pos, "x": x, "y": y };
 	}
@@ -373,7 +405,7 @@ class ParserBayBase
 		if (s == "#case" or s == "%else") return s;
 		
 		s = rs::substr(content.ref, pos, 4);
-		if (s == "@css" or s == "%for" or s == "%var") return s;
+		if (s == "@css" or s == "%for" or s == "%var" or s == "%set") return s;
 		
 		s = rs::substr(content.ref, pos, 3);
 		if (
@@ -887,7 +919,7 @@ class ParserBayBase
 			
 			string ch = rs::charAt(content.ref, pos);
 			string ch2 = rs::substr(content.ref, pos, 2);
-			while (not static::isCommentClose(ch2) and pos < content_sz)
+			while (not static::isCommentClose(parser, ch2) and pos < content_sz)
 			{
 				x = static::nextX(parser, ch, x);
 				y = static::nextY(parser, ch, y);
@@ -901,7 +933,7 @@ class ParserBayBase
 			}
 			
 			int pos_end = pos;
-			if (static::isCommentClose(ch2))
+			if (static::isCommentClose(parser, ch2))
 			{
 				x = x + 2;
 				pos = pos + 2;
@@ -1003,7 +1035,7 @@ class ParserBayBase
 		Caret caret_start = ident.caret_start;
 		
 		string name = ident.value;
-		names.push(name);
+		names.pushValue(name);
 		
 		list res = parser.parser_base::readToken(parser);
 		look = res[0]; token = res[1];
@@ -1015,7 +1047,7 @@ class ParserBayBase
 			parser = res[0]; ident = res[1];
 			
 			name = ident.value;
-			names.push(name);
+			names.pushValue(name);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
@@ -1067,7 +1099,7 @@ class ParserBayBase
 				list res = static::readTypeIdentifier(parser);
 				parser = res[0]; parser_value = res[1];
 				
-				template.push(parser_value);
+				template.pushValue(parser_value);
 				
 				list res = static::lookToken(parser, ">");
 				look = res[0]; token = res[1]; flag_end_caret = res[2];
@@ -1144,7 +1176,7 @@ class ParserBayBase
 					"condition": ifdef_condition,
 				}
 			}
-			values.push(parser_value);
+			values.pushValue(parser_value);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == "#endif")
@@ -1215,7 +1247,13 @@ class ParserBayBase
 				parser = look;
 			}
 			
-			values.push( new OpDictPair{ "key": key, "value": parser_value, "condition": ifdef_condition } );
+			values.pushValue(
+				new OpDictPair{
+					"key": key,
+					"value": parser_value,
+					"condition": ifdef_condition
+				}
+			);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == "#endif")
@@ -1329,7 +1367,7 @@ class ParserBayBase
 				ParserBay parser_value = null;
 				list res = parser.parser_expression::readExpression(parser);
 				parser = res[0]; parser_value = res[1];
-				items.push(parser_value);
+				items.pushValue(parser_value);
 				
 				list res = static::readToken(parser); look = res[0]; token = res[1];
 				if (token.content == ",")
@@ -1350,15 +1388,19 @@ class ParserBayBase
 	/**
 	 * Read new instance
 	 */
-	pure list<ParserBay, BaseOpCode> readNew(ParserBay parser)
+	pure list<ParserBay, BaseOpCode> readNew(ParserBay parser, bool match_new = true)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
 		BaseOpCode op_code = null;
+		Caret caret_start = parser.caret;
 		
 		Collection<BaseOpCode> args = [];
-		list res = static::matchToken(parser, "new"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		if (match_new)
+		{
+			list res = static::matchToken(parser, "new"); parser = res[0]; token = res[1];
+			caret_start = token.caret_start;
+		}
 		list res = static::readTypeIdentifier(parser); parser = res[0]; op_code = res[1];
 		
 		list res = static::readToken(parser); token = res[1];
@@ -1489,13 +1531,13 @@ class ParserBayBase
 				{
 					"pos": pos,
 				};
-				args.push(arg);
+				args.pushValue(arg);
 			}
 			else
 			{
 				list res = parser.parser_expression::readExpression(parser);
 				parser = res[0]; arg = res[1];
-				args.push(arg);
+				args.pushValue(arg);
 			}
 			
 			list res = static::readToken(parser); look = res[0]; token = res[1];
@@ -1728,7 +1770,7 @@ class ParserBayBase
 					op_code.kind != OpIdentifier::KIND_SYS_TYPE and
 					op_code.kind != OpIdentifier::KIND_SYS_FUNCTION and
 					op_code.kind != OpIdentifier::KIND_VARIABLE and
-					op_code.kind != OpIdentifier::KIND_MODULE and
+					op_code.kind != OpIdentifier::KIND_CLASS and
 					op_code.kind != OpIdentifier::KIND_CLASSREF and
 					op_code.kind != OpIdentifier::KIND_CONTEXT
 				)
@@ -1740,7 +1782,7 @@ class ParserBayBase
 					);
 				}
 			}
-			else if (op_code instanceof OpNew){}
+			else if (op_code instanceof OpNew or op_code instanceof OpCollection or op_code instanceof OpDict){}
 			else
 			{
 				throw new ParserExpected
@@ -1860,14 +1902,14 @@ class ParserBayBase
 					if (token.content == ",")
 					{
 						look_values = new Vector();
-						look_values.push(look_value);
+						look_values.pushValue(look_value);
 					}
 					while (token.content == ",")
 					{
 						parser = look;
 						list res = parser.parser_expression::readExpression(parser);
 						parser = res[0]; look_value = res[1];
-						look_values.push(look_value);
+						look_values.pushValue(look_value);
 						list res = static::readToken(parser); look = res[0]; token = res[1];
 					}
 					

@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ static class TranslatorNodeProgram extends TranslatorES6Program
 	pure list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
 	{
 		string content = "\"use strict;\"";
-		content ~= t.s("var use = require('bayrell').use;");
+		content ~= t.s("var use = require('bay-lang').use;");
 		return [t, content];
 	}
 	

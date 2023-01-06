@@ -1,0 +1,271 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.Compiler;
+
+use Runtime.fs;
+use Runtime.re;
+use Runtime.BaseProvider;
+use Runtime.Exceptions.RuntimeException;
+use Bayrell.Lang.Compiler.Module;
+
+
+class SettingsProvider extends BaseProvider
+{
+	string project_path = "";
+	Dict config = {};
+	Dict<Module> modules = {};
+	
+	
+	/**
+	 * Start provider
+	 */
+	async void start()
+	{
+		/* Read settings from file located in @.base_path */
+		await this.readSettingsFromFile( fs::join([ @.base_path, "project.json" ]) );
+	}
+	
+	
+	
+	/**
+     * Read settings from file
+     */
+    async void readSettingsFromFile(string file_name)
+    {
+        bool is_file = await fs::isFile(file_name);
+		if (!is_file)
+		{
+			throw new RuntimeException("File '" + file_name + "' does not exists");
+		}
+		
+		string file_content = await fs::readFile(file_name);
+		this.config = rtl::json_decode(file_content);
+		this.project_path = rs::dirname(file_name);
+		
+		/* Load modules */
+		this.modules = await this.readModules();
+    }
+	
+	
+	
+	/**
+	 * Returns modules from config
+	 */
+	async Dict readModules()
+	{
+		Map<Module> modules = new Map();
+		Dict config = this.config;
+		
+		Collection modules_info = config["modules"] |> default Collection [];
+		for (int i = 0; i<modules_info.count(); i++)
+		{
+			Dict module_info = modules_info[i] |> default Dict {};
+			string module_src = module_info["src"] |> default string "";
+			string module_type = module_info["type"] |> default string "";
+			
+			if (module_type == "module")
+			{
+				string module_path = fs::join([ this.project_path, module_src ]);
+				Module module = await this.readModule(module_path);
+				if (module and not modules.has(module.name))
+				{
+					modules.setValue(module.name, module);
+				}
+			}
+			else if (module_type == "folder")
+			{
+				string folder_path = fs::join([ this.project_path, module_src ]);
+				Collection<Module> folder_modules =
+					await this.readModulesFromFolder(folder_path)
+				;
+				for (int j=0; j<folder_modules.count(); j++)
+				{
+					Module module = folder_modules[j];
+					if (module and not modules.has(module.name))
+					{
+						modules.setValue(module.name, module);
+					}
+				}
+			}
+		}
+		
+		return modules.toDict();
+	}
+	
+	
+	
+	/**
+	 * Read module from folder
+	 */
+	async Module readModule(string module_path)
+	{
+		string module_json_path = fs::join([ module_path, "module.json" ]);
+		bool is_file = await fs::isFile(module_json_path);
+		if (!is_file)
+			return null;
+		
+		string module_json_content = await fs::readFile(module_json_path);
+		string module_json = rtl::json_decode(module_json_content);
+		if (!module_json)
+			return null;
+		
+		string module_name = module_json["name"] |> default string "";
+		if (module_name == "")
+			return null;
+		
+		Module module = new Module
+		{
+			"name": module_name,
+			"config": module_json,
+			"path": module_path,
+		};
+		
+		return module;
+	}
+	
+	
+	
+	/**
+	 * Read modules from folder
+	 */
+	async Collection<Module> readModulesFromFolder(string folder_path)
+	{
+		Vector<Module> modules = new Vector();
+		
+		Collection<string> file_names = await fs::listDir(folder_path);
+		for (int i=0; i<file_names.count(); i++)
+		{
+			string file_name = file_names[i];
+			string module_path = fs::join([ folder_path, file_name ]);
+			Module module = await this.readModule(module_path);
+			if (module)
+			{
+				modules.pushValue(module);
+			}
+		}
+		
+		return modules.toCollection();
+	}
+	
+	
+	
+	/**
+	 * Find module by module name
+	 */
+	Module findModuleByFileName(string file_name)
+	{
+		Collection<string> module_names = this.modules.keys();
+		for (int i=0; i<module_names.count(); i++)
+		{
+			string module_name = module_names[i];
+			Module module = this.modules[module_name];
+			if (rs::indexOf(file_name, module.path) == 0)
+			{
+				return module;
+			}
+		}
+		
+		return null;
+	}
+	
+	
+	
+	/**
+	 * Resolve source file.
+	 * Returns file_name, ext_name and module by file
+	 */
+	async var resolveSourceFile(string file_name)
+	{
+		if (not await fs::isFile(file_name))
+			return null;
+		
+		Module module = this.findModuleByFileName(file_name);
+		if (!module)
+			return null;
+		
+		string module_src_path = module.getSourcePath();
+		
+		if (rs::indexOf(file_name, module_src_path) != 0)
+			return null;
+		
+		string module_file_name = rs::substr(file_name, rs::strlen(module_src_path));
+		module_file_name = fs::removeFirstSlash(module_file_name);
+		
+		string module_ext_name = rs::extname(module_file_name);
+		
+		Dict d = {
+			"file_name": module_file_name,
+			"ext_name": module_ext_name,
+			"module": module,
+			"success": false,
+		};
+		
+		/* Check whitelist */
+		Collection<string> module_whitelist = module["config", "whitelist"];
+		if (module_whitelist and module_whitelist instanceof Collection)
+		{
+			bool whitelist_res = false;
+			for (int i=0; i<module_whitelist.count(); i++)
+			{
+				string whitelist = module_whitelist[i] |> default string "";
+				if (whitelist != "")
+				{
+					var res = re::match(whitelist, module_file_name);
+					whitelist_res = whitelist_res or res;
+					if (res)
+					{
+						break;
+					}
+				}
+			}
+			if (!whitelist_res)
+			{
+				return d;
+			}
+		}
+		
+		/* Check blacklist */
+		Collection<string> module_blacklist = module["config", "blacklist"];
+		if (module_blacklist and module_blacklist instanceof Collection)
+		{
+			bool blacklist_res = false;
+			for (int i=0; i<module_blacklist.count(); i++)
+			{
+				string blacklist = module_blacklist[i] |> default string "";
+				if (blacklist != "")
+				{
+					var res = re::match(blacklist, module_file_name);
+					blacklist_res = blacklist_res and res;
+					if (res)
+					{
+						break;
+					}
+				}
+			}
+			if (blacklist_res)
+			{
+				return d;
+			}
+		}
+		
+		d <= success <= true;
+		
+		return d;
+	}
+}

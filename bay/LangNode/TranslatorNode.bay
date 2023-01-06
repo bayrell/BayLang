@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -47,33 +47,24 @@ struct TranslatorNode extends TranslatorES6
 	bool enable_async_await = true;
 	bool emulate_async_await = false;
 	bool enable_introspection = false;
-	
+	bool enable_context = true;
 	
 	
 	/**
 	 * Reset translator
 	 */
-	pure TranslatorES6 reset(TranslatorES6 t) =>
-		t.copy({
-			"value": "",
-			"current_namespace_name": "",
-			"modules": new Dict<string>(),
-			"async_await": new TranslatorES6AsyncAwait(),
-			"expression": new TranslatorNodeExpression(),
-			"html": new TranslatorES6Html(),
-			"operator": new TranslatorES6Operator(),
-			"program": new TranslatorNodeProgram(),
-			"save_vars": new Collection<string>(),
-			"save_op_codes": new Collection<SaveOpCode>(),
-			"save_op_code_inc": 0,
-			"preprocessor_flags": 
-			{
-				"BACKEND": true,
-				"NODEJS": true,
-				"JAVASCRIPT": true,
-			},
-		})
-	;
+	pure TranslatorES6 reset(TranslatorES6 t)
+	{
+		t = parent::reset(t);
+		t <= expression <= new TranslatorNodeExpression();
+		t <= program <= new TranslatorNodeProgram();
+		t <= preprocessor_flags <= t.preprocessor_flags.copy({
+			"BACKEND": true,
+			"NODEJS": true,
+			"ES6": false,
+		});
+		return t;
+	}
 	
 	
 	

@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ struct TranslatorES6 extends CoreTranslator
 {
 	/* Work */
 	bool is_pipe = false;
+	bool is_call = false;
 	string pipe_var_name = "";
 	string html_var_name = "";
 	bool is_html = false;
@@ -52,7 +53,7 @@ struct TranslatorES6 extends CoreTranslator
 	bool use_strict = true;
 	bool enable_async_await = true;
 	bool emulate_async_await = false;
-	bool enable_context = true;
+	bool enable_context = false;
 	bool enable_check_types = false;
 	bool enable_introspection = false;
 	

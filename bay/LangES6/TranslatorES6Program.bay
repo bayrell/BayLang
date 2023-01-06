@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -422,7 +422,7 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
 			
 			/* Get current namespace function */
-			content ~= t.s("getCurrentNamespace: function()");
+			content ~= t.s("getNamespace: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -431,7 +431,7 @@ struct TranslatorES6Program extends BaseStruct
 			
 			
 			/* Get current class name function */
-			content ~= t.s("getCurrentClassName: function()");
+			content ~= t.s("getClassName: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -544,12 +544,12 @@ struct TranslatorES6Program extends BaseStruct
 					
 					if (flag != 0)
 					{
-						if (not vars.has(flag)) vars.set(flag, new Vector<string>());
+						if (not vars.has(flag)) vars.setValue(flag, new Vector<string>());
 						Vector<string> v = vars.item(flag);
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
-							v.push(value.var_name);
+							v.pushValue(value.var_name);
 						}
 					}
 				}
@@ -747,7 +747,7 @@ struct TranslatorES6Program extends BaseStruct
 		else
 		{
 			/* Get current namespace function */
-			content ~= t.s("getCurrentNamespace: function()");
+			content ~= t.s("getNamespace: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
@@ -755,7 +755,7 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("},");
 			
 			/* Get current class name function */
-			content ~= t.s("getCurrentClassName: function()");
+			content ~= t.s("getClassName: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
@@ -840,11 +840,20 @@ struct TranslatorES6Program extends BaseStruct
 				/* Clear save op codes */
 				Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 				int save_op_code_inc = t.save_op_code_inc;
-				
+				/*
 				if (class_kind == OpDeclareClass::KIND_STRUCT)
 				{
 					content ~= t.s("var defProp = use('Runtime.rtl').defProp;");
 					content ~= t.s("var a = Object.getOwnPropertyNames(this);");
+				}
+				*/
+				if (t.current_class_extends_name != "")
+				{
+					content ~= t.s
+					(
+						t.expression::useModuleName(t, t.current_class_extends_name) ~
+							".prototype._init.call(this,ctx);"
+					);
 				}
 				
 				string s1 = "";
@@ -899,15 +908,6 @@ struct TranslatorES6Program extends BaseStruct
 					}
 				}
 				
-				if (t.current_class_extends_name != "")
-				{
-					s1 ~= t.s
-					(
-						t.expression::useModuleName(t, t.current_class_extends_name) ~ 
-							".prototype._init.call(this,ctx);"
-					);
-				}
-				
 				/* Output save op code */
 				string save = t::outputSaveOpCode(t, save_op_codes.count());
 				if (save != "") content ~= save;
@@ -924,7 +924,7 @@ struct TranslatorES6Program extends BaseStruct
 			}
 			
 			/* Struct */
-			if (class_kind == OpDeclareClass::KIND_STRUCT and (t.flag_struct_check_types or t.enable_introspection))
+			if (class_kind == OpDeclareClass::KIND_STRUCT)
 			{
 				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
 				/* string var_prefix = is_struct ? "__" : ""; */
@@ -1052,15 +1052,6 @@ struct TranslatorES6Program extends BaseStruct
 			}
 			
 		}
-		
-		/* Get class name function */
-		content ~= t.s("getClassName: function(ctx)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
 		
 		t = t.levelDec();
 		content ~= t.s("});");

@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ struct TranslatorPHP extends CoreTranslator
 	/* Flags */
 	bool frontend = false;
 	bool backend = true;
-	bool enable_context = true;
-	bool enable_check_types = true;
+	bool enable_context = false;
+	bool enable_check_types = false;
 	bool enable_introspection = false;
 	
 	

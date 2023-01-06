@@ -1,0 +1,92 @@
+/*!
+ *  Bayrell Language
+ *
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.Compiler;
+
+use Runtime.fs;
+use Runtime.re;
+use Runtime.rs;
+use Runtime.BaseStruct;
+
+
+class Module extends BaseStruct
+{
+	string name = "";
+	string path = "";
+	Dict config = {};
+	
+	
+	/**
+	 * Returns source path
+	 */
+	string getSourcePath()
+	{
+		string module_src = this.config["src"] |> default string "";
+		string module_src_path = fs::join([ this.path, module_src ]);
+		return module_src_path;
+	}
+	
+	
+	/**
+	 * Resolve source file.
+	 * Returns file_path
+	 */
+	var resolveSourceFile(string file_name)
+	{
+		return fs::join([ this.path, file_name ]);
+	}
+	
+	
+	/**
+	 * Resolve destination file
+	 */
+	string resolveDestFile(string project_path, string relative_file_name, string lang)
+	{
+		string dest = this.config["dest", lang] |> default string "";
+		string dest_path = "";
+		bool is_local = rs::substr(dest, 0, 2) == "./";
+		
+		if (is_local)
+		{
+			dest_path = fs::join([ this.path, dest, relative_file_name ]);
+		}
+		else
+		{
+			dest_path = fs::join([ project_path, dest, relative_file_name ]);
+		}
+		
+		if (lang == "php")
+		{
+			dest_path = re::replace("\\.bay$", ".php", dest_path);
+			dest_path = re::replace("\\.ui$", ".php", dest_path);
+		}
+		else if (lang == "es6")
+		{
+			dest_path = re::replace("\\.bay$", ".js", dest_path);
+			dest_path = re::replace("\\.ui$", ".js", dest_path);
+		}
+		else if (lang == "nodejs")
+		{
+			dest_path = re::replace("\\.bay$", ".js", dest_path);
+			dest_path = re::replace("\\.ui$", ".js", dest_path);
+		}
+		
+		return dest_path;
+	}
+	
+}

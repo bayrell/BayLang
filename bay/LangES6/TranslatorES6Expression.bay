@@ -1,7 +1,7 @@
 /*!
  *  Bayrell Language
  *
- *  (c) Copyright 2016-2020 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -283,7 +283,7 @@ struct TranslatorES6Expression extends BaseStruct
 			
 			while (op_code_first instanceof OpAttr)
 			{
-				attrs.push(op_code_first);
+				attrs.pushValue(op_code_first);
 				op_code_item = op_code_first;
 				op_code_first = op_code_first.obj;
 			}
@@ -300,6 +300,18 @@ struct TranslatorES6Expression extends BaseStruct
 			{
 				prev_kind = "var";
 				list res = static::OpNew(t, op_code_first); t = res[0]; s = "(" ~ res[1] ~ ")";
+				first_item_complex = true;
+			}
+			else if (op_code_first instanceof OpCollection)
+			{
+				prev_kind = "var";
+				list res = static::OpCollection(t, op_code_first); t = res[0]; s = res[1];
+				first_item_complex = true;
+			}
+			else if (op_code_first instanceof OpDict)
+			{
+				prev_kind = "var";
+				list res = static::OpDict(t, op_code_first); t = res[0]; s = res[1];
 				first_item_complex = true;
 			}
 			else if (op_code_first instanceof OpIdentifier)
@@ -424,7 +436,7 @@ struct TranslatorES6Expression extends BaseStruct
 						{
 							list res = static::Expression(t, attr.attrs[j]);
 							t = res[0];
-							items.push(res[1]);
+							items.pushValue(res[1]);
 						}
 					}
 					s = "Runtime.rtl.attr(ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -776,7 +788,7 @@ struct TranslatorES6Expression extends BaseStruct
 		list res = t.expression::Expression(t, op_code.if_false); t = res[0]; string if_false = res[1];
 		
 		content ~= "(" ~ condition ~ ") ? (" ~ if_true ~ ") : (" ~ if_false ~ ")";
-		t <= opcode_level <= 11;
+		t <= opcode_level <= 0;
 		
 		/* OpTernary */
 		return [t, content];
@@ -816,7 +828,7 @@ struct TranslatorES6Expression extends BaseStruct
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.push(op_code_item);
+			items.pushValue(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
 		items = items.reverseIm();
