@@ -155,7 +155,7 @@ class CLI
 			{
 				if (op_code)
 				{
-					CoreTranslator t = static::createTranslator(lang_name);
+					CoreTranslator t = LangUtils::createTranslator(lang_name);
 					if (t)
 					{
 						container <= result <= LangUtils::translate(t, op_code);
