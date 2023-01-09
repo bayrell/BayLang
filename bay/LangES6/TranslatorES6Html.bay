@@ -149,17 +149,18 @@ class TranslatorES6Html
 				else if (is_event_async) attr_key = "@eventAsync:" ~ event_name;
 				else if (is_signal) attr_key = "@signal:" ~ event_name;
 				
-				attr_value = "[this.getCurrentClassName()," ~ attr_value ~ "]";
+				attr_value = "[__v.component," ~ attr_value ~ "]";
 			}
 			else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
 				attr_key == "@name" or attr_key == "@watch")
 			{
 				/*res_attrs.push
 				(
-					t.expression::toString("@model_path") ~ ": this.concatAttr(ctx, params, \"@model_path\", " ~
+					t.expression::toString("@model_path") ~
+						": this._concat_attrs(ctx, params, \"@model_path\", " ~
 						attr_value ~ ")"
 				);*/
-				attr_value = "[this.getCurrentClassName()," ~ attr_value ~ "]";
+				attr_value = "[__v.component," ~ attr_value ~ "]";
 			}
 			
 			res_attrs.pushValue
@@ -203,7 +204,7 @@ class TranslatorES6Html
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "Runtime.Web.RenderDriver.mergeAttrs(ctx, "~attr_s~","~attr.value.value~")";
+			attr_s = "this._merge_attrs(ctx, "~attr_s~","~attr.value.value~")";
 		}
 		
 		return [t, attr_s];
@@ -252,7 +253,8 @@ class TranslatorES6Html
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
+			content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+				".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -274,18 +276,21 @@ class TranslatorES6Html
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
 				content ~= t.s("/* Raw */");
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"r\", \"\", null, " ~ item_value ~ ");");
+				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+					".e(ctx, \"r\", \"\", null, " ~ item_value ~ ");");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
 				content ~= t.s("/* Html */");
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"h\", \"\", null, " ~ item_value ~ ");");
+				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+					".e(ctx, \"h\", \"\", null, " ~ item_value ~ ");");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
 				item_value = "Runtime.rtl.json_encode(ctx, " ~ item_value ~ ")";
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
+				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+					".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -302,7 +307,7 @@ class TranslatorES6Html
 			if (op_code.tag_name == "")
 			{
 				content ~= t.s("/* Items */");
-				content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"empty\");");
+				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"empty\");");
 			}
 			else if (is_component)
 			{
@@ -318,14 +323,14 @@ class TranslatorES6Html
 					list res = static::OpHtmlItems(t, op_code.items);
 					t = res[0]; string f = res[1];
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"c\"," ~
+					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"c\"," ~
 						tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");");
 					has_childs = false;
 				}
 				else
 				{
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"c\", " ~
+					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"c\", " ~
 						tag_name ~ ", " ~ attrs ~ ");");
 				}
 			}
@@ -341,19 +346,19 @@ class TranslatorES6Html
 				{
 					string svg_content = op_code["items", "items", 0, "value", "value"] |> default string "";
 					svg_content = t.expression::toString(svg_content);
-					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"e\", " ~
-						tag_name ~ ", " ~ attrs ~ ");");
+					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+						".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
 					has_childs = false;
 				}
 				else if (has_childs)
 				{
-					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"e\", " ~
-						tag_name ~ ", " ~ attrs ~ ");");
+					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+						".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
 				}
 				else
 				{
-					content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"e\", " ~
-						tag_name ~ ", " ~ attrs ~ ");");
+					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+						".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
 				}
 			}
 			
@@ -388,7 +393,8 @@ class TranslatorES6Html
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
 			content ~= t.s("/* Text */");
-			content ~= t.s("var " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
+			content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+				".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
 		}
 		
 		return [t, content];

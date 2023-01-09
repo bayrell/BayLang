@@ -499,6 +499,98 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read style
+	 */
+	pure list<ParserBay, BaseOpCode> readStyle(
+		ParserBay parser, Dict item_attrs, Vector<BaseOpCode> items, Caret caret_start
+	)
+	{
+		/* Save vars */
+		Dict<bool> save_vars = parser.vars;
+		parser <= vars <= parser.vars.setIm("vars", true);
+		parser <= is_local_css <= true;
+		
+		/* Check if local css */
+		string is_global = item_attrs.get("global", "");
+		if (is_global == "true")
+		{
+			parser <= is_local_css <= false;
+		}
+		
+		/* Read css */
+		list res = static::readCssBody(parser);
+		parser = res[0]; BaseOpCode css_op_code = res[1];
+		
+		/* Restore vars */
+		parser <= vars <= save_vars;
+		
+		/* Read style footer */
+		list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		int find_pos = -1;
+		for (int items_i=0; items_i<items.count(); items_i++)
+		{
+			OpDeclareFunction f = items[items_i];
+			if (f instanceof OpDeclareFunction)
+			{
+				if (f.name == "css")
+				{
+					find_pos = items_i;
+					break;
+				}
+			}
+		}
+		
+		if (find_pos == -1)
+		{
+			OpDeclareFunction f = new OpDeclareFunction
+			{
+				"args":
+				[
+					new OpDeclareFunctionArg
+					{
+						"name": "vars",
+						"caret_start": caret_start,
+						"caret_end": parser.caret,
+					},
+				],
+				"vars": [],
+				"flags": new OpFlags
+				{
+					"p_static": true,
+					"p_pure": true,
+				},
+				"name": "css",
+				"result_type": "html",
+				"expression": css_op_code,
+				"items": null,
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+			};
+			
+			return [parser, f, -1];
+		}
+		
+		OpDeclareFunction f = items[find_pos];
+		
+		f <= expression <= new OpMath
+		{
+			"caret_start": caret_start,
+			"caret_end": parser.caret,
+			"math": "~",
+			"value1": f.expression,
+			"value2": css_op_code,
+		};
+		
+		return [parser, f, find_pos];
+	}
+	
+	
+	
+	/**
 	 * Read html comment
 	 */
 	pure list<ParserBay, OpComment> readHTMLComment(ParserBay parser)
@@ -584,16 +676,19 @@ class ParserBayHtml extends BaseObject
 		int x = parser.caret.x;
 		int y = parser.caret.y;
 		string ch = rs::substr(content.ref, pos, 1);
+		string ch2 = rs::substr(content.ref, pos, 2);
 		if (ch == "<")
 		{
 			list res = static::readHTMLTag(parser);
 			parser = res[0]; item = res[1];
 		}
-		else if (ch == "{")
+		else if (ch2 == "{{")
 		{
+			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; item = res[1];
+			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 		}
 		else if (ch == "@")
@@ -615,6 +710,7 @@ class ParserBayHtml extends BaseObject
 			
 			caret = new Caret{ "x": x, "y": y, "pos": pos };
 			parser <= caret <= caret;
+			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; item = res[1];
@@ -650,6 +746,7 @@ class ParserBayHtml extends BaseObject
 				};
 			}
 			
+			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 		}
 		
@@ -715,13 +812,20 @@ class ParserBayHtml extends BaseObject
 		BaseOpCode op_code = null;
 		OpIdentifier ident = null;
 		
+		int pos = parser.caret.pos;
+		Reference<string> content = parser.content;
+		string ch = rs::substr(content.ref, pos, 1);
+		string ch2 = rs::substr(content.ref, pos, 2);
+		
 		/* Look token */
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "{")
+		if (ch2 == "{{")
 		{
+			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; op_code = res[1];
+			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 		}
 		else if (token.content == "@")
@@ -786,7 +890,8 @@ class ParserBayHtml extends BaseObject
 			{
 				list res = static::readHTMLAttrKey(parser); parser = res[0]; string key = res[1];
 				list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
-				list res = static::readHTMLAttrValue(parser, key); parser = res[0]; BaseOpCode value = res[1];
+				list res = static::readHTMLAttrValue(parser, key);
+				parser = res[0]; BaseOpCode value = res[1];
 				items.pushValue
 				(
 					new OpHtmlAttribute
@@ -827,13 +932,14 @@ class ParserBayHtml extends BaseObject
 		int y = parser.caret.y;
 		int start_pos = pos;
 		int end_tag_sz = rs::strlen(end_tag);
-		string ch2 = rs::substr(content.ref, pos, end_tag_sz);
+		string ch_pos = rs::substr(content.ref, pos, end_tag_sz);
 		bool flag_first = true;
 		bool first_html_tag = false;
 		if (end_tag == "") first_html_tag = true;
-		while ( ( end_tag == "" or (end_tag != "" and ch2 != end_tag) ) and pos < content_sz)
+		while ( ( end_tag == "" or (end_tag != "" and ch_pos != end_tag) ) and pos < content_sz)
 		{
 			string ch = rs::substr(content.ref, pos, 1);
+			string ch2 = rs::substr(content.ref, pos, 2);
 			string ch3 = rs::substr(content.ref, pos, 3);
 			string ch4 = rs::substr(content.ref, pos, 4);
 			string ch6 = rs::substr(content.ref, pos, 6);
@@ -871,7 +977,7 @@ class ParserBayHtml extends BaseObject
 			}
 			
 			/* If html or tag */
-			else if (ch == "<" or ch == "{" or ch == "@")
+			else if (ch == "<" or ch2 == "{{" or ch == "@")
 			{
 				string value = rs::substr(content.ref, start_pos, pos - start_pos);
 				caret = new Caret{ "x": x, "y": y, "pos": pos };
@@ -904,7 +1010,10 @@ class ParserBayHtml extends BaseObject
 			}
 			
 			/* If html operator */
-			else if (ch3 == "%if" or ch4 == "%for" or ch4 == "%var" or ch4 == "%set" or ch6 == "%while" or ch7 == "%render")
+			else if (
+				ch3 == "%if" or ch4 == "%for" or ch4 == "%var" or
+				ch4 == "%set" or ch6 == "%while" or ch7 == "%render"
+			)
 			{
 				string value = rs::substr(content.ref, start_pos, pos - start_pos);
 				caret = new Caret{ "x": x, "y": y, "pos": pos };
@@ -945,7 +1054,7 @@ class ParserBayHtml extends BaseObject
 				y = parser.parser_base::nextY(parser, ch, y);
 				pos = pos + 1;
 			}
-			ch2 = rs::substr(content.ref, pos, end_tag_sz);
+			ch_pos = rs::substr(content.ref, pos, end_tag_sz);
 		}
 		
 		/* Push item */
@@ -1154,7 +1263,7 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
-	 * Read html template
+	 * Read html operator
 	 */
 	pure list<ParserBay, BaseOpCode> readHTML(ParserBay parser, string end_tag = "")
 	{
@@ -1180,6 +1289,107 @@ class ParserBayHtml extends BaseObject
 		return [parser, op_code];
 	}
 	
+	
+	
+	/**
+	 * Read html operator
+	 */
+	pure list<ParserBay, BaseOpCode> readHTMLTemplate(
+		ParserBay parser, Dict item_attrs, Caret caret_start
+	)
+	{
+		bool is_html_default_args = false;
+		string fn_name = item_attrs.get("name", "render");
+		string fn_args_str = item_attrs.get("args", "");
+		Dict<bool> parser2_vars = {};
+		
+		Collection<OpDeclareFunctionArg> fn_args = null;
+		if (item_attrs.has("args"))
+		{
+			ParserBay parser2 = parser::setContent(parser, fn_args_str);
+			parser2 <= caret <= new Caret{};
+			
+			/* Parse args */
+			list res = parser.parser_operator::readDeclareFunctionArgs(parser2, false, false);
+			parser2 = res[0]; fn_args = res[1];
+			parser2_vars = parser2.vars;
+		}
+		else
+		{
+			fn_args =
+			[
+				new OpDeclareFunctionArg
+				{
+					"name": "layout",
+					"caret_start": caret_start,
+					"caret_end": parser.caret,
+				},
+				new OpDeclareFunctionArg
+				{
+					"name": "model_path",
+					"caret_start": caret_start,
+					"caret_end": parser.caret,
+				},
+				new OpDeclareFunctionArg
+				{
+					"name": "params",
+					"caret_start": caret_start,
+					"caret_end": parser.caret,
+				},
+				new OpDeclareFunctionArg
+				{
+					"name": "content",
+					"caret_start": caret_start,
+					"caret_end": parser.caret,
+				},
+			];
+			
+			is_html_default_args = true;
+			
+			/* Register variable in parser */
+			parser2_vars = parser2_vars
+				.setIm("layout", true)
+				.setIm("model", true)
+				.setIm("model_path", true)
+				.setIm("params", true)
+				.setIm("content", true)
+			;
+		}
+		
+		/* Read template content */
+		Dict<bool> save_vars = parser.vars;
+		parser <= vars <= parser.vars.concat(parser2_vars);
+		list res = static::readHTML(parser, "</template"); parser = res[0];
+		BaseOpCode expression = res[1];
+		parser <= vars <= save_vars;
+		
+		/* Read template footer */
+		list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "template"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		OpDeclareFunction f = new OpDeclareFunction
+		{
+			"args": fn_args,
+			"vars": [],
+			"flags": new OpFlags
+			{
+				"p_static": true,
+				"p_pure": true,
+			},
+			"name": fn_name,
+			"result_type": "html",
+			"is_html": true,
+			"is_html_default_args": is_html_default_args,
+			"expression": expression,
+			"items": null,
+			"caret_start": caret_start,
+			"caret_end": parser.caret,
+		};
+		
+		return [parser, f];
+	}
 	
 	
 	/**
@@ -1357,176 +1567,22 @@ class ParserBayHtml extends BaseObject
 			{
 				if (item_name == "template")
 				{
-					string fn_name = item_attrs.get("name", "render");
-					string fn_args_str = item_attrs.get("args", "");
-					Dict<bool> parser2_vars = {};
-					
-					Collection<OpDeclareFunctionArg> fn_args = null;
-					if (item_attrs.has("args"))
-					{
-						ParserBay parser2 = parser::setContent(parser, fn_args_str);
-						parser2 <= caret <= new Caret{};
-						
-						/* Parse args */
-						list res = parser.parser_operator::readDeclareFunctionArgs(parser2, false, false);
-						parser2 = res[0]; fn_args = res[1];
-						parser2_vars = parser2.vars;
-					}
-					else
-					{
-						fn_args =
-						[
-							new OpDeclareFunctionArg
-							{
-								"name": "layout",
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							new OpDeclareFunctionArg
-							{
-								"name": "model_path",
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							new OpDeclareFunctionArg
-							{
-								"name": "params",
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							new OpDeclareFunctionArg
-							{
-								"name": "content",
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-						];
-						
-						/* Register variable in parser */
-						parser2_vars = parser2_vars
-							.setIm("layout", true)
-							.setIm("model_path", true)
-							.setIm("params", true)
-							.setIm("content", true)
-						;
-					}
-					
-					/* Read template content */
-					Dict<bool> save_vars = parser.vars;
-					parser <= vars <= parser.vars.concat(parser2_vars);
-					list res = static::readHTML(parser, "</template"); parser = res[0];
-					BaseOpCode expression = res[1];
-					parser <= vars <= save_vars;
-					
-					/* Read template footer */
-					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
-					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
-					list res = parser.parser_base::matchToken(parser, "template"); parser = res[0];
-					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
-					
-					OpDeclareFunction f = new OpDeclareFunction
-					{
-						"args": fn_args,
-						"vars": [],
-						"flags": new OpFlags
-						{
-							"p_static": true,
-							"p_pure": true,
-						},
-						"name": fn_name,
-						"result_type": "html",
-						"expression": expression,
-						"items": null,
-						"caret_start": caret_start,
-						"caret_end": parser.caret,
-					};
-					
-					items.pushValue(f);
+					list res = static::readHTMLTemplate(parser, item_attrs, caret_start);
+					parser = res[0]; BaseOpCode op_code = res[1];
+					items.pushValue(op_code);
 				}
 				else if (item_name == "style")
 				{
-					/* Save vars */
-					Dict<bool> save_vars = parser.vars;
-					parser <= vars <= parser.vars.setIm("vars", true);
-					parser <= is_local_css <= true;
-					
-					/* Check if local css */
-					string is_global = item_attrs.get("global", "");
-					if (is_global == "true")
-					{
-						parser <= is_local_css <= false;
-					}
-					
-					/* Read css */
-					list res = static::readCssBody(parser);
-					parser = res[0]; BaseOpCode css_op_code = res[1];
-					
-					/* Restore vars */
-					parser <= vars <= save_vars;
-					
-					/* Read style footer */
-					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
-					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
-					list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
-					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
-					
-					int find_pos = -1;
-					for (int items_i=0; items_i<items.count(); items_i++)
-					{
-						OpDeclareFunction f = items[items_i];
-						if (f instanceof OpDeclareFunction)
-						{
-							if (f.name == "css")
-							{
-								find_pos = items_i;
-								break;
-							}
-						}
-					}
+					list res = static::readStyle(parser, item_attrs, items, caret_start);
+					parser = res[0]; BaseOpCode op_code = res[1]; int find_pos = res[2];
 					
 					if (find_pos == -1)
 					{
-						OpDeclareFunction f = new OpDeclareFunction
-						{
-							"args":
-							[
-								new OpDeclareFunctionArg
-								{
-									"name": "vars",
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-								},
-							],
-							"vars": [],
-							"flags": new OpFlags
-							{
-								"p_static": true,
-								"p_pure": true,
-							},
-							"name": "css",
-							"result_type": "html",
-							"expression": css_op_code,
-							"items": null,
-							"caret_start": caret_start,
-							"caret_end": parser.caret,
-						};
-						
-						items.pushValue(f);
+						items.pushValue(op_code);
 					}
 					else
 					{
-						OpDeclareFunction f = items[find_pos];
-						
-						f <= expression <= new OpMath
-						{
-							"caret_start": caret_start,
-							"caret_end": parser.caret,
-							"math": "~",
-							"value1": f.expression,
-							"value2": css_op_code,
-						};
-						
-						items.set(find_pos, f);
+						items.setValue(find_pos, op_code);
 					}
 				}
 				else if (item_name == "script")
@@ -1546,28 +1602,7 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = parser.parser_base::readDict(parser);
 					parser = res[0]; BaseOpCode arr = res[1];
-					/*
-					OpDeclareFunction f = new OpDeclareFunction
-					{
-						"args":
-						[
-						],
-						"vars": [],
-						"flags": new OpFlags
-						{
-							"p_static": true,
-							"p_pure": true,
-						},
-						"name": "meta",
-						"result_type": "Collection",
-						"expression": arr,
-						"items": null,
-						"caret_start": caret_start,
-						"caret_end": parser.caret,
-					};
 					
-					items.pushValue(f);
-					*/
 					/* Read meta footer */
 					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
