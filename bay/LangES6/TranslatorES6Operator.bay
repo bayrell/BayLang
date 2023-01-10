@@ -914,7 +914,7 @@ struct TranslatorES6Operator extends BaseStruct
 		string content = "";
 		t = t.levelInc();
 		
-		if (f.is_html_default_args)
+		if (f.is_html)
 		{
 			content ~= t.s("let model = use(\"Runtime.rtl\").attr(ctx, layout, model_path);");
 		}

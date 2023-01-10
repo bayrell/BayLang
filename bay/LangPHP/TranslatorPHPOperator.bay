@@ -752,7 +752,7 @@ static class TranslatorPHPOperator
 		string content = "";
 		t = t.levelInc();
 		
-		if (f.is_html_default_args)
+		if (f.is_html)
 		{
 			content ~= t.s("$model = \\Runtime\\rtl::attr($layout, $model_path);");
 		}

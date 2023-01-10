@@ -25,6 +25,7 @@ use Bayrell.Lang.LangBay.ParserBayHtml;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAssign;
+use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpFor;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
@@ -144,14 +145,14 @@ static class TranslatorPHPHtml
 		if (op_code.op_code_name)
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render2($ctx, $layout," ~ v_model ~
+			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}
 		else
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render2($ctx, $layout," ~ v_model ~
+			content ~= t.s(var_name ~ " = [" ~ var_name ~ "_name::render($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}
@@ -453,6 +454,12 @@ static class TranslatorPHPHtml
 			{
 				list res = t.operator::OpWhile(t, item);
 				t = res[0]; op_content ~= res[1];
+			}
+			else if (item instanceof OpCall)
+			{
+				list res = t.expression::OpCall(t, item, true); 
+				t = res[0]; item_value = res[1];
+				item_value = "static::_escape_html($ctx, " ~ item_value ~ ")";
 			}
 			else
 			{
