@@ -727,7 +727,7 @@ struct TranslatorES6Operator extends BaseStruct
 		}
 		else if (op_code instanceof OpCall)
 		{
-			list res = t.expression::OpCall(t, op_code, false); t = res[0];
+			list res = t.expression::OpCall(t, op_code); t = res[0];
 			if (res[1] != "") content = t.s(res[1] ~ ";");
 		}
 		else if (op_code instanceof OpContinue)

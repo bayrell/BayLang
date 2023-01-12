@@ -25,6 +25,7 @@ use Bayrell.Lang.LangBay.ParserBayHtml;
 use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAssign;
+use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpFor;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
@@ -241,7 +242,8 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	pure list<TranslatorES6, string> OpHtmlTag(TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name)
+	pure list<TranslatorES6, string> OpHtmlTag(
+		TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name)
 	{
 		string content = "";
 		string content2 = "";
@@ -380,10 +382,20 @@ class TranslatorES6Html
 			/* Save op codes */
 			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 			/*int save_op_code_inc = t.save_op_code_inc;*/
-
-			list res = t.expression::Expression(t, op_code); 
-			t = res[0]; string item_value = res[1];
-
+			
+			string item_value = "";
+			
+			if (op_code instanceof OpCall)
+			{
+				list res = t.expression::OpCall(t, op_code, true);
+				t = res[0]; item_value ~= res[1];
+			}
+			else
+			{
+				list res = t.expression::Expression(t, op_code);
+				t = res[0]; item_value = res[1];
+			}
+			
 			/* Output save op code */
 			string save = t::outputSaveOpCode(t, save_op_codes.count());
 			if (save != "") content ~= save;
