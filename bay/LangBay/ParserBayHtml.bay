@@ -1137,7 +1137,8 @@ class ParserBayHtml extends BaseObject
 		{
 			if (tag_name == "svg")
 			{
-				list res = parser.parser_base::readUntilStringArr(parser, ["</svg>"], false); parser = res[0];
+				list res = parser.parser_base::readUntilStringArr(parser, ["</svg>"], false);
+				parser = res[0];
 				string content = res[1];
 				content = re::replace("[\t\n]", "", content);
 				
@@ -1304,6 +1305,12 @@ class ParserBayHtml extends BaseObject
 		
 		Collection<OpDeclareFunctionArg> fn_args =
 		[
+			new OpDeclareFunctionArg
+			{
+				"name": "component",
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+			},
 			new OpDeclareFunctionArg
 			{
 				"name": "layout",

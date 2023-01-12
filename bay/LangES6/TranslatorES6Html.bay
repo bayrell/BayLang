@@ -149,7 +149,7 @@ class TranslatorES6Html
 				else if (is_event_async) attr_key = "@eventAsync:" ~ event_name;
 				else if (is_signal) attr_key = "@signal:" ~ event_name;
 				
-				attr_value = "[__v.component," ~ attr_value ~ "]";
+				attr_value = "[component," ~ attr_value ~ "]";
 			}
 			else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
 				attr_key == "@name" or attr_key == "@watch")
@@ -160,7 +160,7 @@ class TranslatorES6Html
 						": this._concat_attrs(ctx, params, \"@model_path\", " ~
 						attr_value ~ ")"
 				);*/
-				attr_value = "[__v.component," ~ attr_value ~ "]";
+				attr_value = "[component," ~ attr_value ~ "]";
 			}
 			
 			res_attrs.pushValue
