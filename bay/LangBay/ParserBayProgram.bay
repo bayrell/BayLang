@@ -51,9 +51,14 @@ static class ParserBayProgram
 		CoreToken token = null;
 		OpEntityName name = null;
 		
-		list res = parser.parser_base::matchToken(parser, "namespace"); parser = res[0]; token = res[1];
+		list res = parser.parser_base::matchToken(parser, "namespace");
+		parser = res[0]; token = res[1];
+		
 		Caret caret_start = token.caret_start;
-		list res = parser.parser_base::readEntityName(parser, false); parser = res[0]; name = res[1];
+		
+		list res = parser.parser_base::readEntityName(parser, false);
+		parser = res[0]; name = res[1];
+		
 		string current_namespace_name = rs::join(".", name.names);
 		
 		OpNamespace current_namespace = new OpNamespace
@@ -80,16 +85,23 @@ static class ParserBayProgram
 		OpEntityName name = null;
 		string alias = "";
 		
-		list res = parser.parser_base::matchToken(parser, "use"); parser = res[0]; token = res[1];
+		list res = parser.parser_base::matchToken(parser, "use");
+		parser = res[0]; token = res[1];
+		
 		Caret caret_start = token.caret_start;
 		
-		list res = parser.parser_base::readEntityName(parser, false); parser = res[0]; name = res[1];
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+		list res = parser.parser_base::readEntityName(parser, false);
+		parser = res[0]; name = res[1];
+		
+		list res = parser.parser_base::readToken(parser);
+		look = res[0]; token = res[1];
+		
 		if (token.content == "as")
 		{
 			BaseOpCode parser_value = null;
 			parser = look;
-			list res = parser.parser_base::readIdentifier(parser); parser = res[0]; parser_value = res[1];
+			list res = parser.parser_base::readIdentifier(parser);
+			parser = res[0]; parser_value = res[1];
 			alias = parser_value.value;
 		}
 		
@@ -159,7 +171,8 @@ static class ParserBayProgram
 			else
 			{
 				OpFlags flags = null;
-				list res = parser.parser_operator::readFlags(parser); parser = res[0]; flags = res[1];
+				list res = parser.parser_operator::readFlags(parser);
+				parser = res[0]; flags = res[1];
 				
 				if (parser.parser_operator::tryReadFunction(parser, true, flags))
 				{
@@ -172,7 +185,8 @@ static class ParserBayProgram
 				}
 				else
 				{
-					list res = parser.parser_operator::readAssign(parser); parser = res[0]; item = res[1];
+					list res = parser.parser_operator::readAssign(parser);
+					parser = res[0]; item = res[1];
 					list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 				}
 				

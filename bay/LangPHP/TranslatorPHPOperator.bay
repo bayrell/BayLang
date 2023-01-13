@@ -722,6 +722,12 @@ static class TranslatorPHPOperator
 		{
 			bool flag = false;
 			if (f.is_context) { content ~= "$ctx"; flag = true; }
+			if (f.is_html)
+			{
+				flag = true;
+				content ~= (flag ? ", " : "") ~
+					"$layout, $model_path, $render_params, $render_content";
+			}
 			for (int i=0; i<f.args.count(i); i++)
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);

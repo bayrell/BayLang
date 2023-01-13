@@ -96,7 +96,8 @@ struct TranslatorES6Program extends BaseStruct
 		string content = "";
 		
 		if (op_code.isFlag("declare")) return [t, ""];
-		if (not is_static and is_static_function or is_static and not is_static_function) return [t, ""];
+		if (not is_static and is_static_function or is_static and not is_static_function)
+			return [t, ""];
 		
 		/* Set current function */
 		t <= current_function <= op_code;
@@ -886,7 +887,7 @@ struct TranslatorES6Program extends BaseStruct
 			if (class_kind == OpDeclareClass::KIND_STRUCT or t.enable_introspection)
 			{
 				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
-				string var_prefix = is_struct ? "__" : "";
+				string var_prefix = "";
 				
 				if (not is_struct)
 				{

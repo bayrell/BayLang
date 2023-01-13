@@ -794,7 +794,7 @@ static class TranslatorPHPExpression
 		if (is_html)
 		{
 			content ~= (flag ? ", " : "") ~
-				"$component, $layout, $model_path, $render_params, $render_content";
+				"$layout, $model_path, $render_params, $render_content";
 			flag = true;
 		}
 		

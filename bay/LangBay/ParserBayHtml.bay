@@ -1303,6 +1303,7 @@ class ParserBayHtml extends BaseObject
 		string fn_args_str = item_attrs.get("args", "");
 		Dict<bool> parser2_vars = {};
 		
+		/*
 		Collection<OpDeclareFunctionArg> fn_args =
 		[
 			new OpDeclareFunctionArg
@@ -1336,6 +1337,8 @@ class ParserBayHtml extends BaseObject
 				"caret_end": parser.caret,
 			},
 		];
+		*/
+		Collection<OpDeclareFunctionArg> fn_args = [];
 		
 		if (item_attrs.has("args"))
 		{

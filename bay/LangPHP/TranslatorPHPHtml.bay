@@ -146,7 +146,7 @@ static class TranslatorPHPHtml
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
 			content ~= t.s(var_name ~ " = [" ~ var_name ~
-				"_name::render($ctx, $component, $layout," ~ v_model ~
+				"_name::render($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}
@@ -154,7 +154,7 @@ static class TranslatorPHPHtml
 		{
 			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
 			content ~= t.s(var_name ~ " = [" ~ var_name ~
-				"_name::render($ctx, $component, $layout," ~ v_model ~
+				"_name::render($ctx, $layout," ~ v_model ~
 				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
 			;
 		}

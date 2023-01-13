@@ -521,6 +521,10 @@ class TranslatorES6Html
 		content ~= t.s("{");
 		t = t.levelInc();
 		
+		content ~= t.s("let layout = component.layout();");
+		content ~= t.s("let model_path = component.model_path;");
+		content ~= t.s("let model = component.model();");
+		
 		/* content ~= t.s("var __vnull = null;"); */
 		/* content ~= t.s("var __c_childs = [];"); */
 		/* content ~= t.s2(""); */
