@@ -682,14 +682,29 @@ class ParserBayHtml extends BaseObject
 			list res = static::readHTMLTag(parser);
 			parser = res[0]; item = res[1];
 		}
-		else if (ch2 == "{{")
+		else if (ch == "{")
 		{
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+			
+			/* Look token */
+			bool flag = false;
+			list res = parser.parser_base::readToken(parser);
+			ParserBay look = res[0]; CoreToken token = res[1];
+			
+			if (token.content == "{")
+			{
+				flag = true;
+				parser = look;
+			}
+			
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; item = res[1];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+			
+			if (flag)
+			{
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+			}
 		}
 		else if (ch == "@")
 		{
@@ -711,7 +726,12 @@ class ParserBayHtml extends BaseObject
 			caret = new Caret{ "x": x, "y": y, "pos": pos };
 			parser <= caret <= caret;
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+			
+			/* Look bracket */
+			list res = parser.parser_base::lookToken(parser, "{");
+			ParserBay look = res[0]; bool find_bracket = res[2];
+			if (find_bracket) parser = look;
+			
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; item = res[1];
 			
@@ -747,7 +767,10 @@ class ParserBayHtml extends BaseObject
 			}
 			
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+			if (find_bracket)
+			{
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+			}
 		}
 		
 		return [parser, item];
@@ -819,14 +842,71 @@ class ParserBayHtml extends BaseObject
 		
 		/* Look token */
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (ch2 == "{{")
+		if (rs::substr(attr_key, 0, 7) == "@event:")
+		{
+			/* Look token */
+			list res = parser.parser_base::lookToken(parser, "{");
+			ParserBay look = res[0]; CoreToken token = res[1]; bool is_fn = res[2];
+			
+			if (is_fn)
+			{
+				list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+				
+				/* Look token */
+				list res = parser.parser_base::lookToken(parser, "{");
+				ParserBay look = res[0]; CoreToken token = res[1]; bool find = res[2];
+				if (find)
+				{
+					parser = look;
+				}
+				
+				/* Add msg to vars */
+				Dict<bool> parser_vars = parser.vars;
+				parser <= vars <= parser.vars.concat({
+					"component": true,
+					"msg": true,
+				});
+				
+				/* Read expression */
+				list res = parser.parser_expression::readExpression(parser);
+				parser = res[0]; op_code = res[1];
+				
+				/* Restore vars */
+				parser <= vars <= parser_vars;
+				
+				/* Parse brackets */
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+				if (find)
+				{
+					list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+				}
+			}
+			else
+			{
+				list res = parser.parser_base::readString(parser);
+				parser = res[0]; op_code = res[1];
+			}
+		}
+		else if (ch == "{")
 		{
 			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
+			
+			/* Look token */
+			list res = parser.parser_base::lookToken(parser, "{");
+			ParserBay look = res[0]; CoreToken token = res[1]; bool find = res[2];
+			if (find)
+			{
+				parser = look;
+			}
+			
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; op_code = res[1];
 			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-			list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+			
+			if (find)
+			{
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
+			}
 		}
 		else if (token.content == "@")
 		{
@@ -835,15 +915,13 @@ class ParserBayHtml extends BaseObject
 		}
 		else if (token.content == "[")
 		{
-			list res = parser.parser_base::readCollection(parser); parser = res[0]; op_code = res[1];
-		}
-		else if (rs::substr(attr_key, 0, 8) == "@signal:")
-		{
-			list res = parser.parser_base::readNew(parser, false); parser = res[0]; op_code = res[1];
+			list res = parser.parser_base::readCollection(parser);
+			parser = res[0]; op_code = res[1];
 		}
 		else
 		{
-			list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];
+			list res = parser.parser_base::readString(parser);
+			parser = res[0]; op_code = res[1];
 		}
 		
 		return [parser, op_code];
@@ -1413,7 +1491,9 @@ class ParserBayHtml extends BaseObject
 		string ch = rs::substr(content.ref, caret.pos, 1);
 		while (ch != "/" and ch != ">" and caret.pos < content_sz)
 		{
-			list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
+			list res = parser.parser_base::readToken(parser);
+			parser = res[0]; token = res[1];
+			
 			list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
 			string attr_name = token.content;
 			
@@ -1421,13 +1501,17 @@ class ParserBayHtml extends BaseObject
 			list res = parser.parser_base::readToken(parser); look_token = res[1];
 			if (look_token.content == "{")
 			{
-				list res = parser.parser_base::readDict(parser); parser = res[0]; op_code = res[1];
+				list res = parser.parser_base::readDict(parser);
+				parser = res[0]; op_code = res[1];
+				
 				caret = parser.caret;
 				items.setValue(attr_name, op_code);
 			}
 			else
 			{
-				list res = parser.parser_base::readString(parser); parser = res[0]; op_code = res[1];
+				list res = parser.parser_base::readString(parser);
+				parser = res[0]; op_code = res[1];
+				
 				items.setValue(attr_name, op_code.value);
 			}
 			
@@ -1532,7 +1616,8 @@ class ParserBayHtml extends BaseObject
 				continue;
 			}
 			
-			list res = static::readAttrs(parser); parser = res[0]; Dict item_attrs = res[1];
+			list res = static::readAttrs(parser);
+			parser = res[0]; Dict item_attrs = res[1];
 			
 			if (item_name == "annotation")
 			{
