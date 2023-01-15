@@ -727,7 +727,7 @@ struct TranslatorES6Operator extends BaseStruct
 		}
 		else if (op_code instanceof OpCall)
 		{
-			list res = t.expression::OpCall(t, op_code, false); t = res[0];
+			list res = t.expression::OpCall(t, op_code); t = res[0];
 			if (res[1] != "") content = t.s(res[1] ~ ";");
 		}
 		else if (op_code instanceof OpContinue)
@@ -880,6 +880,12 @@ struct TranslatorES6Operator extends BaseStruct
 		{
 			bool flag = false;
 			if (f.is_context) { content ~= "ctx"; flag = true; }
+			if (f.is_html)
+			{
+				flag = true;
+				content ~= (flag ? ", " : "") ~
+					"component, render_params, render_content";
+			}
 			for (int i=0; i<f.args.count(i); i++)
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);

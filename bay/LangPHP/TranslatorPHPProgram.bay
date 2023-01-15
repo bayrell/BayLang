@@ -105,18 +105,8 @@ static class TranslatorPHPProgram
 		content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 		t = t.levelInc();
 		
-		if (t.enable_introspection)
-		{
-			content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
-			t = t.levelInc();
-			content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-			content ~= t.s("\"name\"=>" ~ t.expression::toString(f.name) ~ ",");
-		}
-		else
-		{
-			content ~= t.s("return \\Runtime\\Dict::from([");
-			t = t.levelInc();
-		}
+		content ~= t.s("return \\Runtime\\Dict::from([");
+		t = t.levelInc();
 		
 		if (f.flags.isFlag("async"))
 		{
@@ -395,76 +385,84 @@ static class TranslatorPHPProgram
 			}
 			
 			/* Struct */
-			if (class_kind == OpDeclareClass::KIND_STRUCT and (t.flag_struct_check_types or t.enable_introspection))
+			if (class_kind == OpDeclareClass::KIND_STRUCT or t.enable_introspection)
 			{
-				/* Assign Object */
-				content ~= t.s("function assignObject($ctx,$o)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				content ~= t.s("if ($o instanceof \\" ~
-					rs::replace("\\.", "\\", t.current_class_full_name) ~
-				")");
-				content ~= t.s("{");
-				t = t.levelInc();
-				for (int i=0; i<op_code.vars.count(); i++)
-				{
-					OpAssign variable = op_code.vars.item(i);
-					if (variable.kind != OpAssign::KIND_DECLARE) continue;
-					bool is_const = variable.flags.isFlag("const");
-					bool is_static = variable.flags.isFlag("static");
-					if (is_const or is_static) continue;
-					for (int j=0; j<variable.values.count(); j++)
-					{
-						OpAssignValue value = variable.values.item(j);
-						content ~= t.s("$this->__" ~ value.var_name ~ " = $o->__" ~ value.var_name ~ ";");
-					}
-				}
-				t = t.levelDec();
-				content ~= t.s("}");
-				content ~= t.s("parent::assignObject($ctx,$o);");
-				t = t.levelDec();
-				content ~= t.s("}");
+				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
+				string var_prefix = is_struct ? "__" : "";
 				
-				/* Assign Value */
-				content ~= t.s("function assignValue($ctx,$k,$v)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				bool flag = false;
-				for (int i=0; i<op_code.vars.count(); i++)
+				if (not is_struct)
 				{
-					OpAssign variable = op_code.vars.item(i);
-					if (variable.kind != OpAssign::KIND_DECLARE) continue;
-					bool is_const = variable.flags.isFlag("const");
-					bool is_static = variable.flags.isFlag("static");
-					if (is_const or is_static) continue;
-					for (int j=0; j<variable.values.count(); j++)
+					/* Assign Object */
+					content ~= t.s("function assignObject($ctx,$o)");
+					content ~= t.s("{");
+					t = t.levelInc();
+					content ~= t.s("if ($o instanceof \\" ~
+						rs::replace("\\.", "\\", t.current_class_full_name) ~
+					")");
+					content ~= t.s("{");
+					t = t.levelInc();
+					for (int i=0; i<op_code.vars.count(); i++)
 					{
-						OpAssignValue value = variable.values.item(j);
-						if (t.flag_struct_check_types)
+						OpAssign variable = op_code.vars.item(i);
+						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						bool is_const = variable.flags.isFlag("const");
+						bool is_static = variable.flags.isFlag("static");
+						if (is_const or is_static) continue;
+						for (int j=0; j<variable.values.count(); j++)
 						{
-							content ~= t.s
-							(
-								(flag ? "else " : "") ~
-								"if ($k == " ~ t.expression::toString(value.var_name) ~ ")"~
-								"$this->__" ~ value.var_name ~ " = Runtime.rtl.to($v, null, " ~ 
-									static::toPattern(t, variable.pattern) ~ ");"
-							);
+							OpAssignValue value = variable.values.item(j);
+							content ~= t.s("$this->" ~ var_prefix ~ value.var_name ~
+								" = $o->" ~ var_prefix ~ value.var_name ~ ";");
 						}
-						else
-						{
-							content ~= t.s
-							(
-								(flag ? "else " : "") ~
-								"if ($k == " ~ t.expression::toString(value.var_name) ~ ")" ~
-								"$this->__" ~ value.var_name ~ " = $v;"
-							);
-						}
-						flag = true;
 					}
+					t = t.levelDec();
+					content ~= t.s("}");
+					content ~= t.s("parent::assignObject($ctx,$o);");
+					t = t.levelDec();
+					content ~= t.s("}");
+					
+					/* Assign Value */
+					content ~= t.s("function assignValue($ctx,$k,$v)");
+					content ~= t.s("{");
+					t = t.levelInc();
+					bool flag = false;
+					for (int i=0; i<op_code.vars.count(); i++)
+					{
+						OpAssign variable = op_code.vars.item(i);
+						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						bool is_const = variable.flags.isFlag("const");
+						bool is_static = variable.flags.isFlag("static");
+						if (is_const or is_static) continue;
+						for (int j=0; j<variable.values.count(); j++)
+						{
+							OpAssignValue value = variable.values.item(j);
+							if (t.flag_struct_check_types)
+							{
+								content ~= t.s
+								(
+									(flag ? "else " : "") ~
+									"if ($k == " ~ t.expression::toString(value.var_name) ~ ")" ~
+										"$this->" ~ var_prefix ~ value.var_name ~
+										" = Runtime.rtl.to($v, null, " ~ 
+										static::toPattern(t, variable.pattern) ~ ");"
+								);
+							}
+							else
+							{
+								content ~= t.s
+								(
+									(flag ? "else " : "") ~
+									"if ($k == " ~ t.expression::toString(value.var_name) ~ ")" ~
+									"$this->" ~ var_prefix ~ value.var_name ~ " = $v;"
+								);
+							}
+							flag = true;
+						}
+					}
+					content ~= t.s( (flag ? "else " : "") ~ "parent::assignValue($ctx,$k,$v);");
+					t = t.levelDec();
+					content ~= t.s("}");
 				}
-				content ~= t.s( (flag ? "else " : "") ~ "parent::assignValue($ctx,$k,$v);");
-				t = t.levelDec();
-				content ~= t.s("}");
 				
 				/* Take Value */
 				content ~= t.s("function takeValue($ctx,$k,$d=null)");
@@ -484,8 +482,8 @@ static class TranslatorPHPProgram
 						content ~= t.s
 						(
 							(flag ? "else " : "") ~
-							"if ($k == " ~ t.expression::toString(value.var_name) ~ ")return $this->__" ~
-								value.var_name ~ ";"
+							"if ($k == " ~ t.expression::toString(value.var_name) ~
+								")return $this->" ~ var_prefix ~ value.var_name ~ ";"
 						);
 						flag = true;
 					}
@@ -532,19 +530,8 @@ static class TranslatorPHPProgram
 			t = t.levelInc();
 			t = t::clearSaveOpCode(t);
 			
-			if (t.enable_introspection)
-			{
-				content ~= t.s("return new \\Runtime\\IntrospectionInfo($ctx, [");
-				t = t.levelInc();
-				content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_CLASS,");
-				content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-				content ~= t.s("\"name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-			}
-			else
-			{
-				content ~= t.s("return \\Runtime\\Dict::from([");
-				t = t.levelInc();
-			}
+			content ~= t.s("return \\Runtime\\Dict::from([");
+			t = t.levelInc();
 			
 			content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
 			t = t.levelInc();
@@ -678,21 +665,9 @@ static class TranslatorPHPProgram
 					
 					t = t::clearSaveOpCode(t);
 					
-					if (t.enable_introspection)
-					{
-						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-							"return new \\Runtime\\IntrospectionInfo($ctx, [");
-						t = t.levelInc();
-						content ~= t.s("\"kind\"=>\\Runtime\\IntrospectionInfo::ITEM_FIELD,");
-						content ~= t.s("\"class_name\"=>" ~ t.expression::toString(t.current_class_full_name) ~ ",");
-						content ~= t.s("\"name\"=>$field_name,");
-					}
-					else
-					{
-						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-							"return \\Runtime\\Dict::from([");
-						t = t.levelInc();
-					}
+					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+						"return \\Runtime\\Dict::from([");
+					t = t.levelInc();
 					
 					content ~= t.s("\"t\"=>" ~ t.expression::toString(var_type) ~ ",");
 					if (var_sub_types.count() > 0) content ~= t.s("\"s\"=> [" ~ rs::join(", ", var_sub_types) ~ "],");

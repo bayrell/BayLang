@@ -76,7 +76,8 @@ static class TranslatorPHPOperator
 			}
 		);
 		
-		content = "\\Runtime\\rtl::setAttr($ctx, $" ~ var_name ~ ", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
+		content = "\\Runtime\\rtl::setAttr($ctx, $" ~ var_name ~
+			", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
 		return [t, content];
 	}
 	
@@ -85,7 +86,9 @@ static class TranslatorPHPOperator
 	/**
 	 * OpAssign
 	 */
-	pure list<TranslatorPHP, string> OpAssign(TranslatorPHP t, OpAssign op_code, bool flag_indent = true)
+	pure list<TranslatorPHP, string> OpAssign(
+		TranslatorPHP t, OpAssign op_code, bool flag_indent = true
+	)
 	{
 		string content = "";
 		
@@ -143,8 +146,8 @@ static class TranslatorPHPOperator
 							{
 								for (int j=item.attrs.count() - 1; j>=0; j--)
 								{
-									list res = t.expression::Expression(t, item.attrs[j]); t = res[0];
-									obj_s ~= "[" ~ res[1] ~ "]";
+									list res = t.expression::Expression(t, item.attrs[j]);
+									t = res[0]; obj_s ~= "[" ~ res[1] ~ "]";
 									items2.pushValue(res[1]);
 								}
 							}
@@ -169,7 +172,10 @@ static class TranslatorPHPOperator
 				}
 				else
 				{
-					if (item.op_code != null and item.op_code.value == "@" and t.enable_context == false)
+					if (item.op_code != null and
+						item.op_code.value == "@" and
+						t.enable_context == false
+					)
 					{
 						index_s = "\\Runtime\\rtl::setContext(" ~ item_expression ~ ");";
 					}
@@ -716,6 +722,12 @@ static class TranslatorPHPOperator
 		{
 			bool flag = false;
 			if (f.is_context) { content ~= "$ctx"; flag = true; }
+			if (f.is_html)
+			{
+				flag = true;
+				content ~= (flag ? ", " : "") ~
+					"$layout, $model_path, $render_params, $render_content";
+			}
 			for (int i=0; i<f.args.count(i); i++)
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);
@@ -745,6 +757,11 @@ static class TranslatorPHPOperator
 		
 		string content = "";
 		t = t.levelInc();
+		
+		if (f.is_html)
+		{
+			content ~= t.s("$model = \\Runtime\\rtl::attr($layout, $model_path);");
+		}
 		
 		if (f.items)
 		{

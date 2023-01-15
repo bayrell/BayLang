@@ -79,7 +79,8 @@ class ParserBayBase
 	 * @param char ch
 	 * @return boolean
 	 */
-	pure memorize bool isHexChar (char ch) => rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1;
+	pure memorize bool isHexChar (char ch) =>
+		rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1;
 	
 	
 	
@@ -91,7 +92,10 @@ class ParserBayBase
 	pure memorize bool isStringOfNumbers (string s)
 	{
 		int sz = rs::strlen(s);
-		for (int i=0; i<sz; i++){ if (not static::isNumber( rs::charAt(s, i) )) return false; }
+		for (int i=0; i<sz; i++)
+		{
+			if (not static::isNumber( rs::charAt(s, i) )) return false;
+		}
 		return true;
 	}
 	
@@ -317,8 +321,11 @@ class ParserBayBase
 		string ch4 = rs::substr(content.ref, pos, 4);
 		while
 		(
-			(static::isSkipChar(ch) or static::isCommentOpen(parser, ch2) or static::isCommentOpen(parser, ch4)) and
-			pos < parser.content_sz
+			(
+				static::isSkipChar(ch) or
+				static::isCommentOpen(parser, ch2) or
+				static::isCommentOpen(parser, ch4)
+			) and pos < parser.content_sz
 		)
 		{
 			if (static::isCommentOpen(parser, ch2))
@@ -745,7 +752,9 @@ class ParserBayBase
 		while ( pos < content_sz and arr_pos == -1 )
 		{
 			ch = rs::charAt(content.ref, pos);
-			x = static::nextX(parser, ch, x); y = static::nextY(parser, ch, y); pos = pos + 1;
+			x = static::nextX(parser, ch, x);
+			y = static::nextY(parser, ch, y);
+			pos = pos + 1;
 			
 			if (pos >= content_sz)
 			{
@@ -778,7 +787,9 @@ class ParserBayBase
 			for (int i=0; i<sz; i++)
 			{
 				ch = rs::charAt(content.ref, pos);
-				x = static::nextX(parser, ch, x); y = static::nextY(parser, ch, y); pos = pos + 1;
+				x = static::nextX(parser, ch, x);
+				y = static::nextY(parser, ch, y);
+				pos = pos + 1;
 			}
 			end_pos = pos;
 		}
@@ -826,7 +837,9 @@ class ParserBayBase
 		{
 			if (ch == "\\")
 			{
-				x = static::nextX(parser, ch, x); y = static::nextY(parser, ch, y); pos = pos + 1;
+				x = static::nextX(parser, ch, x);
+				y = static::nextY(parser, ch, y);
+				pos = pos + 1;
 				if (pos >= content_sz)
 				{
 					throw new ParserExpected
@@ -845,12 +858,17 @@ class ParserBayBase
 				else if (ch2 == "\\") value_str ~= "\\";
 				else if (ch2 == "'") value_str ~= "'";
 				else if (ch2 == '"') value_str ~= '"';
-				x = static::nextX(parser, ch2, x); y = static::nextY(parser, ch2, y); pos = pos + 1;
+				else value_str ~= ch ~ ch2;
+				x = static::nextX(parser, ch2, x);
+				y = static::nextY(parser, ch2, y);
+				pos = pos + 1;
 			}
 			else
 			{
 				value_str ~= ch;
-				x = static::nextX(parser, ch, x); y = static::nextY(parser, ch, y); pos = pos + 1;
+				x = static::nextX(parser, ch, x);
+				y = static::nextY(parser, ch, y);
+				pos = pos + 1;
 			}
 			
 			if (pos >= content_sz)
@@ -875,7 +893,9 @@ class ParserBayBase
 				parser.file_name
 			);
 		}
-		x = static::nextX(parser, ch, x); y = static::nextY(parser, ch, y); pos = pos + 1;
+		x = static::nextX(parser, ch, x);
+		y = static::nextY(parser, ch, y);
+		pos = pos + 1;
 		
 		/* Return result */
 		Caret caret_end = new Caret{ "x": x, "y": y, "pos": pos };
@@ -1002,7 +1022,10 @@ class ParserBayBase
 		
 		if (parser.find_ident and find_ident and kind == "")
 		{
-			throw new ParserError("Unknown identifier '" ~ name ~ "'", token.caret_start, parser.file_name);
+			throw new ParserError(
+				"Unknown identifier '" ~ name ~ "'",
+				token.caret_start, parser.file_name
+			);
 		}
 		
 		return 
@@ -1154,7 +1177,8 @@ class ParserBayBase
 				list res = parser.parser_expression::readExpression(parser);
 				parser = res[0]; ifdef_condition = res[1];
 				parser <= find_ident <= true;
-				list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+				list res = parser.parser_base::matchToken(parser, "then");
+				parser = res[0]; token = res[1];
 				flag_ifdef = true;
 			}
 			
@@ -1623,7 +1647,8 @@ class ParserBayBase
 			
 			/* Read Expression */
 			list res = static::matchToken(save_parser, "("); parser = res[0];
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
+			list res = parser.parser_expression::readExpression(parser);
+			parser = res[0]; op_code = res[1];
 			list res = static::matchToken(parser, ")"); parser = res[0];
 		}
 		else
@@ -1672,10 +1697,13 @@ class ParserBayBase
 		CoreToken token = null;
 		BaseOpCode op_code = null;
 		
-		list res = static::matchToken(parser, "classref"); parser = res[0]; token = res[1];
+		list res = static::matchToken(parser, "classref");
+		parser = res[0]; token = res[1];
 		Caret caret_start = token.caret_start;
 		
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
+		list res = parser.parser_expression::readExpression(parser);
+		parser = res[0]; op_code = res[1];
+		
 		return 
 		[
 			parser, 
@@ -1741,7 +1769,8 @@ class ParserBayBase
 		list res = static::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "@")
 		{
-			list res = static::readToken(look); ParserBay look2 = res[0]; CoreToken token2 = res[1];
+			list res = static::readToken(look);
+			ParserBay look2 = res[0]; CoreToken token2 = res[1];
 			if (not f_next(token2.content))
 			{
 				if (static::isIdentifier(token2.content))

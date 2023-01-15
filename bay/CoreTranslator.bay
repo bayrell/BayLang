@@ -188,18 +188,7 @@ struct CoreTranslator extends BaseStruct
 	 */
 	pure string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
 	{
-		string content = "";
-		for (int i=0; i<t.save_op_codes.count(); i++)
-		{
-			if (i < save_op_code_value) continue;
-			SaveOpCode save = t.save_op_codes.item(i);
-			string s = (save.content == "") ? 
-				t.s("var " ~ save.var_name ~ " = " ~ save.var_content ~ ";") :
-				save.content
-			;
-			content ~= s;
-		}
-		return content;
+		return "";
 	}
 	
 	

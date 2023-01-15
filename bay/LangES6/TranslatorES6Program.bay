@@ -96,7 +96,8 @@ struct TranslatorES6Program extends BaseStruct
 		string content = "";
 		
 		if (op_code.isFlag("declare")) return [t, ""];
-		if (not is_static and is_static_function or is_static and not is_static_function) return [t, ""];
+		if (not is_static and is_static_function or is_static and not is_static_function)
+			return [t, ""];
 		
 		/* Set current function */
 		t <= current_function <= op_code;
@@ -226,20 +227,8 @@ struct TranslatorES6Program extends BaseStruct
 		s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 		s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 		
-		if (t.enable_introspection)
-		{
-			s1 ~= t.s("var IntrospectionInfo = " ~
-				t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";");
-			s1 ~= t.s("return new IntrospectionInfo(ctx, {");
-			s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_METHOD,");
-			s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-			s1 ~= t.s("\"name\": " ~ t.expression::toString(f.name) ~ ",");
-		}
-		else
-		{
-			s1 ~= t.s("return Dict.from({");
-			t = t.levelInc();
-		}
+		s1 ~= t.s("return Dict.from({");
+		t = t.levelInc();
 		
 		if (f.flags.isFlag("async"))
 		{
@@ -457,21 +446,8 @@ struct TranslatorES6Program extends BaseStruct
 			s1 ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 			s1 ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 			
-			if (t.enable_introspection)
-			{
-				s1 ~= t.s("var IntrospectionInfo = " ~
-					t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";");
-				s1 ~= t.s("return new IntrospectionInfo(ctx, {");
-				t = t.levelInc();
-				s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_CLASS,");
-				s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-				s1 ~= t.s("\"name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-			}
-			else
-			{
-				s1 ~= t.s("return Dict.from({");
-				t = t.levelInc();
-			}
+			s1 ~= t.s("return Dict.from({");
+			t = t.levelInc();
 			
 			s1 ~= t.s("\"annotations\": Collection.from([");
 			t = t.levelInc();
@@ -586,12 +562,7 @@ struct TranslatorES6Program extends BaseStruct
 			{
 				content ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
 				content ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
-				if (t.enable_introspection)
-				{
-					content ~= t.s("var IntrospectionInfo = " ~
-						t.expression::useModuleName(t, "Runtime.IntrospectionInfo") ~ ";")
-					;
-				}
+				
 				for (int i=0; i<op_code.vars.count(); i++)
 				{
 					OpAssign variable = op_code.vars.item(i);
@@ -618,19 +589,8 @@ struct TranslatorES6Program extends BaseStruct
 					t = t::clearSaveOpCode(t);
 					string s1 = "";
 					
-					if (t.enable_introspection)
-					{
-						s1 ~= t.s("if (" ~ rs::join(" or ", v) ~ ") return new IntrospectionInfo(ctx, {");
-						t = t.levelInc();
-						s1 ~= t.s("\"kind\": IntrospectionInfo.ITEM_FIELD,");
-						s1 ~= t.s("\"class_name\": " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-						s1 ~= t.s("\"name\": field_name,");
-					}
-					else
-					{
-						s1 ~= t.s("if (" ~ rs::join(" or ", v) ~ ") return Dict.from({");
-						t = t.levelInc();
-					}
+					s1 ~= t.s("if (" ~ rs::join(" or ", v) ~ ") return Dict.from({");
+					t = t.levelInc();
 					
 					s1 ~= t.s("\"t\": " ~ t.expression::toString(var_type) ~ ",");
 					if (var_sub_types.count() > 0) s1 ~= t.s("\"s\": [" ~ rs::join(", ", var_sub_types) ~ "],");
@@ -924,95 +884,98 @@ struct TranslatorES6Program extends BaseStruct
 			}
 			
 			/* Struct */
-			if (class_kind == OpDeclareClass::KIND_STRUCT)
+			if (class_kind == OpDeclareClass::KIND_STRUCT or t.enable_introspection)
 			{
 				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
-				/* string var_prefix = is_struct ? "__" : ""; */
 				string var_prefix = "";
 				
-				/* Assign Object */
-				content ~= t.s("assignObject: function(ctx,o)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				content ~= t.s("if (o instanceof " ~
-					t.expression::useModuleName(t, t.current_class_full_name) ~
-				")");
-				content ~= t.s("{");
-				t = t.levelInc();
-				for (int i=0; i<op_code.vars.count(); i++)
+				if (not is_struct)
 				{
-					OpAssign variable = op_code.vars.item(i);
-					if (variable.kind != OpAssign::KIND_DECLARE) continue;
-					bool is_const = variable.flags.isFlag("const");
-					bool is_static = variable.flags.isFlag("static");
-					if (is_const or is_static) continue;
-					for (int j=0; j<variable.values.count(); j++)
+					/* Assign Object */
+					content ~= t.s("assignObject: function(ctx,o)");
+					content ~= t.s("{");
+					t = t.levelInc();
+					content ~= t.s("if (o instanceof " ~
+						t.expression::useModuleName(t, t.current_class_full_name) ~
+					")");
+					content ~= t.s("{");
+					t = t.levelInc();
+					for (int i=0; i<op_code.vars.count(); i++)
 					{
-						OpAssignValue value = variable.values.item(j);
-						content ~= t.s("this." ~ var_prefix ~ value.var_name ~ " = o." ~ var_prefix ~ 
-							value.var_name ~ ";");
-					}
-				}
-				t = t.levelDec();
-				content ~= t.s("}");
-				if (t.current_class_extends_name != "")
-				{
-					content ~= t.s
-					(
-						t.expression::useModuleName(t, t.current_class_extends_name) ~
-							".prototype.assignObject.call(this,ctx,o);"
-					);
-				}
-				t = t.levelDec();
-				content ~= t.s("},");
-				
-				/* Assign Value */
-				content ~= t.s("assignValue: function(ctx,k,v)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				bool flag = false;
-				for (int i=0; i<op_code.vars.count(); i++)
-				{
-					OpAssign variable = op_code.vars.item(i);
-					if (variable.kind != OpAssign::KIND_DECLARE) continue;
-					bool is_const = variable.flags.isFlag("const");
-					bool is_static = variable.flags.isFlag("static");
-					if (is_const or is_static) continue;
-					for (int j=0; j<variable.values.count(); j++)
-					{
-						OpAssignValue value = variable.values.item(j);
-						if (t.flag_struct_check_types)
+						OpAssign variable = op_code.vars.item(i);
+						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						bool is_const = variable.flags.isFlag("const");
+						bool is_static = variable.flags.isFlag("static");
+						if (is_const or is_static) continue;
+						for (int j=0; j<variable.values.count(); j++)
 						{
-							content ~= t.s
-							(
-								(flag ? "else " : "") ~
-								"if (k == " ~ t.expression::toString(value.var_name) ~ ")"~
-								"this." ~ var_prefix ~ value.var_name ~ " = Runtime.rtl.to(v, null, " ~ 
+							OpAssignValue value = variable.values.item(j);
+							content ~= t.s("this." ~ var_prefix ~ value.var_name ~
+								" = o." ~ var_prefix ~ value.var_name ~ ";");
+						}
+					}
+					t = t.levelDec();
+					content ~= t.s("}");
+					if (t.current_class_extends_name != "")
+					{
+						content ~= t.s
+						(
+							t.expression::useModuleName(t, t.current_class_extends_name) ~
+								".prototype.assignObject.call(this,ctx,o);"
+						);
+					}
+					t = t.levelDec();
+					content ~= t.s("},");
+					
+					/* Assign Value */
+					content ~= t.s("assignValue: function(ctx,k,v)");
+					content ~= t.s("{");
+					t = t.levelInc();
+					bool flag = false;
+					for (int i=0; i<op_code.vars.count(); i++)
+					{
+						OpAssign variable = op_code.vars.item(i);
+						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						bool is_const = variable.flags.isFlag("const");
+						bool is_static = variable.flags.isFlag("static");
+						if (is_const or is_static) continue;
+						for (int j=0; j<variable.values.count(); j++)
+						{
+							OpAssignValue value = variable.values.item(j);
+							if (t.flag_struct_check_types)
+							{
+								content ~= t.s
+								(
+									(flag ? "else " : "") ~
+									"if (k == " ~ t.expression::toString(value.var_name) ~
+									")" ~ "this." ~ var_prefix ~ value.var_name ~
+									" = Runtime.rtl.to(v, null, " ~ 
 									static::toPattern(t, variable.pattern) ~ ");"
-							);
+								);
+							}
+							else
+							{
+								content ~= t.s
+								(
+									(flag ? "else " : "") ~
+									"if (k == " ~ t.expression::toString(value.var_name) ~
+									")" ~ "this." ~ var_prefix ~ value.var_name ~ " = v;"
+								);
+							}
+							flag = true;
 						}
-						else
-						{
-							content ~= t.s
-							(
-								(flag ? "else " : "") ~
-								"if (k == " ~ t.expression::toString(value.var_name) ~ ")" ~
-								"this." ~ var_prefix ~ value.var_name ~ " = v;"
-							);
-						}
-						flag = true;
 					}
+					if (t.current_class_extends_name != "")
+					{
+						content ~= t.s(
+							(flag ? "else " : "") ~ 
+							t.expression::useModuleName(t, t.current_class_extends_name) ~
+								".prototype.assignValue.call(this,ctx,k,v);"
+						);
+					}
+					t = t.levelDec();
+					content ~= t.s("},");
 				}
-				if (t.current_class_extends_name != "")
-				{
-					content ~= t.s(
-						(flag ? "else " : "") ~ 
-						t.expression::useModuleName(t, t.current_class_extends_name) ~
-							".prototype.assignValue.call(this,ctx,k,v);"
-					);
-				}
-				t = t.levelDec();
-				content ~= t.s("},");
 				
 				/* Take Value */
 				content ~= t.s("takeValue: function(ctx,k,d)");
@@ -1235,12 +1198,12 @@ struct TranslatorES6Program extends BaseStruct
 		/* Disable context */
 		if (t.enable_context == false)
 		{
-			content = rs::replace("\\(ctx\\)", "()", content);
-			content = rs::replace("\\(ctx, ", "(", content);
-			content = rs::replace("\\(ctx,", "(", content);
-			content = rs::replace(",ctx,", ",", content);
-			content = rs::replace("this,ctx", "this", content);
-			content = rs::replace("this, ctx", "this", content);
+			content = rs::replace("\\("~"ctx\\)", "()", content);
+			content = rs::replace("\\("~"ctx, ", "(", content);
+			content = rs::replace("\\("~"ctx,", "(", content);
+			content = rs::replace(","~"ctx,", ",", content);
+			content = rs::replace("this,"~"ctx", "this", content);
+			content = rs::replace("this,"~" ctx", "this", content);
 		}
 		
 		return [t, content];

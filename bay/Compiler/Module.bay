@@ -48,7 +48,12 @@ class Module extends BaseStruct
 	 */
 	var resolveSourceFile(string file_name)
 	{
-		return fs::join([ this.path, file_name ]);
+		string first_char = file_name[0];
+		if (first_char == "@")
+			return fs::join([ this.path, rs::substr(file_name, 1) ]);
+		
+		string path = this.getSourcePath();
+		return fs::join([ path, file_name ]);
 	}
 	
 	

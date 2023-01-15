@@ -55,7 +55,7 @@ struct TranslatorES6 extends CoreTranslator
 	bool emulate_async_await = false;
 	bool enable_context = false;
 	bool enable_check_types = false;
-	bool enable_introspection = false;
+	bool enable_introspection = true;
 	
 	
 	/**
@@ -114,6 +114,40 @@ struct TranslatorES6 extends CoreTranslator
 	{
 		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);
+	}
+	
+	
+	
+	/**
+	 * Output save op code content
+	 */
+	pure string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
+	{
+		string content = "";
+		for (int i=0; i<t.save_op_codes.count(); i++)
+		{
+			if (i < save_op_code_value) continue;
+			SaveOpCode save = t.save_op_codes.item(i);
+			
+			string s = "";
+			if (t.is_html)
+			{
+				s = (save.content == "") ? 
+					t.s("let " ~ save.var_name ~ " = " ~ save.var_content ~ ";") :
+					save.content
+				;
+			}
+			else
+			{
+				s = (save.content == "") ? 
+					t.s("var " ~ save.var_name ~ " = " ~ save.var_content ~ ";") :
+					save.content
+				;
+			}
+			
+			content ~= s;
+		}
+		return content;
 	}
 	
 }

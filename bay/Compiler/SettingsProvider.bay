@@ -170,6 +170,8 @@ class SettingsProvider extends BaseProvider
 	 */
 	Module findModuleByFileName(string file_name)
 	{
+		Module res = null;
+		int module_path_sz = -1;
 		Collection<string> module_names = this.modules.keys();
 		for (int i=0; i<module_names.count(); i++)
 		{
@@ -177,11 +179,16 @@ class SettingsProvider extends BaseProvider
 			Module module = this.modules[module_name];
 			if (rs::indexOf(file_name, module.path) == 0)
 			{
-				return module;
+				int sz = rs::strlen(module.path);
+				if (module_path_sz < sz)
+				{
+					module_path_sz = sz;
+					res = module;
+				}
 			}
 		}
 		
-		return null;
+		return res;
 	}
 	
 	

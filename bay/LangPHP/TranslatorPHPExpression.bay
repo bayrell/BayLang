@@ -765,7 +765,7 @@ static class TranslatorPHPExpression
 	/**
 	 * OpCall
 	 */
-	pure list<TranslatorPHP, string> OpCall(TranslatorPHP t, OpCall op_code)
+	pure list<TranslatorPHP, string> OpCall(TranslatorPHP t, OpCall op_code, bool is_html = false)
 	{
 		string s = "";
 		bool flag = false;
@@ -790,6 +790,14 @@ static class TranslatorPHPExpression
 			content ~= (flag ? ", " : "") ~ "$ctx";
 			flag = true;
 		}
+		
+		if (is_html)
+		{
+			content ~= (flag ? ", " : "") ~
+				"$layout, $model_path, $render_params, $render_content";
+			flag = true;
+		}
+		
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);

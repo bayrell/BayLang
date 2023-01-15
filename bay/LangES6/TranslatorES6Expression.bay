@@ -711,13 +711,11 @@ struct TranslatorES6Expression extends BaseStruct
 	/**
 	 * OpCall
 	 */
-	pure list<TranslatorES6, string> OpCall(TranslatorES6 t, OpCall op_code, bool is_expression = true)
+	pure list<TranslatorES6, string> OpCall(
+		TranslatorES6 t, OpCall op_code,
+		bool is_html = false
+	)
 	{
-		if (t.current_function.isFlag("async") and op_code.is_await and t.isEmulateAsyncAwait())
-		{
-			return t.async_await::OpCall(t, op_code, is_expression);
-		}
-		
 		string s = "";
 		bool flag = false;
 		list res = t.expression::Dynamic(t, op_code.obj, true); t = res[0]; s = res[1];
@@ -744,6 +742,14 @@ struct TranslatorES6Expression extends BaseStruct
 			content ~= (flag ? ", " : "") ~ "ctx";
 			flag = true;
 		}
+		
+		if (is_html)
+		{
+			content ~= (flag ? ", " : "") ~
+				"component, model_path, render_params, render_content";
+			flag = true;
+		}
+		
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
