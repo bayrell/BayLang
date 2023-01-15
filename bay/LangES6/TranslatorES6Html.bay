@@ -92,7 +92,9 @@ class TranslatorES6Html
 	/**
 	 * Translator html template
 	 */
-	pure list<TranslatorES6, string> OpHtmlAttrs(TranslatorES6 t, Collection<OpHtmlAttribute> attrs, int item_pos)
+	pure list<TranslatorES6, string> OpHtmlAttrs(
+		TranslatorES6 t, Collection<OpHtmlAttribute> attrs, int item_pos
+	)
 	{
 		Vector<string> attr_class = new Vector<string>();
 		string attr_s = "null";
@@ -307,7 +309,11 @@ class TranslatorES6Html
 			;
 			bool is_component = static::isComponent(op_code.tag_name);
 			
-			list res = static::OpHtmlAttrs(t, op_code.attrs, item_pos);
+			Collection<OpHtmlAttribute> op_code_attrs = op_code.attrs.filter(
+				bool (OpHtmlAttribute attr) => attr.key != "@render"
+			);
+			
+			list res = static::OpHtmlAttrs(t, op_code_attrs, item_pos);
 			t = res[0]; string attrs = res[1];
 			
 			if (op_code.tag_name == "")
@@ -323,48 +329,86 @@ class TranslatorES6Html
 					list res = t.expression::Expression(t, op_code.op_code_name);
 					t = res[0]; tag_name = res[1];
 				}
-				else tag_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
+				else tag_name = t.expression::toString(
+					t.expression::findModuleName(t, op_code.tag_name)
+				);
 				if (has_childs)
 				{
 					list res = static::OpHtmlItems(t, op_code.items);
 					t = res[0]; string f = res[1];
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"c\"," ~
-						tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");");
+					content ~= t.s("let " ~ new_var_name ~ " = " ~
+						var_name ~ ".e(ctx, \"c\"," ~ tag_name ~ ", " ~
+						attrs ~ ", " ~ f ~ ");");
 					has_childs = false;
 				}
 				else
 				{
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"c\", " ~
+					content ~= t.s("let " ~ new_var_name ~ " = " ~
+						var_name ~ ".e(ctx, \"c\", " ~
 						tag_name ~ ", " ~ attrs ~ ");");
 				}
 			}
 			else
 			{
-				string tag_name = t.expression::toString(op_code.tag_name);
-				string attr_class_name = static::getOpHtmlAttrsClassName(op_code.attrs);
-				attr_class_name = rs::replace("\s", ".", attr_class_name);
-				if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
+				OpHtmlAttribute render_attr = op_code.attrs.findItem(
+					bool (OpHtmlAttribute attr) => attr.key == "@render"
+				);
 				
-				content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
-				if (op_code.tag_name == 'svg')
+				if (render_attr)
 				{
-					string svg_content = op_code["items", "items", 0, "value", "value"] |> default string "";
-					svg_content = t.expression::toString(svg_content);
+					string render_attrs = "";
+					if (render_attr and render_attr.value instanceof OpString)
+					{
+						string render_attr_value = render_attr.value.value;
+						render_attr_value = t.expression::toString(render_attr_value);
+						render_attrs = "{\"@ref\":[component," ~ render_attr_value ~ "]}";
+					}
+					
+					OpHtmlTag new_op_code = op_code.copy({
+						"attrs": op_code_attrs,
+					});
+					
+					OpHtmlItems op_code_html_items = new OpHtmlItems{
+						"items": [
+							new_op_code
+						],
+					};
+					
+					list res = static::OpHtmlItems(t, op_code_html_items);
+					t = res[0]; string f = res[1];
+					
+					content ~= t.s("/* Render function '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-						".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
+						".e(ctx, \"f\", \"\", " ~ render_attrs ~ ", " ~ f ~ ");");
+					list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
+					
 					has_childs = false;
-				}
-				else if (has_childs)
-				{
-					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-						".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
 				}
 				else
 				{
-					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-						".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
+					string tag_name = t.expression::toString(op_code.tag_name);
+					string attr_class_name = static::getOpHtmlAttrsClassName(op_code_attrs);
+					attr_class_name = rs::replace("\s", ".", attr_class_name);
+					if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
+					
+					content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
+					if (op_code.tag_name == 'svg')
+					{
+						string svg_content = op_code["items", "items", 0, "value", "value"]
+							|> default string ""
+						;
+						svg_content = t.expression::toString(svg_content);
+						content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+							".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
+						has_childs = false;
+					}
+					else
+					{
+						content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
+							".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
+					}
 				}
 			}
 			
@@ -375,11 +419,6 @@ class TranslatorES6Html
 				t = res[0]; content ~= res[1];
 				content ~= t.s(new_var_name ~ ".p(ctx);");
 			}
-			/*
-			if (op_code.tag_name == "")
-			{
-				content ~= t.s(var_name ~ "_childs.concat(" ~ new_var_name ~ "_childs);");
-			}*/
 		}
 		else
 		{
@@ -531,7 +570,7 @@ class TranslatorES6Html
 		
 		/* content ~= t.s("var __vnull = null;"); */
 		/* content ~= t.s("var __c_childs = [];"); */
-		/* content ~= t.s2(""); */
+		content ~= t.s2("");
 		
 		list res = static::OpHtmlChilds(t, op_code, "__v");
 		t = res[0]; content ~= res[1];
