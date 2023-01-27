@@ -101,6 +101,7 @@ static class TranslatorPHPProgram
 	{
 		string content = "";
 		if (f.flags.isFlag("declare")) return [t, content];
+		if (not f.annotations) return [t, content];
 		if (f.annotations.count() == 0) return [t, content];
 		content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 		t = t.levelInc();

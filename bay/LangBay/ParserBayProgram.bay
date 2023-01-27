@@ -465,7 +465,7 @@ static class ParserBayProgram
 			"functions": d.item("functions"),
 			"fn_create": d.item("fn_create"),
 			"fn_destroy": d.item("fn_destroy"),
-			"items": d.item("items"),
+			"items": arr,
 			"caret_start": caret_start,
 			"caret_end": parser.caret,
 		};
