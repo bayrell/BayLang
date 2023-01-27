@@ -283,6 +283,19 @@ static class ParserBayProgram
 				annotations.clear();
 				comments.clear();
 			}
+			else if (item instanceof OpPreprocessorIfDef)
+			{
+				list d = static::classBodyAnalyze(parser, item.items);
+				Collection<BaseOpCode> d_vars = d["vars"];
+				d_vars = d_vars.map(
+					BaseOpCode (BaseOpCode v) use (item)
+					{
+						v <= condition <= item.condition;
+						return v;
+					}
+				);
+				vars.appendVector(d_vars);
+			}
 			else
 			{
 				items.pushValue(item);

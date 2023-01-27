@@ -194,38 +194,52 @@ static class ParserBayPreprocessor
 		CoreToken token = null;
 		
 		Caret caret_start = parser.caret;
-		list res = parser.parser_base::matchToken(parser, "#ifdef"); parser = res[0]; token = res[1];
+		list res = parser.parser_base::matchToken(parser, "#ifdef");
+		parser = res[0]; token = res[1];
 		
 		/* Read condition */
 		BaseOpCode condition = null;
 		parser <= find_ident <= false;
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
+		list res = parser.parser_expression::readExpression(parser);
+		parser = res[0]; condition = res[1];
 		parser <= find_ident <= true;
 		
 		/* Read then */
-		list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+		list res = parser.parser_base::matchToken(parser, "then");
+		parser = res[0]; token = res[1];
 		
 		if (kind == OpPreprocessorIfDef::KIND_PROGRAM)
 		{
-			list res = parser.parser_program::readProgram(parser, "#endif"); parser = res[0]; items = res[1];
-			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+			list res = parser.parser_program::readProgram(parser, "#endif");
+			parser = res[0]; items = res[1];
+			
+			list res = parser.parser_base::matchToken(parser, "#endif");
+			parser = res[0];
 		}
 		else if (kind == OpPreprocessorIfDef::KIND_CLASS_BODY)
 		{
-			list res = parser.parser_program::readClassBody(parser, "#endif"); parser = res[0]; items = res[1];
+			list res = parser.parser_program::readClassBody(parser, "#endif")
+			parser = res[0]; items = res[1];
+			
 			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
 			list d = parser.parser_program::classBodyAnalyze(parser, items);
-			items = d.item("functions");
+			/* items = d.item("functions"); */
 		}
 		else if (kind == OpPreprocessorIfDef::KIND_OPERATOR)
 		{
-			list res = parser.parser_operator::readOpItems(parser, "#endif"); parser = res[0]; items = res[1];
-			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+			list res = parser.parser_operator::readOpItems(parser, "#endif");
+			parser = res[0]; items = res[1];
+			
+			list res = parser.parser_base::matchToken(parser, "#endif");
+			parser = res[0];
 		}
 		else if (kind == OpPreprocessorIfDef::KIND_EXPRESSION)
 		{
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; items = res[1];
-			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
+			list res = parser.parser_expression::readExpression(parser);
+			parser = res[0]; items = res[1];
+			
+			list res = parser.parser_base::matchToken(parser, "#endif");
+			parser = res[0];
 		}
 		
 		return

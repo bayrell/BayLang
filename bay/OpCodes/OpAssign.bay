@@ -41,4 +41,5 @@ struct OpAssign extends BaseOpCode
 	Collection<OpAssignValue> values = null;
 	Collection<string> names = null;
 	BaseOpCode expression = null;
+	BaseOpCode condition = null;
 }
