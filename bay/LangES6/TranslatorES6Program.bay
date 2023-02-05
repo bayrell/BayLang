@@ -219,6 +219,7 @@ struct TranslatorES6Program extends BaseStruct
 	{
 		string content = "";
 		if (f.flags.isFlag("declare")) return [t, content];
+		if (not f.annotations) return [t, content];
 		if (f.annotations.count() == 0) return [t, content];
 		content ~= t.s("if (field_name == " ~ t.expression::toString(f.name) ~ ")");
 		content ~= t.s("{");
@@ -356,6 +357,10 @@ struct TranslatorES6Program extends BaseStruct
 			{
 				OpAssign variable = op_code.vars.item(i);
 				if (variable.kind != OpAssign::KIND_DECLARE) continue;
+				if (variable.condition and
+					t.preprocessor_flags[variable.condition.value] != true
+				) continue;
+				
 				bool is_static = variable.flags.isFlag("static");
 				if (not is_static) continue;
 				for (int j=0; j<variable.values.count(); j++)
@@ -498,10 +503,14 @@ struct TranslatorES6Program extends BaseStruct
 					bool is_static = variable.flags.isFlag("static");
 					bool is_serializable = variable.flags.isFlag("serializable");
 					bool is_assignable = true;
-					bool has_annotation = variable.annotations != null and variable.annotations.count() > 0;
+					bool has_annotation = variable.annotations != null and
+						variable.annotations.count() > 0;
 					
 					if (is_static) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
 					
 					if (class_kind == OpDeclareClass::KIND_STRUCT)
 					{
@@ -800,13 +809,6 @@ struct TranslatorES6Program extends BaseStruct
 				/* Clear save op codes */
 				Collection<SaveOpCode> save_op_codes = t.save_op_codes;
 				int save_op_code_inc = t.save_op_code_inc;
-				/*
-				if (class_kind == OpDeclareClass::KIND_STRUCT)
-				{
-					content ~= t.s("var defProp = use('Runtime.rtl').defProp;");
-					content ~= t.s("var a = Object.getOwnPropertyNames(this);");
-				}
-				*/
 				if (t.current_class_extends_name != "")
 				{
 					content ~= t.s
@@ -824,6 +826,9 @@ struct TranslatorES6Program extends BaseStruct
 					
 					if (is_static) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
 					
 					string prefix = "";
 					if (class_kind == OpDeclareClass::KIND_STRUCT)
@@ -842,29 +847,6 @@ struct TranslatorES6Program extends BaseStruct
 						list res = t.expression::Expression(t, value.expression); t = res[0];
 						string s = (value.expression != null) ? res[1] : "null";
 						s1 ~= t.s("this." ~ prefix ~ value.var_name ~ " = " ~ s ~ ";");
-						
-						if (class_kind == OpDeclareClass::KIND_STRUCT)
-						{
-							string var_name = t.expression::toString(value.var_name);
-							/*s1 ~= t.s
-							(
-								"if (a.indexOf(" ~ var_name ~ ") == -1) defProp(this, " ~ var_name ~ ");"
-							);*/
-							/*
-							s1 ~= t.s
-							(
-								"if (a.indexOf(" ~ t.expression::toString(value.var_name) ~ ") == -1)"~
-								"Object.defineProperty(this, " ~ t.expression::toString(value.var_name) ~ ",{"~
-								"get:function(){return this." ~ prefix ~ value.var_name ~ ";},"~
-								"set:function(value){"~
-									"throw new Runtime.Exceptions.AssignStructValueError(" ~
-										t.expression::toString(value.var_name) ~
-									");}"~
-								"});"
-							);
-							*/
-						}
-						
 					}
 				}
 				
@@ -904,6 +886,10 @@ struct TranslatorES6Program extends BaseStruct
 					{
 						OpAssign variable = op_code.vars.item(i);
 						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						if (variable.condition and
+							t.preprocessor_flags[variable.condition.value] != true
+						) continue;
+						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
 						if (is_const or is_static) continue;
@@ -936,6 +922,10 @@ struct TranslatorES6Program extends BaseStruct
 					{
 						OpAssign variable = op_code.vars.item(i);
 						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						if (variable.condition and
+							t.preprocessor_flags[variable.condition.value] != true
+						) continue;
+						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
 						if (is_const or is_static) continue;
@@ -987,6 +977,10 @@ struct TranslatorES6Program extends BaseStruct
 				{
 					OpAssign variable = op_code.vars.item(i);
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
+					
 					bool is_const = variable.flags.isFlag("const");
 					bool is_static = variable.flags.isFlag("static");
 					if (is_const or is_static) continue;

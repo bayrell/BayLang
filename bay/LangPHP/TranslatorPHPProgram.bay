@@ -101,6 +101,7 @@ static class TranslatorPHPProgram
 	{
 		string content = "";
 		if (f.flags.isFlag("declare")) return [t, content];
+		if (not f.annotations) return [t, content];
 		if (f.annotations.count() == 0) return [t, content];
 		content ~= t.s("if ($field_name == " ~ t.expression::toString(f.name) ~ ")");
 		t = t.levelInc();
@@ -259,6 +260,10 @@ static class TranslatorPHPProgram
 			{
 				OpAssign variable = op_code.vars.item(i);
 				if (variable.kind != OpAssign::KIND_DECLARE) continue;
+				if (variable.condition and
+					t.preprocessor_flags[variable.condition.value] != true
+				) continue;
+				
 				bool is_static = variable.flags.isFlag("static");
 				bool is_const = variable.flags.isFlag("const");
 				for (int j=0; j<variable.values.count(); j++)
@@ -360,6 +365,9 @@ static class TranslatorPHPProgram
 					
 					if (is_static) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
 					
 					string prefix = "";
 					if (class_kind == OpDeclareClass::KIND_STRUCT)
@@ -405,6 +413,10 @@ static class TranslatorPHPProgram
 					{
 						OpAssign variable = op_code.vars.item(i);
 						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						if (variable.condition and
+							t.preprocessor_flags[variable.condition.value] != true
+						) continue;
+						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
 						if (is_const or is_static) continue;
@@ -430,6 +442,10 @@ static class TranslatorPHPProgram
 					{
 						OpAssign variable = op_code.vars.item(i);
 						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						if (variable.condition and
+							t.preprocessor_flags[variable.condition.value] != true
+						) continue;
+						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
 						if (is_const or is_static) continue;
@@ -473,6 +489,10 @@ static class TranslatorPHPProgram
 				{
 					OpAssign variable = op_code.vars.item(i);
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
+					
 					bool is_const = variable.flags.isFlag("const");
 					bool is_static = variable.flags.isFlag("static");
 					if (is_const or is_static) continue;
@@ -577,10 +597,14 @@ static class TranslatorPHPProgram
 					bool is_static = variable.flags.isFlag("static");
 					bool is_serializable = variable.flags.isFlag("serializable");
 					bool is_assignable = variable.flags.isFlag("assignable");
-					bool has_annotation = variable.annotations != null and variable.annotations.count() > 0;
+					bool has_annotation = variable.annotations != null and
+						variable.annotations.count() > 0;
 					
 					if (is_static) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
 					
 					if (class_kind == OpDeclareClass::KIND_STRUCT)
 					{
@@ -629,7 +653,8 @@ static class TranslatorPHPProgram
 				
 			}
 			
-			content ~= t.s("return " ~ t.expression::getModuleName(t, "Runtime.Collection") ~ "::from($a);");
+			content ~= t.s("return " ~
+				t.expression::getModuleName(t, "Runtime.Collection") ~ "::from($a);");
 			t = t.levelDec();
 			content ~= t.s("}");
 			
@@ -643,7 +668,14 @@ static class TranslatorPHPProgram
 				for (int i=0; i<op_code.vars.count(); i++)
 				{
 					OpAssign variable = op_code.vars.item(i);
-					Collection<string> v = variable.values.map( string (OpAssignValue value) => value.var_name );
+					
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
+					
+					Collection<string> v = variable.values.map(
+						string (OpAssignValue value) => value.var_name
+					);
 					v = v.map
 					(
 						string (string var_name) use (t) =>

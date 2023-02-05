@@ -1800,7 +1800,7 @@ class ParserBayHtml extends BaseObject
 					"functions": class_body.item("functions"),
 					"fn_create": class_body.item("fn_create"),
 					"fn_destroy": class_body.item("fn_destroy"),
-					"items": class_body.item("items"),
+					"items": items,
 					"caret_start": class_caret_start,
 					"caret_end": parser.caret,
 				}
