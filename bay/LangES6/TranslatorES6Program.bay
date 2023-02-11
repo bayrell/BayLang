@@ -487,7 +487,7 @@ struct TranslatorES6Program extends BaseStruct
 			
 			/* Get fields list of the function */
 			t = t::clearSaveOpCode(t);
-			content ~= t.s("getFieldsList: function(ctx, f)");
+			content ~= t.s("getFieldsList: function(ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("var a = [];");
@@ -500,66 +500,34 @@ struct TranslatorES6Program extends BaseStruct
 				{
 					OpAssign variable = op_code.vars.item(i);
 					
+					bool is_const = variable.flags.isFlag("const");
 					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
 					bool is_serializable = variable.flags.isFlag("serializable");
 					bool is_assignable = true;
 					bool has_annotation = variable.annotations != null and
 						variable.annotations.count() > 0;
 					
-					if (is_static) continue;
+					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
 					if (variable.condition and
 						t.preprocessor_flags[variable.condition.value] != true
 					) continue;
 					
-					if (class_kind == OpDeclareClass::KIND_STRUCT)
+					for (int j=0; j<variable.values.count(); j++)
 					{
-						is_serializable = true;
-						is_assignable = true;
-					}
-					if (is_serializable)
-					{
-						is_assignable = true;
-					}
-					
-					int flag = 0;
-					if (is_serializable) flag = flag | 1;
-					if (is_assignable) flag = flag | 2;
-					if (has_annotation) flag = flag | 4;
-					
-					if (flag != 0)
-					{
-						if (not vars.has(flag)) vars.setValue(flag, new Vector<string>());
-						Vector<string> v = vars.item(flag);
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							v.pushValue(value.var_name);
-						}
+						OpAssignValue value = variable.values.item(j);
+						content ~= t.s("a.push(" ~ t.expression::toString(value.var_name) ~ ");");
 					}
 				}
-				
-				vars.each(
-					void (Vector<string> v, string flag) use (t, content)
-					{
-						content ~= t.s("if ((f&"~flag~")=="~flag~")");
-						content ~= t.s("{");
-						t = t.levelInc();
-						v.each
-						(
-							void (string varname) use (t, content)
-							{
-								content ~= t.s("a.push(" ~ t.expression::toString(varname) ~ ");");
-							}
-						);
-						t = t.levelDec();
-						content ~= t.s("}");
-					}
-				);
-				
 			}
 			
-			content ~= t.s("return " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ".from(a);");
+			content ~= t.s("return " ~
+				t.expression::useModuleName(t, "Runtime.Collection") ~
+				".from(a);"
+			);
 			t = t.levelDec();
 			content ~= t.s("},");
 			
@@ -569,13 +537,31 @@ struct TranslatorES6Program extends BaseStruct
 			t = t.levelInc();
 			if (op_code.vars != null)
 			{
-				content ~= t.s("var Collection = " ~ t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
-				content ~= t.s("var Dict = " ~ t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
+				content ~= t.s("var Collection = " ~
+					t.expression::useModuleName(t, "Runtime.Collection") ~ ";");
+				content ~= t.s("var Dict = " ~
+					t.expression::useModuleName(t, "Runtime.Dict") ~ ";");
 				
 				for (int i=0; i<op_code.vars.count(); i++)
 				{
 					OpAssign variable = op_code.vars.item(i);
-					Collection<string> v = variable.values.map( string (OpAssignValue value) => value.var_name );
+					
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
+					
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
+					
+					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
+					
+					Collection<string> v = variable.values.map(
+						string (OpAssignValue value) => value.var_name
+					);
 					v = v.map
 					(
 						string (string var_name) use (t) =>
@@ -892,7 +878,12 @@ struct TranslatorES6Program extends BaseStruct
 						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
+						bool is_protected = variable.flags.isFlag("protected");
+						bool is_private = variable.flags.isFlag("private");
+						
 						if (is_const or is_static) continue;
+						if (is_protected or is_private) continue;
+						
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
@@ -928,7 +919,12 @@ struct TranslatorES6Program extends BaseStruct
 						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
+						bool is_protected = variable.flags.isFlag("protected");
+						bool is_private = variable.flags.isFlag("private");
+						
 						if (is_const or is_static) continue;
+						if (is_protected or is_private) continue;
+						
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
@@ -983,7 +979,12 @@ struct TranslatorES6Program extends BaseStruct
 					
 					bool is_const = variable.flags.isFlag("const");
 					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
+					
 					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
+					
 					for (int j=0; j<variable.values.count(); j++)
 					{
 						OpAssignValue value = variable.values.item(j);

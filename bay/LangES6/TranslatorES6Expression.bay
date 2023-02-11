@@ -746,7 +746,7 @@ struct TranslatorES6Expression extends BaseStruct
 		if (is_html)
 		{
 			content ~= (flag ? ", " : "") ~
-				"component, model_path, render_params, render_content";
+				"component, render_params, render_content";
 			flag = true;
 		}
 		

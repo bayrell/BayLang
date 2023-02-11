@@ -419,7 +419,12 @@ static class TranslatorPHPProgram
 						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
+						bool is_protected = variable.flags.isFlag("protected");
+						bool is_private = variable.flags.isFlag("private");
+						
 						if (is_const or is_static) continue;
+						if (is_protected or is_private) continue;
+						
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
@@ -429,7 +434,10 @@ static class TranslatorPHPProgram
 					}
 					t = t.levelDec();
 					content ~= t.s("}");
-					content ~= t.s("parent::assignObject($ctx,$o);");
+					if (t.current_class.extend_name)
+					{
+						content ~= t.s("parent::assignObject($ctx,$o);");
+					}
 					t = t.levelDec();
 					content ~= t.s("}");
 					
@@ -448,7 +456,12 @@ static class TranslatorPHPProgram
 						
 						bool is_const = variable.flags.isFlag("const");
 						bool is_static = variable.flags.isFlag("static");
+						bool is_protected = variable.flags.isFlag("protected");
+						bool is_private = variable.flags.isFlag("private");
+						
 						if (is_const or is_static) continue;
+						if (is_protected or is_private) continue;
+						
 						for (int j=0; j<variable.values.count(); j++)
 						{
 							OpAssignValue value = variable.values.item(j);
@@ -475,7 +488,10 @@ static class TranslatorPHPProgram
 							flag = true;
 						}
 					}
-					content ~= t.s( (flag ? "else " : "") ~ "parent::assignValue($ctx,$k,$v);");
+					if (t.current_class.extend_name)
+					{
+						content ~= t.s( (flag ? "else " : "") ~ "parent::assignValue($ctx,$k,$v);");
+					}
 					t = t.levelDec();
 					content ~= t.s("}");
 				}
@@ -495,7 +511,12 @@ static class TranslatorPHPProgram
 					
 					bool is_const = variable.flags.isFlag("const");
 					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
+					
 					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
+					
 					for (int j=0; j<variable.values.count(); j++)
 					{
 						OpAssignValue value = variable.values.item(j);
@@ -508,7 +529,10 @@ static class TranslatorPHPProgram
 						flag = true;
 					}
 				}
-				content ~= t.s("return parent::takeValue($ctx,$k,$d);");
+				if (t.current_class.extend_name)
+				{
+					content ~= t.s("return parent::takeValue($ctx,$k,$d);");
+				}
 				t = t.levelDec();
 				content ~= t.s("}");
 			}
@@ -582,7 +606,7 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Get fields list of the function */
-			content ~= t.s("static function getFieldsList($ctx,$f)");
+			content ~= t.s("static function getFieldsList($ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("$a = [];");
@@ -594,63 +618,26 @@ static class TranslatorPHPProgram
 				{
 					OpAssign variable = op_code.vars.item(i);
 					
+					bool is_const = variable.flags.isFlag("const");
 					bool is_static = variable.flags.isFlag("static");
-					bool is_serializable = variable.flags.isFlag("serializable");
-					bool is_assignable = variable.flags.isFlag("assignable");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
 					bool has_annotation = variable.annotations != null and
 						variable.annotations.count() > 0;
 					
-					if (is_static) continue;
+					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
 					if (variable.kind != OpAssign::KIND_DECLARE) continue;
 					if (variable.condition and
 						t.preprocessor_flags[variable.condition.value] != true
 					) continue;
 					
-					if (class_kind == OpDeclareClass::KIND_STRUCT)
+					for (int j=0; j<variable.values.count(); j++)
 					{
-						is_serializable = true;
-						is_assignable = true;
-					}
-					if (is_serializable)
-					{
-						is_assignable = true;
-					}
-					
-					int flag = 0;
-					if (is_serializable) flag = flag | 1;
-					if (is_assignable) flag = flag | 2;
-					if (has_annotation) flag = flag | 4;
-					
-					if (flag != 0)
-					{
-						if (not vars.has(flag)) vars.setValue(flag, new Vector<string>());
-						Vector<string> v = vars.item(flag);
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							v.pushValue(value.var_name);
-						}
+						OpAssignValue value = variable.values.item(j);
+						content ~= t.s("$a[]=" ~ t.expression::toString(value.var_name) ~ ";");
 					}
 				}
-				
-				vars.each(
-					void (Vector<string> v, string flag) use (t, content)
-					{
-						content ~= t.s("if (($f&"~flag~")=="~flag~")");
-						content ~= t.s("{");
-						t = t.levelInc();
-						v.each
-						(
-							void (string varname) use (t, content)
-							{
-								content ~= t.s("$a[]=" ~ t.expression::toString(varname) ~ ";");
-							}
-						);
-						t = t.levelDec();
-						content ~= t.s("}");
-					}
-				);
-				
 			}
 			
 			content ~= t.s("return " ~
@@ -669,9 +656,18 @@ static class TranslatorPHPProgram
 				{
 					OpAssign variable = op_code.vars.item(i);
 					
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
 					if (variable.condition and
 						t.preprocessor_flags[variable.condition.value] != true
 					) continue;
+					
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
+					
+					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
 					
 					Collection<string> v = variable.values.map(
 						string (OpAssignValue value) => value.var_name
