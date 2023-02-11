@@ -99,5 +99,9 @@
 		"php": "./php",
 		"es6": "./es6",
 		"nodejs": "./nodejs"
-	}
+	},
+	"allow":
+	[
+		"\\.bay$"
+	]
 }

@@ -31,6 +31,7 @@ use Bayrell.Lang.Exceptions.ParserExpected;
 use Bayrell.Lang.LangBay.ParserBay;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAnnotation;
+use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpCollection;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpDeclareClass;

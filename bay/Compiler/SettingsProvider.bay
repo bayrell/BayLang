@@ -223,55 +223,39 @@ class SettingsProvider extends BaseProvider
 			"success": false,
 		};
 		
-		/* Check whitelist */
-		Collection<string> module_whitelist = module["config", "whitelist"];
-		if (module_whitelist and module_whitelist instanceof Collection)
+		/* log(module_file_name); */
+		
+		/* Check allow list */
+		Collection<string> module_allowlist = module["config", "allow"];
+		if (module_allowlist and module_allowlist instanceof Collection)
 		{
-			bool whitelist_res = false;
-			for (int i=0; i<module_whitelist.count(); i++)
+			for (int i=0; i<module_allowlist.count(); i++)
 			{
-				string whitelist = module_whitelist[i] |> default string "";
-				if (whitelist != "")
+				string file_match = module_allowlist[i] |> default string "";
+				if (file_match == "") continue;
+				
+				bool res = re::match(file_match, module_file_name);
+				
+				/* Ignore */
+				if (rs::charAt(file_match, 0) == "!")
 				{
-					var res = re::match(whitelist, module_file_name);
-					whitelist_res = whitelist_res or res;
 					if (res)
 					{
-						break;
+						d <= success <= false;
 					}
 				}
-			}
-			if (!whitelist_res)
-			{
-				return d;
-			}
-		}
-		
-		/* Check blacklist */
-		Collection<string> module_blacklist = module["config", "blacklist"];
-		if (module_blacklist and module_blacklist instanceof Collection)
-		{
-			bool blacklist_res = false;
-			for (int i=0; i<module_blacklist.count(); i++)
-			{
-				string blacklist = module_blacklist[i] |> default string "";
-				if (blacklist != "")
+				
+				/* Allow */
+				else
 				{
-					var res = re::match(blacklist, module_file_name);
-					blacklist_res = blacklist_res and res;
 					if (res)
 					{
-						break;
+						d <= success <= true;
 					}
 				}
-			}
-			if (blacklist_res)
-			{
-				return d;
+				
 			}
 		}
-		
-		d <= success <= true;
 		
 		return d;
 	}
