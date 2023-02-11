@@ -157,7 +157,13 @@ static class TranslatorPHPProgram
 		}
 		else if (item instanceof OpDeclareFunction)
 		{
-			content ~= t.s( t.expression::toString(item.name) ~ "," );
+			if (
+				not item.flags.isFlag("declare") and
+				not item.flags.isFlag("protected") and
+				not item.flags.isFlag("private")
+			){
+				content ~= t.s( t.expression::toString(item.name) ~ "," );
+			}
 		}
 		return [t, content];
 	}
@@ -724,18 +730,19 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			/* Get methods list of the function */
-			content ~= t.s("static function getMethodsList($ctx,$f=0)");
+			content ~= t.s("static function getMethodsList($ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
-			content ~= t.s("$a = [];");
-			content ~= t.s("if (($f&4)==4) $a=[");
+			content ~= t.s("$a=[");
 			t = t.levelInc();
-			if (op_code.functions != null)
+			if (op_code.functions != null and false)
 			{
 				for (int i=0; i<op_code.functions.count(); i++)
 				{
 					OpDeclareFunction f = op_code.functions.item(i);
 					if (f.flags.isFlag("declare")) continue;
+					if (f.flags.isFlag("protected")) continue;
+					if (f.flags.isFlag("private")) continue;
 					if (f.annotations.count() == 0) continue;
 					content ~= t.s( t.expression::toString(f.name) ~ "," );
 				}
@@ -751,7 +758,10 @@ static class TranslatorPHPProgram
 			}
 			t = t.levelDec();
 			content ~= t.s("];");
-			content ~= t.s("return " ~ t.expression::getModuleName(t, "Runtime.Collection") ~ "::from($a);");
+			content ~= t.s("return " ~
+				t.expression::getModuleName(t, "Runtime.Collection") ~
+				"::from($a);"
+			);
 			t = t.levelDec();
 			content ~= t.s("}");
 			

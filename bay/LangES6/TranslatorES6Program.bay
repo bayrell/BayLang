@@ -284,7 +284,13 @@ struct TranslatorES6Program extends BaseStruct
 		}
 		else if (item instanceof OpDeclareFunction)
 		{
-			content ~= t.s( t.expression::toString(item.name) ~ "," );
+			if (
+				not item.flags.isFlag("declare") and
+				not item.flags.isFlag("protected") and
+				not item.flags.isFlag("private")
+			){
+				content ~= t.s( t.expression::toString(item.name) ~ "," );
+			}
 		}
 		return [t, content];
 	}
@@ -616,22 +622,21 @@ struct TranslatorES6Program extends BaseStruct
 			t = t.levelDec();
 			content ~= t.s("},");
 			
-			
 			/* Get methods list of the function */
 			t = t::clearSaveOpCode(t);
-			content ~= t.s("getMethodsList: function(ctx,f)");
+			content ~= t.s("getMethodsList: function(ctx)");
 			content ~= t.s("{");
 			t = t.levelInc();
-			content ~= t.s("if (f==undefined) f=0;");
-			content ~= t.s("var a = [];");
-			content ~= t.s("if ((f&4)==4) a=[");
+			content ~= t.s("var a=[");
 			t = t.levelInc();
-			if (op_code.functions != null)
+			if (op_code.functions != null and false)
 			{
 				for (int i=0; i<op_code.functions.count(); i++)
 				{
 					OpDeclareFunction f = op_code.functions.item(i);
 					if (f.flags.isFlag("declare")) continue;
+					if (f.flags.isFlag("protected")) continue;
+					if (f.flags.isFlag("private")) continue;
 					if (f.annotations.count() == 0) continue;
 					content ~= t.s( t.expression::toString(f.name) ~ "," );
 				}
@@ -651,12 +656,11 @@ struct TranslatorES6Program extends BaseStruct
 			t = t.levelDec();
 			content ~= t.s("},");
 			
-			
 			/* Get method info by name */
 			t = t::clearSaveOpCode(t);
 			content ~= t.s("getMethodInfoByName: function(ctx,field_name)");
 			content ~= t.s("{");
-			t = t.levelInc();		
+			t = t.levelInc();
 			if (op_code.functions != null)
 			{
 				for (int i=0; i<op_code.functions.count(); i++)
@@ -678,7 +682,6 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("return null;");
 			t = t.levelDec();
 			content ~= t.s("},");
-			
 			
 			/* Add implements */
 			if (op_code.class_implements != null and op_code.class_implements.count() > 0)
