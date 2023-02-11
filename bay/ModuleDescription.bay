@@ -35,7 +35,7 @@ static class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleVersion() => "0.11.4";
+	pure string getModuleVersion() => "0.11.4-2";
 	
 	
 	
