@@ -94,4 +94,72 @@ class Module extends BaseStruct
 		return dest_path;
 	}
 	
+	
+	/**
+	 * Check exclude
+	 */
+	bool checkExclude(string file_name)
+	{
+		Collection<string> module_excludelist = this.config["exclude"];
+		if (module_excludelist and module_excludelist instanceof Collection)
+		{
+			for (int i=0; i<module_excludelist.count(); i++)
+			{
+				string file_match = module_excludelist[i] |> default string "";
+				if (file_match == "") continue;
+				
+				bool res = re::match(file_match, file_name);
+				
+				if (res)
+				{
+					return true;
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	
+	/**
+	 * Check allow list
+	 */
+	bool checkAllow(string file_name)
+	{
+		bool success = false;
+		
+		Collection<string> module_allowlist = this.config["allow"];
+		if (module_allowlist and module_allowlist instanceof Collection)
+		{
+			for (int i=0; i<module_allowlist.count(); i++)
+			{
+				string file_match = module_allowlist[i] |> default string "";
+				if (file_match == "") continue;
+				
+				bool res = re::match(file_match, file_name);
+				
+				/* Ignore */
+				if (rs::charAt(file_match, 0) == "!")
+				{
+					if (res)
+					{
+						success = false;
+					}
+				}
+				
+				/* Allow */
+				else
+				{
+					if (res)
+					{
+						success = true;
+					}
+				}
+				
+			}
+		}
+		
+		return success;
+	}
+	
 }

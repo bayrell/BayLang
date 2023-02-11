@@ -204,6 +204,9 @@ class CLI
 			string file_name = files[i];
 			string file_path = fs::join([ module_src_path, file_name ]);
 			
+			if (module.checkExclude(file_name))
+				continue;
+			
 			if ( not await fs::isFile(file_path) )
 				continue;
 			
