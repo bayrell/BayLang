@@ -223,6 +223,11 @@ class SettingsProvider extends BaseProvider
 			"success": false,
 		};
 		
+		if (module.checkExclude(module_file_name))
+		{
+			return d;
+		}
+		
 		d <= success <= module.checkAllow(module_file_name);
 		
 		return d;
