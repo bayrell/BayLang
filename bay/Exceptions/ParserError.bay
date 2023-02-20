@@ -36,7 +36,6 @@ class ParserError extends ParserUnknownError
 		this.error_line = caret.y + 1;
 		this.error_pos = caret.x + 1;
 		this.error_file = file;
-		this.updateError();
 	}
 	
 	

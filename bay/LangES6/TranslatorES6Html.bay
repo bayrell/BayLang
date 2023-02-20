@@ -430,7 +430,7 @@ class TranslatorES6Html
 			
 			if (op_code instanceof OpCall)
 			{
-				list res = t.expression::OpCall(t, op_code, true);
+				list res = t.expression::OpCall(t, op_code);
 				t = res[0]; item_value ~= res[1];
 			}
 			else

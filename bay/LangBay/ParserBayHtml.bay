@@ -1331,8 +1331,12 @@ class ParserBayHtml extends BaseObject
 		{
 			BaseOpCode op_code = null;
 			list res = parser.parser_base::matchToken(parser, "%render"); parser = res[0];
-			list res = parser.parser_expression::readExpression(parser);
+			list res = parser.parser_base::readDynamic(parser);
 			parser = res[0]; op_code = res[1];
+			if (op_code instanceof OpCall)
+			{
+				op_code <= is_html <= true;
+			}
 			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 			return [parser, op_code];
 		}
