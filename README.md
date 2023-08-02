@@ -5,6 +5,12 @@ Bayrell Language
 
 Versions:
 
+[02 Aug 2023] 0.11.6 - Deploy first site on bay-lang. Ready Runtime.Web application.
+
+[20 Feb 2023] 0.11.5 - Ready version 0.11 version
+
+[25 Dec 2022] 0.11.0 - Start work 0.11 version
+
 [21 Feb 2021] 0.10.9 - Add declare, annotations to ui, add watch model
 
 [02 Feb 2021] 0.10.8 - New render function, add svg support. Remove AssignObject, AssignValue, takeValue
