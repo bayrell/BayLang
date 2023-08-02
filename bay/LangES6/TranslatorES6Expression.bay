@@ -712,8 +712,7 @@ struct TranslatorES6Expression extends BaseStruct
 	 * OpCall
 	 */
 	pure list<TranslatorES6, string> OpCall(
-		TranslatorES6 t, OpCall op_code,
-		bool is_html = false
+		TranslatorES6 t, OpCall op_code
 	)
 	{
 		string s = "";
@@ -743,7 +742,7 @@ struct TranslatorES6Expression extends BaseStruct
 			flag = true;
 		}
 		
-		if (is_html)
+		if (op_code.is_html)
 		{
 			content ~= (flag ? ", " : "") ~
 				"component, render_params, render_content";

@@ -459,7 +459,7 @@ static class TranslatorPHPHtml
 			}
 			else if (item instanceof OpCall)
 			{
-				list res = t.expression::OpCall(t, item, true); 
+				list res = t.expression::OpCall(t, item); 
 				t = res[0]; item_value = res[1];
 				item_value = "static::_escape_html($ctx, " ~ item_value ~ ")";
 			}

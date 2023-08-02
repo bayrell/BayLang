@@ -497,7 +497,6 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= t.s("{");
 			t = t.levelInc();
 			content ~= t.s("var a = [];");
-			content ~= t.s("if (f==undefined) f=0;");
 			if (op_code.vars != null)
 			{
 				Map<Vector> vars = new Map();
