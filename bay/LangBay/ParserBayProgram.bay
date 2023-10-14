@@ -180,7 +180,19 @@ static class ParserBayProgram
 					parser = res[0]; item = res[1];
 					if (item.expression != null)
 					{
-						list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
+						if (not item.is_html)
+						{
+							list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
+						}
+						else
+						{
+							list res = parser.parser_base::readToken(parser);
+							look = res[0]; token = res[1];
+							if (token.content == ";")
+							{
+								parser = look;
+							}
+						}
 					}
 				}
 				else
