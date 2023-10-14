@@ -694,7 +694,7 @@ static class TranslatorPHPOperator
 			/* Output content */
 			if (res[1] != "")
 			{
-				content ~= t.s("static::_p(" ~ save_html_var_name ~ ", " ~ res[1] ~ ");");
+				content ~= t.s("\\Runtime\\rs::_p(" ~ save_html_var_name ~ ", " ~ res[1] ~ ");");
 			}
 			
 			t <= save_op_codes <= save_op_codes;

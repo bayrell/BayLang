@@ -164,7 +164,7 @@ class TranslatorES6Html
 				/*res_attrs.push
 				(
 					t.expression::toString("@model_path") ~
-						": this._concat_attrs(ctx, params, \"@model_path\", " ~
+						": Runtime.rs._concat_attrs(ctx, params, \"@model_path\", " ~
 						attr_value ~ ")"
 				);*/
 				attr_value = "[component," ~ attr_value ~ "]";
@@ -179,7 +179,7 @@ class TranslatorES6Html
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.pushValue( "this.getCssHash(ctx)" );
+			attr_class.pushValue( "Runtime.rs.getCssHash(ctx, this.getClassName())" );
 			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			res_attrs.pushValue
 			(
@@ -211,7 +211,7 @@ class TranslatorES6Html
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "this._merge_attrs(ctx, "~attr_s~","~attr.value.value~")";
+			attr_s = "Runtime.rs._merge_attrs(ctx, "~attr_s~","~attr.value.value~")";
 		}
 		
 		return [t, attr_s];
