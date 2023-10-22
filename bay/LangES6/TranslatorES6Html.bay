@@ -161,13 +161,12 @@ class TranslatorES6Html
 			else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
 				attr_key == "@name" or attr_key == "@watch")
 			{
-				/*res_attrs.push
-				(
-					t.expression::toString("@model_path") ~
-						": Runtime.rs._concat_attrs(ctx, params, \"@model_path\", " ~
-						attr_value ~ ")"
-				);*/
 				attr_value = "[component," ~ attr_value ~ "]";
+			}
+			else if (attr_key == "@global")
+			{
+				attr_key = "@model";
+				attr_value = "[null," ~ attr_value ~ "]";
 			}
 			
 			res_attrs.pushValue

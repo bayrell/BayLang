@@ -92,7 +92,7 @@ static class TranslatorPHPHtml
 		BaseOpCode attr_name = op_code.attrs.findItem( lib::equalAttr("key", "@name") );
 		BaseOpCode attr_bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
 		BaseOpCode attr_model = op_code.attrs.findItem( lib::equalAttr("key", "@model") );
-		BaseOpCode attr_model_path = op_code.attrs.findItem( lib::equalAttr("key", "@model_path") );
+		BaseOpCode attr_global = op_code.attrs.findItem( lib::equalAttr("key", "@global") );
 		
 		if (attr_name)
 		{
@@ -109,9 +109,9 @@ static class TranslatorPHPHtml
 			list res = t.expression::Expression(t, attr_model.value); t = res[0];
 			v_model = "\\Runtime\\rs::_concat_attrs($ctx, $model_path, " ~ res[1] ~ ")";
 		}
-		else if (attr_model_path)
+		else if (attr_global)
 		{
-			list res = t.expression::Expression(t, attr_model_path.value); t = res[0];
+			list res = t.expression::Expression(t, attr_global.value); t = res[0];
 			v_model = "\\Runtime\\rs::_concat_attrs($ctx, [], " ~ res[1] ~ ")";
 		}
 		
@@ -122,6 +122,7 @@ static class TranslatorPHPHtml
 			if (attr.key == "@bind") continue;
 			if (attr.key == "@name") continue;
 			if (attr.key == "@model") continue;
+			if (attr.key == "@global") continue;
 			if (attr.key == "@model_path") continue;
 			if (attr.key == "@ref") continue;
 			
