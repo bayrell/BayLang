@@ -857,7 +857,6 @@ struct TranslatorES6Expression extends BaseStruct
 			string s1 = "";
 			string s2 = "";
 			OpPipe op_item = items.item(i);
-			Vector<string> args = new Vector();
 			
 			if (op_item.kind == OpPipe::KIND_ATTR)
 			{
@@ -866,55 +865,40 @@ struct TranslatorES6Expression extends BaseStruct
 			}
 			else if (op_item.kind == OpPipe::KIND_METHOD)
 			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s2 = "try{ ";
-				s2 ~= var_name~"=("~var_name~".val!=null && "~var_name~".err==null) ? new "~monad_name~"(ctx, "~value~") : "~var_name~";";
-				s2 ~= " } catch (err) { ";
-				s2 ~= var_name~"=new "~monad_name~"(ctx, null, err);";
-				s2 ~= " }";
+				string value = op_item.value.obj.value.value;
+				
+				string args = "";
+				bool flag = false;
+				for (int j=0; j<op_item.value.args.count(); j++)
+				{
+					BaseOpCode item = op_item.value.args.item(j);
+					list res = t.expression::Expression(t, item); t = res[0]; string s = res[1];
+					args ~= (flag ? ", " : "") ~ s;
+					flag = true;
+				}
+				
+				if (
+					not op_item.is_async or
+					not t.enable_async_await or
+					not t.current_function.isFlag("async"))
+				{
+					s1 = var_name ~ ".callMethod(ctx, \"" ~ value ~ "\", [" ~ args ~ "])";
+				}
+				else
+				{
+					s1 = "await " ~ var_name ~ ".callMethodAsync(ctx, \"" ~ value ~ "\", [" ~ args ~ "])";
+				}
 			}
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				t <= is_pipe <= true;
 				
-				string args = "";
-				/*
-				bool is_instance_method = false;
-				if (
-					op_item.value instanceof OpCall and
-					op_item.value.obj instanceof OpAttr and
-					op_item.value.obj.kind == OpAttr::KIND_ATTR and
-					op_item.value.obj.obj.value == ""
-				)
-				{
-					string value1 = "";
-					is_instance_method = true;
-					if (op_item.value.obj.obj.value == "")
-					{
-						value1 = t.pipe_var_name ~ ".val";
-					}
-					else
-					{
-						list res = static::Expression(t, op_item.value.obj.obj);
-						t = res[0]; value1 = res[1];
-					}
-					value = value1;
-					value ~= "." ~ op_item.value.obj.value.value;
-					value ~= ".bind(" ~ value1 ~ ")";
-					bool flag = false;
-					for (int j=0; j<op_item.value.args.count(); j++)
-					{
-						BaseOpCode item = op_item.value.args.item(j);
-						list res = t.expression::Expression(t, item); t = res[0]; string s_arg = res[1];
-						args ~= (flag ? ", " : "") ~ s_arg;
-						flag = true;
-					}
-					args = ", [" ~ args ~ "]";
-				}
-				*/
 				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
 				
-				if (not op_item.is_async or not t.enable_async_await)
+				if (
+					not op_item.is_async or
+					not t.enable_async_await or
+					not t.current_function.isFlag("async"))
 				{
 					if (op_item.is_monad)
 					{
@@ -922,32 +906,18 @@ struct TranslatorES6Expression extends BaseStruct
 					}
 					else
 					{
-						s1 = var_name ~ ".call(ctx, " ~ value ~ args ~ ")";
+						s1 = var_name ~ ".call(ctx, " ~ value ~ ")";
 					}
 				}
-				else if (op_item.is_async and t.current_function.isFlag("async"))
+				else
 				{
-					if (t.isEmulateAsyncAwait())
+					if (op_item.is_monad)
 					{
-						if (op_item.is_monad)
-						{
-							s2 = var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
-						}
-						else
-						{
-							s2 = var_name ~ ".callAsync(ctx, " ~ value ~ args ~ ")";
-						}
+						s1 = "await " ~ var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
 					}
-					else if (t.isAsyncAwait())
+					else
 					{
-						if (op_item.is_monad)
-						{
-							s1 = "await " ~ var_name ~ ".monadAsync(ctx, " ~ value ~ ")";
-						}
-						else
-						{
-							s1 = "await " ~ var_name ~ ".callAsync(ctx, " ~ value ~ args ~ ")";
-						}
+						s1 = "await " ~ var_name ~ ".callAsync(ctx, " ~ value ~ ")";
 					}
 				}
 				
@@ -979,37 +949,6 @@ struct TranslatorES6Expression extends BaseStruct
 				);
 				t = res[0];
 			}
-			
-			/*
-			if (s2 != "")
-			{
-				list res = t.async_await::nextPos(t); t = res[0]; string next_pos = res[1];
-				string async_t = t.async_await.async_t;
-				string s3 = t.s
-				(
-					"return " ~ async_t ~
-					".jump(ctx, " ~ next_pos ~ ")" ~
-					".call(ctx, " ~ s2 ~ "," ~ t.expression::toString(var_name) ~ ");"
-				);
-				t = t.levelDec();
-				s3 ~= t.s("}");
-				s3 ~= t.s("else if (" ~ async_t ~ ".pos(ctx) == " ~ next_pos ~ ")");
-				s3 ~= t.s("{");
-				t = t.levelInc();
-				s3 ~= t.s(
-					"var " ~ var_name ~ " = " ~ async_t ~ 
-					".getVar(ctx, " ~ t.expression::toString(var_name) ~ ");"
-				);
-				list res = t::addSaveOpCode
-				(
-					t,
-					{
-						"content": s3,
-					}
-				);
-				t = res[0];
-			}
-			*/
 		}
 		
 		return [t, var_name ~ ".value(ctx)"];

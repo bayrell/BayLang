@@ -894,101 +894,33 @@ static class TranslatorPHPExpression
 			}
 			else if (op_item.kind == OpPipe::KIND_METHOD)
 			{
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				s2 = "try{ ";
-				s2 ~= var_name~"=("~var_name~"->val!=null && "~var_name~"->err==null) ? new \\Runtime\\Monad($ctx, "~value~") : "~var_name~";";
-				s2 ~= " } catch (\\Exception $err) { ";
-				s2 ~= var_name~"=new \\Runtime\\Monad($ctx, null, $err);";
-				s2 ~= " }";
+				string value = op_item.value.obj.value.value;
+				
+				string args = "";
+				bool flag = false;
+				for (int j=0; j<op_item.value.args.count(); j++)
+				{
+					BaseOpCode item = op_item.value.args.item(j);
+					list res = t.expression::Expression(t, item); t = res[0]; string s = res[1];
+					args ~= (flag ? ", " : "") ~ s;
+					flag = true;
+				}
+				
+				s1 = var_name ~ "->callMethod(ctx, \"" ~ value ~ "\", [" ~ args ~ "])";
 			}
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
 				t <= is_pipe <= true;
 				
-				string args = "";
-				/*
-				bool is_instance_method = false;
-				if (
-					op_item.value instanceof OpCall and
-					op_item.value.obj instanceof OpAttr and
-					op_item.value.obj.kind == OpAttr::KIND_ATTR
-				)
+				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
+				
+				if (op_item.is_monad)
 				{
-					is_instance_method = true;
-					value = "new \\Runtime\\Callback("
-					if (op_item.value.obj.obj.value == "")
-					{
-						value ~= t.pipe_var_name ~ "->val";
-					}
-					else
-					{
-						list res = static::Expression(t, op_item.value.obj.obj);
-						t = res[0]; value ~= res[1];
-					}
-					value ~= ",";
-					value ~= static::toString(op_item.value.obj.value.value);
-					value ~= ")";
-					bool flag = false;
-					for (int j=0; j<op_item.value.args.count(); j++)
-					{
-						BaseOpCode item = op_item.value.args.item(j);
-						list res = t.expression::Expression(t, item); t = res[0]; string s_arg = res[1];
-						args ~= (flag ? ", " : "") ~ s_arg;
-						flag = true;
-					}
-					args = ", [" ~ args ~ "]";
-				}
-				*/
-				/*
-				if (op_item.value instanceof OpAttr)
-				{
-					value = "new \\Runtime\\Callback("
-					if (op_item.value.kind == OpAttr::KIND_ATTR and op_item.value.obj.value == "")
-					{
-						value ~= t.pipe_var_name ~ "->val";
-					}
-					else if (op_item.value.kind == OpAttr::KIND_STATIC and op_item.value.obj.value == "")
-					{
-						value ~= "static::class";
-					}
-					else
-					{
-						list res = static::Expression(t, op_item.value.obj);
-						t = res[0]; value ~= res[1];
-					}
-					value ~= ",";
-					value ~= static::toString(op_item.value.value.value);
-					value ~= ")";
+					s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
 				}
 				else
 				{
-					list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				}
-				*/
-				
-				list res = static::Dynamic(t, op_item.value); t = res[0]; value = res[1];
-				
-				if (not op_item.is_async or not t.enable_async_await)
-				{
-					if (op_item.is_monad)
-					{
-						s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
-					}
-					else
-					{
-						s1 = var_name ~ "->call($ctx, " ~ value ~ args ~ ")";
-					}
-				}
-				else if (op_item.is_async and t.current_function.isFlag("async"))
-				{
-					if (op_item.is_monad)
-					{
-						s1 = var_name ~ "->monadAsync($ctx, " ~ value ~ ")";
-					}
-					else
-					{
-						s1 = var_name ~ "->callAsync($ctx, " ~ value ~ args ~ ")";
-					}
+					s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
 				}
 				
 				t <= is_pipe <= false;
