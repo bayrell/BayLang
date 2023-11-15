@@ -55,8 +55,48 @@ use Bayrell.Lang.OpCodes.OpUse;
 
 class ParserBayHtml extends BaseObject
 {
+	/**
+	 * Hash function
+	 * @param string
+	 * @return int hash
+	 */
+	static int hash(string s, bool last=true, int x = 257, int p = 1000000007)
+	{
+		int h = 0;
+		int sz = rs::strlen(s);
+		for (int i=0; i<sz; i++)
+		{
+			int ch = rs::ord( rs::substr(s, i, 1) );
+			h = (h * x + ch) % p;
+		}
+		if (last)
+		{
+			h = (h * x) % p;
+		}
+		return h;
+	}
 	
 	
+	/**
+	 * Convert int to hex
+	 * @param int
+	 * @return string
+	 */
+	static string toHex(int h)
+	{
+		string r = "";
+		string a = "0123456789abcdef";
+		while (h >= 0)
+		{
+			int c = h & 15;
+			h = h >> 4;
+			r = rs::substr(a, c, 1) ~ r;
+			if (h == 0) break;
+		}
+		return r;
+	}
+	
+
 	/**
 	 * Retuns css hash
 	 * @param string component class name
@@ -64,26 +104,10 @@ class ParserBayHtml extends BaseObject
 	 */
 	static memorize string getCssHash(string s)
 	{
-		string r = "";
-		string a = "1234567890abcdef";
-		int sz = rs::strlen(s);
-		int h = 0;
-		for (int i=0; i<sz; i++)
-		{
-			int c = rs::ord( rs::substr(s, i, 1) );
-			h = ((h << 2) + (h >> 14) + c) & 65535;
-		}
-		int p = 0;
-		while (h != 0 or p < 4)
-		{
-			int c = h & 15;
-			h = h >> 4;
-			r ~= rs::substr(a, c, 1);
-			p = p + 1;
-		}
-		return r;
+		int h = static::hash(s, true, 337, 65537) + 65537;
+		string res = static::toHex(h);
+		return rs::substr(res, -4);
 	}
-	
 	
 	
 	/**
@@ -1561,7 +1585,7 @@ class ParserBayHtml extends BaseObject
 		
 		fn getClassShortName = string (string class_name) =>
 			class_name |>
-			curry rs::split("\\.", ?) |>
+			curry rs::split(".", ?) |>
 			.last()
 		;
 		
@@ -1579,7 +1603,7 @@ class ParserBayHtml extends BaseObject
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_model), class_model );
 		}
 		
-		Collection class_name_arr = rs::split("\\.", class_name);
+		Collection class_name_arr = rs::split(".", class_name);
 		class_name_last = class_name_arr.last();
 		class_name_arr = class_name_arr.removeLastIm();
 		namespace_name = rs::join(".", class_name_arr);
@@ -1593,7 +1617,7 @@ class ParserBayHtml extends BaseObject
 			{
 				"caret_start": class_caret_start,
 				"caret_end": parser.caret,
-				"names": rs::split("\\.", class_extends),
+				"names": rs::split(".", class_extends),
 			},
 			"template": null,
 			"caret_start": class_caret_start,
@@ -1608,7 +1632,8 @@ class ParserBayHtml extends BaseObject
 			ParserBay parser_start = parser;
 			Caret caret_start = parser.caret;
 			list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
-			list res = parser.parser_base::readToken(parser); parser = res[0]; CoreToken item_token = res[1];
+			list res = parser.parser_base::readToken(parser); parser = res[0];
+			CoreToken item_token = res[1];
 			item_name = item_token.content;
 			
 			/* Html comment */
@@ -1636,7 +1661,7 @@ class ParserBayHtml extends BaseObject
 						{
 							"entity_name": new OpEntityName
 							{
-								"names": rs::split("\\.", annotation_name),
+								"names": rs::split(".", annotation_name),
 							},
 						},
 						"params": annotation_op_code,
@@ -1795,6 +1820,7 @@ class ParserBayHtml extends BaseObject
 					"kind": OpDeclareClass::KIND_CLASS,
 					"name": class_name_last,
 					"is_static": true,
+					"is_component": true,
 					"is_declare": false,
 					"class_extends": class_extend_op_code,
 					"class_implements": null,

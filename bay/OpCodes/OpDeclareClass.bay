@@ -51,4 +51,5 @@ struct OpDeclareClass extends BaseOpCode
 	bool is_abstract = false;
 	bool is_static = false;
 	bool is_declare = false;
+	bool is_component = false;
 }

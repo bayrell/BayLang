@@ -48,7 +48,7 @@ static class TranslatorPHPProgram
 	 */
 	pure list<TranslatorPHP, string> OpNamespace(TranslatorPHP t, OpNamespace op_code)
 	{
-		Collection<string> arr = rs::split("\\.", op_code.name);
+		Collection<string> arr = rs::split(".", op_code.name);
 		t <= current_namespace_name <= op_code.name;
 		return [t, t.s("namespace " ~ rs::join("\\", arr) ~ ";")];
 	}

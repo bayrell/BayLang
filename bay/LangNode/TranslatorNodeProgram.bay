@@ -55,7 +55,7 @@ static class TranslatorNodeProgram extends TranslatorES6Program
 		
 		/*
 		content ~= t.s("if (module.exports == undefined) module.exports = {};");
-		Collection<string> arr = rs::split("\\.", t.current_namespace_name);
+		Collection<string> arr = rs::split(".", t.current_namespace_name);
 		for (int i=0; i<arr.count(); i++)
 		{
 			name = name ~ ((i == 0) ? "" : ".") ~ arr.item(i);
