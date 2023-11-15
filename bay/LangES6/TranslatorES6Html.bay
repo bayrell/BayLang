@@ -40,7 +40,6 @@ use Bayrell.Lang.OpCodes.OpWhile;
 
 class TranslatorES6Html
 {
-
 	/**
 	 * Is component
 	 */
@@ -51,7 +50,6 @@ class TranslatorES6Html
 		string ch2 = rs::strtoupper(ch1);
 		return ch1 == "{" or ch1 == ch2;
 	}
-	
 	
 	
 	/**
@@ -86,7 +84,6 @@ class TranslatorES6Html
 		
 		return [t, value];
 	}
-	
 	
 	
 	/**
@@ -178,25 +175,23 @@ class TranslatorES6Html
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.pushValue( "Runtime.rs.getCssHash(ctx, this.getClassName())" );
-			/*attr_class.push( t.expression::toString("h-" ~ ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
 			res_attrs.pushValue
 			(
-				"\"class\":" ~ "[" ~ rs::join(", ", attr_class) ~ "].join(\" \")"
+				"\"class\":" ~ "this.$options._class_name([" ~ attr_class ~ "])"
 			);
 		}
 		if (attr_key_value != "")
 		{
 			res_attrs.pushValue
 			(
-				"\"@key\":" ~ attr_key_value
+				"\"key\":" ~ attr_key_value
 			);
 		}
 		if (attr_elem_name != "")
 		{
 			res_attrs.pushValue
 			(
-				"\"@elem_name\":" ~ attr_elem_name
+				"\"key\":" ~ attr_elem_name
 			);
 		}
 		if (res_attrs.count() > 0)
@@ -210,12 +205,11 @@ class TranslatorES6Html
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "Runtime.rs._merge_attrs(ctx, "~attr_s~","~attr.value.value~")";
+			attr_s = "this.$options._merge_attrs(ctx, " ~ attr_s ~ "," ~ attr.value.value ~ ")";
 		}
 		
 		return [t, attr_s];
 	}
-	
 	
 	
 	/**
@@ -243,12 +237,12 @@ class TranslatorES6Html
 	}
 	
 	
-	
 	/**
 	 * Translator html template
 	 */
 	pure list<TranslatorES6, string> OpHtmlTag(
-		TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name)
+		TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name
+	)
 	{
 		string content = "";
 		string content2 = "";
@@ -260,8 +254,7 @@ class TranslatorES6Html
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-				".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
+			content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -283,21 +276,20 @@ class TranslatorES6Html
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
 				content ~= t.s("/* Raw */");
-				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-					".e(ctx, \"r\", \"\", null, " ~ item_value ~ ");");
+				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~
+					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
 				content ~= t.s("/* Html */");
-				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-					".e(ctx, \"h\", \"\", null, " ~ item_value ~ ");");
+				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~
+					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
 				item_value = "Runtime.rtl.json_encode(ctx, " ~ item_value ~ ")";
-				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-					".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
+				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -317,8 +309,6 @@ class TranslatorES6Html
 			
 			if (op_code.tag_name == "")
 			{
-				content ~= t.s("/* Items */");
-				content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~ ".e(ctx, \"empty\");");
 			}
 			else if (is_component)
 			{
@@ -333,82 +323,26 @@ class TranslatorES6Html
 				);
 				if (has_childs)
 				{
-					list res = static::OpHtmlItems(t, op_code.items);
+					list res = static::OpHtmlChildsAsFunction(t, op_code.items);
 					t = res[0]; string f = res[1];
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
-						var_name ~ ".e(ctx, \"c\"," ~ tag_name ~ ", " ~
-						attrs ~ ", " ~ f ~ ");");
+						"Vue.e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");"
+					);
 					has_childs = false;
 				}
 				else
 				{
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
-						var_name ~ ".e(ctx, \"c\", " ~
-						tag_name ~ ", " ~ attrs ~ ");");
+						"Vue.e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
 				}
 			}
 			else
 			{
-				OpHtmlAttribute render_attr = op_code.attrs.findItem(
-					bool (OpHtmlAttribute attr) => attr.key == "@render"
-				);
-				
-				if (render_attr)
-				{
-					string render_attrs = "";
-					if (render_attr and render_attr.value instanceof OpString)
-					{
-						string render_attr_value = render_attr.value.value;
-						render_attr_value = t.expression::toString(render_attr_value);
-						render_attrs = "{\"@ref\":[component," ~ render_attr_value ~ "]}";
-					}
-					
-					OpHtmlTag new_op_code = op_code.copy({
-						"attrs": op_code_attrs,
-					});
-					
-					OpHtmlItems op_code_html_items = new OpHtmlItems{
-						"items": [
-							new_op_code
-						],
-					};
-					
-					list res = static::OpHtmlItems(t, op_code_html_items);
-					t = res[0]; string f = res[1];
-					
-					content ~= t.s("/* Render function '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-						".e(ctx, \"f\", \"\", " ~ render_attrs ~ ", " ~ f ~ ");");
-					list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
-					
-					has_childs = false;
-				}
-				else
-				{
-					string tag_name = t.expression::toString(op_code.tag_name);
-					string attr_class_name = static::getOpHtmlAttrsClassName(op_code_attrs);
-					attr_class_name = rs::replace("\s", ".", attr_class_name);
-					if (attr_class_name != "") attr_class_name = "." ~ attr_class_name;
-					
-					content ~= t.s("/* Element '" ~ op_code.tag_name ~ attr_class_name ~ "' */");
-					if (op_code.tag_name == 'svg')
-					{
-						string svg_content = op_code["items", "items", 0, "value", "value"]
-							|> default string ""
-						;
-						svg_content = t.expression::toString(svg_content);
-						content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-							".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
-						has_childs = false;
-					}
-					else
-					{
-						content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-							".e(ctx, \"e\", " ~ tag_name ~ ", " ~ attrs ~ ");");
-					}
-				}
+				string tag_name = t.expression::toString(op_code.tag_name);
+				content ~= t.s("let " ~ new_var_name ~ " = " ~
+					"Vue.e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
 			}
 			
 			if (has_childs)
@@ -416,7 +350,6 @@ class TranslatorES6Html
 				content ~= t.s2("");
 				list res = static::OpHtmlChilds(t, op_code.items, new_var_name);
 				t = res[0]; content ~= res[1];
-				content ~= t.s(new_var_name ~ ".p(ctx);");
 			}
 		}
 		else
@@ -447,13 +380,66 @@ class TranslatorES6Html
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
 			content ~= t.s("/* Text */");
-			content ~= t.s("let " ~ new_var_name ~ " = " ~ var_name ~
-				".e(ctx, \"t\", \"\", null, " ~ item_value ~ ");");
+			content ~= t.s("let " ~ new_var_name ~ " = " ~
+				"Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
 		
 		return [t, content];
 	}
 	
+	
+	/**
+	 * Translator html items
+	 */
+	pure list<TranslatorES6, string> OpHtmlExpression
+		(TranslatorES6 t, OpHtmlItems op_code)
+	{
+		list res = static::OpHtmlChilds(t, op_code, "__v");
+		t = res[0];
+		
+		string content = "";
+		content ~= t.s("let __v = [];");
+		content ~= t.s2("");
+		content ~= res[1];
+		content ~= t.s2("");
+		
+		list res = t::addSaveOpCode
+		(
+			t,
+			{
+				"content": content,
+			}
+		);
+		t = res[0];
+		
+		return [t, "this.$options._flatten(__v)"];
+	}
+	
+	
+	/**
+	 * Translator html items as function
+	 */
+	pure list<TranslatorES6, string> OpHtmlChildsAsFunction
+		(TranslatorES6 t, OpHtmlItems op_code)
+	{
+		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+		
+		string content = t.s("() => {");
+		t = t.levelInc();
+		
+		list res = static::OpHtmlExpression(t, op_code);
+		t = res[0];
+		
+		/* Output save op code */
+		string save = t::outputSaveOpCode(t, save_op_codes.count());
+		if (save != "") content ~= save;
+		content ~= t.s("return " ~ res[1] ~ ";");
+		
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		return [t, content];
+	}
 	
 	
 	/**
@@ -461,7 +447,7 @@ class TranslatorES6Html
 	 */
 	pure list<TranslatorES6, string> OpHtmlChilds
 	(
-		TranslatorES6 t, OpHtmlItems op_code, string control_name
+		TranslatorES6 t, OpHtmlItems op_code, string var_name = ""
 	)
 	{
 		if (op_code == null or op_code.items.count() == 0)
@@ -469,8 +455,8 @@ class TranslatorES6Html
 			return [t, ""];
 		}
 		
-		string save_control_name = t.html_var_name;
-		t <= html_var_name <= control_name;
+		string save_var_name = t.html_var_name;
+		t <= html_var_name <= var_name;
 		
 		bool next_space = true;
 		string content = "";
@@ -515,7 +501,7 @@ class TranslatorES6Html
 			}
 			else
 			{
-				list res = static::OpHtmlTag(t, item, i, control_name);
+				list res = static::OpHtmlTag(t, item, i, var_name);
 				t = res[0]; op_content ~= res[1];
 			}
 			
@@ -530,73 +516,14 @@ class TranslatorES6Html
 		}
 		
 		/*
-		if (control_name != "control" and patch_flag)
+		if (var_name != "control" and patch_flag)
 		{
-			content ~= t.s("RenderDriver.p(" ~ control_name ~ ", " ~ control_name ~ "_childs);");
+			content ~= t.s("RenderDriver.p(" ~ var_name ~ ", " ~ var_name ~ "_childs);");
 		}
 		*/
 		
-		t <= html_var_name <= save_control_name;
+		t <= html_var_name <= save_var_name;
 		
-		return [t, content];
-	}
-	
-	
-	
-	/**
-	 * Translator html items
-	 */
-	pure list<TranslatorES6, string> OpHtmlItems(TranslatorES6 t, OpHtmlItems op_code)
-	{
-		if (op_code == null or op_code.items.count() == 0)
-		{
-			return [t, ""];
-		}
-		
-		/* Save op codes */
-		TranslatorES6 save_t = t;
-		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-		/*int save_op_code_inc = t.save_op_code_inc;*/
-		
-		string content = "";
-		content ~= "(ctx, __v) =>";
-		content ~= t.s("{");
-		t = t.levelInc();
-		
-		content ~= t.s("let layout = component.layout();");
-		content ~= t.s("let model_path = component.model_path;");
-		content ~= t.s("let model = component.model();");
-		
-		/* content ~= t.s("var __vnull = null;"); */
-		/* content ~= t.s("var __c_childs = [];"); */
-		content ~= t.s2("");
-		
-		list res = static::OpHtmlChilds(t, op_code, "__v");
-		t = res[0]; content ~= res[1];
-		/*content ~= t.s("RenderDriver.p(__c, __c_childs);");*/
-		
-		/* content ~= t.s2(""); */
-		/* content ~= t.s("return __c_childs;"); */
-		
-		t = t.levelDec();
-		content ~= t.s("}");
-		
-		/* Restore save op codes */
-		t <= save_op_codes <= save_op_codes;
-		/*t <= save_op_code_inc <= save_op_code_inc;*/
-		
-		return [t, content];
-	}
-	
-	
-	
-	/**
-	 * Translate html
-	 */
-	pure list<TranslatorES6, string> OpHtml(TranslatorES6 t, OpHtmlItems op_code)
-	{
-		string content = "";
-		list res = static::OpHtmlItems(t, op_code); t = res[0]; content ~= res[1];
 		return [t, content];
 	}
 }

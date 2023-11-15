@@ -1488,8 +1488,8 @@ class ParserBayHtml extends BaseObject
 			"vars": [],
 			"flags": new OpFlags
 			{
-				"p_static": true,
-				"p_pure": true,
+				"p_static": false,
+				"p_pure": false,
 			},
 			"name": fn_name,
 			"result_type": "html",
@@ -1578,15 +1578,15 @@ class ParserBayHtml extends BaseObject
 		list res = parser.parser_base::matchToken(parser, "class"); parser = res[0];
 		list res = static::readAttrs(parser); parser = res[0]; Dict attrs = res[1];
 		class_name = attrs.get("name", "");
-		class_extends = attrs.get("extends", "Runtime.Web.Component");
+		class_extends = attrs.get("extends", "Runtime.Render.Component");
 		class_version = attrs.get("version", "1.0");
 		class_model = attrs.get("model", "Runtime.Dict");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 		
 		fn getClassShortName = string (string class_name) =>
-			class_name |>
-			curry rs::split(".", ?) |>
-			.last()
+			class_name
+			|> curry rs::split(".", ?)
+			|> .last()
 		;
 		
 		if (class_name != "")
@@ -1596,7 +1596,7 @@ class ParserBayHtml extends BaseObject
 		if (class_extends != "")
 		{
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_extends), class_extends );
-			if (class_extends != "Runtime.Web.Component") components.pushValue(class_extends);
+			if (class_extends != "Runtime.Render.Component") components.pushValue(class_extends);
 		}
 		if (class_model != "" and class_model != "Runtime.Dict")
 		{

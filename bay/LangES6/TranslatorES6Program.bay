@@ -423,7 +423,7 @@ struct TranslatorES6Program extends BaseStruct
 		}	
 		
 		/* Extends */
-		if (current_class_extends_name != "")
+		if (current_class_extends_name != "" and not op_code.is_component)
 		{
 			content ~= t.s("Object.assign(" ~ t.current_class_full_name ~ ", " ~
 				t.expression::useModuleName(t, current_class_extends_name) ~ ");");
@@ -1188,6 +1188,55 @@ struct TranslatorES6Program extends BaseStruct
 	
 	
 	/**
+	 * OpDeclareComponent
+	 */
+	pure list<TranslatorES6, string> OpDeclareComponent(TranslatorES6 t, OpDeclareClass op_code)
+	{
+		string content = "";
+		
+		if (t.current_class_extends_name == "")
+		{
+			t <= current_class_extends_name <= "Runtime.Render.Component";
+		}
+		
+		content ~= t.s(t.current_class_full_name ~ " = {");
+		t = t.levelInc();
+		
+		content ~= t.s("name: " ~ t.expression::toString(t.current_class_full_name) ~ ",");
+		content ~= t.s("extends: " ~ t.expression::useModuleName(t, t.current_class_extends_name)  ~ ",");
+		
+		/* Render function */
+		content ~= t.s("render: function ()");
+		content ~= t.s("{");
+		t = t.levelInc();
+		content ~= t.s("return this.render();");
+		t = t.levelDec();
+		content ~= t.s("},");
+		
+		/* Methods */
+		content ~= t.s("methods: function ()");
+		content ~= t.s("{");
+		t = t.levelInc();
+		list res = static::OpDeclareClassFunctions(t, op_code);
+		t = res[0];
+		content ~= res[1];
+		t = t.levelDec();
+		content ~= t.s("},");
+		
+		t = t.levelDec();
+		content ~= t.s("};");
+		
+		/* Class static functions */
+		list res = static::OpDeclareClassBodyStatic(t, op_code); content ~= res[1];
+		
+		/* Class footer */
+		list res = static::OpDeclareClassFooter(t, op_code); content ~= res[1];
+				
+		return [t, content];
+	}
+	
+	
+	/**
 	 * OpDeclareClass
 	 */
 	pure list<TranslatorES6, string> OpDeclareClass(TranslatorES6 t, OpDeclareClass op_code)
@@ -1217,9 +1266,10 @@ struct TranslatorES6Program extends BaseStruct
 		{
 			t <= current_class_extends_name <= "Runtime.BaseStruct";
 		}
-		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
+		
+		if (op_code.is_component)
 		{
-			t <= current_class_extends_name <= "";
+			return static::OpDeclareComponent(t, op_code);
 		}
 		
 		/* Constructor */
