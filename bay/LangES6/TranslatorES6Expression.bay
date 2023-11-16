@@ -64,7 +64,7 @@ struct TranslatorES6Expression extends BaseStruct
 		s = re::replace('\n', '\\n', s);
 		s = re::replace('\r', '\\r', s);
 		s = re::replace('\t', '\\t', s);
-		return '"' ~ s ~ '"';
+		return "\"" ~ s ~ "\"";
 	}
 	
 	
@@ -255,7 +255,7 @@ struct TranslatorES6Expression extends BaseStruct
 			}
 		);
 		values = values.filter( bool (string s) => s != "" );
-		string module_name = static::useModuleName(t, "Dict");
+		string module_name = static::useModuleName(t, "Map");
 		content = module_name ~ ".from({" ~ rs::join(",", values) ~ "})";
 		return [t, content];
 	}
