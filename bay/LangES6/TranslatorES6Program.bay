@@ -869,7 +869,104 @@ struct TranslatorES6Program extends BaseStruct
 	
 	
 	/**
-	 * Class variables
+	 * Component props
+	 */
+	pure list<TranslatorES6, string> OpDeclareComponentProps
+		(TranslatorES6 t, OpDeclareClass op_code)
+	{
+		Collection<OpAssign> vars = op_code.vars.filter
+		(
+			bool (OpAssign variable) => variable.flags.isFlag("props")
+		);
+		
+		if (vars.count() == 0) return [t, ""];
+		
+		string content = "";
+		
+		content ~= t.s("props: {");
+		t = t.levelInc();
+		
+		for (int i=0; i<vars.count(); i++)
+		{
+			OpAssign variable = vars.item(i);
+			
+			if (variable.kind != OpAssign::KIND_DECLARE) continue;
+			if (variable.condition and
+				t.preprocessor_flags[variable.condition.value] != true
+			) continue;
+			
+			for (int j=0; j<variable.values.count(); j++)
+			{
+				OpAssignValue value = variable.values.item(j);
+				list res = t.expression::Expression(t, value.expression); t = res[0];
+				string s = (value.expression != null) ? res[1] : "null";
+				content ~= t.s(t.expression::toString(value.var_name) ~ ": {");
+				t = t.levelInc();
+				content ~= t.s("default: " ~ s ~ ",");
+				t = t.levelDec();
+				content ~= t.s("},");
+			}
+		}
+		
+		t = t.levelDec();
+		content ~= t.s("},");
+		
+		return [t, content];
+	}
+	
+	
+	/**
+	 * Component variables
+	 */
+	pure list<TranslatorES6, string> OpDeclareComponentVariables
+		(TranslatorES6 t, OpDeclareClass op_code)
+	{
+		Collection<OpAssign> vars = op_code.vars.filter
+		(
+			bool (OpAssign variable) =>
+				not variable.flags.isFlag("static") and
+				not variable.flags.isFlag("props")
+		);
+		
+		if (vars.count() == 0) return [t, ""];
+		
+		string content = "";
+		
+		content ~= t.s("data: function ()");
+		content ~= t.s("{");
+		t = t.levelInc();
+		content ~= t.s("return {");
+		t = t.levelInc();
+		
+		for (int i=0; i<vars.count(); i++)
+		{
+			OpAssign variable = vars.item(i);
+			
+			if (variable.kind != OpAssign::KIND_DECLARE) continue;
+			if (variable.condition and
+				t.preprocessor_flags[variable.condition.value] != true
+			) continue;
+			
+			for (int j=0; j<variable.values.count(); j++)
+			{
+				OpAssignValue value = variable.values.item(j);
+				list res = t.expression::Expression(t, value.expression); t = res[0];
+				string s = (value.expression != null) ? res[1] : "null";
+				content ~= t.s(value.var_name ~ ": " ~ s ~ ",");
+			}
+		}
+		
+		t = t.levelDec();
+		content ~= t.s("};");
+		t = t.levelDec();
+		content ~= t.s("},");
+		
+		return [t, content];
+	}
+	
+	
+	/**
+	 * Class functions
 	 */
 	pure list<TranslatorES6, string> OpDeclareClassFunctions
 		(TranslatorES6 t, OpDeclareClass op_code)
@@ -1205,13 +1302,15 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= t.s("name: " ~ t.expression::toString(t.current_class_full_name) ~ ",");
 		content ~= t.s("extends: " ~ t.expression::useModuleName(t, t.current_class_extends_name)  ~ ",");
 		
-		/* Render function */
-		content ~= t.s("render: function ()");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return this.render();");
-		t = t.levelDec();
-		content ~= t.s("},");
+		/* Props */
+		list res = static::OpDeclareComponentProps(t, op_code);
+		t = res[0];
+		content ~= res[1];
+		
+		/* Variables */
+		list res = static::OpDeclareComponentVariables(t, op_code);
+		t = res[0];
+		content ~= res[1];
 		
 		/* Methods */
 		content ~= t.s("methods: function ()");

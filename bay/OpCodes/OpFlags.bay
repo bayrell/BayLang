@@ -37,6 +37,7 @@ struct OpFlags extends BaseStruct
 	public bool p_memorize = false;
 	public bool p_lambda = false;
 	public bool p_pure = false;
+	public bool p_props = false;
 	
 	
 	/**
@@ -71,6 +72,7 @@ struct OpFlags extends BaseStruct
 			"memorize",
 			/*"lambda",*/
 			"pure",
+			"props",
 		];
 	}
 	
@@ -95,7 +97,8 @@ struct OpFlags extends BaseStruct
 			flag_name == "assignable" or
 			flag_name == "memorize" or
 			flag_name == "lambda" or
-			flag_name == "pure"
+			flag_name == "pure" or
+			flag_name == "props"
 		){
 			return true;
 		}

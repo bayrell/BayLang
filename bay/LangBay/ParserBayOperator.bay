@@ -506,7 +506,7 @@ static class ParserBayOperator
 					parser = res[0]; name = res[1];
 					list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 				}
-				else if (token.content == '"' or token.content == "'")
+				else if (token.content == "\"" or token.content == "'")
 				{
 					list res = parser.parser_base::readString(parser); parser = res[0]; name = res[1];
 				}
@@ -529,7 +529,9 @@ static class ParserBayOperator
 			}
 			
 			names = arr.toCollection();
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; expression = res[1];
+			list res = parser.parser_expression::readExpression(parser);
+			parser = res[0]; expression = res[1];
+			
 			return 
 			[
 				parser,
@@ -547,7 +549,8 @@ static class ParserBayOperator
 		if 
 		(
 			token.content != "=" and token.content != "+=" and token.content != "-=" and
-			token.content != "~=" and token.content != "." and token.content != "::" and token.content != "["
+			token.content != "~=" and token.content != "." and token.content != "::" and
+			token.content != "["
 		)
 		{
 			BaseOpCode var_op_code = null;
@@ -592,11 +595,14 @@ static class ParserBayOperator
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			while (not token.eof and token.content == ",")
 			{
-				list res = parser.parser_base::readIdentifier(look); parser = res[0]; var_op_code = res[1];
+				list res = parser.parser_base::readIdentifier(look);
+				parser = res[0]; var_op_code = res[1];
 				var_name = var_op_code.value;
 				
 				/* Read expression */
-				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+				list res = parser.parser_base::readToken(parser);
+				look = res[0]; token = res[1];
+				
 				if (token.content == "=")
 				{
 					list res = parser.parser_expression::readExpression(look);
@@ -634,7 +640,9 @@ static class ParserBayOperator
 			list res = parser.parser_base::readDynamic(parser, 2 | 8);
 			parser = res[0]; BaseOpCode op_code = res[1];
 			
-			list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
+			list res = parser.parser_base::readToken(parser);
+			parser = res[0]; token = res[1];
+			
 			if 
 			(
 				token.content == "=" or token.content == "+=" or token.content == "-=" or

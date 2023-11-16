@@ -145,16 +145,21 @@ class TranslatorES6Html
 				
 				if (is_event) attr_key = "@event:" ~ event_name;
 				else if (is_signal) attr_key = "@signal:" ~ event_name;
-				
-				if (attr.value instanceof OpString)
-				{
-					attr_value = "[component," ~ attr_value ~ "]";
-				}
-				else
-				{
-					attr_value = "[component,(msg)=>{" ~ attr_value ~ "}]";
-				}
 			}
+			else if (attr_key == "@global")
+			{
+				attr_key = "model_path";
+			}
+			else if (attr_key == "@model")
+			{
+				attr_key = "model_path";
+				attr_value = "this.model_path.concat(" ~ attr_value ~ ")";
+			}
+			else if (attr_key == "@ref")
+			{
+				attr_key = "ref";
+			}
+			/*
 			else if (attr_key == "@ref" or attr_key == "@bind" or attr_key == "@model" or
 				attr_key == "@name" or attr_key == "@watch")
 			{
@@ -165,7 +170,7 @@ class TranslatorES6Html
 				attr_key = "@model";
 				attr_value = "[null," ~ attr_value ~ "]";
 			}
-			
+			*/
 			res_attrs.pushValue
 			(
 				t.expression::toString(attr_key) ~ ":" ~ attr_value,
@@ -247,12 +252,11 @@ class TranslatorES6Html
 		string content = "";
 		string content2 = "";
 		string str_var_name = t.expression::toString(var_name);
-		string new_var_name = "";
-		list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
 		
 		if (op_code instanceof OpHtmlContent)
 		{
 			string item_value = t.expression::toString(op_code.value);
+			content ~= t.s2("");
 			content ~= t.s("/* Text */");
 			content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
@@ -275,18 +279,21 @@ class TranslatorES6Html
 			
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
+				content ~= t.s2("");
 				content ~= t.s("/* Raw */");
 				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~
 					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_HTML)
 			{
+				content ~= t.s2("");
 				content ~= t.s("/* Html */");
 				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~
 					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
+				content ~= t.s2("");
 				content ~= t.s("/* Text */");
 				item_value = "Runtime.rtl.json_encode(ctx, " ~ item_value ~ ")";
 				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
@@ -294,6 +301,9 @@ class TranslatorES6Html
 		}
 		else if (op_code instanceof OpHtmlTag)
 		{
+			string new_var_name = "";
+			list res = t::incSaveOpCode(t); t = res[0]; new_var_name = res[1];
+			
 			bool has_childs = (op_code.items != null) and
 				(op_code.items.items != null) and
 				(op_code.items.items.count() > 0)
@@ -325,6 +335,7 @@ class TranslatorES6Html
 				{
 					list res = static::OpHtmlChildsAsFunction(t, op_code.items);
 					t = res[0]; string f = res[1];
+					content ~= t.s2("");
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
 						"Vue.e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");"
@@ -333,6 +344,7 @@ class TranslatorES6Html
 				}
 				else
 				{
+					content ~= t.s2("");
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
 						"Vue.e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
@@ -340,6 +352,8 @@ class TranslatorES6Html
 			}
 			else
 			{
+				content ~= t.s2("");
+				content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
 				string tag_name = t.expression::toString(op_code.tag_name);
 				content ~= t.s("let " ~ new_var_name ~ " = " ~
 					"Vue.e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
@@ -347,7 +361,6 @@ class TranslatorES6Html
 			
 			if (has_childs)
 			{
-				content ~= t.s2("");
 				list res = static::OpHtmlChilds(t, op_code.items, new_var_name);
 				t = res[0]; content ~= res[1];
 			}
@@ -379,9 +392,9 @@ class TranslatorES6Html
 			t <= save_op_codes <= save_op_codes;
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
+			content ~= t.s2("");
 			content ~= t.s("/* Text */");
-			content ~= t.s("let " ~ new_var_name ~ " = " ~
-				"Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+			content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
 		
 		return [t, content];
@@ -399,7 +412,6 @@ class TranslatorES6Html
 		
 		string content = "";
 		content ~= t.s("let __v = [];");
-		content ~= t.s2("");
 		content ~= res[1];
 		content ~= t.s2("");
 		
@@ -423,8 +435,10 @@ class TranslatorES6Html
 		(TranslatorES6 t, OpHtmlItems op_code)
 	{
 		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
+		int save_op_code_inc = t.save_op_code_inc;
+		t <= save_op_code_inc <= 0;
 		
-		string content = t.s("() => {");
+		string content = "() => {";
 		t = t.levelInc();
 		
 		list res = static::OpHtmlExpression(t, op_code);
@@ -437,6 +451,10 @@ class TranslatorES6Html
 		
 		t = t.levelDec();
 		content ~= t.s("}");
+		
+		/* Restore save op codes */
+		t <= save_op_codes <= save_op_codes;
+		t <= save_op_code_inc <= save_op_code_inc;
 		
 		return [t, content];
 	}
@@ -469,7 +487,7 @@ class TranslatorES6Html
 			/*int save_op_code_inc = t.save_op_code_inc;*/
 			
 			string op_content = "";
-			if (i > 0 and next_space) content ~= t.s2("");
+			/*if (i > 0 and next_space) content ~= t.s2("");*/
 			if (not next_space) next_space = true;
 			
 			if (item instanceof OpAssign)
