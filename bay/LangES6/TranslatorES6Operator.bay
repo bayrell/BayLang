@@ -54,7 +54,6 @@ use Bayrell.Lang.OpCodes.OpWhile;
 
 struct TranslatorES6Operator extends BaseStruct
 {
-	
 	/**
 	 * Returns true if op_code contains await
 	 */
@@ -155,7 +154,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpAssign
 	 */
@@ -181,7 +179,6 @@ struct TranslatorES6Operator extends BaseStruct
 		content = "Runtime.rtl.setAttr(ctx, " ~ var_name ~ ", Runtime.Collection.from([" ~ rs::join(", ", names) ~ "]), " ~ expr ~ ")";
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -329,7 +326,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpDelete
 	 */
@@ -338,7 +334,6 @@ struct TranslatorES6Operator extends BaseStruct
 		string content = "";
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -373,7 +368,7 @@ struct TranslatorES6Operator extends BaseStruct
 		list res = t.expression::Expression(t, op_code.expr2); t = res[0]; s2 = res[1];
 		list res = t.expression::Expression(t, op_code.expr3); t = res[0]; s3 = res[1];
 		
-		content = t.s("for ("~s1~s2~";"~s3~")");
+		content = t.s("for (" ~ s1 ~ " " ~ s2 ~ "; " ~ s3 ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		list res = static::Operators(t, op_code.value); t = res[0]; content ~= res[1];
@@ -382,7 +377,6 @@ struct TranslatorES6Operator extends BaseStruct
 		
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -437,7 +431,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpReturn
 	 */
@@ -477,7 +470,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpThrow
 	 */
@@ -487,7 +479,6 @@ struct TranslatorES6Operator extends BaseStruct
 		string content = t.s("throw " ~ res[1]);
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -550,7 +541,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpWhile
 	 */
@@ -578,7 +568,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpPreprocessorIfCode
 	 */
@@ -591,7 +580,6 @@ struct TranslatorES6Operator extends BaseStruct
 		}
 		return [t, t.s(content)];
 	}
-	
 	
 	
 	/**
@@ -632,7 +620,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpComment
 	 */
@@ -641,7 +628,6 @@ struct TranslatorES6Operator extends BaseStruct
 		string content = t.s("/*" ~ op_code.value ~ "*/");
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -657,7 +643,6 @@ struct TranslatorES6Operator extends BaseStruct
 		}
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -679,7 +664,6 @@ struct TranslatorES6Operator extends BaseStruct
 		}
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -813,7 +797,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * Operators
 	 */
@@ -850,7 +833,6 @@ struct TranslatorES6Operator extends BaseStruct
 	}
 	
 	
-	
 	/**
 	 * OpDeclareFunction Arguments
 	 */
@@ -879,7 +861,6 @@ struct TranslatorES6Operator extends BaseStruct
 		}
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -964,5 +945,4 @@ struct TranslatorES6Operator extends BaseStruct
 		
 		return [save_t, content];		
 	}
-	
 }

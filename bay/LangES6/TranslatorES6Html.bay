@@ -59,7 +59,7 @@ class TranslatorES6Html
 	{
 		BaseOpCode op_code = attr.value;
 		
-		if (attr instanceof OpString)
+		if (op_code instanceof OpString)
 		{
 			return [t, t.expression::toString(op_code.value)];
 		}
@@ -67,7 +67,8 @@ class TranslatorES6Html
 		{
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
-				list res = t.expression::Expression(t, op_code.value); t = res[0]; string value = res[1];
+				list res = t.expression::Expression(t, op_code.value);
+				t = res[0]; string value = res[1];
 				return [t, value];
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
@@ -79,7 +80,9 @@ class TranslatorES6Html
 			}
 		}
 		
-		list res = t.expression::Expression(t, op_code); t = res[0]; string value = res[1];
+		list res = t.expression::Expression(t, op_code);
+		t = res[0]; string value = res[1];
+		
 		value = t.o(value, res[0].opcode_level, 13);
 		
 		return [t, value];

@@ -320,7 +320,21 @@ struct TranslatorES6Expression extends BaseStruct
 				{
 					if (op_code_first.value == "static")
 					{
-						s = "this" ~ (not t.is_static_function ? ".constructor" : "");
+						if (not t.is_static_function)
+						{
+							if (not t.is_html)
+							{
+								s = "this.constructor";
+							}
+							else
+							{
+								s = "this.$options";
+							}
+						}
+						else
+						{
+							s = "this";
+						}
 						prev_kind = "static";
 					}
 					else if (op_code_first.value == "parent")

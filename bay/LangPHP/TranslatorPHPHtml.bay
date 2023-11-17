@@ -63,140 +63,36 @@ static class TranslatorPHPHtml
 	
 	
 	/**
-	 * Translator html component
-	 */
-	pure list<TranslatorPHP, string> OpHtmlComponent(TranslatorPHP t, OpHtmlTag op_code)
-	{
-		list res = t::incSaveOpCode(t); t = res[0]; string var_name = res[1];
-		string content = "";
-		string v_model = "null";
-		string tag_name = op_code.tag_name;
-		string module_name = "";
-		
-		if (op_code.op_code_name)
-		{
-			list res = t.expression::Expression(t, op_code.op_code_name);
-			t = res[0]; module_name = res[1];
-		}
-		else
-		{
-			module_name = t.expression::toString(t.expression::findModuleName(t, op_code.tag_name));
-		}
-		
-		content ~= t.s("/* Component '" ~ tag_name ~ "' */");
-		content ~= t.s(var_name~"_params = [];");
-		
-		BaseOpCode attr_name = op_code.attrs.findItem( lib::equalAttr("key", "@name") );
-		BaseOpCode attr_bind = op_code.attrs.findItem( lib::equalAttr("key", "@bind") );
-		BaseOpCode attr_model = op_code.attrs.findItem( lib::equalAttr("key", "@model") );
-		BaseOpCode attr_global = op_code.attrs.findItem( lib::equalAttr("key", "@global") );
-		
-		if (attr_name)
-		{
-			list res = t.expression::Expression(t, attr_name.value); t = res[0];
-			v_model = "\\Runtime\\rs::_concat_attrs($ctx, $model_path, " ~ res[1] ~ ")";
-		}
-		else if (attr_bind)
-		{
-			list res = t.expression::Expression(t, attr_bind.value); t = res[0];
-			v_model = "\\Runtime\\rs::_concat_attrs($ctx, $model_path, " ~ res[1] ~ ")";
-		}
-		else if (attr_model)
-		{
-			list res = t.expression::Expression(t, attr_model.value); t = res[0];
-			v_model = "\\Runtime\\rs::_concat_attrs($ctx, $model_path, " ~ res[1] ~ ")";
-		}
-		else if (attr_global)
-		{
-			list res = t.expression::Expression(t, attr_global.value); t = res[0];
-			v_model = "\\Runtime\\rs::_concat_attrs($ctx, [], " ~ res[1] ~ ")";
-		}
-		
-		for (int i=0; i<op_code.attrs.count(); i++)
-		{
-			OpHtmlAttribute attr = op_code.attrs.item(i);
-			
-			if (attr.key == "@bind") continue;
-			if (attr.key == "@name") continue;
-			if (attr.key == "@model") continue;
-			if (attr.key == "@global") continue;
-			if (attr.key == "@model_path") continue;
-			if (attr.key == "@ref") continue;
-			
-			if (attr.is_spread)
-			{
-				content ~= t.s("if($"~attr.value.value~"!=null)"~var_name~"_params = array_merge("~var_name~"_params,$"~attr.value.value~"->_map);");
-			}
-			else
-			{
-				list res = static::OpHtmlAttr(t, attr);
-				t = res[0]; string attr_value = res[1];
-				content ~= t.s(var_name~"_params[" ~ t.expression::toString(attr.key) ~ "] = " ~ attr_value ~ ";");
-			}
-		}
-		
-		content ~= t.s(var_name~"_content = [];");
-		fn f = rtl::method(static::getClassName(), "OpHtmlItems");
-		list res = t::saveOpCodeCall(t, f, [op_code.items, var_name~"_content"]); t = res[0];
-		content ~= res[1];
-		
-		if (op_code.op_code_name)
-		{
-			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~
-				"_name::render($ctx, $layout," ~ v_model ~
-				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
-			;
-		}
-		else
-		{
-			content ~= t.s(var_name ~ "_name = \\Runtime\\rtl::find_class(" ~ module_name ~ ");");
-			content ~= t.s(var_name ~ " = [" ~ var_name ~
-				"_name::render($ctx, $layout," ~ v_model ~
-				",\\Runtime\\Dict::from(" ~ var_name ~ "_params)," ~ var_name ~ "_content)];")
-			;
-		}
-		
-		list res = t::addSaveOpCode
-		(
-			t,
-			{
-				"op_code": op_code,
-				"var_name": var_name,
-				"content": content,
-			}
-		);
-		t = res[0];
-		return [t, var_name];
-	}
-	
-	
-	/**
 	 * Translator html attr
 	 */
 	pure list<TranslatorPHP, string> OpHtmlAttr(TranslatorPHP t, OpHtmlAttribute attr)
 	{
-		if (attr.value instanceof OpString)
+		BaseOpCode op_code = attr.value;
+		
+		if (op_code instanceof OpString)
 		{
-			return [t, t.expression::toString(attr.value.value)];
+			return [t, t.expression::toString(op_code.value)];
 		}
-		if (attr.value instanceof OpHtmlValue)
+		if (op_code instanceof OpHtmlValue)
 		{
-			if (attr.value.kind == OpHtmlValue::KIND_RAW)
+			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
-				list res = t.expression::Expression(t, attr.value.value); t = res[0]; 
-				return [t, res[1]];
+				list res = t.expression::Expression(t, op_code.value);
+				t = res[0]; string value = res[1];
+				return [t, value];
 			}
-			else if (attr.value.kind == OpHtmlValue::KIND_JSON)
+			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
-				list res = t.expression::Expression(t, attr.value.value); 
+				list res = t.expression::Expression(t, op_code.value); 
 				t = res[0]; string value = res[1];
 				value = "\\Runtime\\rtl::json_encode($ctx, " ~ value ~ ")";
 				return [t, value];
 			}
 		}
 		
-		list res = t.expression::Expression(t, attr.value); t = res[0]; string value = res[1];
+		list res = t.expression::Expression(t, op_code);
+		t = res[0]; string value = res[1];
+		
 		value = t.o(value, res[0].opcode_level, 13);
 		
 		return [t, value];
@@ -208,103 +104,83 @@ static class TranslatorPHPHtml
 	 */
 	pure list<TranslatorPHP, string> OpHtmlAttrs(TranslatorPHP t, Collection<OpHtmlAttribute> attrs)
 	{
-		return [t, "null"];
-		
 		Vector<string> attr_class = new Vector<string>();
-		string attr_s = "";
+		string attr_s = "null";
 		string attr_key_value = "";
+		string attr_elem_name = "";
 		bool has_attr_key = false;
 		
-		Collection<string> res_attrs = attrs.map
-		(
-			string (OpHtmlAttribute attr) use (t, attr_class, attr_key_value, has_attr_key)
+		Vector<string> res_attrs = new Vector();
+		
+		for (int attrs_i = 0; attrs_i<attrs.count(); attrs_i++)
+		{
+			OpHtmlAttribute attr = attrs[attrs_i];
+			
+			if (attr.is_spread) continue;
+			
+			string attr_key = attr.key;
+			string ch = rs::substr(attr_key, 0, 1);
+			if (
+				ch == "@" and 
+				attr_key != "@model" and
+				attr_key != "@global"
+			)
 			{
-				if (attr.is_spread) return "";
-				
-				string attr_key = attr.key;
-				string attr_value = "";
-				
-				/*
-				if (attr_key == "@class")
-				{
-					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.pushValue( "\\Runtime\\rs::_get_css_name($ctx, " ~
-						attr_value ~ ")" );
-					
-					if (not has_attr_key and attr.value instanceof OpString)
-					{
-						var arr = rs::split(" ", attr.value.value);
-						attr_key_value = t.expression::toString(arr[0]);
-						has_attr_key = true;
-					}
-					
-					return "";
-				}
-				*/
-				if (attr_key == "class")
-				{
-					t <= opcode_level <= 1000;
-					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_class.pushValue(attr_value);
-					
-					if (not has_attr_key and attr.value instanceof OpString)
-					{
-						var arr = rs::split(" ", attr.value.value);
-						attr_key_value = t.expression::toString(arr[0]);
-						has_attr_key = true;
-					}
-					
-					return "";
-				}
-				else if (attr_key == "@key")
-				{
-					has_attr_key = true;
-					list res = static::OpHtmlAttr(t, attr); t = res[0]; attr_value = res[1];
-					attr_key_value = attr_value;
-					return "";
-				}
-				
-				if (attr_key == "@bind" or attr_key == "@name")
-				{
-					attr_key = "value";
-					list res = t.expression::Expression(t, attr.value); t = res[0];
-					attr_value = "\\Runtime\\rtl::attr($ctx, $model, " ~ res[1] ~ ", null)";
-				}
-				
-				string ch = rs::substr(attr_key, 0, 1);
-				if (ch == "@") return "";
-				
-				if (attr_value == "")
-				{
-					list res = static::OpHtmlAttr(t, attr);
-					t = res[0]; attr_value = res[1];
-				}
-				
-				return attr_key ~ "=\"'.\\Runtime\\rs::_escape_attr($ctx, " ~ attr_value ~ ").'\"";
+				continue;
 			}
-		);
+			
+			list res = static::OpHtmlAttr(t, attr);
+			t = res[0]; string attr_value = res[1];
+			
+			if (attr_key == "class")
+			{
+				attr_class.pushValue(attr_value);
+				
+				if (attr_elem_name == "" and attr.value instanceof OpString)
+				{
+					var arr = rs::split(" ", attr.value.value);
+					attr_elem_name = t.expression::toString(arr[0]);
+				}
+				
+				continue;
+			}
+			else if (attr_key == "@global")
+			{
+				attr_key = "model_path";
+			}
+			else if (attr_key == "@model")
+			{
+				attr_key = "model_path";
+				attr_value = "$this->model_path->concat(" ~ attr_value ~ ")";
+			}
+			
+			res_attrs.pushValue
+			(
+				t.expression::toString(attr_key) ~ " => " ~ attr_value,
+			);
+		}
+		
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			attr_class.pushValue( "\\Runtime\\rs::getCssHash($ctx, static::getClassName())" );
-			/*attr_class.pushValue( t.expression::toString("h-" ~
-				ParserBayHtml::getCssHash(t.current_class_full_name)) );*/
-			res_attrs = res_attrs.pushIm
+			res_attrs.pushValue
 			(
-				"class=" ~ "\"'." ~ rs::join(".\" \".", attr_class) ~ ".'\""
+				"\"class\" => " ~ "static::_class_name([" ~ attr_class ~ "])"
 			);
 		}
+		
 		if (res_attrs.count() > 0)
 		{
-			attr_s = " " ~ rs::join(" ", res_attrs);
+			attr_s = "[" ~ rs::join(",", res_attrs) ~ "]";
 		}
+		else attr_s = "[]";
 		
 		/* Add spreads */
 		for (int i=0; i<attrs.count(); i++)
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s ~= " ' . \\Runtime\\rs::_join_attrs($ctx, $" ~ attr.value.value ~ ") . '";
+			attr_s = "static::_merge_attrs(" ~ attr_s ~ "," ~ attr.value.value ~ ")";
 		}
 		
 		return [t, attr_s];

@@ -53,7 +53,6 @@ use Bayrell.Lang.OpCodes.OpWhile;
 
 static class TranslatorPHPOperator
 {
-	
 	/**
 	 * OpAssign
 	 */
@@ -80,7 +79,6 @@ static class TranslatorPHPOperator
 			", [" ~ rs::join(", ", names) ~ "], " ~ expr ~ ")";
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -215,7 +213,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpDelete
 	 */
@@ -224,7 +221,6 @@ static class TranslatorPHPOperator
 		string content = "";
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -251,7 +247,7 @@ static class TranslatorPHPOperator
 		list res = t.expression::Expression(t, op_code.expr2); t = res[0]; s2 = res[1];
 		list res = t.expression::Expression(t, op_code.expr3); t = res[0]; s3 = res[1];
 		
-		content = t.s("for ("~s1~s2~";"~s3~")");
+		content = t.s("for (" ~ s1 ~ " " ~ s2 ~ "; " ~ s3 ~ ")");
 		content ~= t.s("{");
 		t = t.levelInc();
 		list res = static::Operators(t, op_code.value); t = res[0]; content ~= res[1];
@@ -260,7 +256,6 @@ static class TranslatorPHPOperator
 		
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -307,7 +302,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpReturn
 	 */
@@ -335,7 +329,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpThrow
 	 */
@@ -345,7 +338,6 @@ static class TranslatorPHPOperator
 		string content = t.s("throw " ~ res[1] ~ ";");
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -400,7 +392,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpWhile
 	 */
@@ -420,7 +411,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpPreprocessorIfCode
 	 */
@@ -433,7 +423,6 @@ static class TranslatorPHPOperator
 		}
 		return [t, t.s(content)];
 	}
-	
 	
 	
 	/**
@@ -474,7 +463,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpComment
 	 */
@@ -483,7 +471,6 @@ static class TranslatorPHPOperator
 		string content = t.s("/*" ~ op_code.value ~ "*/");
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -499,7 +486,6 @@ static class TranslatorPHPOperator
 		}
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -521,7 +507,6 @@ static class TranslatorPHPOperator
 		}
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -649,7 +634,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * Operators
 	 */
@@ -694,7 +678,6 @@ static class TranslatorPHPOperator
 	}
 	
 	
-	
 	/**
 	 * OpDeclareFunction Arguments
 	 */
@@ -728,7 +711,6 @@ static class TranslatorPHPOperator
 		}
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -797,5 +779,4 @@ static class TranslatorPHPOperator
 		
 		return [save_t, content];		
 	}
-	
 }

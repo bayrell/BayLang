@@ -51,7 +51,6 @@ use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 
 static class TranslatorPHPExpression
 {
-	
 	/**
 	 * Returns string
 	 */
@@ -63,9 +62,8 @@ static class TranslatorPHPExpression
 		s = re::replace('\r', '\\r', s);
 		s = re::replace('\t', '\\t', s);
 		s = re::replace('\\$', '\\$', s);
-		return '"' ~ s ~ '"';
+		return "\"" ~ s ~ "\"";
 	}
-	
 	
 	
 	/**
@@ -86,7 +84,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * Returns string
 	 */
@@ -95,7 +92,6 @@ static class TranslatorPHPExpression
 		string module_name = static::getModuleName(t, "rtl");
 		return module_name ~ "::toStr("~s~")";
 	}
-	
 	
 	
 	/**
@@ -113,7 +109,6 @@ static class TranslatorPHPExpression
 		else if (t.modules.has(module_name)) return t.modules.item(module_name);
 		return module_name;
 	}
-	
 	
 	
 	/**
@@ -134,7 +129,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * Return module name
 	 */
@@ -146,7 +140,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * Return module name
 	 */
@@ -154,7 +147,6 @@ static class TranslatorPHPExpression
 	{
 		return "\\" ~ rs::join("\\", static::findModuleNames(t, names));
 	}
-	
 	
 	
 	/**
@@ -166,7 +158,6 @@ static class TranslatorPHPExpression
 		string s = "\\" ~ rs::join("\\", names);
 		return [t, s];
 	}
-	
 	
 	
 	/**
@@ -212,7 +203,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpNumber
 	 */
@@ -228,7 +218,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpString
 	 */
@@ -236,7 +225,6 @@ static class TranslatorPHPExpression
 	{
 		return [t, static::toString(op_code.value)];
 	}
-	
 	
 	
 	/**
@@ -254,11 +242,10 @@ static class TranslatorPHPExpression
 			}
 		);
 		values = values.filter( bool (string s) => s != "" );
-		string module_name = static::getModuleName(t, "Collection");
+		string module_name = static::getModuleName(t, "Vector");
 		content = module_name ~ "::from([" ~ rs::join(",", values) ~ "])";
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -277,7 +264,7 @@ static class TranslatorPHPExpression
 			}
 		);
 		values = values.filter( bool (string s) => s != "" );
-		string module_name = static::getModuleName(t, "Dict");
+		string module_name = static::getModuleName(t, "Map");
 		if (not flag_array)
 		{
 			content = module_name ~ "::from([" ~ rs::join(",", values) ~ "])";
@@ -290,11 +277,11 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * Dynamic
 	 */
-	pure list<TranslatorPHP, string> Dynamic(TranslatorPHP t, BaseOpCode op_code, BaseOpCode next_op_code = null)
+	pure list<TranslatorPHP, string> Dynamic
+		(TranslatorPHP t, BaseOpCode op_code, BaseOpCode next_op_code = null)
 	{
 		if (op_code instanceof OpIdentifier)
 		{
@@ -505,7 +492,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpInc
 	 */
@@ -521,7 +507,6 @@ static class TranslatorPHPExpression
 		
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -599,7 +584,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpMethod
 	 */
@@ -622,7 +606,6 @@ static class TranslatorPHPExpression
 		t <= opcode_level <= 0;
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -651,7 +634,6 @@ static class TranslatorPHPExpression
 		
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -761,7 +743,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpCall
 	 */
@@ -811,7 +792,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpClassOf
 	 */
@@ -821,7 +801,6 @@ static class TranslatorPHPExpression
 		string s = rs::join(".", names);
 		return [t, static::toString(s)];
 	}
-	
 	
 	
 	/**
@@ -842,7 +821,6 @@ static class TranslatorPHPExpression
 		/* OpTernary */
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -957,7 +935,6 @@ static class TranslatorPHPExpression
 	}
 	
 	
-	
 	/**
 	 * OpTypeConvert
 	 */
@@ -968,7 +945,6 @@ static class TranslatorPHPExpression
 		content = "\\Runtime\\rtl::to(" ~ value ~ ", " ~ static::toPattern(t, op_code.pattern) ~ ")";
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -998,7 +974,6 @@ static class TranslatorPHPExpression
 		/* OpTernary */
 		return [t, content];
 	}
-	
 	
 	
 	/**
@@ -1099,5 +1074,4 @@ static class TranslatorPHPExpression
 		t <= is_pipe <= save_is_pipe;
 		return [t, content];
 	}
-	
 }
