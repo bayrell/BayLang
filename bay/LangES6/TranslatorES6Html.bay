@@ -90,7 +90,7 @@ class TranslatorES6Html
 	 * Translator html template
 	 */
 	pure list<TranslatorES6, string> OpHtmlAttrs(
-		TranslatorES6 t, Collection<OpHtmlAttribute> attrs, int item_pos
+		TranslatorES6 t, Collection<OpHtmlAttribute> attrs
 	)
 	{
 		Vector<string> attr_class = new Vector<string>();
@@ -246,7 +246,7 @@ class TranslatorES6Html
 	 * Translator html template
 	 */
 	pure list<TranslatorES6, string> OpHtmlTag(
-		TranslatorES6 t, OpHtmlTag op_code, int item_pos, string var_name
+		TranslatorES6 t, OpHtmlTag op_code, string var_name
 	)
 	{
 		string content = "";
@@ -282,12 +282,6 @@ class TranslatorES6Html
 				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~
 					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
-			else if (op_code.kind == OpHtmlValue::KIND_HTML)
-			{
-				content ~= t.s("/* Html */");
-				content ~= t.s("Vue.e(" ~ var_name ~ ", null, null, " ~
-					"new Runtime.RawString(" ~ item_value ~ "));");
-			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
@@ -310,7 +304,7 @@ class TranslatorES6Html
 				bool (OpHtmlAttribute attr) => attr.key != "@render"
 			);
 			
-			list res = static::OpHtmlAttrs(t, op_code_attrs, item_pos);
+			list res = static::OpHtmlAttrs(t, op_code_attrs);
 			t = res[0]; string attrs = res[1];
 			
 			if (op_code.tag_name == "")
@@ -324,12 +318,15 @@ class TranslatorES6Html
 					list res = t.expression::Expression(t, op_code.op_code_name);
 					t = res[0]; tag_name = res[1];
 				}
-				else tag_name = t.expression::toString(
-					t.expression::findModuleName(t, op_code.tag_name)
-				);
+				else
+				{
+					tag_name = t.expression::toString(
+						t.expression::findModuleName(t, op_code.tag_name)
+					);
+				}
 				if (has_childs)
 				{
-					list res = static::OpHtmlChildsAsFunction(t, op_code.items);
+					list res = static::OpHtmlItemsAsFunction(t, op_code.items);
 					t = res[0]; string f = res[1];
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
@@ -354,7 +351,7 @@ class TranslatorES6Html
 			
 			if (has_childs)
 			{
-				list res = static::OpHtmlChilds(t, op_code.items, new_var_name, true);
+				list res = static::OpHtmlItems(t, op_code.items, new_var_name, true);
 				t = res[0]; content ~= res[1];
 			}
 		}
@@ -380,7 +377,7 @@ class TranslatorES6Html
 			/* Output save op code */
 			string save = t::outputSaveOpCode(t, save_op_codes.count());
 			if (save != "") content ~= save;
-
+			
 			/* Restore op codes */
 			t <= save_op_codes <= save_op_codes;
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
@@ -401,7 +398,7 @@ class TranslatorES6Html
 	{
 		string content = "";
 		content ~= t.s("let __v = [];");
-		list res = static::OpHtmlChilds(t, op_code, "__v", true);
+		list res = static::OpHtmlItems(t, op_code, "__v", true);
 		t = res[0];
 		content ~= res[1];
 		content ~= t.s2("");
@@ -422,7 +419,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html items as function
 	 */
-	pure list<TranslatorES6, string> OpHtmlChildsAsFunction
+	pure list<TranslatorES6, string> OpHtmlItemsAsFunction
 		(TranslatorES6 t, OpHtmlItems op_code)
 	{
 		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
@@ -454,7 +451,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html items
 	 */
-	pure list<TranslatorES6, string> OpHtmlChilds
+	pure list<TranslatorES6, string> OpHtmlItems
 	(
 		TranslatorES6 t, OpHtmlItems op_code, string var_name = "", bool first_space = false
 	)
@@ -519,7 +516,7 @@ class TranslatorES6Html
 			else
 			{
 				add_space(i);
-				list res = static::OpHtmlTag(t, item, i, var_name);
+				list res = static::OpHtmlTag(t, item, var_name);
 				t = res[0]; op_content ~= res[1];
 			}
 			

@@ -679,26 +679,9 @@ static class TranslatorPHPOperator
 			string save_html_var_name = t.html_var_name;
 			bool save_is_html = t.is_html;
 			
-			/* Save op codes */
-			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-			int save_op_code_inc = t.save_op_code_inc;
-			
 			t <= is_html <= true;
-			list res = t.html::OpHtmlItems(t, op_code);
-			t = res[0];
-			
-			/* Output save op code */
-			string save = t::outputSaveOpCode(t, save_op_codes.count());
-			if (save != "") content = save;
-			
-			/* Output content */
-			if (res[1] != "")
-			{
-				content ~= t.s("\\Runtime\\rs::_p(" ~ save_html_var_name ~ ", " ~ res[1] ~ ");");
-			}
-			
-			t <= save_op_codes <= save_op_codes;
-			t <= save_op_code_inc <= save_op_code_inc;
+			list res = t.html::OpHtmlItems(t, op_code, save_html_var_name, false);
+			t = res[0]; content = res[1];
 			t <= is_html <= save_is_html;
 		}
 		else
@@ -722,12 +705,14 @@ static class TranslatorPHPOperator
 		{
 			bool flag = false;
 			if (f.is_context) { content ~= "$ctx"; flag = true; }
+			/*
 			if (f.is_html)
 			{
 				flag = true;
 				content ~= (flag ? ", " : "") ~
 					"$layout, $model_path, $render_params, $render_content";
 			}
+			*/
 			for (int i=0; i<f.args.count(i); i++)
 			{
 				OpDeclareFunctionArg arg = f.args.item(i);
@@ -757,12 +742,12 @@ static class TranslatorPHPOperator
 		
 		string content = "";
 		t = t.levelInc();
-		
+		/*
 		if (f.is_html)
 		{
 			content ~= t.s("$model = \\Runtime\\rtl::attr($layout, $model_path);");
 		}
-		
+		*/
 		if (f.items)
 		{
 			list res = t.operator::Operators(t, f.items); t = res[0];

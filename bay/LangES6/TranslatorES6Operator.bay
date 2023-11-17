@@ -835,28 +835,9 @@ struct TranslatorES6Operator extends BaseStruct
 			string save_html_var_name = t.html_var_name;
 			bool save_is_html = t.is_html;
 			
-			/* Save op codes */
-			/*
-			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-			int save_op_code_inc = t.save_op_code_inc;
-			*/
 			t <= is_html <= true;
-			list res = t.html::OpHtmlChilds(t, op_code, save_html_var_name, false);
+			list res = t.html::OpHtmlItems(t, op_code, save_html_var_name, false);
 			t = res[0]; content = res[1];
-			
-			/* Output save op code */
-			/*
-			string save = t::outputSaveOpCode(t, save_op_codes.count());
-			if (save != "") content = save;
-			*/
-			/* Output content */
-			/*
-			content ~= t.s(save_html_var_name ~ "_childs.push(" ~ res[1] ~ ");");
-			
-			t <= save_op_codes <= save_op_codes;
-			t <= save_op_code_inc <= save_op_code_inc;
-			*/
-			
 			t <= is_html <= save_is_html;
 		}
 		else

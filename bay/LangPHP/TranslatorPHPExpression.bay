@@ -790,14 +790,14 @@ static class TranslatorPHPExpression
 			content ~= (flag ? ", " : "") ~ "$ctx";
 			flag = true;
 		}
-		
+		/*
 		if (op_code.is_html)
 		{
 			content ~= (flag ? ", " : "") ~
 				"$layout, $model_path, $render_params, $render_content";
 			flag = true;
 		}
-		
+		*/
 		for (int i=0; i<op_code.args.count(); i++)
 		{
 			BaseOpCode item = op_code.args.item(i);
@@ -1087,7 +1087,7 @@ static class TranslatorPHPExpression
 		else if (op_code instanceof OpHtmlItems)
 		{
 			t <= is_html <= true;
-			list res = t.html::OpHtmlItems(t, op_code); t = res[0]; content = res[1];
+			list res = t.html::OpHtmlExpression(t, op_code); t = res[0]; content = res[1];
 			t <= is_html <= false;
 		}
 		else if (op_code instanceof OpPreprocessorIfDef)
