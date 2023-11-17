@@ -391,14 +391,12 @@ static class TranslatorPHPProgram
 			}
 			
 			/* Struct */
-			if (op_code.is_component == false and (
-				class_kind == OpDeclareClass::KIND_STRUCT or t.enable_introspection
-			))
+			if (op_code.is_component == false and class_kind == OpDeclareClass::KIND_STRUCT)
 			{
 				bool is_struct = class_kind == OpDeclareClass::KIND_STRUCT;
 				string var_prefix = is_struct ? "__" : "";
 				
-				if (not is_struct)
+				if (not is_struct and false)
 				{
 					/* Assign Object */
 					content ~= t.s("function assignObject($ctx,$o)");

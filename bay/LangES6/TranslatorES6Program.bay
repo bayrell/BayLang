@@ -1228,35 +1228,26 @@ struct TranslatorES6Program extends BaseStruct
 		}
 		
 		/* Init struct */
-		if (
-			(class_kind == OpDeclareClass::KIND_STRUCT or t.enable_introspection) and
-			op_code.vars != null
-		)
+		if (class_kind == OpDeclareClass::KIND_STRUCT and op_code.vars != null)
 		{
-			/* Not struct */
-			if (class_kind != OpDeclareClass::KIND_STRUCT)
-			{
-				/* Assign object */
-				/*
-				list res = static::OpDeclareClassAssignObject(t, op_code);
-				t = res[0];
-				content ~= res[1];
-				*/
-				
-				/* Assign value */
-				/*
-				list res = static::OpDeclareClassAssignValue(t, op_code);
-				t = res[0];
-				content ~= res[1];
-				*/
-			}
-			
-			/* Take Value */
+			/* Assign object */
 			/*
-			list res = static::OpDeclareClassTakeValue(t, op_code);
+			list res = static::OpDeclareClassAssignObject(t, op_code);
 			t = res[0];
 			content ~= res[1];
 			*/
+			
+			/* Assign value */
+			/*
+			list res = static::OpDeclareClassAssignValue(t, op_code);
+			t = res[0];
+			content ~= res[1];
+			*/
+			
+			/* Take Value */
+			list res = static::OpDeclareClassTakeValue(t, op_code);
+			t = res[0];
+			content ~= res[1];
 		}
 		
 		t = t.levelDec();
