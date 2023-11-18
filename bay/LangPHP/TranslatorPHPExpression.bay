@@ -122,7 +122,7 @@ static class TranslatorPHPExpression
 			module_name = static::findModuleName(t, module_name);
 			if (module_name != "")
 			{
-				names = names.removeFirstIm().prependCollectionIm(rs::split("\\.", module_name));
+				names = names.removeFirstIm().prependCollectionIm(rs::split(".", module_name));
 			}
 		}
 		return names;
@@ -451,7 +451,7 @@ static class TranslatorPHPExpression
 				{
 					list res = static::Expression(t, attr.value);
 					t = res[0]; /* s ~= "[" ~ res[1] ~ "]"; */
-					s = "\\Runtime\\rtl::get($ctx, " ~ s ~ ", " ~ res[1] ~ ")";
+					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", " ~ res[1] ~ ")";
 				}
 				else if (attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 				{
