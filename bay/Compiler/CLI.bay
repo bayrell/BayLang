@@ -216,7 +216,7 @@ class CLI
 			}
 			catch (ParserUnknownError e)
 			{
-				io::print_error(e.getErrorMessage());
+				io::print_error(e.toString());
 				is_success = false;
 			}
 			catch (var e)
@@ -477,7 +477,7 @@ class CLI
 					let ParserUnknownError = use("Bayrell.Lang.Exceptions.ParserUnknownError");
 					if (e instanceof ParserUnknownError)
 					{
-						io.print_error(ctx, "Error: " + e.getErrorMessage());
+						io.print_error(ctx, "Error: " + e.toString());
 					}
 					else
 					{

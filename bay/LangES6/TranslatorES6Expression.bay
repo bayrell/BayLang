@@ -745,15 +745,19 @@ struct TranslatorES6Expression extends BaseStruct
 		else s ~= "(";
 		
 		string content = s;
-		if (op_code.obj instanceof OpIdentifier and op_code.obj.value == "_")
+		
+		if (t.enable_context)
 		{
-			content ~= (flag ? ", " : "") ~ "ctx";
-			flag = true;
-		}
-		else if (t.current_function.is_context and op_code.is_context)
-		{
-			content ~= (flag ? ", " : "") ~ "ctx";
-			flag = true;
+			if (op_code.obj instanceof OpIdentifier and op_code.obj.value == "_")
+			{
+				content ~= (flag ? ", " : "") ~ "ctx";
+				flag = true;
+			}
+			else if ((t.current_function == null or t.current_function.is_context) and op_code.is_context)
+			{
+				content ~= (flag ? ", " : "") ~ "ctx";
+				flag = true;
+			}
 		}
 		/*
 		if (op_code.is_html)
@@ -772,7 +776,11 @@ struct TranslatorES6Expression extends BaseStruct
 		}
 		content ~= ")";
 		
-		if (t.current_function.isFlag("async") and op_code.is_await and t.isAsyncAwait())
+		if (
+			t.current_function != null and
+			t.current_function.isFlag("async") and
+			op_code.is_await and t.isAsyncAwait()
+		)
 		{
 			content = "await " ~ content;
 		}
