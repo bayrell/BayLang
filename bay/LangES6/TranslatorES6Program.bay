@@ -1282,16 +1282,16 @@ struct TranslatorES6Program extends BaseStruct
 	{
 		string content = "";
 		
-		if (t.current_class_extends_name == "")
-		{
-			t <= current_class_extends_name <= "Runtime.Render.Component";
-		}
-		
 		content ~= t.s(t.current_class_full_name ~ " = {");
 		t = t.levelInc();
 		
 		content ~= t.s("name: " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-		content ~= t.s("extends: " ~ t.expression::useModuleName(t, t.current_class_extends_name)  ~ ",");
+		
+		if (t.current_class_extends_name)
+		{
+			content ~= t.s("extends: " ~
+				t.expression::useModuleName(t, t.current_class_extends_name) ~ ",");
+		}
 		
 		/* Props */
 		list res = static::OpDeclareComponentProps(t, op_code);

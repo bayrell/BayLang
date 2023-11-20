@@ -1578,7 +1578,7 @@ class ParserBayHtml extends BaseObject
 		list res = parser.parser_base::matchToken(parser, "class"); parser = res[0];
 		list res = static::readAttrs(parser); parser = res[0]; Dict attrs = res[1];
 		class_name = attrs.get("name", "");
-		class_extends = attrs.get("extends", "Runtime.Render.Component");
+		class_extends = attrs.get("extends", "Runtime.Web.Component");
 		class_version = attrs.get("version", "1.0");
 		class_model = attrs.get("model", "Runtime.Dict");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
@@ -1589,14 +1589,18 @@ class ParserBayHtml extends BaseObject
 			|> .last()
 		;
 		
-		if (class_name != "")
+		if (class_name == "Runtime.Web.Component")
+		{
+			class_extends = null;
+		}
+		else
 		{
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_name), class_name );
 		}
-		if (class_extends != "")
+		if (class_extends != "" and class_extends != null)
 		{
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_extends), class_extends );
-			if (class_extends != "Runtime.Render.Component") components.pushValue(class_extends);
+			if (class_extends != "Runtime.Web.Component") components.pushValue(class_extends);
 		}
 		if (class_model != "" and class_model != "Runtime.Dict")
 		{
@@ -1611,17 +1615,21 @@ class ParserBayHtml extends BaseObject
 		parser <= current_class_name <= class_name_last;
 		parser <= current_namespace_name <= namespace_name;
 		
-		OpTypeIdentifier class_extend_op_code = new OpTypeIdentifier
+		OpTypeIdentifier class_extend_op_code = null;
+		if (class_extends != null)
 		{
-			"entity_name": new OpEntityName
+			class_extend_op_code = new OpTypeIdentifier
 			{
+				"entity_name": new OpEntityName
+				{
+					"caret_start": class_caret_start,
+					"caret_end": parser.caret,
+					"names": rs::split(".", class_extends),
+				},
+				"template": null,
 				"caret_start": class_caret_start,
 				"caret_end": parser.caret,
-				"names": rs::split(".", class_extends),
-			},
-			"template": null,
-			"caret_start": class_caret_start,
-			"caret_end": parser.caret,
+			}
 		}
 		
 		/* Read class body */

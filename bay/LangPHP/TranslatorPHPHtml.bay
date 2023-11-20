@@ -85,7 +85,7 @@ static class TranslatorPHPHtml
 			{
 				list res = t.expression::Expression(t, op_code.value); 
 				t = res[0]; string value = res[1];
-				value = "\\Runtime\\rtl::json_encode($ctx, " ~ value ~ ")";
+				value = "\\Runtime\\rtl::json_encode(" ~ value ~ ")";
 				return [t, value];
 			}
 		}
@@ -165,7 +165,7 @@ static class TranslatorPHPHtml
 		{
 			res_attrs.pushValue
 			(
-				"\"class\" => " ~ "static::_class_name([" ~ attr_class ~ "])"
+				"\"class\" => " ~ "$this->_class_name([" ~ attr_class ~ "])"
 			);
 		}
 		
@@ -180,7 +180,7 @@ static class TranslatorPHPHtml
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "static::_merge_attrs(" ~ attr_s ~ "," ~ attr.value.value ~ ")";
+			attr_s = "$this->_merge_attrs(" ~ attr_s ~ "," ~ attr.value.value ~ ")";
 		}
 		
 		return [t, attr_s];
@@ -198,7 +198,7 @@ static class TranslatorPHPHtml
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s("static::_e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+			content ~= t.s("$this->_e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -216,14 +216,14 @@ static class TranslatorPHPHtml
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
 				content ~= t.s("/* Raw */");
-				content ~= t.s("static::_e(" ~ var_name ~ ", null, null, " ~
+				content ~= t.s("$this->_e(" ~ var_name ~ ", null, null, " ~
 					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
 				item_value = "\\Runtime\\rtl::json_encode(" ~ item_value ~ ")";
-				content ~= t.s("static::_e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+				content ~= t.s("$this->_e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -266,30 +266,43 @@ static class TranslatorPHPHtml
 					list res = static::OpHtmlItemsAsFunction(t, op_code.items);
 					t = res[0]; string f = res[1];
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s(new_var_name ~ " = " ~
-						"static::_e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");"
+					content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
+						", " ~ attrs ~ ", " ~ f ~ ");"
 					);
 					has_childs = false;
 				}
 				else
 				{
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s(new_var_name ~ " = " ~
-						"static::_e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
+					content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
+						", " ~ attrs ~ ");"
+					);
 				}
 			}
 			else
 			{
-				content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
 				string tag_name = t.expression::toString(op_code.tag_name);
-				content ~= t.s(new_var_name ~ " = " ~
-					"static::_e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
-			}
-			
-			if (has_childs)
-			{
-				list res = static::OpHtmlItems(t, op_code.items, new_var_name, true);
-				t = res[0]; content ~= res[1];
+				if (has_childs)
+				{
+					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+					content ~= t.s(new_var_name ~ " = [];")
+					
+					list res = static::OpHtmlItems(t, op_code.items, new_var_name, true);
+					t = res[0]; content ~= res[1];
+					
+					content ~= t.s2("");
+					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+					content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
+						", " ~ attrs ~ ", " ~ new_var_name ~ ");"
+					);
+				}
+				else
+				{
+					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+					content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
+						", " ~ attrs ~ ");"
+					);
+				}
 			}
 		}
 		else
@@ -320,7 +333,7 @@ static class TranslatorPHPHtml
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
 			content ~= t.s("/* Text */");
-			content ~= t.s("static::_e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+			content ~= t.s("$this->_e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
 		
 		return [t, content];
