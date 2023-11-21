@@ -856,7 +856,7 @@ static class TranslatorPHPExpression
 			t,
 			{
 				"content": 
-					t.s(var_name ~ " = new \\Runtime\\Monad($ctx, " ~ value ~ ");")
+					t.s(var_name ~ " = new \\Runtime\\Monad(" ~ value ~ ");")
 				,
 			}
 		);
@@ -872,7 +872,7 @@ static class TranslatorPHPExpression
 			if (op_item.kind == OpPipe::KIND_ATTR)
 			{
 				list res = static::Expression(t, op_item.value); t = res[0]; value = res[1];
-				s1 = var_name ~ "->attr($ctx, " ~ value ~ ")";
+				s1 = var_name ~ "->attr(" ~ value ~ ")";
 			}
 			else if (op_item.kind == OpPipe::KIND_METHOD)
 			{
@@ -888,7 +888,7 @@ static class TranslatorPHPExpression
 					flag = true;
 				}
 				
-				s1 = var_name ~ "->callMethod(ctx, \"" ~ value ~ "\", [" ~ args ~ "])";
+				s1 = var_name ~ "->callMethod(\"" ~ value ~ "\", [" ~ args ~ "])";
 			}
 			else if (op_item.kind == OpPipe::KIND_CALL)
 			{
@@ -898,11 +898,11 @@ static class TranslatorPHPExpression
 				
 				if (op_item.is_monad)
 				{
-					s1 = var_name ~ "->monad($ctx, " ~ value ~ ")";
+					s1 = var_name ~ "->monad(" ~ value ~ ")";
 				}
 				else
 				{
-					s1 = var_name ~ "->call($ctx, " ~ value ~ ")";
+					s1 = var_name ~ "->call(" ~ value ~ ")";
 				}
 				
 				t <= is_pipe <= false;
@@ -935,7 +935,7 @@ static class TranslatorPHPExpression
 			}
 		}
 		
-		return [t, var_name ~ "->value($ctx)"];
+		return [t, var_name ~ "->value()"];
 	}
 	
 	
