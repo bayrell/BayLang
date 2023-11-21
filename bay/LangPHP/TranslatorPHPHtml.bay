@@ -217,7 +217,7 @@ static class TranslatorPHPHtml
 			{
 				content ~= t.s("/* Raw */");
 				content ~= t.s("$this->_e(" ~ var_name ~ ", null, null, " ~
-					"new Runtime.RawString(" ~ item_value ~ "));");
+					"new \\Runtime\\RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
@@ -285,7 +285,7 @@ static class TranslatorPHPHtml
 				if (has_childs)
 				{
 					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s(new_var_name ~ " = [];")
+					content ~= t.s(new_var_name ~ " = new \\Runtime\\Vector();")
 					
 					list res = static::OpHtmlItems(t, op_code.items, new_var_name, true);
 					t = res[0]; content ~= res[1];
@@ -317,11 +317,13 @@ static class TranslatorPHPHtml
 			{
 				list res = t.expression::OpCall(t, op_code);
 				t = res[0]; item_value ~= res[1];
+				item_value = "$this->_escape(" ~ item_value ~ ")";
 			}
 			else
 			{
 				list res = t.expression::Expression(t, op_code);
 				t = res[0]; item_value = res[1];
+				item_value = "$this->_escape(" ~ item_value ~ ")";
 			}
 			
 			/* Output save op code */
@@ -347,7 +349,7 @@ static class TranslatorPHPHtml
 		(TranslatorPHP t, OpHtmlItems op_code)
 	{
 		string content = "";
-		content ~= t.s("$__v = [];");
+		content ~= t.s("$__v = new \\Runtime\\Vector();");
 		list res = static::OpHtmlItems(t, op_code, "$__v", true);
 		t = res[0];
 		content ~= res[1];
@@ -362,7 +364,7 @@ static class TranslatorPHPHtml
 		);
 		t = res[0];
 		
-		return [t, "$__v"];
+		return [t, "new \\Runtime\\RawString($__v->join(\"\"))"];
 	}
 	
 	
@@ -385,7 +387,7 @@ static class TranslatorPHPHtml
 		/* Output save op code */
 		string save = t::outputSaveOpCode(t, save_op_codes.count());
 		if (save != "") content ~= save;
-		content ~= t.s("return " ~ res[1] ~ ";");
+		content ~= t.s("return new \\Runtime\\RawString(" ~ res[1] ~ "->join(\"\"));");
 		
 		t = t.levelDec();
 		content ~= t.s("}");

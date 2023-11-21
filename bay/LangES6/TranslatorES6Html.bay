@@ -385,7 +385,7 @@ class TranslatorES6Html
 			t <= save_op_codes <= save_op_codes;
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
-			content ~= t.s("/* Text */");
+			content ~= t.s("/* Render */");
 			content ~= t.s("this._e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
 		}
 		

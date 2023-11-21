@@ -155,7 +155,9 @@ static class TranslatorPHPProgram
 			if (
 				not item.flags.isFlag("declare") and
 				not item.flags.isFlag("protected") and
-				not item.flags.isFlag("private")
+				not item.flags.isFlag("private") and
+				not item.annotations == null and
+				not item.annotations.count() == 0
 			){
 				content ~= t.s( t.expression::toString(item.name) ~ "," );
 			}
@@ -630,6 +632,11 @@ static class TranslatorPHPProgram
 						if (is_const or is_static) continue;
 						if (is_protected or is_private) continue;
 						if (variable.kind != OpAssign::KIND_DECLARE) continue;
+						if (class_kind != OpDeclareClass::KIND_STRUCT)
+						{
+							if (variable.annotations == null) continue;
+							if (variable.annotations.count() == 0) continue;
+						}
 						if (variable.condition and
 							t.preprocessor_flags[variable.condition.value] != true
 						) continue;
@@ -670,6 +677,8 @@ static class TranslatorPHPProgram
 						
 						if (is_const or is_static) continue;
 						if (is_protected or is_private) continue;
+						if (variable.annotations == null) continue;
+						if (variable.annotations.count() == 0) continue;
 						
 						Collection<string> v = variable.values.map(
 							string (OpAssignValue value) => value.var_name
@@ -742,7 +751,7 @@ static class TranslatorPHPProgram
 				t = t.levelInc();
 				content ~= t.s("$a=[");
 				t = t.levelInc();
-				if (op_code.functions != null and false)
+				if (op_code.functions != null)
 				{
 					for (int i=0; i<op_code.functions.count(); i++)
 					{

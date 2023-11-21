@@ -280,7 +280,9 @@ struct TranslatorES6Program extends BaseStruct
 			if (
 				not item.flags.isFlag("declare") and
 				not item.flags.isFlag("protected") and
-				not item.flags.isFlag("private")
+				not item.flags.isFlag("private") and
+				not item.annotations == null and
+				not item.annotations.count() == 0
 			){
 				content ~= t.s( t.expression::toString(item.name) ~ "," );
 			}
@@ -598,6 +600,11 @@ struct TranslatorES6Program extends BaseStruct
 				if (is_const or is_static) continue;
 				if (is_protected or is_private) continue;
 				if (variable.kind != OpAssign::KIND_DECLARE) continue;
+				if (class_kind != OpDeclareClass::KIND_STRUCT)
+				{
+					if (variable.annotations == null) continue;
+					if (variable.annotations.count() == 0) continue;
+				}
 				if (variable.condition and
 					t.preprocessor_flags[variable.condition.value] != true
 				) continue;
@@ -644,6 +651,8 @@ struct TranslatorES6Program extends BaseStruct
 				
 				if (is_const or is_static) continue;
 				if (is_protected or is_private) continue;
+				if (variable.annotations == null) continue;
+				if (variable.annotations.count() == 0) continue;
 				
 				Collection<string> v = variable.values.map(
 					string (OpAssignValue value) => value.var_name
@@ -709,7 +718,7 @@ struct TranslatorES6Program extends BaseStruct
 		t = t.levelInc();
 		content ~= t.s("var a=[");
 		t = t.levelInc();
-		if (op_code.functions != null and false)
+		if (op_code.functions != null)
 		{
 			for (int i=0; i<op_code.functions.count(); i++)
 			{
@@ -1304,7 +1313,7 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= res[1];
 		
 		/* Methods */
-		content ~= t.s("methods: function ()");
+		content ~= t.s("methods:");
 		content ~= t.s("{");
 		t = t.levelInc();
 		list res = static::OpDeclareClassFunctions(t, op_code);
