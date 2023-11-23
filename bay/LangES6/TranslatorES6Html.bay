@@ -260,7 +260,7 @@ class TranslatorES6Html
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s("this._e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+			content ~= t.s("this._t(" ~ var_name ~ ", " ~ item_value ~ ");");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -282,14 +282,14 @@ class TranslatorES6Html
 			if (op_code.kind == OpHtmlValue::KIND_RAW)
 			{
 				content ~= t.s("/* Raw */");
-				content ~= t.s("this._e(" ~ var_name ~ ", null, null, " ~
+				content ~= t.s("this._t(" ~ var_name ~ ", " ~
 					"new Runtime.RawString(" ~ item_value ~ "));");
 			}
 			else if (op_code.kind == OpHtmlValue::KIND_JSON)
 			{
 				content ~= t.s("/* Text */");
 				item_value = "Runtime.rtl.json_encode(" ~ item_value ~ ")";
-				content ~= t.s("this._e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+				content ~= t.s("this._t(" ~ var_name ~ ", " ~ item_value ~ ");");
 			}
 		}
 		else if (op_code instanceof OpHtmlTag)
@@ -333,7 +333,7 @@ class TranslatorES6Html
 					t = res[0]; string f = res[1];
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
-						"this._e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");"
+						"this._c(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ", " ~ f ~ ");"
 					);
 					has_childs = false;
 				}
@@ -341,7 +341,7 @@ class TranslatorES6Html
 				{
 					content ~= t.s("/* Component '" ~ op_code.tag_name ~ "' */");
 					content ~= t.s("let " ~ new_var_name ~ " = " ~
-						"this._e(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
+						"this._c(" ~ var_name ~ ", " ~ tag_name ~ ", " ~ attrs ~ ");");
 				}
 			}
 			else
@@ -386,7 +386,7 @@ class TranslatorES6Html
 			/*t <= save_op_code_inc <= save_op_code_inc;*/
 			
 			content ~= t.s("/* Render */");
-			content ~= t.s("this._e(" ~ var_name ~ ", null, null, " ~ item_value ~ ");");
+			content ~= t.s("this._t(" ~ var_name ~ ", " ~ item_value ~ ");");
 		}
 		
 		return [t, content];
