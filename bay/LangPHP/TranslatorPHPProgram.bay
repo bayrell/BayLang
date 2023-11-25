@@ -117,8 +117,12 @@ static class TranslatorPHPProgram
 			OpAnnotation annotation = f.annotations.item(j);
 			list res = t.expression::OpTypeIdentifier(t, annotation.name);
 			t = res[0]; string name = res[1];
-			list res = t.expression::OpDict(t, annotation.params, true);
-			t = res[0]; string params = res[1];
+			string params = "";
+			if (annotation.params != null)
+			{
+				list res = t.expression::OpDict(t, annotation.params, true);
+				t = res[0]; params = res[1];
+			}
 			content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
 		}
 		
