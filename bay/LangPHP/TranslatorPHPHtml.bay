@@ -387,7 +387,7 @@ static class TranslatorPHPHtml
 		/* Output save op code */
 		string save = t::outputSaveOpCode(t, save_op_codes.count());
 		if (save != "") content ~= save;
-		content ~= t.s("return new \\Runtime\\RawString(" ~ res[1] ~ "->join(\"\"));");
+		content ~= t.s("return " ~ res[1] ~ ";");
 		
 		t = t.levelDec();
 		content ~= t.s("}");
