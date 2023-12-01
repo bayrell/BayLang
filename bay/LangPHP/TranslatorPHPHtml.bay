@@ -25,6 +25,7 @@ use Bayrell.Lang.LangBay.ParserBayHtml;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAssign;
+use Bayrell.Lang.OpCodes.OpAttr;
 use Bayrell.Lang.OpCodes.OpCall;
 use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpFor;
@@ -33,6 +34,7 @@ use Bayrell.Lang.OpCodes.OpHtmlContent;
 use Bayrell.Lang.OpCodes.OpHtmlItems;
 use Bayrell.Lang.OpCodes.OpHtmlTag;
 use Bayrell.Lang.OpCodes.OpHtmlValue;
+use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpIf;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpWhile;
@@ -146,12 +148,13 @@ static class TranslatorPHPHtml
 			}
 			else if (attr_key == "@global")
 			{
-				attr_key = "model_path";
+				attr_key = "model";
+				attr_value = "$this->_model(" ~ attr_value ~ ", true)";
 			}
 			else if (attr_key == "@model")
 			{
-				attr_key = "model_path";
-				attr_value = "$this->model_path->concat(" ~ attr_value ~ ")";
+				attr_key = "model";
+				attr_value = "$this->_model(" ~ attr_value ~ ")";
 			}
 			
 			res_attrs.pushValue
@@ -180,7 +183,7 @@ static class TranslatorPHPHtml
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "$this->_merge_attrs(" ~ attr_s ~ "," ~ attr.value.value ~ ")";
+			attr_s = "$this->_merge_attrs(" ~ attr_s ~ ", $" ~ attr.value.value ~ ")";
 		}
 		
 		return [t, attr_s];
@@ -378,7 +381,17 @@ static class TranslatorPHPHtml
 		int save_op_code_inc = t.save_op_code_inc;
 		t <= save_op_code_inc <= 0;
 		
-		string content = "function (){";
+		/* Get used vars */
+		string use_vars = "";
+		Vector used_vars = [];
+		static::exportUsedVars(used_vars, op_code);
+		if (used_vars.count() > 0)
+		{
+			used_vars = used_vars.map(string (string s) => "$" ~ s);
+			use_vars = " use (" ~ used_vars.join(", ") ~ ") ";
+		}
+		
+		string content = "function ()" ~ use_vars ~ "{";
 		t = t.levelInc();
 		
 		list res = static::OpHtmlExpression(t, op_code);
@@ -484,5 +497,42 @@ static class TranslatorPHPHtml
 		t <= html_var_name <= save_html_var_name;
 		
 		return [t, content];
+	}
+	
+	
+	/**
+	 * Export used vars
+	 */
+	static void exportUsedVars(Vector used_vars, BaseOpCode op_code)
+	{
+		if (op_code instanceof OpHtmlItems)
+		{
+			for (int i=0; i<op_code.items.count(); i++)
+			{
+				static::exportUsedVars(used_vars, op_code.items.get(i));
+			}
+		}
+		else if (op_code instanceof OpCall)
+		{
+			static::exportUsedVars(used_vars, op_code.obj);
+			if (op_code.args != null)
+			{
+				for (int i=0; i<op_code.args.count(); i++)
+				{
+					static::exportUsedVars(used_vars, op_code.args.get(i));
+				}
+			}
+		}
+		else if (op_code instanceof OpAttr)
+		{
+			static::exportUsedVars(used_vars, op_code.obj);
+		}
+		else if (op_code instanceof OpIdentifier)
+		{
+			if (op_code.kind == OpIdentifier::KIND_VARIABLE)
+			{
+				used_vars.pushValue(op_code.value);
+			}
+		}
 	}
 }

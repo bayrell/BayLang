@@ -151,12 +151,13 @@ class TranslatorES6Html
 			}
 			else if (attr_key == "@global")
 			{
-				attr_key = "model_path";
+				attr_key = "model";
+				attr_value = "this._model(" ~ attr_value ~ ", true)";
 			}
 			else if (attr_key == "@model")
 			{
-				attr_key = "model_path";
-				attr_value = "this.model_path.concat(" ~ attr_value ~ ")";
+				attr_key = "model";
+				attr_value = "this._model(" ~ attr_value ~ ")";
 			}
 			else if (attr_key == "@ref")
 			{
@@ -213,7 +214,7 @@ class TranslatorES6Html
 		{
 			OpHtmlAttribute attr = attrs[i];
 			if (not attr.is_spread) continue;
-			attr_s = "this._merge_attrs(" ~ attr_s ~ "," ~ attr.value.value ~ ")";
+			attr_s = "this._merge_attrs(" ~ attr_s ~ ", " ~ attr.value.value ~ ")";
 		}
 		
 		return [t, attr_s];

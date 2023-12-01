@@ -1591,7 +1591,7 @@ class ParserBayHtml extends BaseObject
 		
 		if (class_name == "Runtime.Web.Component")
 		{
-			class_extends = null;
+			class_extends = "Runtime.BaseObject";
 		}
 		else
 		{
@@ -1600,7 +1600,10 @@ class ParserBayHtml extends BaseObject
 		if (class_extends != "" and class_extends != null)
 		{
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_extends), class_extends );
-			if (class_extends != "Runtime.Web.Component") components.pushValue(class_extends);
+			if (class_extends != "Runtime.BaseObject" and class_extends != "Runtime.Web.Component")
+			{
+				components.pushValue(class_extends);
+			}
 		}
 		if (class_model != "" and class_model != "Runtime.Dict")
 		{
