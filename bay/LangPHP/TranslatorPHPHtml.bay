@@ -367,6 +367,11 @@ static class TranslatorPHPHtml
 		);
 		t = res[0];
 		
+		if (t.current_function.flags.isFlag("multiblock") and op_code.items.count() > 1)
+		{
+			return [t, "new \\Runtime\\RawString($this->_flatten($__v))"];
+		}
+		
 		return [t, "new \\Runtime\\RawString($__v->join(\"\"))"];
 	}
 	

@@ -116,7 +116,6 @@ class TranslatorES6Html
 			string attr_key = attr.key;
 			string ch = rs::substr(attr_key, 0, 1);
 			bool is_event = rs::substr(attr_key, 0, 7) == "@event:";
-			bool is_signal = rs::substr(attr_key, 0, 8) == "@signal:";
 			
 			if (attr_key == "class")
 			{
@@ -137,17 +136,10 @@ class TranslatorES6Html
 				
 				continue;
 			}
-			else if (is_event or is_signal)
+			else if (is_event)
 			{
-				string event_name = "";
-				
-				if (is_event) event_name = rs::substr(attr_key, 7);
-				else if (is_signal) event_name = rs::substr(attr_key, 8);
-				
-				event_name = t.expression::findModuleName(t, event_name);
-				
-				if (is_event) attr_key = "@event:" ~ event_name;
-				else if (is_signal) attr_key = "@signal:" ~ event_name;
+				string event_name = rs::substr(attr_key, 7);
+				attr_key = rs::substr(attr_key, 7);
 			}
 			else if (attr_key == "@global")
 			{

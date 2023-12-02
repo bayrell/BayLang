@@ -1460,6 +1460,24 @@ class ParserBayHtml extends BaseObject
 			fn_args = fn_args.concat(fn_args2);
 		}
 		
+		/* If multiblock */
+		bool is_multiblock = false;
+		if (fn_name == "render")
+		{
+			is_multiblock = true;
+		}
+		if (item_attrs.has("multiblock"))
+		{
+			if (item_attrs.get("multiblock") == "true")
+			{
+				is_multiblock = true;
+			}
+			else if (item_attrs.get("multiblock") == "false")
+			{
+				is_multiblock = false;
+			}
+		}
+		
 		/* Register variable in parser */
 		parser2_vars = parser2_vars
 			.setIm("layout", true)
@@ -1490,6 +1508,7 @@ class ParserBayHtml extends BaseObject
 			{
 				"p_static": false,
 				"p_pure": false,
+				"p_multiblock": is_multiblock,
 			},
 			"name": fn_name,
 			"result_type": "html",

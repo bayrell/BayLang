@@ -35,6 +35,7 @@ struct OpFlags extends BaseStruct
 	public bool p_cloneable = false;
 	public bool p_assignable = false;
 	public bool p_memorize = false;
+	public bool p_multiblock = false;
 	public bool p_lambda = false;
 	public bool p_pure = false;
 	public bool p_props = false;
@@ -70,6 +71,7 @@ struct OpFlags extends BaseStruct
 			"cloneable",
 			"assignable",
 			"memorize",
+			"multiblock",
 			/*"lambda",*/
 			"pure",
 			"props",
@@ -96,6 +98,7 @@ struct OpFlags extends BaseStruct
 			flag_name == "cloneable" or
 			flag_name == "assignable" or
 			flag_name == "memorize" or
+			flag_name == "multiblock" or
 			flag_name == "lambda" or
 			flag_name == "pure" or
 			flag_name == "props"
