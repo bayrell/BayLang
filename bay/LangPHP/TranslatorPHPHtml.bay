@@ -49,7 +49,7 @@ static class TranslatorPHPHtml
 	{
 		string ch1 = rs::substr(tag_name, 0, 1);
 		string ch2 = rs::strtoupper(ch1);
-		return tag_name != "" and (ch1 == "{" or ch1 == ch2);
+		return tag_name != "" and (ch1 == "{" or ch1 == ch2) and tag_name != "Teleport";
 	}
 	
 	
@@ -201,7 +201,7 @@ static class TranslatorPHPHtml
 		{
 			string item_value = t.expression::toString(op_code.value);
 			content ~= t.s("/* Text */");
-			content ~= t.s("$this->_t(" ~ var_name ~ "," ~ item_value ~ ");");
+			content ~= t.s("$this->_t(" ~ var_name ~ ", " ~ item_value ~ ");");
 		}
 		else if (op_code instanceof OpHtmlValue)
 		{
@@ -294,17 +294,34 @@ static class TranslatorPHPHtml
 					t = res[0]; content ~= res[1];
 					
 					content ~= t.s2("");
-					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
-						", " ~ attrs ~ ", " ~ new_var_name ~ ");"
-					);
+					if (op_code.tag_name == "Teleport")
+					{
+						content ~= t.s("/* Teleport */");
+						content ~= t.s("$this->_teleport(" ~ var_name ~
+							", " ~ attrs ~ ", " ~ new_var_name ~ ");");
+					}
+					else
+					{
+						content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+						content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
+							", " ~ attrs ~ ", " ~ new_var_name ~ ");"
+						);
+					}
 				}
 				else
 				{
-					content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
-					content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
-						", " ~ attrs ~ ");"
-					);
+					if (op_code.tag_name == "Teleport")
+					{
+						content ~= t.s("/* Teleport */");
+						content ~= t.s("$this->_teleport(" ~ var_name ~ ", " ~ attrs ~ ");");
+					}
+					else
+					{
+						content ~= t.s("/* Element '" ~ op_code.tag_name ~ "' */");
+						content ~= t.s("$this->_e(" ~ var_name ~ ", " ~ tag_name ~
+							", " ~ attrs ~ ");"
+						);
+					}
 				}
 			}
 		}
