@@ -322,7 +322,7 @@ struct TranslatorES6Expression extends BaseStruct
 					{
 						if (not t.is_static_function)
 						{
-							if (not t.is_html)
+							if (not t.current_class.is_component)
 							{
 								s = "this.constructor";
 							}
@@ -737,8 +737,16 @@ struct TranslatorES6Expression extends BaseStruct
 			s = static::useModuleName(t, t.current_class_extends_name);
 			if (t.current_function.name != "constructor") 
 			{
-				if (t.current_function.isStatic()) s ~= "." ~ t.current_function.name;
-				else s ~= ".prototype." ~ t.current_function.name;
+				if (not t.current_class.is_component)
+				{
+					if (t.current_function.isStatic()) s ~= "." ~ t.current_function.name;
+					else s ~= ".prototype." ~ t.current_function.name;
+				}
+				else
+				{
+					if (t.current_function.isStatic()) s ~= "." ~ t.current_function.name;
+					else s ~= ".methods." ~ t.current_function.name;
+				}
 			}
 			s ~= ".call(this"; flag = true;
 		}

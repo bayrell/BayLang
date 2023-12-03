@@ -337,7 +337,10 @@ static class TranslatorPHPHtml
 			{
 				list res = t.expression::OpCall(t, op_code);
 				t = res[0]; item_value ~= res[1];
-				item_value = "$this->_escape(" ~ item_value ~ ")";
+				if (not op_code.is_html)
+				{
+					item_value = "$this->_escape(" ~ item_value ~ ")";
+				}
 			}
 			else
 			{
@@ -386,10 +389,10 @@ static class TranslatorPHPHtml
 		
 		if (t.current_function.flags.isFlag("multiblock") and op_code.items.count() > 1)
 		{
-			return [t, "new \\Runtime\\RawString($this->_flatten($__v))"];
+			return [t, "$this->_flatten($__v)"];
 		}
 		
-		return [t, "new \\Runtime\\RawString($__v->join(\"\"))"];
+		return [t, "$__v->join(\"\")"];
 	}
 	
 	
