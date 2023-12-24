@@ -369,7 +369,7 @@ static class TranslatorPHPHtml
 	 * Translator html items
 	 */
 	pure list<TranslatorPHP, string> OpHtmlExpression
-		(TranslatorPHP t, OpHtmlItems op_code)
+		(TranslatorPHP t, OpHtmlItems op_code, bool detect_multiblock = true)
 	{
 		string content = "";
 		content ~= t.s("$__v = new \\Runtime\\Vector();");
@@ -387,7 +387,11 @@ static class TranslatorPHPHtml
 		);
 		t = res[0];
 		
-		if (t.current_function.flags.isFlag("multiblock") and op_code.items.count() > 1)
+		if (
+			detect_multiblock and
+			t.current_function.flags.isFlag("multiblock") and
+			op_code.items.count() > 1
+		)
 		{
 			return [t, "$this->_flatten($__v)"];
 		}
@@ -419,7 +423,7 @@ static class TranslatorPHPHtml
 		string content = "function ()" ~ use_vars ~ "{";
 		t = t.levelInc();
 		
-		list res = static::OpHtmlExpression(t, op_code);
+		list res = static::OpHtmlExpression(t, op_code, false);
 		t = res[0];
 		
 		/* Output save op code */
