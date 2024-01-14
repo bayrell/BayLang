@@ -5,6 +5,8 @@ Bayrell Language
 
 Versions:
 
+[29 Dec 2023] 0.12.0 - Component VueJS Support
+
 [02 Aug 2023] 0.11.6 - Deploy first site on bay-lang. Ready Runtime.Web application.
 
 [20 Feb 2023] 0.11.5 - Ready version 0.11 version
