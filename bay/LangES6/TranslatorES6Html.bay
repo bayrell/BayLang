@@ -141,6 +141,12 @@ class TranslatorES6Html
 			{
 				string event_name = rs::substr(attr_key, 7);
 				attr_key = rs::substr(attr_key, 7);
+				if (rs::substr(attr_key, 0, 2) != "on")
+				{
+					string first = rs::upper(rs::substr(attr_key, 0, 1));
+					string second = rs::substr(attr_key, 1);
+					attr_key = "on" ~ first ~ second;
+				}
 			}
 			else if (attr_key == "@global")
 			{
@@ -189,7 +195,7 @@ class TranslatorES6Html
 				"\"key\":" ~ attr_key_value
 			);
 		}
-		if (attr_elem_name != "")
+		else if (attr_elem_name != "")
 		{
 			res_attrs.pushValue
 			(
