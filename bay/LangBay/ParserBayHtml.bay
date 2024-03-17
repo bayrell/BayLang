@@ -51,6 +51,7 @@ use Bayrell.Lang.OpCodes.OpNamespace;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
+use Bayrell.Lang.OpCodes.OpWidget;
 
 
 class ParserBayHtml extends BaseObject
@@ -1523,6 +1524,7 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
+	
 	/**
 	 * Read html attributes
 	 */
@@ -1569,6 +1571,135 @@ class ParserBayHtml extends BaseObject
 			if (ch2 == "/>") break;
 		}
 		return [parser, items.toDict()];
+	}
+	
+	
+	
+	/**
+	 * Read item
+	 */
+	pure list<ParserBay, BaseOpCode> readWidget(ParserBay parser, string item_name = "item")
+	{
+		Map settings = new Map();
+		Vector items = new Vector();
+		
+		/* Read item */
+		list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, item_name); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		CoreToken token = null;
+		ParserBay look = null;
+		Caret caret = null;
+		Caret caret_start = parser.caret;
+		Reference<string> content = parser.content;
+		string end_tag = "</" ~ item_name ~ ">";
+		int content_sz = parser.content_sz;
+		int pos = parser.caret.pos;
+		int x = parser.caret.x;
+		int y = parser.caret.y;
+		int start_pos = pos;
+		int end_tag_sz = rs::strlen(end_tag);
+		string ch = "";
+		
+		/* Read data */
+		string ch_pos = rs::substr(content.ref, pos, end_tag_sz);
+		while ( ( end_tag == "" or (end_tag != "" and ch_pos != end_tag) ) and pos < content_sz)
+		{
+			ch = rs::substr(content.ref, pos, 1);
+			
+			/* If tag */
+			if (ch == "<")
+			{
+				/* Change parser */
+				parser = parser.copy{ "caret": new Caret{ "x": x, "y": y, "pos": pos } };
+				
+				/* Read tag */
+				list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+				list res = parser.parser_base::readToken(parser); parser = res[0]; token = res[1];
+				list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+				
+				string props_name = token.content;
+				string props_value = "";
+				
+				/* Read widget item */
+				if (props_name == "item")
+				{
+					parser = parser.copy{ "caret": new Caret{ "x": x, "y": y, "pos": pos } };
+					list res = static::readWidget(parser);
+					parser = res[0]; BaseOpCode item = res[1];
+					items.pushValue(item);
+				}
+				
+				/* Read widget item props */
+				else
+				{
+					/* Read content */
+					caret = parser.caret;
+					pos = parser.caret.pos;
+					x = parser.caret.x;
+					y = parser.caret.y;
+					string item_ch = rs::substr(content.ref, pos, 1);
+					while (item_ch != "<" and pos < content_sz)
+					{
+						props_value += item_ch;
+						x = parser.parser_base::nextX(parser, item_ch, x);
+						y = parser.parser_base::nextY(parser, item_ch, y);
+						pos = pos + 1;
+						item_ch = rs::substr(content.ref, pos, 1);
+					}
+					
+					/* Change parser */
+					parser = parser.copy{ "caret": new Caret{ "x": x, "y": y, "pos": pos } };
+					
+					settings.setValue(props_name, new OpString
+					{
+						"caret_start": caret,
+						"caret_end": parser.caret,
+						"value": props_value,
+					});
+					
+					/* Read end tag */
+					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, props_name); parser = res[0];
+					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+				}
+				
+				/* Set pos, x, y */
+				pos = parser.caret.pos;
+				x = parser.caret.x;
+				y = parser.caret.y;
+			}
+			else
+			{
+				/* Next char */
+				x = parser.parser_base::nextX(parser, ch, x);
+				y = parser.parser_base::nextY(parser, ch, y);
+				pos = pos + 1;
+			
+				ch_pos = rs::substr(content.ref, pos, end_tag_sz);
+			}
+		}
+		
+		/* Change parser */
+		parser = parser.copy{ "caret": new Caret{ "x": x, "y": y, "pos": pos } };
+		
+		/* Read item */
+		list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, "/"); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, item_name); parser = res[0];
+		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		/* Create widget data */
+		BaseOpCode op_code = new OpWidget{
+			"caret_start": caret_start,
+			"caret_end": parser.caret,
+			"items": items.toCollection(),
+			"settings": settings.toDict(),
+		};
+		
+		return [parser, op_code];
 	}
 	
 	
@@ -1747,7 +1878,6 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "script"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 				}
-				
 				else if (item_name == "meta")
 				{
 					list res = parser.parser_base::readDict(parser);
@@ -1759,7 +1889,16 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "meta"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 				}
-				
+				else if (item_name == "data")
+				{
+					/* Read data content */
+					parser = parser.copy{ "caret": caret_start };
+					Dict<bool> save_vars = parser.vars;
+					list res = static::readWidget(parser, "data"); parser = res[0];
+					items.pushValue(res[1]);
+					BaseOpCode op_data = res[1];
+					parser <= vars <= save_vars;
+				}
 				else
 				{
 					throw new ParserError

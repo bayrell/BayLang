@@ -640,7 +640,8 @@ class ParserBayBase
 		CoreToken token = null;
 		
 		/* Look token */
-		list res = static::lookToken(parser, next_token); parser = res[0]; token = res[1]; bool find = res[2];
+		list res = static::lookToken(parser, next_token);
+		parser = res[0]; token = res[1]; bool find = res[2];
 		if (not find)
 		{
 			throw new ParserExpected(next_token, token.caret_start, parser.file_name);
