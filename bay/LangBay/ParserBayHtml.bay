@@ -283,9 +283,8 @@ class ParserBayHtml extends BaseObject
 	 * Concat op_code_item with selector
 	 */
 	pure BaseOpCode readCssBodyConcatItem(
-		ParserBay parser,
-		Caret caret_start_item1,
-		Caret caret_start_item2,
+		Caret caret_start,
+		Caret caret_end,
 		string selector,
 		BaseOpCode op_code_item
 	)
@@ -293,8 +292,8 @@ class ParserBayHtml extends BaseObject
 		if (op_code_item instanceof OpString)
 		{
 			op_code_item = new OpString{
-				"caret_start": caret_start_item2,
-				"caret_end": parser.getCaret(),
+				"caret_start": caret_start,
+				"caret_end": caret_end,
 				"value": op_code_item.value ~ "}",
 			}
 		}
@@ -302,8 +301,8 @@ class ParserBayHtml extends BaseObject
 		{
 			op_code_item = new OpMath
 			{
-				"caret_start": caret_start_item2,
-				"caret_end": parser.getCaret(),
+				"caret_start": caret_start,
+				"caret_end": caret_end,
 				"value1": op_code_item,
 				"value2": new OpString
 				{
@@ -316,8 +315,8 @@ class ParserBayHtml extends BaseObject
 		if (op_code_item instanceof OpString)
 		{
 			op_code_item = new OpString{
-				"caret_start": caret_start_item1,
-				"caret_end": parser.getCaret(),
+				"caret_start": caret_start,
+				"caret_end": caret_end,
 				"value": selector ~ "{" ~ op_code_item.value,
 			}
 		}
@@ -325,12 +324,12 @@ class ParserBayHtml extends BaseObject
 		{
 			op_code_item = new OpMath
 			{
-				"caret_start": caret_start_item1,
-				"caret_end": parser.getCaret(),
+				"caret_start": caret_start,
+				"caret_end": caret_end,
 				"value1": new OpString
 				{
-					"caret_start": caret_start_item1,
-					"caret_end": caret_start_item2,
+					"caret_start": caret_start,
+					"caret_end": caret_end,
 					"value": selector ~ "{",
 				},
 				"value2": op_code_item,
@@ -367,7 +366,9 @@ class ParserBayHtml extends BaseObject
 	 * Read css body
 	 */
 	pure ParserBay readCssBodyItems(
-		ParserBay parser, Vector items, string end_tag
+		ParserBay parser, Vector items,
+		string start_selector, string end_tag,
+		bool default_component_name
 	)
 	{
 		/* Get caret */
@@ -395,7 +396,7 @@ class ParserBayHtml extends BaseObject
 					caret.readChar();
 					ch = caret.nextChar();
 				}
-				string selector = caret.getString(start_pos, caret.pos - start_pos);
+				string media_selector = caret.getString(start_pos, caret.pos - start_pos);
 				
 				/* Setup caret */
 				parser <= caret <= caret;
@@ -403,21 +404,27 @@ class ParserBayHtml extends BaseObject
 				Caret caret_start_item2 = parser.getCaret();
 				
 				/* Read body */
+				Vector new_items = new Vector();
 				list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-				list res = static::readCssBody(parser);
-				parser = res[0]; op_code_item = res[1];
+				parser = static::readCssBodyItems(
+					parser, new_items,
+					start_selector,
+					"}", default_component_name
+				);
 				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 				
-				/* Concat item */
-				op_code_item = static::readCssBodyConcatItem(
-					parser,
-					caret_start_item1,
-					caret_start_item2,
-					selector,
-					op_code_item,
-				);
-				
-				items.pushValue(op_code_item);
+				/* Items */
+				for (int i=0; i<new_items.count(); i++)
+				{
+					BaseOpCode item = new_items.get(i);
+					item = static::readCssBodyConcatItem(
+						item.caret_start,
+						item.caret_end,
+						media_selector,
+						item
+					);
+					items.pushValue(item);
+				}
 				
 				/* Get caret */
 				caret = parser.getCaret();
@@ -430,7 +437,7 @@ class ParserBayHtml extends BaseObject
 				parser <= caret <= caret;
 				
 				/* Read css selector */
-				list res = static::readCssSelector(parser);
+				list res = static::readCssSelector(parser, default_component_name);
 				parser = res[0];
 				string selector = res[1];
 				
@@ -438,20 +445,12 @@ class ParserBayHtml extends BaseObject
 				
 				/* Read body */
 				list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-				list res = static::readCssBody(parser);
-				parser = res[0]; op_code_item = res[1];
-				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-				
-				/* Concat item */
-				op_code_item = static::readCssBodyConcatItem(
-					parser,
-					caret_start_item1,
-					caret_start_item2,
-					selector,
-					op_code_item,
+				parser = static::readCssBodyItems(
+					parser, items,
+					start_selector ~ " " ~ selector,
+					"}", false
 				);
-				
-				items.pushValue(op_code_item);
+				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 				
 				/* Get caret */
 				caret = parser.getCaret();
@@ -471,12 +470,12 @@ class ParserBayHtml extends BaseObject
 					caret.readChar();
 					ch = caret.nextChar();
 				}
-				string s = rs::join("", arr);
+				string s = rs::trim(rs::join("", arr));
 				op_code_item = new OpString
 				{
 					"caret_start": caret_start_item1,
 					"caret_end": parser.getCaret(),
-					"value": rs::trim(s),
+					"value": rs::trim(start_selector ~ "{" ~ s ~ "}"),
 				};
 				
 				items.pushValue(op_code_item);
@@ -491,16 +490,6 @@ class ParserBayHtml extends BaseObject
 			caret = parser.getCaret();
 		}
 		
-		if (op_code == null)
-		{
-			op_code = new OpString
-			{
-				"caret_start": caret_start,
-				"caret_end": parser.getCaret(),
-				"value": "",
-			};
-		}
-		
 		parser <= caret <= caret;
 		return parser;
 	}
@@ -509,12 +498,19 @@ class ParserBayHtml extends BaseObject
 	/**
 	 * Read css body
 	 */
-	pure list<ParserBay, BaseOpCode> readCssBody(ParserBay parser, string end_tag = "}")
+	pure list<ParserBay, BaseOpCode> readCssBody(
+		ParserBay parser, string end_tag = "}",
+		bool default_component_name = true
+	)
 	{
+		/* Get caret */
+		Caret caret_start = parser.getCaret();
+		
 		BaseOpCode op_code = null;
 		Vector items = new Vector();
 		
-		parser = static::readCssBodyItems(parser, items, end_tag);
+		/* Read items */
+		parser = static::readCssBodyItems(parser, items, "", end_tag, default_component_name);
 		
 		for (int i=0; i<items.count(); i++)
 		{
@@ -542,6 +538,16 @@ class ParserBayHtml extends BaseObject
 					};
 				}
 			}
+		}
+		
+		if (op_code == null)
+		{
+			op_code = new OpString
+			{
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+				"value": "",
+			};
 		}
 		
 		return [parser, op_code];
