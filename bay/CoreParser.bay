@@ -53,6 +53,15 @@ class CoreParser extends BaseStruct
 	bool isEof() => this.caret.pos >= this.content_sz;
 	
 	
+	/**
+	 * Returns caret
+	 */
+	Caret getCaret() => this.caret.clone{
+		"file_name": this.file_name,
+		"content": this.content,
+		"content_sz": this.content_sz,
+	};
+	
 	
 	/**
 	 * Reset parser
@@ -65,7 +74,6 @@ class CoreParser extends BaseStruct
 	;
 	
 	
-	
 	/**
 	 * Set content
 	 */
@@ -74,7 +82,6 @@ class CoreParser extends BaseStruct
 			"content": new Reference(content), "content_sz": rs::strlen(content)
 		})
 	;
-	
 	
 	
 	/**
@@ -90,5 +97,4 @@ class CoreParser extends BaseStruct
 		}
 		return parser;
 	}
-	
 }

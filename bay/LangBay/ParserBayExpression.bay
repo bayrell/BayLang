@@ -564,7 +564,7 @@ static class ParserBayExpression
 					list res = static::readTernary(parser); parser = res[0]; value = res[1];
 					kind = OpPipe::KIND_ATTR;
 				}
-				else if (look_token.content == '"' or look_token.content == "'")
+				else if (look_token.content == '"' or look_token.content == "'") /*"*/
 				{
 					list res = static::readTernary(parser); parser = res[0]; value = res[1];
 					kind = OpPipe::KIND_ATTR;
