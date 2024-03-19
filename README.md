@@ -5,7 +5,7 @@ BayLang
 
 Versions:
 
-0.12.1 - Add model, widget data.
+[19 Mar 2024] 0.12.1 - Template css style fix.
 
 [29 Dec 2023] 0.12.0 - Component VueJS Support
 

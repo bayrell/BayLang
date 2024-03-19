@@ -1990,9 +1990,9 @@ class ParserBayHtml extends BaseObject
 					list res = parser.parser_base::matchToken(parser, "script"); parser = res[0];
 					list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 				}
+				/*
 				else if (item_name == "data")
 				{
-					/* Read data content */
 					parser = parser.copy{ "caret": caret_start };
 					Dict<bool> save_vars = parser.vars;
 					list res = static::readWidgetData(parser, "data"); parser = res[0];
@@ -2000,6 +2000,7 @@ class ParserBayHtml extends BaseObject
 					BaseOpCode op_data = res[1];
 					parser <= vars <= save_vars;
 				}
+				*/
 				else
 				{
 					throw new ParserError
