@@ -32,6 +32,7 @@ use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpEntityName;
 use Bayrell.Lang.OpCodes.OpFlags;
+use Bayrell.Lang.OpCodes.OpHtmlStyle;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpNamespace;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
@@ -447,6 +448,14 @@ struct TranslatorES6Program extends BaseStruct
 		if (class_kind != OpDeclareClass::KIND_INTERFACE)
 		{
 			list res = static::OpDeclareClassStaticFunctions(t, op_code);
+			t = res[0];
+			content ~= res[1];
+		}
+		
+		/* Declare component functions */
+		if (op_code.is_model or op_code.is_component)
+		{
+			list res = static::OpDeclareComponentFunctions(t, op_code);
 			t = res[0];
 			content ~= res[1];
 		}
@@ -973,6 +982,36 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= t.s("};");
 		t = t.levelDec();
 		content ~= t.s("},");
+		
+		return [t, content];
+	}
+	
+	
+	/**
+	 * Declare component functions
+	 */
+	pure list<TranslatorES6, string> OpDeclareComponentFunctions
+		(TranslatorES6 t, OpDeclareClass op_code)
+	{
+		string content = "";
+		
+		content ~= t.s("css: function(vars)");
+		content ~= t.s("{");
+		t = t.levelInc();
+		
+		content ~= t.s("var res = \"\";");
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			OpHtmlStyle item = op_code.items.get(i);
+			if (not(item instanceof OpHtmlStyle)) continue;
+			list res = t.expression::Expression(t, item.value); t = res[0];
+			string s = res[1];
+			content ~= t.s( "res += Runtime.rtl.toStr(" ~ s ~ ");" );
+		}
+		
+		content ~= t.s("return res;");
+		t = t.levelDec();
+		content ~= t.s("}");
 		
 		return [t, content];
 	}

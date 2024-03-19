@@ -42,6 +42,8 @@ use Bayrell.Lang.OpCodes.OpFlags;
 use Bayrell.Lang.OpCodes.OpHtmlAttribute;
 use Bayrell.Lang.OpCodes.OpHtmlContent;
 use Bayrell.Lang.OpCodes.OpHtmlItems;
+use Bayrell.Lang.OpCodes.OpHtmlMeta;
+use Bayrell.Lang.OpCodes.OpHtmlStyle;
 use Bayrell.Lang.OpCodes.OpHtmlTag;
 use Bayrell.Lang.OpCodes.OpHtmlValue;
 use Bayrell.Lang.OpCodes.OpIdentifier;
@@ -550,6 +552,9 @@ class ParserBayHtml extends BaseObject
 			};
 		}
 		
+		op_code <= caret_start <= caret_start;
+		op_code <= caret_end <= parser.caret;
+		
 		return [parser, op_code];
 	}
 	
@@ -604,7 +609,7 @@ class ParserBayHtml extends BaseObject
 		}
 		
 		/* Read css */
-		list res = static::readCssBody(parser, "<");
+		list res = static::readCssBody(parser, "<", parser.is_local_css);
 		parser = res[0]; BaseOpCode css_op_code = res[1];
 		
 		/* Restore vars */
@@ -616,64 +621,14 @@ class ParserBayHtml extends BaseObject
 		list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 		
-		int find_pos = -1;
-		for (int items_i=0; items_i<items.count(); items_i++)
-		{
-			OpDeclareFunction f = items[items_i];
-			if (f instanceof OpDeclareFunction)
-			{
-				if (f.name == "css")
-				{
-					find_pos = items_i;
-					break;
-				}
-			}
-		}
-		
-		if (find_pos == -1)
-		{
-			OpDeclareFunction f = new OpDeclareFunction
-			{
-				"args":
-				[
-					new OpDeclareFunctionArg
-					{
-						"name": "vars",
-						"caret_start": caret_start,
-						"caret_end": parser.caret,
-					},
-				],
-				"vars": [],
-				"flags": new OpFlags
-				{
-					"p_static": true,
-					"p_pure": true,
-				},
-				"name": "css",
-				"result_type": "html",
-				"expression": css_op_code,
-				"items": null,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			};
-			
-			return [parser, f, -1];
-		}
-		
-		OpDeclareFunction f = items[find_pos];
-		
-		f <= expression <= new OpMath
-		{
+		BaseOpCode op_code = new OpHtmlStyle{
 			"caret_start": caret_start,
 			"caret_end": parser.caret,
-			"math": "~",
-			"value1": f.expression,
-			"value2": css_op_code,
+			"value": css_op_code,
 		};
 		
-		return [parser, f, find_pos];
+		return [parser, op_code];
 	}
-	
 	
 	
 	/**
@@ -863,7 +818,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read html attribute key
 	 */
@@ -908,7 +862,6 @@ class ParserBayHtml extends BaseObject
 		
 		return [parser, key];
 	}
-	
 	
 	
 	/**
@@ -1014,7 +967,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read html attributes
 	 */
@@ -1075,7 +1027,6 @@ class ParserBayHtml extends BaseObject
 		
 		return [parser, items.toCollection()];
 	}
-	
 	
 	
 	/**
@@ -1241,7 +1192,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read html tag
 	 */
@@ -1374,7 +1324,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read html operator
 	 */
@@ -1430,7 +1379,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read html operator
 	 */
@@ -1457,7 +1405,6 @@ class ParserBayHtml extends BaseObject
 		
 		return [parser, op_code];
 	}
-	
 	
 	
 	/**
@@ -1584,7 +1531,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read html attributes
 	 */
@@ -1632,7 +1578,6 @@ class ParserBayHtml extends BaseObject
 		}
 		return [parser, items.toDict()];
 	}
-	
 	
 	
 	/**
@@ -1763,7 +1708,6 @@ class ParserBayHtml extends BaseObject
 	}
 	
 	
-	
 	/**
 	 * Read UI
 	 */
@@ -1788,10 +1732,25 @@ class ParserBayHtml extends BaseObject
 		list res = parser.parser_base::matchToken(parser, "class"); parser = res[0];
 		list res = static::readAttrs(parser); parser = res[0]; Dict attrs = res[1];
 		class_name = attrs.get("name", "");
-		class_extends = attrs.get("extends", "Runtime.Web.Component");
+		class_extends = attrs.get("extends", null);
 		class_version = attrs.get("version", "1.0");
 		class_model = attrs.get("model", "Runtime.Dict");
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
+		
+		bool flag_is_component = true;
+		bool flag_is_model = false;
+		if (attrs.get("type") == "model")
+		{
+			flag_is_component = false;
+			flag_is_model = true;
+		}
+		
+		/* Default class extends */
+		if (class_extends == null)
+		{
+			if (flag_is_component) class_extends = "Runtime.Web.Component";
+			else class_extends = "Runtime.Web.BaseModel";
+		}
 		
 		fn getClassShortName = string (string class_name) =>
 			class_name
@@ -1810,7 +1769,11 @@ class ParserBayHtml extends BaseObject
 		if (class_extends != "" and class_extends != null)
 		{
 			parser <= uses <= parser.uses.setIm( getClassShortName(class_extends), class_extends );
-			if (class_extends != "Runtime.BaseObject" and class_extends != "Runtime.Web.Component")
+			if (
+				class_extends != "Runtime.BaseObject" and
+				class_extends != "Runtime.Web.Component" and
+				class_extends != "Runtime.Web.BaseModel"
+			)
 			{
 				components.pushValue(class_extends);
 			}
@@ -1847,6 +1810,7 @@ class ParserBayHtml extends BaseObject
 		
 		/* Read class body */
 		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret);
+		parser <= caret <= caret;
 		string ch2 = rs::substr(content.ref, caret.pos, 2);
 		while (ch2 != "</" and caret.pos < content_sz)
 		{
@@ -1915,16 +1879,8 @@ class ParserBayHtml extends BaseObject
 				else if (item_name == "style")
 				{
 					list res = static::readStyle(parser, item_attrs, items, caret_start);
-					parser = res[0]; BaseOpCode op_code = res[1]; int find_pos = res[2];
-					
-					if (find_pos == -1)
-					{
-						items.pushValue(op_code);
-					}
-					else
-					{
-						items.setValue(find_pos, op_code);
-					}
+					parser = res[0]; BaseOpCode op_code = res[1];
+					items.pushValue(op_code);
 				}
 				else if (item_name == "script")
 				{
@@ -1942,6 +1898,11 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = parser.parser_base::readDict(parser);
 					parser = res[0]; BaseOpCode arr = res[1];
+					items.pushValue(new OpHtmlMeta{
+						"caret_start": arr.caret_start,
+						"caret_end": arr.caret_end,
+						"value": arr,
+					});
 					
 					/* Read meta footer */
 					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
@@ -1983,6 +1944,7 @@ class ParserBayHtml extends BaseObject
 			}
 			
 			caret = parser.parser_base::skipChar(parser, content, parser.caret);
+			parser <= caret <= caret;
 			ch2 = rs::substr(content.ref, caret.pos, 2);
 		}
 		
@@ -2049,7 +2011,8 @@ class ParserBayHtml extends BaseObject
 					"kind": OpDeclareClass::KIND_CLASS,
 					"name": class_name_last,
 					"is_static": true,
-					"is_component": true,
+					"is_component": flag_is_component,
+					"is_model": flag_is_model,
 					"is_declare": false,
 					"class_extends": class_extend_op_code,
 					"class_implements": null,
@@ -2067,7 +2030,6 @@ class ParserBayHtml extends BaseObject
 			]
 		];
 	}
-	
 	
 	
 	/**
@@ -2121,5 +2083,4 @@ class ParserBayHtml extends BaseObject
 			}
 		];
 	}
-	
 }
