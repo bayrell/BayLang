@@ -277,7 +277,7 @@ static class TranslatorPHPProgram
 		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
 		if (op_code_meta)
 		{
-			content ~= t.s("static function meta()");
+			content ~= t.s("static function getMetaData()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			list res = t.expression::Expression(t, op_code_meta.value); t = res[0];

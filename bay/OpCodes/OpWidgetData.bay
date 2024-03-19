@@ -21,8 +21,8 @@ namespace Bayrell.Lang.OpCodes;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 
 
-struct OpHtmlMeta extends BaseOpCode
+struct OpWidgetData extends BaseOpCode
 {
-	string op = "op_html_meta";
+	string op = "op_widget_data";
 	BaseOpCode value = null;
 }

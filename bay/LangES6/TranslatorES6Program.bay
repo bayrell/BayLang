@@ -42,6 +42,7 @@ use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
 use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.OpCodes.OpUse;
+use Bayrell.Lang.OpCodes.OpWidget;
 
 
 struct TranslatorES6Program extends BaseStruct
@@ -1016,11 +1017,29 @@ struct TranslatorES6Program extends BaseStruct
 		t = t.levelDec();
 		content ~= t.s("}");
 		
-		/* Meta data */
+		/* Widget data */
+		OpWidget op_code_widget = op_code.items.findItem(lib::isInstance(classof OpWidget));
 		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
+		if (op_code_widget)
+		{
+			content ~= t.s("getWidgetData: function()");
+			content ~= t.s("{");
+			t = t.levelInc();
+			content ~= t.s("return {");
+			t = t.levelInc();
+			content ~= t.s("\"data\": null,");
+			content ~= t.s("\"info\": null,");
+			t = t.levelDec();
+			content ~= t.s("};");
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
+		
+		/* Meta data */
+		
 		if (op_code_meta)
 		{
-			content ~= t.s("meta: function()");
+			content ~= t.s("getMetaData: function()");
 			content ~= t.s("{");
 			t = t.levelInc();
 			list res = t.expression::Expression(t, op_code_meta.value); t = res[0];
