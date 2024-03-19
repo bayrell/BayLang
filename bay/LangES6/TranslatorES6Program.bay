@@ -18,6 +18,7 @@
 
 namespace Bayrell.Lang.LangES6;
 
+use Runtime.lib;
 use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.Exceptions.DeclaredClass;
@@ -32,6 +33,7 @@ use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
 use Bayrell.Lang.OpCodes.OpEntityName;
 use Bayrell.Lang.OpCodes.OpFlags;
+use Bayrell.Lang.OpCodes.OpHtmlMeta;
 use Bayrell.Lang.OpCodes.OpHtmlStyle;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpNamespace;
@@ -995,6 +997,7 @@ struct TranslatorES6Program extends BaseStruct
 	{
 		string content = "";
 		
+		/* CSS */
 		content ~= t.s("css: function(vars)");
 		content ~= t.s("{");
 		t = t.levelInc();
@@ -1012,6 +1015,20 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= t.s("return res;");
 		t = t.levelDec();
 		content ~= t.s("}");
+		
+		/* Meta data */
+		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
+		if (op_code_meta)
+		{
+			content ~= t.s("meta: function()");
+			content ~= t.s("{");
+			t = t.levelInc();
+			list res = t.expression::Expression(t, op_code_meta.value); t = res[0];
+			string s = res[1];
+			content ~= t.s("return " ~ s ~ ";");
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
 		
 		return [t, content];
 	}

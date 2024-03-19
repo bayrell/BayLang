@@ -18,6 +18,7 @@
 
 namespace Bayrell.Lang.LangPHP;
 
+use Runtime.lib;
 use Runtime.BaseStruct;
 use Bayrell.Lang.SaveOpCode;
 use Bayrell.Lang.Exceptions.DeclaredClass;
@@ -30,6 +31,7 @@ use Bayrell.Lang.OpCodes.OpComment;
 use Bayrell.Lang.OpCodes.OpDeclareClass;
 use Bayrell.Lang.OpCodes.OpDeclareFunction;
 use Bayrell.Lang.OpCodes.OpFlags;
+use Bayrell.Lang.OpCodes.OpHtmlMeta;
 use Bayrell.Lang.OpCodes.OpHtmlStyle;
 use Bayrell.Lang.OpCodes.OpItems;
 use Bayrell.Lang.OpCodes.OpNamespace;
@@ -252,6 +254,7 @@ static class TranslatorPHPProgram
 	{
 		string content = "";
 		
+		/* CSS */
 		content ~= t.s("static function css($vars)");
 		content ~= t.s("{");
 		t = t.levelInc();
@@ -269,6 +272,20 @@ static class TranslatorPHPProgram
 		content ~= t.s("return $res;");
 		t = t.levelDec();
 		content ~= t.s("}");
+		
+		/* Meta data */
+		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
+		if (op_code_meta)
+		{
+			content ~= t.s("static function meta()");
+			content ~= t.s("{");
+			t = t.levelInc();
+			list res = t.expression::Expression(t, op_code_meta.value); t = res[0];
+			string s = res[1];
+			content ~= t.s("return " ~ s ~ ";");
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
 		
 		return [t, content];
 	}
@@ -378,7 +395,7 @@ static class TranslatorPHPProgram
 			t = res[0]; content ~= res[1];
 		}
 		
-		if (class_kind != OpDeclareClass::KIND_INTERFACE and op_code.is_component == false)
+		if (class_kind != OpDeclareClass::KIND_INTERFACE)
 		{
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
 		}
