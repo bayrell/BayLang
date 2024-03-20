@@ -199,4 +199,80 @@ class Caret extends BaseObject
 		
 		this.readChar();
 	}
+	
+	
+	/**
+	 * Return true if is char
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isChar(char ch) =>
+		rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1
+	;
+	
+	
+	/**
+	 * Return true if is number
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isNumber(char ch) =>
+		rs::strpos('0123456789', ch) !== -1
+	;
+	
+	
+	/**
+	 * Return true if char is number
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isHexChar(char ch) =>
+		rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1
+	;
+	
+	
+	/**
+	 * Return true if is string of numbers
+	 * @param string s
+	 * @return boolean
+	 */
+	pure memorize bool isStringOfNumbers(string s)
+	{
+		int sz = rs::strlen(s);
+		for (int i=0; i<sz; i++)
+		{
+			if (not static::isNumber( rs::charAt(s, i) )) return false;
+		}
+		return true;
+	}
+	
+	
+	/**
+	 * Return true if char is system or space. ASCII code <= 32.
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isSkipChar(char ch)
+	{
+		if (rs::ord(ch) <= 32) return true;
+		return false;
+	}
+	
+	
+	/**
+	 * Skip chars
+	 */
+	void skipChar(char ch)
+	{
+		if (this.nextChar() == ch) this.readChar();
+	}
+	
+	
+	/**
+	 * Skip null chars
+	 */
+	void skipNullChar()
+	{
+		while (not this.eof() and static::isSkipChar(this.nextChar())) this.readChar();
+	}
 }

@@ -59,7 +59,7 @@ class ParserBayBase
 	 */
 	pure memorize bool isChar (char ch) =>
 		rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1
-	;	
+	;
 	
 	
 	
@@ -1184,7 +1184,8 @@ class ParserBayBase
 			}
 			
 			BaseOpCode parser_value = null;
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; parser_value = res[1];
+			list res = parser.parser_expression::readExpression(parser);
+			parser = res[0]; parser_value = res[1];
 			
 			list res = static::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == ",")
