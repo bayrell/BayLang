@@ -1015,9 +1015,10 @@ struct TranslatorES6Program extends BaseStruct
 		
 		content ~= t.s("return res;");
 		t = t.levelDec();
-		content ~= t.s("}");
+		content ~= t.s("},");
 		
 		/* Widget data */
+		/*
 		OpWidget op_code_widget = op_code.items.findItem(lib::isInstance(classof OpWidget));
 		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
 		if (op_code_widget)
@@ -1034,20 +1035,7 @@ struct TranslatorES6Program extends BaseStruct
 			t = t.levelDec();
 			content ~= t.s("}");
 		}
-		
-		/* Meta data */
-		
-		if (op_code_meta)
-		{
-			content ~= t.s("getMetaData: function()");
-			content ~= t.s("{");
-			t = t.levelInc();
-			list res = t.expression::Expression(t, op_code_meta.value); t = res[0];
-			string s = res[1];
-			content ~= t.s("return " ~ s ~ ";");
-			t = t.levelDec();
-			content ~= t.s("}");
-		}
+		*/
 		
 		return [t, content];
 	}
