@@ -259,7 +259,7 @@ static class TranslatorPHPProgram
 		content ~= t.s("{");
 		t = t.levelInc();
 		
-		content ~= t.s("var $res = \"\";");
+		content ~= t.s("$res = \"\";");
 		for (int i=0; i<op_code.items.count(); i++)
 		{
 			OpHtmlStyle item = op_code.items.get(i);
