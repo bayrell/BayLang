@@ -368,16 +368,14 @@ class ParserBayHtml extends BaseObject
 		if (ch == "%" or ch == "." or ch == "#" or ch == ":" or ch == "*") return true;
 		if (not caret::isChar(ch)) return false;
 		
-		while (
-			not caret.eof() and
-			ch != "," and ch != "(" and ch != "{" and ch != "}" and ch != "<"
-		)
+		while (not caret.eof() and ch != "{" and ch != "}" and ch != "<")
 		{
+			if (ch == ";" or ch == "(" or ch == ")") return false;
 			caret.nextChar();
 			ch = caret.readChar();
 		}
 		
-		if (ch == "{" or ch == ",") return true;
+		if (ch == "{") return true;
 		return false;
 	}
 	
