@@ -221,7 +221,7 @@ class ParserBayHtml extends BaseObject
 		char ch = caret.nextChar();
 		while (
 			not caret.eof() and ch != " " and ch != "," and
-			ch != "." and ch != ":" and ch != "[" and ch != "{"
+			ch != ":" and ch != "[" and ch != "{"
 		)
 		{
 			caret.readChar();
