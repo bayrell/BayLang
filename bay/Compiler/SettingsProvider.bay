@@ -20,34 +20,25 @@ namespace Bayrell.Lang.Compiler;
 
 use Runtime.fs;
 use Runtime.re;
-use Runtime.BaseProvider;
+use Runtime.BaseObject;
 use Runtime.Exceptions.RuntimeException;
 use Bayrell.Lang.Compiler.Module;
 
 
-class SettingsProvider extends BaseProvider
+class SettingsProvider extends BaseObject
 {
 	string project_path = "";
+	string project_json_path = "";
 	Dict config = {};
 	Dict<Module> modules = {};
 	
 	
 	/**
-	 * Start provider
-	 */
-	async void start()
-	{
-		/* Read settings from file located in @.base_path */
-		await this.readSettingsFromFile( fs::join([ @.base_path, "project.json" ]) );
-	}
-	
-	
-	
-	/**
      * Read settings from file
      */
-    async void readSettingsFromFile(string file_name)
+    async void reload()
     {
+		string file_name = this.project_json_path;
         bool is_file = await fs::isFile(file_name);
 		if (!is_file)
 		{
@@ -57,21 +48,18 @@ class SettingsProvider extends BaseProvider
 		string file_content = await fs::readFile(file_name);
 		this.config = rtl::json_decode(file_content);
 		this.project_path = rs::dirname(file_name);
+		this.modules = {};
 		
 		/* Load modules */
-		this.modules = await this.readModules();
+		await this.readModules(this.project_path, this.config);
     }
-	
 	
 	
 	/**
 	 * Returns modules from config
 	 */
-	async Dict readModules()
+	async void readModules(string config_path, Dict config)
 	{
-		Map<Module> modules = new Map();
-		Dict config = this.config;
-		
 		Collection modules_info = config["modules"] |> default Collection [];
 		for (int i = 0; i<modules_info.count(); i++)
 		{
@@ -81,33 +69,18 @@ class SettingsProvider extends BaseProvider
 			
 			if (module_type == "module")
 			{
-				string module_path = fs::join([ this.project_path, module_src ]);
+				string module_path = fs::join([ config_path, module_src ]);
 				Module module = await this.readModule(module_path);
-				if (module and not modules.has(module.name))
-				{
-					modules.setValue(module.name, module);
-				}
 			}
 			else if (module_type == "folder")
 			{
-				string folder_path = fs::join([ this.project_path, module_src ]);
+				string folder_path = fs::join([ config_path, module_src ]);
 				Collection<Module> folder_modules =
 					await this.readModulesFromFolder(folder_path)
 				;
-				for (int j=0; j<folder_modules.count(); j++)
-				{
-					Module module = folder_modules[j];
-					if (module and not modules.has(module.name))
-					{
-						modules.setValue(module.name, module);
-					}
-				}
 			}
 		}
-		
-		return modules.toDict();
 	}
-	
 	
 	
 	/**
@@ -129,6 +102,7 @@ class SettingsProvider extends BaseProvider
 		if (module_name == "")
 			return null;
 		
+		/* Create module */
 		Module module = new Module
 		{
 			"name": module_name,
@@ -136,33 +110,32 @@ class SettingsProvider extends BaseProvider
 			"path": module_path,
 		};
 		
+		/* Read submodules */
+		await this.readModules(module_path, module_json);
+		
+		/* Add module */
+		if (module and not this.modules.has(module_name))
+		{
+			this.modules.setValue(module_name, module);
+		}
+		
 		return module;
 	}
-	
 	
 	
 	/**
 	 * Read modules from folder
 	 */
-	async Collection<Module> readModulesFromFolder(string folder_path)
+	async void readModulesFromFolder(string folder_path)
 	{
-		Vector<Module> modules = new Vector();
-		
 		Collection<string> file_names = await fs::listDir(folder_path);
 		for (int i=0; i<file_names.count(); i++)
 		{
 			string file_name = file_names[i];
 			string module_path = fs::join([ folder_path, file_name ]);
-			Module module = await this.readModule(module_path);
-			if (module)
-			{
-				modules.pushValue(module);
-			}
+			await this.readModule(module_path);
 		}
-		
-		return modules.toCollection();
 	}
-	
 	
 	
 	/**
@@ -192,7 +165,6 @@ class SettingsProvider extends BaseProvider
 	}
 	
 	
-	
 	/**
 	 * Resolve source file.
 	 * Returns file_name, ext_name and module by file
@@ -206,10 +178,21 @@ class SettingsProvider extends BaseProvider
 		if (!module)
 			return null;
 		
+		string module_path = module.getModulePath();
 		string module_src_path = module.getSourcePath();
-		
 		if (rs::indexOf(file_name, module_src_path) != 0)
+		{
+			if (rs::indexOf(file_name, module_path) == 0)
+			{
+				Dict d = {
+					"file": rs::substr(file_name, rs::strlen(module_path)),
+					"module": module,
+					"success": false,
+				};
+				return d;
+			}
 			return null;
+		}
 		
 		string module_file_name = rs::substr(file_name, rs::strlen(module_src_path));
 		module_file_name = fs::removeFirstSlash(module_file_name);
@@ -217,6 +200,7 @@ class SettingsProvider extends BaseProvider
 		string module_ext_name = rs::extname(module_file_name);
 		
 		Dict d = {
+			"file": rs::substr(file_name, rs::strlen(module_path)),
 			"file_name": module_file_name,
 			"ext_name": module_ext_name,
 			"module": module,

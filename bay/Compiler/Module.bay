@@ -32,6 +32,15 @@ class Module extends BaseStruct
 	
 	
 	/**
+	 * Returns module path
+	 */
+	string getModulePath()
+	{
+		return this.path;
+	}
+	
+	
+	/**
 	 * Returns source path
 	 */
 	string getSourcePath()

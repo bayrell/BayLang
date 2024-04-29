@@ -47,7 +47,6 @@ class CLI
 	}
 	
 	
-	
 	/**
 	 * Compile file
 	 */
@@ -182,7 +181,6 @@ class CLI
 	}
 	
 	
-	
 	/**
 	 * Compile module
 	 */
@@ -231,7 +229,6 @@ class CLI
 			await this.makeAssets(module_name);
 		}
 	}
-	
 	
 	
 	/**
@@ -293,7 +290,6 @@ class CLI
 	}
 	
 	
-	
 	/**
 	 * Make assets
 	 */
@@ -328,7 +324,6 @@ class CLI
 	}
 	
 	
-	
 	/**
 	 * Show modules
 	 */
@@ -356,14 +351,12 @@ class CLI
 	}
 	
 	
-	
 	/**
 	 * App modules
 	 */
 	pure Collection<string> modules() => [
 		"Bayrell.Lang",
 	];
-	
 	
 	
 	/**
@@ -375,7 +368,6 @@ class CLI
 	}
 	
 	
-	
 	/**
 	 * Start app
 	 */
@@ -383,9 +375,9 @@ class CLI
 	{
 		/* Create settings provider */
 		this.settings = new SettingsProvider();
-		await this.settings.start();
+		this.settings.project_json_path = fs::join([ @.base_path, "project.json" ]);
+		await this.settings.reload();
 	}
-	
 	
 	
 	/**
@@ -459,6 +451,13 @@ class CLI
 				let io = use("Runtime.io");
 				try
 				{
+					if (changed_file_path == this.settings.project_json_path)
+					{
+						io.print(ctx, "Reload project.json");
+						await this.settings.reload();
+						return;
+					}
+					
 					let file_info = await this.compileFile(ctx, changed_file_path, "", 3);
 					if (file_info)
 					{
@@ -466,7 +465,13 @@ class CLI
 						let assets = module.config.get(ctx, "assets");
 						let file_name = file_info.get(ctx, "file_name");
 						
-						if (assets.indexOf(ctx, file_name) >= 0)
+						if (file_info.get(ctx, "file") == "/module.json")
+						{
+							io.print(ctx, "Reload module.json");
+							await this.settings.reload();
+						}
+						
+						else if (assets.indexOf(ctx, file_name) >= 0)
 						{
 							await this.makeAssets(ctx, module.name);
 						}
