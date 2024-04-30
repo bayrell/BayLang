@@ -30,6 +30,7 @@ use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpInc;
 use Bayrell.Lang.OpCodes.OpMath;
 use Bayrell.Lang.OpCodes.OpMethod;
+use Bayrell.Lang.OpCodes.OpNegative;
 use Bayrell.Lang.OpCodes.OpPipe;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpString;
@@ -38,6 +39,34 @@ use Bayrell.Lang.OpCodes.OpTernary;
 
 static class ParserBayExpression
 {
+	/**
+	 * Read negative
+	 */
+	pure list<ParserBay, BaseOpCode> readNegative(ParserBay parser)
+	{
+		ParserBay look = null;
+		CoreToken token = null;
+		
+		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+		Caret caret_start = token.caret_start;
+		if (token.content == "-")
+		{
+			BaseOpCode op_code = null;
+			list res = parser.parser_base::readDynamic(look); parser = res[0]; op_code = res[1];
+			return
+			[
+				parser,
+				new OpNegative
+				{
+					"value": op_code,
+					"caret_start": caret_start,
+					"caret_end": parser.caret,
+				}
+			];
+		}
+		return parser.parser_base::readDynamic(parser);
+	}
+	
 	
 	/**
 	 * Read bit not
@@ -52,8 +81,8 @@ static class ParserBayExpression
 		if (token.content == "!")
 		{
 			BaseOpCode op_code = null;
-			list res = parser.parser_base::readDynamic(look); parser = res[0]; op_code = res[1];
-			return 
+			list res = static::readNegative(look); parser = res[0]; op_code = res[1];
+			return
 			[
 				parser,
 				new OpMath
@@ -65,7 +94,7 @@ static class ParserBayExpression
 				}
 			];
 		}
-		return parser.parser_base::readDynamic(parser);
+		return static::readNegative(parser);
 	}
 	
 	
@@ -692,7 +721,8 @@ static class ParserBayExpression
 						parser <= pipe_kind <= OpAttr::KIND_STATIC;
 					}
 					
-					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					list res = parser.parser_base::readDynamic(parser);
+					parser = res[0]; value = res[1];
 					
 					/* Restore parser */
 					parser <= is_pipe <= false;
@@ -706,7 +736,8 @@ static class ParserBayExpression
 				else
 				{
 					kind = OpPipe::KIND_CALL;
-					list res = parser.parser_base::readDynamic(parser); parser = res[0]; value = res[1];
+					list res = parser.parser_base::readDynamic(parser);
+					parser = res[0]; value = res[1];
 				}
 				
 				op_code = new OpPipe

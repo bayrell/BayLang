@@ -43,6 +43,7 @@ use Bayrell.Lang.OpCodes.OpIdentifier;
 use Bayrell.Lang.OpCodes.OpMethod;
 use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
+use Bayrell.Lang.OpCodes.OpNegative;
 use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
 use Bayrell.Lang.OpCodes.OpString;
 use Bayrell.Lang.OpCodes.OpTypeConvert;
@@ -679,7 +680,7 @@ class ParserBayBase
 	/**
 	 * Read number
 	 */
-	pure list<ParserBay, OpNumber> readNumber(ParserBay parser)
+	pure list<ParserBay, OpNumber> readNumber(ParserBay parser, bool flag_negative = false)
 	{
 		CoreToken token = null;
 		ParserBay start = parser;
@@ -697,14 +698,30 @@ class ParserBayBase
 			throw new ParserExpected("Number", caret_start, parser.file_name);
 		}
 		
-		return 
+		string value = token.content;
+		
+		/* Look dot */
+		list res = static::readToken(parser);
+		ParserBay look = res[0]; token = res[1];
+		
+		if (token.content == ".")
+		{
+			value ~= ".";
+			list res = static::readToken(look);
+			parser = res[0];
+			token = res[1];
+			value ~= token.content;
+		}
+		
+		return
 		[
 			parser,
 			new OpNumber
 			{
-				"value": token.content,
+				"value": value,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
+				"negative": flag_negative,
 			}
 		];
 	}
@@ -821,7 +838,7 @@ class ParserBayBase
 		string str_char = token.content;
 		
 		/* Read begin string char */
-		if (str_char != "'" and str_char != '"')
+		if (str_char != "'" and str_char != '"') /* " */
 		{
 			throw new ParserExpected("String", caret_start, parser.file_name);
 		}
@@ -885,7 +902,7 @@ class ParserBayBase
 		}
 		
 		/* Read end string char */
-		if (ch != "'" and ch != '"')
+		if (ch != "'" and ch != '"') /* " */
 		{
 			throw new ParserExpected
 			(
@@ -1315,6 +1332,7 @@ class ParserBayBase
 		ParserBay look = null;
 		CoreToken token = null;
 		ParserBay start = parser;
+		Caret caret_start = parser.caret;
 		bool flag_negative = false;
 		
 		list res = static::readToken(parser); look = res[0]; token = res[1];
@@ -1323,45 +1341,36 @@ class ParserBayBase
 			throw new ParserExpected("Identifier", token.caret_start, look.file_name);
 		}
 		
-		/* Negative number */
-		if (token.content == "-")
-		{
-			flag_negative = true;
-			list res = static::readToken(look); look = res[0]; token = res[1];
-		}
-		
 		/* Read string */
-		if (not flag_negative and (token.content == "'" or token.content == '"'))
+		if (token.content == "'" or token.content == '"') /* " */
 		{
 			return static::readString(parser);
 		}
 		
 		/* Read Collection */
-		if (not flag_negative and token.content == "[")
+		if (token.content == "[")
 		{
 			return static::readCollection(parser);
 		}
 		
 		/* Read Dict */
-		if (not flag_negative and token.content == "{")
+		if (token.content == "{")
 		{
 			return static::readDict(parser);
+		}
+		
+		/* Negative number */
+		if (token.content == "-")
+		{
+			flag_negative = true;
+			parser = look;
+			list res = static::readToken(look); look = res[0]; token = res[1];
 		}
 		
 		/* Read Number */
 		if (static::isStringOfNumbers(token.content))
 		{
-			return 
-			[
-				look,
-				new OpNumber
-				{
-					"value": token.content,
-					"caret_start": token.caret_start,
-					"caret_end": look.caret,
-					"negative": flag_negative,
-				}
-			];
+			return static::readNumber(parser, flag_negative);
 		}
 		
 		return static::readIdentifier(parser, true);

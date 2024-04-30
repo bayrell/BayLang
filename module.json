@@ -72,6 +72,7 @@
 		"OpCodes/OpMethod.bay",
 		"OpCodes/OpModule.bay",
 		"OpCodes/OpNamespace.bay",
+		"OpCodes/OpNegative.bay",
 		"OpCodes/OpNew.bay",
 		"OpCodes/OpNumber.bay",
 		"OpCodes/OpPipe.bay",

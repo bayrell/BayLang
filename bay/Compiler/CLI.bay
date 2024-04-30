@@ -392,6 +392,7 @@ class CLI
 			io::print("Methods:");
 			io::print("  assets");
 			io::print("  make");
+			io::print("  make_all");
 			io::print("  modules");
 			io::print("  version");
 			io::print("  watch");
@@ -426,6 +427,20 @@ class CLI
 			}
 			
 			return await this.compileModule(module_name, lang);
+		}
+		
+		else if (cmd == "make_all")
+		{
+			string lang = @.cli_args[2];
+			
+			Dict<Module> modules = this.getModules();
+			Collection<string> modules_names = modules.keys().sort();
+			for (int i=0; i<modules_names.count(); i++)
+			{
+				string module_name = modules_names[i];
+				io::print(io::color("yellow", "Compile " ~ module_name));
+				await this.compileModule(module_name, lang);
+			}
 		}
 		
 		else if (cmd == "assets")
