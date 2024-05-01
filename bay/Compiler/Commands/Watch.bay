@@ -21,10 +21,16 @@ namespace Bayrell.Lang.Compiler.Commands;
 use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
+use Bayrell.Lang.Compiler.Module;
+use Bayrell.Lang.Compiler.SettingsProvider;
+use Bayrell.Lang.Exceptions.ParserUnknownError;
 
 
 class Watch extends BaseCommand
 {
+	SettingsProvider settings;
+	
+	
 	/**
 	 * Returns name
 	 */
@@ -38,10 +44,77 @@ class Watch extends BaseCommand
 	
 	
 	/**
+	 * On change file
+	 */
+	async void onChangeFile(string changed_file_path)
+	{
+		try
+		{
+			if (changed_file_path == this.settings.project_json_path)
+			{
+				io::print("Reload project.json");
+				await this.settings.reload();
+				return;
+			}
+			
+			Map file_info = await this.settings.compileFile(changed_file_path, "", 3);
+			if (not file_info) return;
+			
+			Module module = file_info.get("module");
+			Collection assets = module.config.get("assets");
+			string module_file_name = file_info.get("module_file_name");
+			
+			if (file_info.get("file") == "/module.json")
+			{
+				io::print("Reload module.json");
+				await this.settings.reload();
+			}
+			
+			else if (assets.indexOf(module_file_name) >= 0)
+			{
+				await this.settings.updateModule(module.name);
+			}
+		}
+		catch (ParserUnknownError e)
+		{
+			io::print_error("Error: " + e.toString());
+		}
+		catch (var e)
+		{
+			io::print_error(e);
+		}
+	}
+	
+	
+	/**
 	 * Run task
 	 */
-	async static int run()
+	async int run()
 	{
+		this.settings = @.provider(classof SettingsProvider);
+		
+		#ifcode NODEJS then
+		
+		let watch_dir = (ctx) =>
+		{
+			let io = use("Runtime.io");
+			let chokidar = require("chokidar");
+			return new Promise(() => {
+				io.print(ctx, "Start watch");
+				chokidar
+					.watch(ctx.base_path)
+					.on('change', (path, stat) => {
+						setTimeout(()=>{ this.onChangeFile(ctx, path); }, 500);
+					})
+				;
+				
+			});
+		};
+		
+		await watch_dir(ctx);
+		
+		#endif
+		
 		return static::SUCCESS;
 	}
 }

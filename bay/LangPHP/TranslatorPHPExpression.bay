@@ -123,7 +123,7 @@ static class TranslatorPHPExpression
 			module_name = static::findModuleName(t, module_name);
 			if (module_name != "")
 			{
-				names = names.removeFirstIm().prependCollectionIm(rs::split(".", module_name));
+				names = rs::split(".", module_name).concat(names.slice(1));
 			}
 		}
 		return names;
@@ -312,12 +312,12 @@ static class TranslatorPHPExpression
 			
 			while (op_code_next instanceof OpAttr)
 			{
-				attrs.pushValue(op_code_next);
+				attrs.push(op_code_next);
 				op_code_item = op_code_next;
 				op_code_next = op_code_next.obj;
 			}
 			
-			attrs = attrs.reverseIm();
+			attrs = attrs.reverse();
 			
 			if (op_code_next instanceof OpCall)
 			{
@@ -441,7 +441,7 @@ static class TranslatorPHPExpression
 						{
 							s ~= "::" ~ attr_val;
 						}
-						else if (rs::strtoupper(attr_val) == attr_val)
+						else if (rs::upper(attr_val) == attr_val)
 						{
 							s ~= "::" ~ attr_val;
 						}
@@ -475,7 +475,7 @@ static class TranslatorPHPExpression
 						for (int j=0; j<attr.attrs.count(); j++)
 						{
 							list res = static::Expression(t, attr.attrs[j]); t = res[0];
-							items.pushValue(res[1]);
+							items.push(res[1]);
 						}
 					}
 					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -661,7 +661,7 @@ static class TranslatorPHPExpression
 		
 		Collection<OpCurryArg> args = op_code.args
 			.filter( bool (BaseOpCode arg) => arg instanceof OpCurryArg )
-			.sortIm(
+			.sort(
 				int (OpCurryArg arg1, OpCurryArg arg2) =>
 					(arg1.pos > arg2.pos) ? 1 : ( (arg1.pos < arg2.pos) ? -1 : 0 )
 			)
@@ -683,7 +683,7 @@ static class TranslatorPHPExpression
 			if (arg instanceof OpCurryArg) continue;
 			if (arg instanceof OpIdentifier)
 			{
-				args_use.pushValue("$" ~ arg.value);
+				args_use.push("$" ~ arg.value);
 			}
 		}
 		
@@ -694,15 +694,15 @@ static class TranslatorPHPExpression
 			
 			string s_use = "";
 			Vector<string> arr_use = new Vector();
-			arr_use.appendVector(args_use);
+			arr_use.appendItems(args_use);
 			for (int j=0; j<i; j++)
 			{
 				OpCurryArg arg_use = args.item(j);
-				arr_use.pushValue("$__varg" ~ arg_use.pos);
+				arr_use.push("$__varg" ~ arg_use.pos);
 			}
 			if (use_obj_item != "")
 			{
-				arr_use.pushValue(use_obj_item);
+				arr_use.push(use_obj_item);
 			}
 			if (arr_use.count() > 0)
 			{
@@ -858,10 +858,10 @@ static class TranslatorPHPExpression
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.pushValue(op_code_item);
+			items.push(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
-		items = items.reverseIm();
+		items = items.reverse();
 		
 		/* First item */
 		list res = t.expression::Expression(t, op_code_item); t = res[0]; value = res[1];

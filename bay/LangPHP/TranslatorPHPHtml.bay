@@ -48,7 +48,7 @@ static class TranslatorPHPHtml
 	pure bool isComponent(string tag_name)
 	{
 		string ch1 = rs::substr(tag_name, 0, 1);
-		string ch2 = rs::strtoupper(ch1);
+		string ch2 = rs::upper(ch1);
 		return tag_name != "" and (ch1 == "{" or ch1 == ch2) and tag_name != "Teleport";
 	}
 	
@@ -136,7 +136,7 @@ static class TranslatorPHPHtml
 			
 			if (attr_key == "class")
 			{
-				attr_class.pushValue(attr_value);
+				attr_class.push(attr_value);
 				
 				if (attr_elem_name == "" and attr.value instanceof OpString)
 				{
@@ -157,7 +157,7 @@ static class TranslatorPHPHtml
 				attr_value = "$this->_model(" ~ attr_value ~ ")";
 			}
 			
-			res_attrs.pushValue
+			res_attrs.push
 			(
 				t.expression::toString(attr_key) ~ " => " ~ attr_value,
 			);
@@ -166,7 +166,7 @@ static class TranslatorPHPHtml
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			res_attrs.pushValue
+			res_attrs.push
 			(
 				"\"class\" => " ~ "$this->_class_name([" ~ attr_class ~ "])"
 			);
@@ -560,7 +560,7 @@ static class TranslatorPHPHtml
 		{
 			if (op_code.kind == OpIdentifier::KIND_VARIABLE)
 			{
-				used_vars.pushValue(op_code.value);
+				used_vars.push(op_code.value);
 			}
 		}
 	}

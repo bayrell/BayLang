@@ -21,6 +21,8 @@ namespace Bayrell.Lang.Compiler.Commands;
 use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
+use Bayrell.Lang.Compiler.Commands.Modules;
+use Bayrell.Lang.Compiler.SettingsProvider;
 
 
 class Make extends BaseCommand
@@ -40,8 +42,25 @@ class Make extends BaseCommand
 	/**
 	 * Run task
 	 */
-	async static int run()
+	async int run()
 	{
+		string module_name = @.cli_args[2];
+		string lang = @.cli_args[3];
+		
+		if (rtl::isEmpty(module_name))
+		{
+			Modules::showModules();
+			return 0;
+		}
+		
+		/* Compile module */
+		SettingsProvider settings = @.provider(classof SettingsProvider);
+		bool result = await settings.compileModule(module_name, lang);
+		if (not result)
+		{
+			return static::FAIL;
+		}
+		
 		return static::SUCCESS;
 	}
 }

@@ -207,7 +207,7 @@ class Caret extends BaseObject
 	 * @return boolean
 	 */
 	pure memorize bool isChar(char ch) =>
-		rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1
+		rs::indexOf('qazwsxedcrfvtgbyhnujmikolp', rs::lower(ch)) !== -1
 	;
 	
 	
@@ -217,7 +217,7 @@ class Caret extends BaseObject
 	 * @return boolean
 	 */
 	pure memorize bool isNumber(char ch) =>
-		rs::strpos('0123456789', ch) !== -1
+		rs::indexOf('0123456789', ch) !== -1
 	;
 	
 	
@@ -227,7 +227,7 @@ class Caret extends BaseObject
 	 * @return boolean
 	 */
 	pure memorize bool isHexChar(char ch) =>
-		rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1
+		rs::indexOf('0123456789abcdef', rs::lower(ch)) !== -1
 	;
 	
 	

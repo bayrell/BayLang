@@ -59,7 +59,7 @@ class ParserBayBase
 	 * @return boolean
 	 */
 	pure memorize bool isChar (char ch) =>
-		rs::strpos('qazwsxedcrfvtgbyhnujmikolp', rs::strtolower(ch)) !== -1
+		rs::indexOf('qazwsxedcrfvtgbyhnujmikolp', rs::lower(ch)) !== -1
 	;
 	
 	
@@ -70,7 +70,7 @@ class ParserBayBase
 	 * @return boolean
 	 */
 	pure memorize bool isNumber (char ch) =>
-		rs::strpos('0123456789', ch) !== -1
+		rs::indexOf('0123456789', ch) !== -1
 	;
 	
 	
@@ -81,7 +81,7 @@ class ParserBayBase
 	 * @return boolean
 	 */
 	pure memorize bool isHexChar (char ch) =>
-		rs::strpos('0123456789abcdef', rs::strtolower(ch)) !== -1;
+		rs::indexOf('0123456789abcdef', rs::lower(ch)) !== -1;
 	
 	
 	
@@ -224,7 +224,7 @@ class ParserBayBase
 	 */
 	pure memorize bool isTokenChar(char ch)
 	{
-		return rs::strpos('qazwsxedcrfvtgbyhnujmikolp0123456789_', rs::strtolower(ch)) !== -1;
+		return rs::indexOf('qazwsxedcrfvtgbyhnujmikolp0123456789_', rs::lower(ch)) !== -1;
 	}
 	
 	
@@ -1076,7 +1076,7 @@ class ParserBayBase
 		Caret caret_start = ident.caret_start;
 		
 		string name = ident.value;
-		names.pushValue(name);
+		names.push(name);
 		
 		list res = parser.parser_base::readToken(parser);
 		look = res[0]; token = res[1];
@@ -1088,7 +1088,7 @@ class ParserBayBase
 			parser = res[0]; ident = res[1];
 			
 			name = ident.value;
-			names.pushValue(name);
+			names.push(name);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
@@ -1140,7 +1140,7 @@ class ParserBayBase
 				list res = static::readTypeIdentifier(parser);
 				parser = res[0]; parser_value = res[1];
 				
-				template.pushValue(parser_value);
+				template.push(parser_value);
 				
 				list res = static::lookToken(parser, ">");
 				look = res[0]; token = res[1]; flag_end_caret = res[2];
@@ -1219,7 +1219,7 @@ class ParserBayBase
 					"condition": ifdef_condition,
 				}
 			}
-			values.pushValue(parser_value);
+			values.push(parser_value);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 			if (token.content == "#endif")
@@ -1290,7 +1290,7 @@ class ParserBayBase
 				parser = look;
 			}
 			
-			values.pushValue(
+			values.push(
 				new OpDictPair{
 					"key": key,
 					"value": parser_value,
@@ -1402,7 +1402,7 @@ class ParserBayBase
 				ParserBay parser_value = null;
 				list res = parser.parser_expression::readExpression(parser);
 				parser = res[0]; parser_value = res[1];
-				items.pushValue(parser_value);
+				items.push(parser_value);
 				
 				list res = static::readToken(parser); look = res[0]; token = res[1];
 				if (token.content == ",")
@@ -1566,13 +1566,13 @@ class ParserBayBase
 				{
 					"pos": pos,
 				};
-				args.pushValue(arg);
+				args.push(arg);
 			}
 			else
 			{
 				list res = parser.parser_expression::readExpression(parser);
 				parser = res[0]; arg = res[1];
-				args.pushValue(arg);
+				args.push(arg);
 			}
 			
 			list res = static::readToken(parser); look = res[0]; token = res[1];
@@ -1942,14 +1942,14 @@ class ParserBayBase
 					if (token.content == ",")
 					{
 						look_values = new Vector();
-						look_values.pushValue(look_value);
+						look_values.push(look_value);
 					}
 					while (token.content == ",")
 					{
 						parser = look;
 						list res = parser.parser_expression::readExpression(parser);
 						parser = res[0]; look_value = res[1];
-						look_values.pushValue(look_value);
+						look_values.push(look_value);
 						list res = static::readToken(parser); look = res[0]; token = res[1];
 					}
 					

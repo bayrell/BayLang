@@ -34,7 +34,6 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 
 struct TranslatorNode extends TranslatorES6
 {
-	
 	/* Translators */
 	TranslatorES6AsyncAwait async_await = null;
 	TranslatorES6Expression expression = null;
@@ -58,7 +57,7 @@ struct TranslatorNode extends TranslatorES6
 		t = parent::reset(t);
 		t <= expression <= new TranslatorNodeExpression();
 		t <= program <= new TranslatorNodeProgram();
-		t <= preprocessor_flags <= t.preprocessor_flags.copy({
+		t <= preprocessor_flags <= t.preprocessor_flags.concat({
 			"BACKEND": true,
 			"NODEJS": true,
 			"ES6": false,
@@ -76,5 +75,4 @@ struct TranslatorNode extends TranslatorES6
 		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);
 	}
-	
 }

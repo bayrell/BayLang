@@ -117,7 +117,7 @@ static class ParserBayPreprocessor
 				"caret_start": caret_content,
 				"caret_end": parser.caret,
 			};
-			items.pushValue(ifcode);
+			items.push(ifcode);
 		}
 		
 		/* Restore vars */

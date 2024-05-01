@@ -213,11 +213,11 @@ struct TranslatorES6Operator extends BaseStruct
 					BaseOpCode op_code_next = item.op_code;
 					while (op_code_next instanceof OpAttr)
 					{
-						items.pushValue(op_code_next);
+						items.push(op_code_next);
 						op_code_next = op_code_next.obj;
 					}
 					
-					items = items.reverseIm();
+					items = items.reverse();
 					list res = t.expression::OpIdentifier(t, op_code_next);
 					t = res[0]; string obj_s = res[1];
 					
@@ -228,13 +228,13 @@ struct TranslatorES6Operator extends BaseStruct
 						if (item_attr.kind == OpAttr::KIND_ATTR)
 						{
 							obj_s ~= "." ~ item_attr.value.value;
-							items2.pushValue( t.expression::toString(item_attr.value.value) );
+							items2.push( t.expression::toString(item_attr.value.value) );
 						}
 						else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
 						{
 							list res = t.expression::Expression(t, item_attr.value); t = res[0];
 							obj_s ~= "[" ~ res[1] ~ "]";
-							items2.pushValue(res[1]);
+							items2.push(res[1]);
 						}
 						else if (item_attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 						{
@@ -244,7 +244,7 @@ struct TranslatorES6Operator extends BaseStruct
 								{
 									list res = t.expression::Expression(t, item_attr.attrs[j]); t = res[0];
 									obj_s ~= "[" ~ res[1] ~ "]";
-									items2.pushValue(res[1]);
+									items2.push(res[1]);
 								}
 							}
 						}

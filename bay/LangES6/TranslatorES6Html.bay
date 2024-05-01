@@ -48,7 +48,7 @@ class TranslatorES6Html
 		if (tag_name == "") return false;
 		if (tag_name == "Teleport") return false;
 		string ch1 = rs::substr(tag_name, 0, 1);
-		string ch2 = rs::strtoupper(ch1);
+		string ch2 = rs::upper(ch1);
 		return ch1 == "{" or ch1 == ch2;
 	}
 	
@@ -120,7 +120,7 @@ class TranslatorES6Html
 			
 			if (attr_key == "class")
 			{
-				attr_class.pushValue(attr_value);
+				attr_class.push(attr_value);
 				
 				if (attr_elem_name == "" and attr.value instanceof OpString)
 				{
@@ -174,7 +174,7 @@ class TranslatorES6Html
 				attr_value = "[null," ~ attr_value ~ "]";
 			}
 			*/
-			res_attrs.pushValue
+			res_attrs.push
 			(
 				t.expression::toString(attr_key) ~ ":" ~ attr_value,
 			);
@@ -183,21 +183,21 @@ class TranslatorES6Html
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
 		if (attr_class.count() > 0)
 		{
-			res_attrs.pushValue
+			res_attrs.push
 			(
 				"\"class\":" ~ "this._class_name([" ~ attr_class ~ "])"
 			);
 		}
 		if (attr_key_value != "")
 		{
-			res_attrs.pushValue
+			res_attrs.push
 			(
 				"\"key\":" ~ attr_key_value
 			);
 		}
 		else if (attr_elem_name != "")
 		{
-			res_attrs.pushValue
+			res_attrs.push
 			(
 				"\"key\":" ~ attr_elem_name
 			);
@@ -236,7 +236,7 @@ class TranslatorES6Html
 				{
 					if (attr.value instanceof OpString)
 					{
-						class_names.pushValue(attr.value.value);
+						class_names.push(attr.value.value);
 					}
 				}
 			}

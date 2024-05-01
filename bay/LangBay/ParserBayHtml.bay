@@ -270,7 +270,7 @@ class ParserBayHtml extends BaseObject
 			string selector = res[1];
 			
 			default_component_name = false;
-			selectors.pushValue(selector);
+			selectors.push(selector);
 			
 			/* Skip empty chars */
 			Caret caret = parser.parser_base::skipChar(parser, parser.content, parser.caret);
@@ -397,7 +397,7 @@ class ParserBayHtml extends BaseObject
 				for (int k=0; k<items.count(); k++)
 				{
 					string selector = items.get(k);
-					result.pushValue(prev_selector ~ " " ~ selector);
+					result.push(prev_selector ~ " " ~ selector);
 				}
 			}
 		}
@@ -440,7 +440,7 @@ class ParserBayHtml extends BaseObject
 				{
 					if (ch != "\t" and ch != "\n")
 					{
-						arr.pushValue(ch);
+						arr.push(ch);
 					}
 					caret.readChar();
 					ch = caret.nextChar();
@@ -472,7 +472,7 @@ class ParserBayHtml extends BaseObject
 						media_selector,
 						item
 					);
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Get caret */
@@ -490,7 +490,7 @@ class ParserBayHtml extends BaseObject
 					parser <= caret <= caret;
 					list res = static::readCssSelector(parser, default_component_name);
 					parser = res[0];
-					selectors.pushValue(res[1]);
+					selectors.push(res[1]);
 					caret = parser.getCaret();
 					caret.skipChar();
 					if (caret.isNextChar(","))
@@ -526,14 +526,14 @@ class ParserBayHtml extends BaseObject
 				{
 					if (ch != "\t" and ch != "\n")
 					{
-						arr.pushValue(ch);
+						arr.push(ch);
 					}
 					caret.readChar();
 					ch = caret.nextChar();
 				}
 				
 				string s = rs::trim(rs::join("", arr));
-				css_content.pushValue(s);
+				css_content.push(s);
 				
 				caret.skipChar(";");
 				
@@ -562,7 +562,7 @@ class ParserBayHtml extends BaseObject
 				"value": rs::trim(content),
 			};
 			
-			items.pushValue(op_code_item);
+			items.push(op_code_item);
 		}
 		
 		parser <= caret <= caret;
@@ -1064,7 +1064,7 @@ class ParserBayHtml extends BaseObject
 				OpIdentifier ident = null;
 				list res = parser.parser_base::matchToken(parser, "..."); parser = res[0];
 				list res = parser.parser_base::readIdentifier(look); parser = res[0]; ident = res[1];
-				items.pushValue
+				items.push
 				(
 					new OpHtmlAttribute
 					{
@@ -1081,7 +1081,7 @@ class ParserBayHtml extends BaseObject
 				list res = parser.parser_base::matchToken(parser, "="); parser = res[0];
 				list res = static::readHTMLAttrValue(parser, key);
 				parser = res[0]; BaseOpCode value = res[1];
-				items.pushValue
+				items.push
 				(
 					new OpHtmlAttribute
 					{
@@ -1148,13 +1148,13 @@ class ParserBayHtml extends BaseObject
 						"caret_start": caret_start,
 						"caret_end": caret,
 					}
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Read HTML Comment */
 				parser <= caret <= caret;
 				list res = static::readHTMLComment(parser);
-				parser = res[0]; items.pushValue( res[1] );
+				parser = res[0]; items.push( res[1] );
 				
 				/* Set pos, x, y */
 				caret_start = parser.caret;
@@ -1180,14 +1180,14 @@ class ParserBayHtml extends BaseObject
 						"caret_start": caret_start,
 						"caret_end": caret,
 					}
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Read HTML Value */
 				parser <= caret <= caret;
 				list res = static::readHTMLValue(parser);
 				parser = res[0]; item = res[1];
-				items.pushValue(item);
+				items.push(item);
 				
 				/* Set pos, x, y */
 				caret_start = parser.caret;
@@ -1215,14 +1215,14 @@ class ParserBayHtml extends BaseObject
 						"caret_start": caret_start,
 						"caret_end": caret,
 					}
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Read HTML Operator */
 				parser <= caret <= caret;
 				list res = static::readHTMLOperator(parser);
 				parser = res[0]; item = res[1];
-				items.pushValue(item);
+				items.push(item);
 				
 				/* Set pos, x, y */
 				caret_start = parser.caret;
@@ -1258,7 +1258,7 @@ class ParserBayHtml extends BaseObject
 				"caret_start": caret_start,
 				"caret_end": caret,
 			}
-			items.pushValue(item);
+			items.push(item);
 		}
 		
 		return [ parser.copy{ "caret": caret }, items ];
@@ -1634,14 +1634,14 @@ class ParserBayHtml extends BaseObject
 				parser = res[0]; op_code = res[1];
 				
 				caret = parser.caret;
-				items.setValue(attr_name, op_code);
+				items.set(attr_name, op_code);
 			}
 			else
 			{
 				list res = parser.parser_base::readString(parser);
 				parser = res[0]; op_code = res[1];
 				
-				items.setValue(attr_name, op_code.value);
+				items.set(attr_name, op_code.value);
 			}
 			
 			caret = parser.parser_base::skipChar(parser, content, parser.caret);
@@ -1706,7 +1706,7 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = static::readWidget(parser_item);
 					parser = res[0]; BaseOpCode item = res[1];
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Read widget style */
@@ -1714,7 +1714,7 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = static::readWidgetStyle(parser_item);
 					parser = res[0]; BaseOpCode item = res[1];
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Read widget item props */
@@ -1735,7 +1735,7 @@ class ParserBayHtml extends BaseObject
 					/* Save caret */
 					parser <= caret <= caret;
 					
-					settings.setValue(props_name, new OpString
+					settings.set(props_name, new OpString
 					{
 						"caret_start": caret,
 						"caret_end": parser.caret,
@@ -1827,7 +1827,7 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = static::readWidget(parser_item);
 					parser = res[0]; BaseOpCode item = res[1];
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Read widget class */
@@ -1835,7 +1835,7 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = static::readWidgetClass(parser_item);
 					parser = res[0]; BaseOpCode item = res[1];
-					items.pushValue(item);
+					items.push(item);
 				}
 				
 				/* Unknown name */
@@ -1943,7 +1943,7 @@ class ParserBayHtml extends BaseObject
 				class_extends != "Runtime.Web.BaseModel"
 			)
 			{
-				components.pushValue(class_extends);
+				components.push(class_extends);
 			}
 		}
 		if (class_model != "" and class_model != "Runtime.Dict")
@@ -1953,7 +1953,7 @@ class ParserBayHtml extends BaseObject
 		
 		Collection class_name_arr = rs::split(".", class_name);
 		class_name_last = class_name_arr.last();
-		class_name_arr = class_name_arr.removeLastIm();
+		class_name_arr = class_name_arr.slice(0, -1);
 		namespace_name = rs::join(".", class_name_arr);
 		
 		parser <= current_class_name <= class_name_last;
@@ -1993,7 +1993,7 @@ class ParserBayHtml extends BaseObject
 			if (item_name == "!--")
 			{
 				list res = static::readHTMLComment(parser_start);
-				parser = res[0]; items.pushValue( res[1] );
+				parser = res[0]; items.push( res[1] );
 				caret = parser.parser_base::skipChar(parser, content, parser.caret);
 				ch2 = rs::substr(content.ref, caret.pos, 2);
 				continue;
@@ -2006,7 +2006,7 @@ class ParserBayHtml extends BaseObject
 			{
 				string annotation_name = item_attrs.get("name", "");
 				BaseOpCode annotation_op_code = item_attrs.get("value", null);
-				class_annotations.pushValue
+				class_annotations.push
 				(
 					new OpAnnotation
 					{
@@ -2026,11 +2026,11 @@ class ParserBayHtml extends BaseObject
 				full_name = item_attrs.get("name", "");
 				short_name = item_attrs.get("as", "");
 				is_component = item_attrs.get("component", "false");
-				if (short_name == "") short_name = rs::explode(".", full_name).last();
+				if (short_name == "") short_name = rs::split(".", full_name).last();
 				parser <= uses <= parser.uses.setIm(short_name, full_name);
 				if (is_component == "true" or is_component == "1")
 				{
-					components.pushValue(full_name);
+					components.push(full_name);
 				}
 			}
 			
@@ -2042,19 +2042,19 @@ class ParserBayHtml extends BaseObject
 				{
 					list res = static::readHTMLTemplate(parser, item_attrs, caret_start);
 					parser = res[0]; BaseOpCode op_code = res[1];
-					items.pushValue(op_code);
+					items.push(op_code);
 				}
 				else if (item_name == "style")
 				{
 					list res = static::readStyle(parser, item_attrs, items, caret_start);
 					parser = res[0]; BaseOpCode op_code = res[1];
-					items.pushValue(op_code);
+					items.push(op_code);
 				}
 				else if (item_name == "script")
 				{
 					list res = parser.parser_program::readClassBody(parser, "</");
 					parser = res[0]; Collection<BaseOpCode> arr = res[1];
-					items.appendVector(arr);
+					items.appendItems(arr);
 					
 					/* Read script footer */
 					list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
@@ -2068,7 +2068,7 @@ class ParserBayHtml extends BaseObject
 					parser = parser.copy{ "caret": caret_start };
 					Dict<bool> save_vars = parser.vars;
 					list res = static::readWidgetData(parser, "data"); parser = res[0];
-					items.pushValue(res[1]);
+					items.push(res[1]);
 					BaseOpCode op_data = res[1];
 					parser <= vars <= save_vars;
 				}
@@ -2139,7 +2139,7 @@ class ParserBayHtml extends BaseObject
 				"caret_end": parser.caret,
 			};
 			
-			items.pushValue(f);
+			items.push(f);
 		}
 		
 		/* Read class footer */
@@ -2209,13 +2209,13 @@ class ParserBayHtml extends BaseObject
 			{
 				list res = static::readUIClass(parser_start);
 				parser = res[0];
-				items.appendVector( res[1] );
+				items.appendItems( res[1] );
 			}
 			else if (token.content == "!--")
 			{
 				list res = static::readHTMLComment(parser_start);
 				parser = res[0];
-				items.pushValue( res[1] );
+				items.push( res[1] );
 			}
 			
 			parser <= skip_comments <= false;

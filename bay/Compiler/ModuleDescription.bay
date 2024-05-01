@@ -18,6 +18,7 @@
 
 namespace Bayrell.Lang.Compiler;
 
+use Runtime.Entity.Provider;
 use Runtime.Console.Annotations.ConsoleCommand;
 use Bayrell.Lang.ModuleDescription as BayLangModuleDescription;
 
@@ -59,5 +60,6 @@ static class ModuleDescription
 		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Modules"),
 		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Version"),
 		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Watch"),
+		new Provider("Bayrell.Lang.Compiler.SettingsProvider"),
 	];
 }

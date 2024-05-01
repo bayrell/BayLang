@@ -52,7 +52,7 @@ class Module extends BaseStruct
 	
 	
 	/**
-	 * Resolve source file.
+	 * Returns full source file.
 	 * Returns file_path
 	 */
 	var resolveSourceFile(string file_name)

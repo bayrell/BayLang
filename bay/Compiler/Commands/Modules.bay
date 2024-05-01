@@ -21,6 +21,8 @@ namespace Bayrell.Lang.Compiler.Commands;
 use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
+use Bayrell.Lang.Compiler.Module;
+use Bayrell.Lang.Compiler.SettingsProvider;
 
 
 class Modules extends BaseCommand
@@ -40,8 +42,46 @@ class Modules extends BaseCommand
 	/**
 	 * Run task
 	 */
-	async static int run()
+	static async int run()
 	{
+		this.showModules(true);
 		return static::SUCCESS;
+	}
+	
+	
+	/**
+	 * Returns modules
+	 */
+	static Dict<Module> getModules()
+	{
+		SettingsProvider settings = @.provider(classof SettingsProvider);
+		return settings.modules;
+	}
+	
+	
+	/**
+	 * Show modules
+	 */
+	static void showModules(bool verbose)
+	{
+		Dict<Module> modules = this.getModules();
+		Collection<string> modules_names = modules.keys().sort();
+		for (int i=0; i<modules_names.count(); i++)
+		{
+			string module_name = modules_names[i];
+			Module module = modules[module_name];
+			
+			if (verbose)
+			{
+				io::print( (i + 1) ~ ") " ~
+					io::color("yellow", module_name) ~ " - " ~
+					module.path
+				);
+			}
+			else
+			{
+				io::print( module_name );
+			}
+		}
 	}
 }

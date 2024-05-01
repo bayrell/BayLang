@@ -296,12 +296,12 @@ struct TranslatorES6Expression extends BaseStruct
 			
 			while (op_code_first instanceof OpAttr)
 			{
-				attrs.pushValue(op_code_first);
+				attrs.push(op_code_first);
 				op_code_item = op_code_first;
 				op_code_first = op_code_first.obj;
 			}
 			
-			attrs = attrs.reverseIm();
+			attrs = attrs.reverse();
 			
 			if (op_code_first instanceof OpCall)
 			{
@@ -463,7 +463,7 @@ struct TranslatorES6Expression extends BaseStruct
 						{
 							list res = static::Expression(t, attr.attrs[j]);
 							t = res[0];
-							items.pushValue(res[1]);
+							items.push(res[1]);
 						}
 					}
 					s = "Runtime.rtl.attr(ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -679,7 +679,7 @@ struct TranslatorES6Expression extends BaseStruct
 		
 		Collection<OpCurryArg> args = op_code.args
 			.filter( bool (BaseOpCode arg) => arg instanceof OpCurryArg )
-			.sortIm(
+			.sort(
 				int (OpCurryArg arg1, OpCurryArg arg2) =>
 					(arg1.pos > arg2.pos) ? 1 : ( (arg1.pos < arg2.pos) ? -1 : 0 )
 			)
@@ -876,10 +876,10 @@ struct TranslatorES6Expression extends BaseStruct
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.pushValue(op_code_item);
+			items.push(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
-		items = items.reverseIm();
+		items = items.reverse();
 		
 		/* First item */
 		list res = t.expression::Expression(t, op_code_item); t = res[0]; value = res[1];

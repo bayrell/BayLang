@@ -198,7 +198,7 @@ static class ParserBayOperator
 				"caret_start": item_caret_start,
 				"caret_end": parser.caret,
 			};
-			items.pushValue(item);
+			items.push(item);
 			
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
@@ -315,7 +315,7 @@ static class ParserBayOperator
 				list res = static::readThen(parser); parser = res[0];
 				list res = static::readOperators(parser); parser = res[0]; ifelse_block = res[1];
 				
-				if_else.pushValue
+				if_else.push
 				(
 					new OpIfElse
 					{
@@ -524,7 +524,7 @@ static class ParserBayOperator
 				}
 				else
 				{
-					arr.pushValue( name );
+					arr.push( name );
 				}
 			}
 			
@@ -579,7 +579,7 @@ static class ParserBayOperator
 			}
 			
 			parser <= vars <= parser.vars.setIm(var_name, true);
-			values.pushValue
+			values.push
 			(
 				new OpAssignValue
 				{
@@ -614,7 +614,7 @@ static class ParserBayOperator
 				}
 				
 				parser <= vars <= parser.vars.setIm(var_name, true);
-				values.pushValue
+				values.push
 				(
 					new OpAssignValue
 					{
@@ -911,7 +911,7 @@ static class ParserBayOperator
 			list res = static::readOperator(parser); parser = res[0]; parser_value = res[1];
 			if (parser_value != null)
 			{
-				arr.pushValue(parser_value);
+				arr.push(parser_value);
 			}
 			
 			parser <= skip_comments <= false;
@@ -1004,7 +1004,7 @@ static class ParserBayOperator
 		while (not token.eof and current_flags.indexOf(token.content) >= 0)
 		{
 			string flag = token.content;
-			values.setValue("p_"~flag, true);
+			values.set("p_"~flag, true);
 			parser = look;
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
@@ -1064,7 +1064,7 @@ static class ParserBayOperator
 			/* Register variable in parser */
 			parser <= vars <= parser.vars.setIm(arg_name, true);
 			
-			items.pushValue
+			items.push
 			(
 				new OpDeclareFunctionArg
 				{
@@ -1126,7 +1126,7 @@ static class ParserBayOperator
 						);
 					}
 				}
-				items.pushValue(name);
+				items.push(name);
 				
 				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 				if (token.content == ",")

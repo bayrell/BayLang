@@ -115,11 +115,11 @@ static class TranslatorPHPOperator
 					BaseOpCode op_code_next = item.op_code;
 					while (op_code_next instanceof OpAttr)
 					{
-						items.pushValue(op_code_next);
+						items.push(op_code_next);
 						op_code_next = op_code_next.obj;
 					}
 					
-					items = items.reverseIm();
+					items = items.reverse();
 					list res = t.expression::OpIdentifier(t, op_code_next);
 					t = res[0]; string obj_s = res[1];
 					
@@ -130,13 +130,13 @@ static class TranslatorPHPOperator
 						if (item.kind == OpAttr::KIND_ATTR)
 						{
 							obj_s ~= "->" ~ item.value.value;
-							items2.pushValue( t.expression::toString(item.value.value) );
+							items2.push( t.expression::toString(item.value.value) );
 						}
 						else if (item.kind == OpAttr::KIND_DYNAMIC)
 						{
 							list res = t.expression::Expression(t, item.value); t = res[0];
 							obj_s ~= "[" ~ res[1] ~ "]";
-							items2.pushValue(res[1]);
+							items2.push(res[1]);
 						}
 						else if (item.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 						{
@@ -146,7 +146,7 @@ static class TranslatorPHPOperator
 								{
 									list res = t.expression::Expression(t, item.attrs[j]);
 									t = res[0]; obj_s ~= "[" ~ res[1] ~ "]";
-									items2.pushValue(res[1]);
+									items2.push(res[1]);
 								}
 							}
 						}

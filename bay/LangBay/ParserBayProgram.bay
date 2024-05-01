@@ -141,19 +141,19 @@ static class ParserBayProgram
 			{
 				list res = parser.parser_base::readComment(parser);
 				parser = res[0]; item = res[1];
-				if (item != null) items.pushValue(item);
+				if (item != null) items.push(item);
 			}
 			else if (token.content == "@")
 			{
 				list res = parser.parser_operator::readAnnotation(parser);
 				parser = res[0]; item = res[1];
-				items.pushValue(item);
+				items.push(item);
 			}
 			else if (token.content == "#switch" or token.content == "#ifcode")
 			{
 				list res = parser.parser_preprocessor::readPreprocessor(parser);
 				parser = res[0]; item = res[1];
-				if (item != null) items.pushValue(item);
+				if (item != null) items.push(item);
 			}
 			else if (token.content == "#ifdef")
 			{
@@ -162,7 +162,7 @@ static class ParserBayProgram
 					parser, OpPreprocessorIfDef::KIND_CLASS_BODY
 				);
 				parser = res[0]; item = res[1];
-				if (item != null) items.pushValue(item);
+				if (item != null) items.push(item);
 			}
 			else if (token.content == "<")
 			{
@@ -205,7 +205,7 @@ static class ParserBayProgram
 				item <= flags <= flags;
 				if (item != null)
 				{
-					items.pushValue(item);
+					items.push(item);
 				}
 			}
 			
@@ -238,11 +238,11 @@ static class ParserBayProgram
 			BaseOpCode item = arr.item(i);
 			if (item instanceof OpAnnotation)
 			{
-				annotations.pushValue(item);
+				annotations.push(item);
 			}
 			else if (item instanceof OpComment)
 			{
-				comments.pushValue(item);
+				comments.push(item);
 			}
 			else if (item instanceof OpAssign)
 			{
@@ -259,14 +259,14 @@ static class ParserBayProgram
 							parser.file_name
 						);
 					}
-					names.setValue(value_name, true);
+					names.set(value_name, true);
 				}
 				
 				item = item.copy({
 					"annotations": annotations.toCollection(),
 					"comments": comments.toCollection(),
 				});
-				vars.pushValue(item);
+				vars.push(item);
 				annotations.clear();
 				comments.clear();
 			}
@@ -286,11 +286,11 @@ static class ParserBayProgram
 						parser.file_name
 					);
 				}
-				names.setValue(item.name, true);
+				names.set(item.name, true);
 				
 				if (item.name == "constructor") fn_create = item;
 				else if (item.name == "destructor") fn_destroy = item;
-				else functions.pushValue(item);
+				else functions.push(item);
 				
 				annotations.clear();
 				comments.clear();
@@ -306,15 +306,15 @@ static class ParserBayProgram
 						return v;
 					}
 				);
-				vars.appendVector(d_vars);
+				vars.appendItems(d_vars);
 			}
 			else
 			{
-				items.pushValue(item);
+				items.push(item);
 			}
 		}
 		
-		items.appendVector(comments);
+		items.appendItems(comments);
 		return {
 			"annotations": annotations.toCollection(),
 			"comments": comments.toCollection(),
@@ -411,7 +411,7 @@ static class ParserBayProgram
 				list res = parser.parser_base::readIdentifier(parser);
 				parser = res[0]; parser_value = res[1];
 				
-				template.pushValue(parser_value);
+				template.push(parser_value);
 				parser <= uses <= parser.uses.setIm(parser_value.value, parser_value.value);
 				
 				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
@@ -442,7 +442,7 @@ static class ParserBayProgram
 			
 			list res = parser.parser_base::readTypeIdentifier(look);
 			parser = res[0]; op_code = res[1];
-			class_implements.pushValue(op_code);
+			class_implements.push(op_code);
 			
 			list res = parser.parser_base::readToken(parser);
 			look = res[0]; token = res[1];
@@ -451,7 +451,7 @@ static class ParserBayProgram
 				parser = look;
 				list res = parser.parser_base::readTypeIdentifier(look);
 				parser = res[0]; op_code = res[1];
-				class_implements.pushValue(op_code);
+				class_implements.push(op_code);
 				
 				list res = parser.parser_base::readToken(parser);
 				look = res[0]; token = res[1];
@@ -528,32 +528,32 @@ static class ParserBayProgram
 			{
 				list res = parser.parser_base::readComment(parser);
 				parser = res[0]; op_code = res[1];
-				if (op_code != null) comments.pushValue(op_code);
+				if (op_code != null) comments.push(op_code);
 			}
 			else if (token.content == "@")
 			{
 				list res = parser.parser_operator::readAnnotation(parser);
 				parser = res[0]; op_code = res[1];
-				annotations.pushValue(op_code);
+				annotations.push(op_code);
 			}
 			else if (token.content == "#switch" or token.content == "#ifcode")
 			{
 				/* Append comments */
-				items.appendVector(comments);
+				items.appendItems(comments);
 				comments.clear();
 				
 				list res = parser.parser_preprocessor::readPreprocessor(parser);
 				parser = res[0]; op_code = res[1];
 				if (op_code != null)
 				{
-					items.appendVector(comments);
-					items.pushValue(op_code);
+					items.appendItems(comments);
+					items.push(op_code);
 				}
 			}
 			else if (token.content == "#ifdef")
 			{
 				/* Append comments */
-				items.appendVector(comments);
+				items.appendItems(comments);
 				comments.clear();
 				
 				list res = parser.parser_preprocessor::readPreprocessorIfDef
@@ -563,35 +563,35 @@ static class ParserBayProgram
 				parser = res[0]; op_code = res[1];
 				if (op_code != null)
 				{
-					items.appendVector(comments);
-					items.pushValue(op_code);
+					items.appendItems(comments);
+					items.push(op_code);
 				}
 			}
 			else if (token.content == "namespace")
 			{
 				/* Append comments */
-				items.appendVector(comments);
+				items.appendItems(comments);
 				comments.clear();
 				
 				list res = static::readNamespace(parser); parser = res[0]; op_code = res[1];
-				items.pushValue(op_code);
+				items.push(op_code);
 				list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 			}
 			else if (token.content == "use")
 			{
 				/* Append comments */
-				items.appendVector(comments);
+				items.appendItems(comments);
 				comments.clear();
 				
 				list res = static::readUse(parser); parser = res[0]; op_code = res[1];
 				string full_name = op_code.name;
 				string short_name = "";
-				if (op_code.alias == "") short_name = rs::explode(".", full_name).last();
+				if (op_code.alias == "") short_name = rs::split(".", full_name).last();
 				else short_name = op_code.alias;
 				
 				/* Register module in parser */
 				parser <= uses <= parser.uses.setIm(short_name, full_name);
-				items.pushValue(op_code);
+				items.push(op_code);
 				list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
 			}
 			else if 
@@ -607,7 +607,7 @@ static class ParserBayProgram
 					"annotations": annotations.toCollection(),
 					"comments": comments.toCollection(),
 				});
-				items.pushValue(item);
+				items.push(item);
 				annotations.clear();
 				comments.clear();
 			}
@@ -621,7 +621,7 @@ static class ParserBayProgram
 			parser <= skip_comments <= true;
 		}
 		
-		items.appendVector(comments);
+		items.appendItems(comments);
 		
 		return
 		[
