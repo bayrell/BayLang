@@ -62,15 +62,15 @@ class Watch extends BaseCommand
 			
 			Module module = file_info.get("module");
 			Collection assets = module.config.get("assets");
-			string module_file_name = file_info.get("module_file_name");
+			string src_file_name = file_info.get("src_file_name");
 			
-			if (file_info.get("file") == "/module.json")
+			if (file_info.get("file_name") == "/module.json")
 			{
 				io::print("Reload module.json");
 				await this.settings.reload();
 			}
 			
-			else if (assets.indexOf(module_file_name) >= 0)
+			else if (assets.indexOf(src_file_name) >= 0)
 			{
 				await this.settings.updateModule(module.name);
 			}

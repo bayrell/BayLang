@@ -39,9 +39,9 @@ class ParserError extends ParserUnknownError
 	}
 	
 	
-	public string buildMessage()
+	public string buildErrorMessage()
 	{
-		string error_str = this.error_str;
+		string error_str = this.getErrorMessage();
 		string file = this.getFileName();
 		string line = this.getErrorLine();
 		string pos = this.getErrorPos();

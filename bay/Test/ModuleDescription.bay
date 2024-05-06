@@ -16,11 +16,10 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler;
+namespace Bayrell.Lang.Test;
 
-use Runtime.Entity.Provider;
-use Runtime.Console.Annotations.ConsoleCommand;
-use Bayrell.Lang.ModuleDescription as BayLangModuleDescription;
+use Runtime.Unit.UnitTest;
+use Bayrell.Lang.ModuleDescription as BayLangDescription;
 
 
 static class ModuleDescription
@@ -29,14 +28,14 @@ static class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleName() => "Bayrell.Lang.Compiler";
+	pure string getModuleName() => "Bayrell.Lang.Test";
 	
 	
 	/**
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleVersion() => BayLangModuleDescription::getModuleVersion();
+	pure string getModuleVersion() => BayLangDescription::getModuleVersion();
 	
 	
 	/**
@@ -45,22 +44,14 @@ static class ModuleDescription
 	 */
 	pure Map<string> requiredModules() =>
 	{
-		'Bayrell.Lang': '*',
-		'Bayrell.Lang.Test': '*',
-		'Runtime.Console': '*',
+		'Bayrell.Lang': '>=0.12',
 	};
 	
 	
 	/**
 	 * Returns enities
 	 */
-	pure Collection<Dict> entities() => 
-	[
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Make"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.MakeAll"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Modules"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Version"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Watch"),
-		new Provider("Bayrell.Lang.Compiler.SettingsProvider"),
+	pure Collection<Dict> entities() => [
+		new UnitTest("Bayrell.Lang.Test.LangBay.Main"),
 	];
 }

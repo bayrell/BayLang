@@ -1,0 +1,19 @@
+{
+	"name": "BayLang.Test",
+	"assets":
+	[
+		"LangBay/Main.bay",
+		"ModuleDescription.bay"
+	],
+	"src": "./",
+	"dest":
+	{
+		"php": "./../../php/Test",
+		"es6": "./../../es6/Test",
+		"nodejs": "./../../nodejs/Test"
+	},
+	"allow":
+	[
+		"\\.bay$"
+	]
+}

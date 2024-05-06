@@ -97,6 +97,13 @@
 		"LangNode/TranslatorNodeProgram.bay",
 		"ModuleDescription.bay"
 	],
+	"modules":
+	[
+		{
+			"src": "bay/Test",
+			"type": "module"
+		}
+	],
 	"src": "./bay",
 	"dest":
 	{
@@ -107,5 +114,9 @@
 	"allow":
 	[
 		"\\.bay$"
+	],
+	"exclude":
+	[
+		"Test/"
 	]
 }
