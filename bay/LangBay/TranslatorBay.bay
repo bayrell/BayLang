@@ -64,22 +64,11 @@ class TranslatorBay extends BaseObject
 	
 	
 	/**
-	 * Output content with indent
+	 * Returns new line with indent
 	 */
-	string s(Collection<string> s)
+	string newLine()
 	{
-		if (s.count() == 0) return "";
-		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level) ~ rs::join("", s);
-	}
-	
-	
-	/**
-	 * Output content with opcode level
-	 */
-	string o(string s, int opcode_level_in, int opcode_level_out)
-	{
-		if (opcode_level_in < opcode_level_out) return "(" ~ s ~ ")";
-		return s;
+		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
 	}
 	
 	

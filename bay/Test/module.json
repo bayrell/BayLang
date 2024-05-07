@@ -3,6 +3,7 @@
 	"assets":
 	[
 		"LangBay/Base.bay",
+		"LangBay/Expression.bay",
 		"ModuleDescription.bay"
 	],
 	"src": "./",

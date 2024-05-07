@@ -21,9 +21,16 @@ namespace Bayrell.Lang.LangBay;
 use Runtime.BaseObject;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.OpCodes.OpAttr;
+use Bayrell.Lang.OpCodes.OpCall;
+use Bayrell.Lang.OpCodes.OpCollection;
+use Bayrell.Lang.OpCodes.OpDict;
+use Bayrell.Lang.OpCodes.OpDictPair;
 use Bayrell.Lang.OpCodes.OpIdentifier;
+use Bayrell.Lang.OpCodes.OpMath;
+use Bayrell.Lang.OpCodes.OpNew;
 use Bayrell.Lang.OpCodes.OpNumber;
 use Bayrell.Lang.OpCodes.OpString;
+use Bayrell.Lang.OpCodes.OpTypeIdentifier;
 use Bayrell.Lang.LangBay.TranslatorBay;
 
 
@@ -48,6 +55,7 @@ class TranslatorBayExpression extends BaseObject
 	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
 	{
 		result.push(op_code.value);
+		this.opcode_level = 20;
 	}
 	
 	
@@ -57,6 +65,7 @@ class TranslatorBayExpression extends BaseObject
 	void OpNumber(OpNumber op_code, Collection<string> result)
 	{
 		result.push(op_code.value);
+		this.opcode_level = 20;
 	}
 	
 	
@@ -65,8 +74,69 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpString(OpNumber op_code, Collection<string> result)
 	{
-		string content = this.translator.toString(op_code.value);
-		result.push(content);
+		result.push(this.translator.toString(op_code.value));
+		this.opcode_level = 20;
+	}
+	
+	
+	/**
+	 * OpTypeIdentifier
+	 */
+	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
+	{
+		result.push(op_code.entity_name.names.last());
+	}
+	
+	
+	/**
+	 * OpCollection
+	 */
+	void OpCollection(OpCollection op_code, Collection<string> result)
+	{
+		result.push("[");
+		int values_count = op_code.values.count();
+		for (int i=0; i<values_count; i++)
+		{
+			BaseOpCode op_code_item = op_code.values.get(i);
+			this.translate(op_code_item, result);
+			if (i < values_count - 1) result.push(", ");
+		}
+		result.push("]");
+	}
+	
+	
+	/**
+	 * OpDict
+	 */
+	void OpDict(OpCollection op_code, Collection<string> result)
+	{
+		if (op_code.values.count() == 0)
+		{
+			result.push("{");
+			result.push("}");
+			return;
+		}
+		
+		/* Begin bracket */
+		result.push("{");
+		this.translator.levelInc();
+		
+		/* Items */
+		int values_count = op_code.values.count();
+		for (int i=0; i<values_count; i++)
+		{
+			OpDictPair op_code_item = op_code.values.get(i);
+			result.push(this.translator.newLine());
+			result.push(this.translator.toString(op_code_item.key));
+			result.push(": ");
+			this.translate(op_code_item.value, result);
+			result.push(",");
+		}
+		
+		/* End bracket */
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
 	}
 	
 	
@@ -86,14 +156,8 @@ class TranslatorBayExpression extends BaseObject
 		
 		attrs = attrs.reverse();
 		
-		if (op_code_first instanceof OpNumber)
-		{
-			this.OpNumber(op_code_first, result);
-		}
-		else if (op_code_first instanceof OpIdentifier)
-		{
-			this.OpIdentifier(op_code_first, result);
-		}
+		/* first op_code */
+		this.Dynamic(op_code_first, result);
 		
 		/* Attrs */
 		for (int i=0; i<attrs.count(); i++)
@@ -121,20 +185,171 @@ class TranslatorBayExpression extends BaseObject
 				int item_attr_count = item_attr.attrs.count();
 				for (int j=0; j<item_attr_count; j++)
 				{
-					BaseOpCode item_op_code = item_attr.attrs.get(j);
-					this.translate(item_op_code, result);
+					BaseOpCode op_code_item = item_attr.attrs.get(j);
+					this.translate(op_code_item, result);
 					if (j < item_attr_count - 1) result.push(", ");
 				}
 				result.push("]");
 			}
 		}
+		
+		this.opcode_level = 20;
 	}
 	
 	
 	/**
-	 * Translate expression
+	 * OpCall
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result)
+	void OpCall(OpCall op_code, Collection<string> result)
+	{
+		this.Dynamic(op_code.obj, result);
+		
+		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
+		{
+			this.OpDict(op_code.args.get(0), result);
+		}
+		else
+		{
+			result.push("(");
+			int args_count = op_code.args.count();
+			for (int i=0; i<args_count; i++)
+			{
+				BaseOpCode op_code_item = op_code.args.get(i);
+				this.Expression(op_code_item, result);
+				if (i < args_count - 1) result.push(", ");
+			}
+			result.push(")");
+		}
+		
+		this.opcode_level = 20;
+	}
+	
+	
+	/**
+	 * OpNew
+	 */
+	void OpNew(OpNew op_code, Collection<string> result)
+	{
+		result.push("new ");
+		this.OpTypeIdentifier(op_code.value, result);
+		
+		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
+		{
+			this.OpDict(op_code.args.get(0), result);
+		}
+		else
+		{
+			result.push("(");
+			int args_count = op_code.args.count();
+			for (int i=0; i<args_count; i++)
+			{
+				BaseOpCode op_code_item = op_code.args.get(i);
+				this.Expression(op_code_item, result);
+				if (i < args_count - 1) result.push(", ");
+			}
+			result.push(")");
+		}
+		
+		this.opcode_level = 20;
+	}
+	
+	
+	/**
+	 * OpMath
+	 */
+	void OpMath(OpCall op_code, Collection<string> result)
+	{
+		Collection<string> result1 = [];
+		this.Expression(op_code.value1, result1);
+		int opcode_level1 = this.opcode_level;
+		
+		string op = "";
+		int opcode_level = 0;
+		if (op_code.math == "!") { opcode_level = 16; op = "!"; }
+		if (op_code.math == ">>") { opcode_level = 12; op = ">>"; }
+		if (op_code.math == "<<") { opcode_level = 12; op = "<<"; }
+		if (op_code.math == "&") { opcode_level = 9; op = "&"; }
+		if (op_code.math == "xor") { opcode_level = 8; op = "^"; }
+		if (op_code.math == "|") { opcode_level = 7; op = "|"; }
+		if (op_code.math == "*") { opcode_level = 14; op = "*"; }
+		if (op_code.math == "/") { opcode_level = 14; op = "/"; }
+		if (op_code.math == "%") { opcode_level = 14; op = "%"; }
+		if (op_code.math == "div") { opcode_level = 14; op = "div"; }
+		if (op_code.math == "mod") { opcode_level = 14; op = "mod"; }
+		if (op_code.math == "+") { opcode_level = 13; op = "+"; }
+		if (op_code.math == "-") { opcode_level = 13; op = "-"; }
+		if (op_code.math == "~") { opcode_level = 13; op = "~"; }
+		if (op_code.math == "===") { opcode_level = 10; op = "==="; }
+		if (op_code.math == "!==") { opcode_level = 10; op = "!=="; }
+		if (op_code.math == "==") { opcode_level = 10; op = "=="; }
+		if (op_code.math == "!=") { opcode_level = 10; op = "!="; }
+		if (op_code.math == ">=") { opcode_level = 10; op = ">="; }
+		if (op_code.math == "<=") { opcode_level = 10; op = "<="; }
+		if (op_code.math == ">") { opcode_level = 10; op = ">"; }
+		if (op_code.math == "<") { opcode_level = 10; op = "<"; }
+		if (op_code.math == "is") { opcode_level = 10; op = "instanceof"; }
+		if (op_code.math == "instanceof") { opcode_level = 10; op = "instanceof"; }
+		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
+		if (op_code.math == "not") { opcode_level = 16; op = "not"; }
+		if (op_code.math == "and") { opcode_level = 6; op = "and"; }
+		if (op_code.math == "&&") { opcode_level = 6; op = "and"; }
+		if (op_code.math == "or") { opcode_level = 5; op = "or"; }
+		if (op_code.math == "||") { opcode_level = 5; op = "or"; }
+		
+		if (op_code.math == "not" or op_code.math == "!")
+		{
+			result.push("not ");
+			
+			if (opcode_level1 < opcode_level)
+			{
+				result.push("(");
+				result.appendItems(result1);
+				result.push(")");
+			}
+			else
+			{
+				result.appendItems(result1);
+			}
+		}
+		else
+		{
+			if (opcode_level1 < opcode_level)
+			{
+				result.push("(");
+				result.appendItems(result1);
+				result.push(")");
+			}
+			else
+			{
+				result.appendItems(result1);
+			}
+			
+			result.push(" " ~ op ~ " ");
+			
+			Collection<string> result2 = [];
+			this.Expression(op_code.value2, result2);
+			int opcode_level2 = this.opcode_level;
+			
+			if (opcode_level2 < opcode_level)
+			{
+				result.push("(");
+				result.appendItems(result2);
+				result.push(")");
+			}
+			else
+			{
+				result.appendItems(result2);
+			}
+		}
+		
+		this.opcode_level = opcode_level;
+	}
+	
+	
+	/**
+	 * Dynamic
+	 */
+	void Dynamic(OpCall op_code, Collection<string> result)
 	{
 		if (op_code instanceof OpNumber)
 		{
@@ -152,5 +367,46 @@ class TranslatorBayExpression extends BaseObject
 		{
 			this.OpAttr(op_code, result);
 		}
+		else if (op_code instanceof OpCollection)
+		{
+			this.OpCollection(op_code, result);
+		}
+		else if (op_code instanceof OpDict)
+		{
+			this.OpDict(op_code, result);
+		}
+		else if (op_code instanceof OpCall)
+		{
+			this.OpCall(op_code, result);
+		}
+		else if (op_code instanceof OpNew)
+		{
+			this.OpNew(op_code, result);
+		}
+	}
+	
+	
+	/**
+	 * Expression
+	 */
+	void Expression(BaseOpCode op_code, Collection<string> result)
+	{
+		if (op_code instanceof OpMath)
+		{
+			this.OpMath(op_code, result);
+		}
+		else
+		{
+			this.Dynamic(op_code, result);
+		}
+	}
+	
+	
+	/**
+	 * Translate expression
+	 */
+	void translate(BaseOpCode op_code, Collection<string> result)
+	{
+		this.Expression(op_code, result);
 	}
 }
