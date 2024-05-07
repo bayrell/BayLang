@@ -5,7 +5,7 @@ BayLang
 
 Versions:
 
-0.12.2 - Add submodules, command make_all, opcode OpNegative. Reload module.json
+[07 May 2024] 0.12.2 - Add submodules, command make_all, opcode OpNegative. Reload module.json
 
 [20 Mar 2024] 0.12.1 - Template css style fix.
 

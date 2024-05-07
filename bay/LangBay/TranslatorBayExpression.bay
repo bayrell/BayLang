@@ -1,0 +1,156 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.LangBay;
+
+use Runtime.BaseObject;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpAttr;
+use Bayrell.Lang.OpCodes.OpIdentifier;
+use Bayrell.Lang.OpCodes.OpNumber;
+use Bayrell.Lang.OpCodes.OpString;
+use Bayrell.Lang.LangBay.TranslatorBay;
+
+
+class TranslatorBayExpression extends BaseObject
+{
+	TranslatorBay translator = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(TranslatorBay translator)
+	{
+		parent();
+		this.translator = translator;
+	}
+	
+	
+	/**
+	 * OpIdentifier
+	 */
+	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
+	{
+		result.push(op_code.value);
+	}
+	
+	
+	/**
+	 * OpNumber
+	 */
+	void OpNumber(OpNumber op_code, Collection<string> result)
+	{
+		result.push(op_code.value);
+	}
+	
+	
+	/**
+	 * OpString
+	 */
+	void OpString(OpNumber op_code, Collection<string> result)
+	{
+		string content = this.translator.toString(op_code.value);
+		result.push(content);
+	}
+	
+	
+	/**
+	 * OpAttr
+	 */
+	void OpAttr(OpAttr op_code, Collection<string> result)
+	{
+		Vector<BaseOpCode> attrs = new Vector();
+		
+		BaseOpCode op_code_first = op_code;
+		while (op_code_first instanceof OpAttr)
+		{
+			attrs.push(op_code_first);
+			op_code_first = op_code_first.obj;
+		}
+		
+		attrs = attrs.reverse();
+		
+		if (op_code_first instanceof OpNumber)
+		{
+			this.OpNumber(op_code_first, result);
+		}
+		else if (op_code_first instanceof OpIdentifier)
+		{
+			this.OpIdentifier(op_code_first, result);
+		}
+		
+		/* Attrs */
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpAttr item_attr = attrs.get(i);
+			if (item_attr.kind == OpAttr::KIND_ATTR)
+			{
+				result.push(".");
+				result.push(item_attr.value.value);
+			}
+			else if (item_attr.kind == OpAttr::KIND_STATIC)
+			{
+				result.push("::");
+				result.push(item_attr.value.value);
+			}
+			else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
+			{
+				result.push("[");
+				this.translate(item_attr.value, result);
+				result.push("]");
+			}
+			else if (item_attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
+			{
+				result.push("[");
+				int item_attr_count = item_attr.attrs.count();
+				for (int j=0; j<item_attr_count; j++)
+				{
+					BaseOpCode item_op_code = item_attr.attrs.get(j);
+					this.translate(item_op_code, result);
+					if (j < item_attr_count - 1) result.push(", ");
+				}
+				result.push("]");
+			}
+		}
+	}
+	
+	
+	/**
+	 * Translate expression
+	 */
+	void translate(BaseOpCode op_code, Collection<string> result)
+	{
+		if (op_code instanceof OpNumber)
+		{
+			this.OpNumber(op_code, result);
+		}
+		if (op_code instanceof OpString)
+		{
+			this.OpString(op_code, result);
+		}
+		else if (op_code instanceof OpIdentifier)
+		{
+			this.OpIdentifier(op_code, result);
+		}
+		else if (op_code instanceof OpAttr)
+		{
+			this.OpAttr(op_code, result);
+		}
+	}
+}

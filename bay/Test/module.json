@@ -2,7 +2,7 @@
 	"name": "BayLang.Test",
 	"assets":
 	[
-		"LangBay/Main.bay",
+		"LangBay/Base.bay",
 		"ModuleDescription.bay"
 	],
 	"src": "./",
