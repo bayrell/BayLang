@@ -224,6 +224,7 @@ class Expression
 		AssertHelper::equalValue(content, res.get(1), content);
 	}
 	
+	
 	@Test{}
 	void testFn3()
 	{
@@ -233,6 +234,21 @@ class Expression
 		this.addVar("c");
 		
 		string content = "(a() + b()) * c()";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void test1()
+	{
+		this.reset();
+		this.addVar("io");
+		this.addVar("class_name");
+		this.addVar("method_name");
+		
+		string content = "io::print(class_name ~ \"::\" ~ method_name ~ " ~
+			"\" \" ~ io::color(\"green\", \"Ok\"))";
 		list res = this.translate(content);
 		AssertHelper::equalValue(content, res.get(1), content);
 	}

@@ -4,6 +4,7 @@
 	[
 		"LangBay/Base.bay",
 		"LangBay/Expression.bay",
+		"LangBay/Operator.bay",
 		"ModuleDescription.bay"
 	],
 	"src": "./",
