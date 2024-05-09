@@ -20,6 +20,7 @@ namespace Bayrell.Lang;
 
 use Runtime.CoreParser;
 use Runtime.Interfaces.ContextInterface;
+use Bayrell.Lang.LangBay.TranslatorBay;
 use Bayrell.Lang.LangES6.TranslatorES6;
 use Bayrell.Lang.LangNode.TranslatorNode;
 use Bayrell.Lang.LangPHP.TranslatorPHP;
@@ -59,17 +60,21 @@ static class LangUtils
 	{
 		CoreTranslator t = null;
 		
-		if (lang == "php")
+		if (lang == "bay")
 		{
-			t = new TranslatorPHP();
+			t = new TranslatorBay();
 		}
-		if (lang == "es6")
+		else if (lang == "es6")
 		{
 			t = new TranslatorES6();
 		}
-		if (lang == "nodejs")
+		else if (lang == "nodejs")
 		{
 			t = new TranslatorNode();
+		}
+		else if (lang == "php")
+		{
+			t = new TranslatorPHP();
 		}
 		
 		return t;

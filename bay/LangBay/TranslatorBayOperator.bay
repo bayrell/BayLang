@@ -80,8 +80,11 @@ class TranslatorBayOperator extends BaseObject
 			{
 				result.push(op_code_value.var_name);
 			}
-			result.push(" = ");
-			this.translator.expression.translate(op_code_value.expression, result);
+			if (op_code_value.expression)
+			{
+				result.push(" = ");
+				this.translator.expression.translate(op_code_value.expression, result);
+			}
 			if (i < values_count - 1) result.push(",");
 		}
 	}

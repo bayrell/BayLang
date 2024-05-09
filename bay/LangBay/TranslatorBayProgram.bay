@@ -1,0 +1,258 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.LangBay;
+
+use Runtime.BaseObject;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.OpCodes.OpDeclareClass;
+use Bayrell.Lang.OpCodes.OpDeclareFunction;
+use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
+use Bayrell.Lang.OpCodes.OpNamespace;
+use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+use Bayrell.Lang.OpCodes.OpUse;
+use Bayrell.Lang.LangBay.TranslatorBay;
+
+
+class TranslatorBayProgram extends BaseObject
+{
+	TranslatorBay translator = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(TranslatorBay translator)
+	{
+		parent();
+		this.translator = translator;
+	}
+	
+	
+	/**
+	 * OpNamespace
+	 */
+	void OpNamespace(OpNamespace op_code, Collection<string> result)
+	{
+		result.push("namespace ");
+		result.push(op_code.name);
+		result.push(";");
+		result.push(this.translator.newLine());
+	}
+	
+	
+	/**
+	 * OpUse
+	 */
+	void OpUse(OpUse op_code, Collection<string> result)
+	{
+		result.push("use ");
+		result.push(op_code.name);
+		result.push(";");
+	}
+	
+	
+	/**
+	 * OpDeclareFunctionArg
+	 */
+	void OpDeclareFunctionArg(OpDeclareFunctionArg op_code, Collection<string> result)
+	{
+		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
+		result.push(" ");
+		result.push(op_code.name);
+		if (op_code.expression)
+		{
+			result.push(" = ");
+			this.translator.expression.translate(op_code.expression, result);
+		}
+	}
+	
+	
+	/**
+	 * OpDeclareFunctionArgs
+	 */
+	void OpDeclareFunctionArgs(OpDeclareFunction op_code, Collection<string> result)
+	{
+		result.push("(");
+		
+		/* Arguments */
+		if (op_code.args and op_code.args.count() > 0)
+		{
+			int args_count = op_code.args.count();
+			for (int i=0; i<args_count; i++)
+			{
+				OpDeclareFunctionArg op_code_item = op_code.args.get(i);
+				this.OpDeclareFunctionArg(op_code_item, result);
+				if (i < args_count - 1) result.push(", ");
+			}
+		}
+		
+		result.push(")");
+	}
+	
+	
+	/**
+	 * OpDeclareFunction
+	 */
+	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
+	{
+		this.translator.expression.OpTypeIdentifier(op_code.result_type, result);
+		
+		/* Function name */
+		result.push(" ");
+		result.push(op_code.name);
+		this.OpDeclareFunctionArgs(op_code, result);
+		
+		/* Items */
+		if (op_code.items.items.count() > 0)
+		{
+			result.push(this.translator.newLine());
+		}
+		this.translator.operator.translateItems(op_code.items, result);
+	}
+	
+	
+	/**
+	 * Translate class item
+	 */
+	bool translateClassItem(BaseOpCode op_code, Collection<string> result)
+	{
+		if (op_code instanceof OpDeclareFunction)
+		{
+			this.OpDeclareFunction(op_code, result);
+		}
+	}
+	
+	
+	/**
+	 * Translate class body
+	 */
+	void translateClassBody(OpDeclareClass op_code, Collection<string> result)
+	{
+		/* Begin bracket */
+		result.push("{");
+		this.translator.levelInc();
+		
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			result.push(this.translator.newLine());
+			BaseOpCode op_code_item = op_code.items.get(i);
+			this.translateClassItem(op_code_item, result);
+		}
+		
+		/* End bracket */
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
+	}
+	
+	
+	/**
+	 * Translate class
+	 */
+	void translateClass(OpDeclareClass op_code, Collection<string> result)
+	{
+		if (op_code.kind == OpDeclareClass::KIND_CLASS)
+		{
+			result.push("class ");
+		}
+		else if (op_code.kind == OpDeclareClass::KIND_INTERFACE)
+		{
+			result.push("interface ");
+		}
+		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
+		{
+			result.push("struct ");
+		}
+		
+		/* Class name */
+		result.push(op_code.name);
+		
+		/* Template */
+		if (op_code.template)
+		{
+			this.translator.expression.OpTypeTemplate(op_code.template, result);
+		}
+		
+		/* Extends */
+		if (op_code.class_extends)
+		{
+			result.push(" extends ");
+			this.translator.expression.OpTypeIdentifier(op_code.class_extends, result);
+		}
+		
+		/* Implements */
+		if (op_code.class_implements)
+		{
+			result.push(" implements ");
+			int items_count = op_code.class_implements.count();
+			for (int i=0; i<items_count; i++)
+			{
+				OpTypeIdentifier op_code_item = op_code.class_implements.get(i);
+				this.translator.expression.OpTypeIdentifier(op_code_item, result);
+				if (i < items_count - 1) result.push(", ");
+			}
+		}
+		
+		result.push(this.translator.newLine());
+		this.translateClassBody(op_code, result);
+	}
+	
+	
+	/**
+	 * Translate item
+	 */
+	void translateItem(BaseOpCode op_code, Collection<string> result)
+	{
+		if (op_code instanceof OpDeclareClass)
+		{
+			this.translateClass(op_code, result);
+		}
+		else if (op_code instanceof OpNamespace)
+		{
+			this.OpNamespace(op_code, result);
+		}
+		else if (op_code instanceof OpUse)
+		{
+			this.OpUse(op_code, result);
+		}
+	}
+	
+	
+	/**
+	 * Translate items
+	 */
+	void translateItems(Collection<BaseOpCode> items, Collection<string> result)
+	{
+		int op_code_use_count = 0;
+		bool prev_op_code_use = false;
+		for (int i=0; i<items.count(); i++)
+		{
+			BaseOpCode op_code_item = items.get(i);
+			if (i > 0) result.push(this.translator.newLine());
+			if (op_code_item instanceof OpDeclareClass and op_code_use_count > 0)
+			{
+				result.push(this.translator.newLine());
+				if (op_code_use_count > 1) result.push(this.translator.newLine());
+			}
+			if (op_code_item instanceof OpUse) op_code_use_count++;
+			else op_code_use_count = 0;
+			this.translateItem(items.get(i), result);
+		}
+	}
+}

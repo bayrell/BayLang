@@ -23,6 +23,7 @@ use Runtime.BaseObject;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.LangBay.TranslatorBayExpression;
 use Bayrell.Lang.LangBay.TranslatorBayOperator;
+use Bayrell.Lang.LangBay.TranslatorBayProgram;
 
 
 class TranslatorBay extends BaseObject
@@ -35,6 +36,7 @@ class TranslatorBay extends BaseObject
 	/* Translators */
 	TranslatorBayExpression expression = new TranslatorBayExpression(this);
 	TranslatorBayOperator operator = new TranslatorBayOperator(this);
+	TranslatorBayProgram program = new TranslatorBayProgram(this);
 	
 	
 	/**
@@ -95,8 +97,8 @@ class TranslatorBay extends BaseObject
 	{
 		Collection<string> content = [];
 		t.reset();
-		/*t.run(op_code, content);*/
-		string result = rs::join(t.crlf, content);
+		t.program.translateItems(op_code.items, content);
+		string result = rs::join("", content);
 		return [t, result];
 	}
 }

@@ -80,23 +80,39 @@ class TranslatorBayExpression extends BaseObject
 	
 	
 	/**
+	 * OpTypeTemplate
+	 */
+	void OpTypeTemplate(Collection<OpTypeIdentifier> items, Collection<string> result)
+	{
+		if (items)
+		{
+			result.push("<");
+			int items_count = items.count();
+			for (int i=0; i<items_count; i++)
+			{
+				OpTypeIdentifier op_code_item = items.get(i);
+				if (op_code_item instanceof OpIdentifier)
+				{
+					this.OpIdentifier(op_code_item, result);
+				}
+				else if (op_code_item instanceof OpTypeIdentifier)
+				{
+					this.OpTypeIdentifier(op_code_item, result);
+				}
+				if (i < items_count - 1) result.push(", ");
+			}
+			result.push(">");
+		}
+	}
+	
+	
+	/**
 	 * OpTypeIdentifier
 	 */
 	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
 	{
 		result.push(op_code.entity_name.names.last());
-		if (op_code.template)
-		{
-			result.push("<");
-			int template_count = op_code.template.count();
-			for (int i=0; i<template_count; i++)
-			{
-				OpTypeIdentifier op_code_item = op_code.template.get(i);
-				this.OpTypeIdentifier(op_code_item, result);
-				if (i < template_count - 1) result.push(", ");
-			}
-			result.push(">");
-		}
+		this.OpTypeTemplate(op_code.template, result);
 	}
 	
 	

@@ -1,0 +1,317 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.Test.LangBay;
+
+use Runtime.io;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use Bayrell.Lang.LangBay.ParserBay;
+use Bayrell.Lang.LangBay.TranslatorBay;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.CoreTranslator;
+
+
+class Program
+{
+	ParserBay parser;
+	TranslatorBay translator;
+	
+	
+	/**
+	 * Reset
+	 */
+	void reset()
+	{
+		this.parser = new ParserBay();
+		this.parser = this.parser::reset(this.parser);
+		this.translator = new TranslatorBay();
+		this.translator.reset();
+	}
+	
+	
+	/**
+	 * Set content
+	 */
+	void setContent(string content)
+	{
+		this.parser = this.parser::setContent(this.parser, content);
+	}
+	
+	
+	/**
+	 * Add variable
+	 */
+	void addVar(string var_name)
+	{
+		ParserBay parser = this.parser;
+		parser <= vars <= parser.vars.setIm(var_name, true);
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	string translate(string content, bool debug = false)
+	{
+		Collection<string> result = [];
+		
+		this.setContent(content);
+		
+		/* Parse */
+		list res = this.parser.parser_program::readProgram(this.parser);
+		BaseOpCode op_code = res.get(1);
+		
+		/* Translate */
+		this.translator.program.translateItems(op_code.items, result);
+		
+		/* Debug output */
+		if (debug)
+		{
+			log(op_code);
+			log(result);
+			log(rs::join("", result));
+		}
+		
+		return [op_code, rs::join("", result)];
+	}
+	
+	
+	@Test{}
+	void testNamespace()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"namespace App;",
+				""
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testUse1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"use Runtime.Unit.Test;",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testClass1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testClass2()
+	{
+		this.reset();
+		this.addVar("BaseObject");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test extends BaseObject",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testClass3()
+	{
+		this.reset();
+		this.addVar("TestInterface");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test implements TestInterface",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testClass4()
+	{
+		this.reset();
+		this.addVar("TestInterface1");
+		this.addVar("TestInterface2");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test implements TestInterface1, TestInterface2",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testClass5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test<T> extends Collection<T>",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testInterface1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"interface Test",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testStruct1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"struct Test",
+				"{",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test",
+				"{",
+				"\tvoid main(){}",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test",
+				"{",
+				"\tvoid main(int a, int b = 1){}",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test",
+				"{",
+				"\tvoid main()",
+				"\t{",
+				"\t\treturn true;",
+				"\t}",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+}

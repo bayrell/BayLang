@@ -24,6 +24,7 @@
 		"LangBay/TranslatorBay.bay",
 		"LangBay/TranslatorBayExpression.bay",
 		"LangBay/TranslatorBayOperator.bay",
+		"LangBay/TranslatorBayProgram.bay",
 		"LangES6/AsyncAwait.bay",
 		"LangES6/TranslatorES6.bay",
 		"LangES6/TranslatorES6AsyncAwait.bay",
