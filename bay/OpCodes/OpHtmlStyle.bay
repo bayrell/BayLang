@@ -24,5 +24,6 @@ use Bayrell.Lang.OpCodes.BaseOpCode;
 struct OpHtmlStyle extends BaseOpCode
 {
 	string op = "op_html_style";
+	bool is_global = false;
 	BaseOpCode value = null;
 }

@@ -697,6 +697,7 @@ class ParserBayHtml extends BaseObject
 		BaseOpCode op_code = new OpHtmlStyle{
 			"caret_start": caret_start,
 			"caret_end": parser.caret,
+			"is_global": is_global,
 			"value": css_op_code,
 		};
 		
@@ -1879,8 +1880,9 @@ class ParserBayHtml extends BaseObject
 	/**
 	 * Read UI
 	 */
-	pure list<ParserBay, BaseOpCode> readUIClass(ParserBay parser)
+	pure list<ParserBay, Collection<BaseOpCode>> readUIClass(ParserBay parser)
 	{
+		Vector<BaseOpCode> module_items = new Vector();
 		Vector<BaseOpCode> items = new Vector();
 		Vector<string> components = new Vector();
 		Caret class_caret_start = parser.caret;
@@ -1976,6 +1978,12 @@ class ParserBayHtml extends BaseObject
 			}
 		}
 		
+		/* Add namespace */
+		module_items.push(new OpNamespace
+		{
+			"name": namespace_name,
+		});
+		
 		/* Read class body */
 		Caret caret = parser.parser_base::skipChar(parser, content, parser.caret);
 		parser <= caret <= caret;
@@ -2032,6 +2040,11 @@ class ParserBayHtml extends BaseObject
 				{
 					components.push(full_name);
 				}
+				module_items.push(new OpUse
+				{
+					"name": full_name,
+					"alias": short_name,
+				});
 			}
 			
 			/* Read body */
@@ -2151,36 +2164,33 @@ class ParserBayHtml extends BaseObject
 		/* Analyze class body */
 		Dict class_body = parser.parser_program::classBodyAnalyze(parser, items);
 		
+		/* Add class */
+		module_items.push(new OpDeclareClass
+		{
+			"kind": OpDeclareClass::KIND_CLASS,
+			"name": class_name_last,
+			"is_static": true,
+			"is_component": flag_is_component,
+			"is_model": flag_is_model,
+			"is_declare": false,
+			"class_extends": class_extend_op_code,
+			"class_implements": null,
+			"annotations": [],
+			"template": null,
+			"vars": class_body.item("vars"),
+			"annotations": class_annotations.toCollection(),
+			"functions": class_body.item("functions"),
+			"fn_create": class_body.item("fn_create"),
+			"fn_destroy": class_body.item("fn_destroy"),
+			"items": items,
+			"caret_start": class_caret_start,
+			"caret_end": parser.caret,
+		});
+		
 		return
 		[
 			parser,
-			[
-				new OpNamespace
-				{
-					"name": namespace_name,
-				},
-				new OpDeclareClass
-				{
-					"kind": OpDeclareClass::KIND_CLASS,
-					"name": class_name_last,
-					"is_static": true,
-					"is_component": flag_is_component,
-					"is_model": flag_is_model,
-					"is_declare": false,
-					"class_extends": class_extend_op_code,
-					"class_implements": null,
-					"annotations": [],
-					"template": null,
-					"vars": class_body.item("vars"),
-					"annotations": class_annotations.toCollection(),
-					"functions": class_body.item("functions"),
-					"fn_create": class_body.item("fn_create"),
-					"fn_destroy": class_body.item("fn_destroy"),
-					"items": items,
-					"caret_start": class_caret_start,
-					"caret_end": parser.caret,
-				}
-			]
+			module_items
 		];
 	}
 	
@@ -2229,6 +2239,7 @@ class ParserBayHtml extends BaseObject
 			parser,
 			new OpModule
 			{
+				"is_component": true,
 				"uses": parser.uses.toDict(),
 				"items": items.toCollection(),
 				"caret_start": caret_start,

@@ -25,4 +25,5 @@ struct OpModule extends BaseOpCode
 {
 	Dict<string> uses = null;
 	Collection<BaseOpCode> items = null;
+	bool is_component = false;
 }

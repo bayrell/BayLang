@@ -30,7 +30,6 @@ use Bayrell.Lang.CoreTranslator;
 
 static class LangUtils
 {
-	
 	/**
 	 * Parse file and convert to BaseOpCode
 	 */

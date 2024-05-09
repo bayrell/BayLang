@@ -4,6 +4,7 @@
 	[
 		"LangBay/Base.bay",
 		"LangBay/Expression.bay",
+		"LangBay/Html.bay",
 		"LangBay/Operator.bay",
 		"LangBay/Program.bay",
 		"ModuleDescription.bay"

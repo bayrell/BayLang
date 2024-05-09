@@ -1,0 +1,399 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace Bayrell.Lang.Test.LangBay;
+
+use Runtime.io;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use Bayrell.Lang.LangBay.ParserBay;
+use Bayrell.Lang.LangBay.TranslatorBay;
+use Bayrell.Lang.OpCodes.BaseOpCode;
+use Bayrell.Lang.CoreTranslator;
+
+
+class Html
+{
+    ParserBay parser;
+	TranslatorBay translator;
+	
+	
+	/**
+	 * Reset
+	 */
+	void reset()
+	{
+		this.parser = new ParserBay();
+		this.parser = this.parser::reset(this.parser);
+		this.translator = new TranslatorBay();
+		this.translator.reset();
+	}
+	
+	
+	/**
+	 * Set content
+	 */
+	void setContent(string content)
+	{
+		this.parser = this.parser::setContent(this.parser, content);
+		this.translator.setContent(content);
+	}
+	
+	
+	/**
+	 * Add variable
+	 */
+	void addVar(string var_name)
+	{
+		ParserBay parser = this.parser;
+		parser <= vars <= parser.vars.setIm(var_name, true);
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	string translate(string content, bool debug = false)
+	{
+		Collection<string> result = [];
+		
+		this.setContent(content);
+		
+		/* Parse */
+		list res = this.parser.parser_program::readProgram(this.parser);
+		BaseOpCode op_code = res.get(1);
+		
+		/* Translate */
+		this.translator.html.translate(op_code, result);
+		
+		/* Debug output */
+		if (debug)
+		{
+			log(op_code);
+			log(result);
+			log(rs::join("", result));
+		}
+		
+		return [op_code, rs::join("", result)];
+	}
+    
+    
+    @Test{}
+	void test1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void test2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"<use name=\"Runtime.Web.Text\" />",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testTemplate1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testTemplate2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template name=\"renderItem\">",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testTemplate3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template name=\"renderItem\" args=\"int a, int b\">",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testComponent1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"",
+				"<template>",
+				"\t<Button />",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testComponent2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"",
+				"<template>",
+				"\t<Button>",
+				"\t\tContent",
+				"\t</Button>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testComponent3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"",
+				"<template>",
+				"\t<Button>",
+				"\t\t{{ this.model.content }}",
+				"\t</Button>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testComponent4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"",
+				"<template>",
+				"\t<Button @model={{ this.model }} />",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testComponent5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"",
+				"<template>",
+				"\t<Button name=\"test\" />",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testScript1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Web.Button\" />",
+				"",
+				"<template>",
+				"</template>",
+				"",
+				"<script>",
+				"",
+				"void test(){}"
+				"",
+				"</script>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testStyle1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<style>",
+				".page_title{",
+				"\tfont-size: 18px;",
+				"\ttext-align: center;",
+				"}",
+				"</style>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testStyle2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<style global=\"true\">",
+				".page_title{",
+				"\tfont-size: 18px;",
+				"\ttext-align: center;",
+				"}",
+				"</style>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+}

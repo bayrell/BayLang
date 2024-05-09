@@ -88,9 +88,6 @@ class TranslatorBayProgram extends BaseObject
 	 */
 	void OpDeclareFunctionArgs(OpDeclareFunction op_code, Collection<string> result)
 	{
-		result.push("(");
-		
-		/* Arguments */
 		if (op_code.args and op_code.args.count() > 0)
 		{
 			int args_count = op_code.args.count();
@@ -101,8 +98,6 @@ class TranslatorBayProgram extends BaseObject
 				if (i < args_count - 1) result.push(", ");
 			}
 		}
-		
-		result.push(")");
 	}
 	
 	
@@ -116,7 +111,11 @@ class TranslatorBayProgram extends BaseObject
 		/* Function name */
 		result.push(" ");
 		result.push(op_code.name);
+		
+		/* Arguments */
+		result.push("(");
 		this.OpDeclareFunctionArgs(op_code, result);
+		result.push(")");
 		
 		/* Items */
 		if (op_code.items.items.count() > 0)
@@ -254,5 +253,14 @@ class TranslatorBayProgram extends BaseObject
 			else op_code_use_count = 0;
 			this.translateItem(items.get(i), result);
 		}
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	void translate(BaseOpCode op_code, Collection<string> result)
+	{
+		this.translateItems(op_code.items, result);
 	}
 }

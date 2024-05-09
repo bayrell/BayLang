@@ -22,6 +22,7 @@ use Runtime.re;
 use Runtime.BaseObject;
 use Bayrell.Lang.OpCodes.BaseOpCode;
 use Bayrell.Lang.LangBay.TranslatorBayExpression;
+use Bayrell.Lang.LangBay.TranslatorBayHtml;
 use Bayrell.Lang.LangBay.TranslatorBayOperator;
 use Bayrell.Lang.LangBay.TranslatorBayProgram;
 
@@ -30,6 +31,7 @@ class TranslatorBay extends BaseObject
 {
 	int opcode_level = 0;
 	int indent_level = 0;
+	string content = "";
 	string indent = "\t";
 	string crlf = "\n";
 	
@@ -37,6 +39,7 @@ class TranslatorBay extends BaseObject
 	TranslatorBayExpression expression = new TranslatorBayExpression(this);
 	TranslatorBayOperator operator = new TranslatorBayOperator(this);
 	TranslatorBayProgram program = new TranslatorBayProgram(this);
+	TranslatorBayHtml html = new TranslatorBayHtml(this);
 	
 	
 	/**
@@ -46,6 +49,15 @@ class TranslatorBay extends BaseObject
 	{
 		this.opcode_level = 0;
 		this.indent_level = 0;
+	}
+	
+	
+	/**
+	 * Set content
+	 */
+	void setContent(string content)
+	{
+		this.content = content;
 	}
 	
 	
@@ -97,7 +109,14 @@ class TranslatorBay extends BaseObject
 	{
 		Collection<string> content = [];
 		t.reset();
-		t.program.translateItems(op_code.items, content);
+		if (op_code.is_component)
+		{
+			t.html.translate(op_code, content);
+		}
+		else
+		{
+			t.program.translate(op_code, content);
+		}
 		string result = rs::join("", content);
 		return [t, result];
 	}
