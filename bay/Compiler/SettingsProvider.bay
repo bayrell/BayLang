@@ -644,12 +644,14 @@ class SettingsProvider extends BaseProvider
 						string content = await fs::readFile(file_dest_path);
 						asset_content ~= content ~ "\n";
 					}
-					/*
-					else if (await fs::isFile(file_source_path))
+					else if (
+						await fs::isFile(file_source_path) and
+						rs::extname(file_source_path) == "js"
+					)
 					{
 						string content = await fs::readFile(file_source_path);
 						asset_content ~= content ~ "\n";
-					}*/
+					}
 				}
 			}
 		}
