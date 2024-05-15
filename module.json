@@ -106,7 +106,7 @@
 		"Runtime"
 	],
 	"groups": [
-		"modules"
+		"baylang"
 	],
 	"modules":
 	[
