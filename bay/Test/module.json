@@ -9,6 +9,12 @@
 		"LangBay/Program.bay",
 		"ModuleDescription.bay"
 	],
+	"require": [
+		"Runtime.Unit"
+	],
+	"groups": [
+		"test"
+	],
 	"src": "./",
 	"dest":
 	{

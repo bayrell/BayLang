@@ -54,5 +54,8 @@ static class ModuleDescription
 	pure Collection<Dict> entities() => [
 		new UnitTest("Bayrell.Lang.Test.LangBay.Base"),
 		new UnitTest("Bayrell.Lang.Test.LangBay.Expression"),
+		new UnitTest("Bayrell.Lang.Test.LangBay.Html"),
+		new UnitTest("Bayrell.Lang.Test.LangBay.Operator"),
+		new UnitTest("Bayrell.Lang.Test.LangBay.Program"),
 	];
 }

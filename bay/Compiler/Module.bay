@@ -52,6 +52,35 @@ class Module extends BaseStruct
 	
 	
 	/**
+	 * Has group
+	 */
+	bool hasGroup(string group_name)
+	{
+		if (rs::substr(group_name, 0, 1) != "@") return false;
+		group_name = rs::substr(group_name, 1);
+		Collection groups = this.config.get("groups");
+		if (groups == null) return false;
+		if (groups.indexOf(group_name) == -1) return false;
+		return true;
+	}
+	
+	
+	/**
+	 * Returns true if this module contains in module list include groups
+	 */
+	bool inModuleList(Collection<string> module_names)
+	{
+		for (int i=0; i<module_names.count(); i++)
+		{
+			string module_name = module_names.get(i);
+			if (this.name == module_name) return true;
+			if (this.hasGroup(module_name)) return true;
+		}
+		return false;
+	}
+	
+	
+	/**
 	 * Returns full source file.
 	 * Returns file_path
 	 */
@@ -71,6 +100,9 @@ class Module extends BaseStruct
 	 */
 	string resolveDestFile(string project_path, string relative_file_name, string lang)
 	{
+		if (not this.config.has("dest")) return "";
+		if (not this.config.get("dest").has(lang)) return "";
+		
 		string dest = this.config["dest", lang] |> default string "";
 		string dest_path = "";
 		bool is_local = rs::substr(dest, 0, 2) == "./";
@@ -170,5 +202,4 @@ class Module extends BaseStruct
 		
 		return success;
 	}
-	
 }
