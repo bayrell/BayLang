@@ -102,6 +102,12 @@
 		"LangNode/TranslatorNodeProgram.bay",
 		"ModuleDescription.bay"
 	],
+	"require": [
+		"Runtime"
+	],
+	"groups": [
+		"modules"
+	],
 	"modules":
 	[
 		{
