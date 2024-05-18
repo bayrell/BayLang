@@ -16,9 +16,9 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.BaseOpCode;
 
 
 struct OpSafe extends BaseOpCode

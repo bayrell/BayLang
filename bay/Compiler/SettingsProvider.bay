@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler;
+namespace BayLang.Compiler;
 
 use Runtime.fs;
 use Runtime.io;
@@ -24,15 +24,15 @@ use Runtime.re;
 use Runtime.lib;
 use Runtime.BaseProvider;
 use Runtime.Exceptions.RuntimeException;
-use Bayrell.Lang.Compiler.Module;
-use Bayrell.Lang.Exceptions.ParserUnknownError;
-use Bayrell.Lang.LangBay.ParserBay;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.LangNode.TranslatorNode;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.CoreTranslator;
-use Bayrell.Lang.LangUtils;
+use BayLang.Compiler.Module;
+use BayLang.Exceptions.ParserUnknownError;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangNode.TranslatorNode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+use BayLang.LangUtils;
 
 
 class SettingsProvider extends BaseProvider

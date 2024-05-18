@@ -16,22 +16,22 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangBay;
+namespace BayLang.LangBay;
 
 use Runtime.BaseObject;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpCollection;
-use Bayrell.Lang.OpCodes.OpDict;
-use Bayrell.Lang.OpCodes.OpDictPair;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpMath;
-use Bayrell.Lang.OpCodes.OpNew;
-use Bayrell.Lang.OpCodes.OpNumber;
-use Bayrell.Lang.OpCodes.OpString;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
-use Bayrell.Lang.LangBay.TranslatorBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpCollection;
+use BayLang.OpCodes.OpDict;
+use BayLang.OpCodes.OpDictPair;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpMath;
+use BayLang.OpCodes.OpNew;
+use BayLang.OpCodes.OpNumber;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.LangBay.TranslatorBay;
 
 
 class TranslatorBayExpression extends BaseObject

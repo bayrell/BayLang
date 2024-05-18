@@ -16,10 +16,10 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.BaseOpCode;
 
 
 struct SaveOpCode extends BaseStruct

@@ -16,15 +16,15 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangBay;
+namespace BayLang.LangBay;
 
 use Runtime.re;
 use Runtime.BaseObject;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.LangBay.TranslatorBayExpression;
-use Bayrell.Lang.LangBay.TranslatorBayHtml;
-use Bayrell.Lang.LangBay.TranslatorBayOperator;
-use Bayrell.Lang.LangBay.TranslatorBayProgram;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.LangBay.TranslatorBayExpression;
+use BayLang.LangBay.TranslatorBayHtml;
+use BayLang.LangBay.TranslatorBayOperator;
+use BayLang.LangBay.TranslatorBayProgram;
 
 
 class TranslatorBay extends BaseObject

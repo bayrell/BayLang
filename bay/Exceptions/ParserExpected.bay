@@ -16,30 +16,27 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Exceptions;
+namespace BayLang.Exceptions;
 
 use Runtime.Context;
 use Runtime.RuntimeUtils;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.LangConstant;
-use Bayrell.Lang.Exceptions.ParserError;
+use BayLang.Caret;
+use BayLang.LangConstant;
+use BayLang.Exceptions.ParserError;
 
 
 class ParserExpected extends ParserError
 {
-	
 	void constructor
 	(
 		string s, Caret caret, string file = "", 
-		Context context, Object prev = null
+		Object prev = null
 	){
 		parent(
 			s ~ " expected",
 			caret, file,
 			LangConstant::ERROR_PARSER_EXPECTED,
-			context,
 			prev
 		);
 	}
-	
 }

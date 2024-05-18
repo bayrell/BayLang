@@ -16,40 +16,40 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangES6;
+namespace BayLang.LangES6;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAssignStruct;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpBreak;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpContinue;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpDelete;
-use Bayrell.Lang.OpCodes.OpFor;
-use Bayrell.Lang.OpCodes.OpHtmlItems;
-use Bayrell.Lang.OpCodes.OpIf;
-use Bayrell.Lang.OpCodes.OpIfElse;
-use Bayrell.Lang.OpCodes.OpInc;
-use Bayrell.Lang.OpCodes.OpItems;
-use Bayrell.Lang.OpCodes.OpMath;
-use Bayrell.Lang.OpCodes.OpPipe;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
-use Bayrell.Lang.OpCodes.OpReturn;
-use Bayrell.Lang.OpCodes.OpSafe;
-use Bayrell.Lang.OpCodes.OpThrow;
-use Bayrell.Lang.OpCodes.OpTryCatch;
-use Bayrell.Lang.OpCodes.OpTryCatchItem;
-use Bayrell.Lang.OpCodes.OpWhile;
+use BayLang.SaveOpCode;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignStruct;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpBreak;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpContinue;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpDelete;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpIfElse;
+use BayLang.OpCodes.OpInc;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpMath;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
+use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpSafe;
+use BayLang.OpCodes.OpThrow;
+use BayLang.OpCodes.OpTryCatch;
+use BayLang.OpCodes.OpTryCatchItem;
+use BayLang.OpCodes.OpWhile;
 
 
 struct TranslatorES6Operator extends BaseStruct

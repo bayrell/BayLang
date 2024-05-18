@@ -16,28 +16,28 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangPHP;
+namespace BayLang.LangPHP;
 
 use Runtime.lib;
 use Runtime.re;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangBay.ParserBayHtml;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpFor;
-use Bayrell.Lang.OpCodes.OpHtmlAttribute;
-use Bayrell.Lang.OpCodes.OpHtmlContent;
-use Bayrell.Lang.OpCodes.OpHtmlItems;
-use Bayrell.Lang.OpCodes.OpHtmlTag;
-use Bayrell.Lang.OpCodes.OpHtmlValue;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpIf;
-use Bayrell.Lang.OpCodes.OpString;
-use Bayrell.Lang.OpCodes.OpWhile;
+use BayLang.SaveOpCode;
+use BayLang.LangBay.ParserBayHtml;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpHtmlAttribute;
+use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpHtmlValue;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpWhile;
 
 
 static class TranslatorPHPHtml

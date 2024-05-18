@@ -16,17 +16,17 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangBay;
+namespace BayLang.LangBay;
 
 use Runtime.BaseObject;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpDeclareClass;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpNamespace;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
-use Bayrell.Lang.OpCodes.OpUse;
-use Bayrell.Lang.LangBay.TranslatorBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpUse;
+use BayLang.LangBay.TranslatorBay;
 
 
 class TranslatorBayProgram extends BaseObject

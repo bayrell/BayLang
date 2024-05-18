@@ -16,15 +16,15 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangNode;
+namespace BayLang.LangNode;
 
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.LangES6.TranslatorES6Expression;
-use Bayrell.Lang.LangES6.TranslatorES6Operator;
-use Bayrell.Lang.LangES6.TranslatorES6Program;
-use Bayrell.Lang.OpCodes.OpDeclareClass;
-use Bayrell.Lang.OpCodes.OpItems;
-use Bayrell.Lang.OpCodes.OpNamespace;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangES6.TranslatorES6Expression;
+use BayLang.LangES6.TranslatorES6Operator;
+use BayLang.LangES6.TranslatorES6Program;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpNamespace;
 
 
 static class TranslatorNodeProgram extends TranslatorES6Program

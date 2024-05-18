@@ -1,0 +1,198 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Helper;
+
+use Runtime.fs;
+use Runtime.BaseObject;
+use BayLang.Helper.Project;
+use BayLang.Helper.RouteProcessor;
+use BayLang.Helper.WidgetProcessor;
+
+
+class Module extends BaseObject
+{
+	Project project = null;
+	string module_path = "";
+	Dict cache_info = null;
+	Dict module_info = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(Project project)
+	{
+		parent();
+		this.project = project;
+	}
+	
+	
+	/**
+	 * Read project from folder
+	 */
+	static Module readModule(Project project, string module_path)
+	{
+		Module module = new Module(project);
+		module.initFromFile(module_path);
+		if (not module.exists()) return null;
+		return module;
+	}
+	
+	
+	/**
+	 * Init module from file
+	 */
+	void initFromFile(string module_path)
+	{
+		this.module_info = null;
+		string file_name = rs::basename(module_path);
+		
+		if (file_name == "") return;
+		if (file_name[0] == ".") return;
+		
+		string module_json_path = module_path ~ "/" ~ "module.json";
+		if (not(await fs::isFile(module_json_path))) return;
+		
+		/* Read file */
+		string content = await fs::readFile(module_json_path);
+		Dict module_info = rtl::json_decode(content);
+		
+		/* Init module */
+		this.init(module_path, module_info);
+	}
+	
+	
+	/**
+	 * Init module
+	 */
+	void init(string module_path, Dict module_info)
+	{
+		this.module_info = null;
+		
+		if (not module_info) return;
+		if (not module_info.has("name")) return;
+		
+		this.module_path = module_path;
+		this.module_info = module_info;
+	}
+	
+	
+	/**
+	 * Returns true if project is exists
+	 */
+	void exists() => this.module_info != null;
+	
+	
+	/**
+	 * Returns module path
+	 */
+	string getPath() => this.exists() ? this.module_path : "";
+	
+	
+	/**
+	 * Returns source path
+	 */
+	string getSourcePath()
+	{
+		string module_src = this.module_info["src"] |> default string "";
+		string module_src_path = fs::join([ this.getPath(), module_src ]);
+		return module_src_path;
+	}
+	
+	
+	/**
+	 * Returns module name
+	 */
+	string getName() => this.exists() ? this.module_info.get("name") : "";
+	
+	
+	/**
+	 * Returns true if module has group
+	 */
+	bool hasGroup(string group_name)
+	{
+		if (rs::substr(group_name, 0, 1) != "@") return false;
+		group_name = rs::substr(group_name, 1);
+		Collection groups = this.module_info.get("groups");
+		if (groups == null) return false;
+		if (groups.indexOf(group_name) == -1) return false;
+		return true;
+	}
+	
+	
+	/**
+	 * Returns true if this module contains in module list include groups
+	 */
+	bool inModuleList(Collection<string> module_names)
+	{
+		for (int i=0; i<module_names.count(); i++)
+		{
+			string module_name = module_names.get(i);
+			if (this.name == module_name) return true;
+			if (this.hasGroup(module_name)) return true;
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Rename module
+	 */
+	void rename(string new_module_name)
+	{
+		return;
+		
+		if (not this.exists()) return;
+		
+		string new_file_name = rs::lower(new_module_name);
+		string old_file_name = this.file_name;
+		
+		/* Set new module name */
+		this.module_info.set("name", new_module_name);
+		
+		/* Save file */
+		string module_path = "/data/projects/" ~ old_file_name;
+		string module_json_path = module_path ~ "/" ~ "module.json";
+		string content = rtl::json_encode(this.module_info, rtl::JSON_PRETTY);
+		await fs::saveFile(module_json_path, content);
+		
+		/* Rename folder */
+		#ifcode PHP then
+		rename($module_path, "/data/projects/" . $new_file_name);
+		#endif
+	}
+	
+	
+	/**
+	 * Build cache
+	 */
+	async void buildCache(Map cache_info)
+	{
+		/* Set path */
+		cache_info.set("path", this.getPath());
+		
+		/* Build widgets cache */
+		WidgetProcessor widget_processor = new WidgetProcessor(this);
+		await widget_processor.buildCache(cache_info);
+		
+		/* Build routes cache */
+		RouteProcessor route_processor = new RouteProcessor(this);
+		await route_processor.buildCache(cache_info);
+	}
+}

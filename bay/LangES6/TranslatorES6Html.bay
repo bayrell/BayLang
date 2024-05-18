@@ -16,26 +16,26 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangES6;
+namespace BayLang.LangES6;
 
 use Runtime.lib;
 use Runtime.re;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangBay.ParserBayHtml;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpFor;
-use Bayrell.Lang.OpCodes.OpHtmlAttribute;
-use Bayrell.Lang.OpCodes.OpHtmlContent;
-use Bayrell.Lang.OpCodes.OpHtmlItems;
-use Bayrell.Lang.OpCodes.OpHtmlTag;
-use Bayrell.Lang.OpCodes.OpHtmlValue;
-use Bayrell.Lang.OpCodes.OpIf;
-use Bayrell.Lang.OpCodes.OpString;
-use Bayrell.Lang.OpCodes.OpWhile;
+use BayLang.SaveOpCode;
+use BayLang.LangBay.ParserBayHtml;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpHtmlAttribute;
+use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpHtmlValue;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpWhile;
 
 
 class TranslatorES6Html

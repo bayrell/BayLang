@@ -16,40 +16,40 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangES6;
+namespace BayLang.LangES6;
 
 use Runtime.BaseStruct;
 use Runtime.re;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpClassOf;
-use Bayrell.Lang.OpCodes.OpClassRef;
-use Bayrell.Lang.OpCodes.OpCollection;
-use Bayrell.Lang.OpCodes.OpCurry;
-use Bayrell.Lang.OpCodes.OpCurryArg;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpDict;
-use Bayrell.Lang.OpCodes.OpDictPair;
-use Bayrell.Lang.OpCodes.OpHtmlItems;
-use Bayrell.Lang.OpCodes.OpHtmlTag;
-use Bayrell.Lang.OpCodes.OpHtmlValue;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpInc;
-use Bayrell.Lang.OpCodes.OpMath;
-use Bayrell.Lang.OpCodes.OpMethod;
-use Bayrell.Lang.OpCodes.OpNegative;
-use Bayrell.Lang.OpCodes.OpNew;
-use Bayrell.Lang.OpCodes.OpNumber;
-use Bayrell.Lang.OpCodes.OpPipe;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpString;
-use Bayrell.Lang.OpCodes.OpTernary;
-use Bayrell.Lang.OpCodes.OpTypeConvert;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+use BayLang.SaveOpCode;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpClassOf;
+use BayLang.OpCodes.OpClassRef;
+use BayLang.OpCodes.OpCollection;
+use BayLang.OpCodes.OpCurry;
+use BayLang.OpCodes.OpCurryArg;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpDict;
+use BayLang.OpCodes.OpDictPair;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpHtmlValue;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpInc;
+use BayLang.OpCodes.OpMath;
+use BayLang.OpCodes.OpMethod;
+use BayLang.OpCodes.OpNegative;
+use BayLang.OpCodes.OpNew;
+use BayLang.OpCodes.OpNumber;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTernary;
+use BayLang.OpCodes.OpTypeConvert;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 struct TranslatorES6Expression extends BaseStruct

@@ -16,14 +16,14 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAnnotation;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpFlags;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 struct OpAssignStruct extends BaseOpCode

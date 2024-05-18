@@ -1,3 +1,4 @@
+/.cache
 /es6
 /php
 !/nodejs/

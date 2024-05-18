@@ -16,12 +16,12 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
 use Runtime.BaseObject;
 use Runtime.BaseStruct;
 use Runtime.Interfaces.SerializeInterface;
-use Bayrell.Lang.Caret;
+use BayLang.Caret;
 
 
 struct BaseOpCode extends BaseStruct

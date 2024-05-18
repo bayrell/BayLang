@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler.Commands;
+namespace BayLang.Compiler.Commands;
 
 use Runtime.io;
 use Runtime.Callback;
@@ -44,7 +44,7 @@ class Version extends BaseCommand
 	static async int run()
 	{
 		Callback runtime_version = new Callback("Runtime.ModuleDescription", "getModuleVersion");
-		Callback lang_version = new Callback("Bayrell.Lang.ModuleDescription", "getModuleVersion");
+		Callback lang_version = new Callback("BayLang.ModuleDescription", "getModuleVersion");
 		
 		io::print("Lang version: " ~ lang_version.apply());
 		io::print("Runtime version: " ~ runtime_version.apply());

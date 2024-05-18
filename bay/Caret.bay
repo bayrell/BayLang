@@ -16,11 +16,11 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.BaseObject;
 use Runtime.Reference;
-use Bayrell.Lang.Exceptions.ParserExpected;
+use BayLang.Exceptions.ParserExpected;
 
 
 class Caret extends BaseObject

@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.BaseStruct;
 use Runtime.FakeStruct;
@@ -24,14 +24,14 @@ use Runtime.lib;
 use Runtime.rs;
 use Runtime.Reference;
 use Runtime.Interfaces.ContextInterface;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.CoreToken;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.Exceptions.ParserExpected;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.Caret;
+use BayLang.CoreToken;
+use BayLang.SaveOpCode;
+use BayLang.Exceptions.ParserExpected;
+use BayLang.OpCodes.BaseOpCode;
 
 
-class CoreParser extends BaseStruct
+struct CoreParser extends BaseStruct
 {
 	/* Settings */
 	int tab_size = 4;

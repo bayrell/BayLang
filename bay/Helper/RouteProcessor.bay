@@ -1,0 +1,202 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Helper;
+
+use Runtime.fs;
+use Runtime.lib;
+use Runtime.BaseObject;
+use BayLang.Helper.Module;
+use BayLang.Exceptions.ParserUnknownError;
+use BayLang.LangBay.ParserBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDict;
+use BayLang.OpCodes.OpDictPair;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
+use BayLang.OpCodes.OpNew;
+use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTypeIdentifier;
+
+
+class RouteProcessor extends BaseObject
+{
+	Module module = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(Module module)
+	{
+		parent();
+		this.module = module;
+	}
+	
+	
+	/**
+	 * Returns file path
+	 */
+	string getRoutesFilePath() => fs::join([
+		this.module.getSourcePath(),
+		"Routes.bay"
+	]);
+	
+	
+	/**
+	 * Build cache
+	 */
+	async void buildCache(Map cache_info)
+	{
+		string file_path = this.getRoutesFilePath();
+		
+		/* Read file */
+		if (not(await fs::isFile(file_path))) return;
+		string content = await fs::readFile(file_path);
+		
+		try
+		{
+			/* Parse file */
+			ParserBay parser = new ParserBay();
+			list res = parser::parse(parser, content);
+			BaseOpCode op_code = res.get(1);
+			
+			/* Get routes */
+			Collection<Dict> routes = static::getRoutes(op_code);
+			if (routes.count() > 0)
+			{
+				cache_info.set("routes", routes);
+			}
+		}
+		catch (ParserUnknownError e)
+		{
+		}
+	}
+	
+	
+	/**
+	 * Returns routes
+	 */
+	static Collection<string> getRoutes(BaseOpCode op_code)
+	{
+		OpDeclareClass class_op_code = static::findClass(op_code);
+		if (not class_op_code) return [];
+		
+		OpDeclareFunction routes_op_code = static::findFunction(class_op_code);
+		if (not routes_op_code) return [];
+		
+		return static::findRoutes(routes_op_code);
+	}
+	
+	
+	/**
+	 * Find class
+	 */
+	static OpDeclareClass findClass(OpModule op_code) =>
+		(op_code instanceof OpModule)
+			? op_code.items.findItem(lib::isInstance(classof OpDeclareClass))
+			: null
+	;
+	
+	
+	/**
+	 * Find function
+	 */
+	static OpDeclareFunction findFunction(OpDeclareClass op_code) =>
+		(op_code instanceof OpDeclareClass)
+			? op_code.items.findItem(
+				bool (BaseOpCode op_code) =>
+					op_code instanceof OpDeclareFunction and op_code.name == "getRoutes"
+			)
+			: null
+	;
+	
+	
+	/**
+	 * Find expression
+	 */
+	static BaseOpCode findExpression(OpDeclareFunction op_code)
+	{
+		if (op_code.expression != null)
+		{
+			return op_code.expression;
+		}
+		
+		if (not(op_code.items instanceof OpItems)) return null;
+		
+		BaseOpCode op_code_item = op_code.items.items.get(0);
+		if (not(op_code_item instanceof OpReturn)) return null;
+		
+		return op_code_item.expression;
+	}
+	
+	
+	/**
+	 * Find routes
+	 */
+	static Collection<string> findRoutes(OpDeclareFunction op_code)
+	{
+		BaseOpCode expression = static::findExpression(op_code);
+		
+		if (expression == null) return [];
+		if (expression.values == null) return [];
+		
+		return expression.values
+			.filter(
+				bool (BaseOpCode op_code) => static::isRoute(op_code)
+			)
+			.map(
+				string (BaseObject op_code)
+				{
+					Map res = {};
+					Collection<OpDictPair> values = op_code.args.get(0).values;
+					for (int i=0; i<values.count(); i++)
+					{
+						OpDictPair value = values.get(i);
+						if (value.value instanceof OpString)
+						{
+							res.set(
+								value.key,
+								value.value.value
+							)
+						}
+					}
+					return res;
+				}
+			)
+		;
+	}
+	
+	
+	/**
+	 * Returns true if op_code is route
+	 */
+	static bool isRoute(BaseOpCode op_code)
+	{
+		if (not(op_code instanceof OpNew)) return false;
+		if (not(op_code.value instanceof OpTypeIdentifier)) return false;
+		if (op_code.value.entity_name.names.count() != 1) return false;
+		if (op_code.value.entity_name.names.get(0) != "RouteInfo") return false;
+		if (op_code.args.count() != 1) return false;
+		if (not(op_code.args.get(0) instanceof OpDict)) return false;
+		return true;
+	}
+}

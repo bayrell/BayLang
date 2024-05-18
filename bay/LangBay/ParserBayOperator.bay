@@ -16,44 +16,44 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangBay;
+namespace BayLang.LangBay;
 
 use Runtime.Reference;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.CoreToken;
-use Bayrell.Lang.Exceptions.ParserError;
-use Bayrell.Lang.Exceptions.ParserExpected;
-use Bayrell.Lang.LangBay.ParserBay;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAnnotation;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAssignStruct;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpBreak;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpContinue;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpDelete;
-use Bayrell.Lang.OpCodes.OpEntityName;
-use Bayrell.Lang.OpCodes.OpFlags;
-use Bayrell.Lang.OpCodes.OpFor;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpIf;
-use Bayrell.Lang.OpCodes.OpIfElse;
-use Bayrell.Lang.OpCodes.OpInc;
-use Bayrell.Lang.OpCodes.OpItems;
-use Bayrell.Lang.OpCodes.OpPipe;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpReturn;
-use Bayrell.Lang.OpCodes.OpSafe;
-use Bayrell.Lang.OpCodes.OpThrow;
-use Bayrell.Lang.OpCodes.OpTryCatch;
-use Bayrell.Lang.OpCodes.OpTryCatchItem;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
-use Bayrell.Lang.OpCodes.OpWhile;
+use BayLang.Caret;
+use BayLang.CoreToken;
+use BayLang.Exceptions.ParserError;
+use BayLang.Exceptions.ParserExpected;
+use BayLang.LangBay.ParserBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignStruct;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpBreak;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpContinue;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpDelete;
+use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpIfElse;
+use BayLang.OpCodes.OpInc;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpSafe;
+use BayLang.OpCodes.OpThrow;
+use BayLang.OpCodes.OpTryCatch;
+use BayLang.OpCodes.OpTryCatchItem;
+use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpWhile;
 
 
 static class ParserBayOperator

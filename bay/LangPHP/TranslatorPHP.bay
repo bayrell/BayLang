@@ -16,16 +16,16 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangPHP;
+namespace BayLang.LangPHP;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.CoreTranslator;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangPHP.TranslatorPHPExpression;
-use Bayrell.Lang.LangPHP.TranslatorPHPHtml;
-use Bayrell.Lang.LangPHP.TranslatorPHPOperator;
-use Bayrell.Lang.LangPHP.TranslatorPHPProgram;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+use BayLang.SaveOpCode;
+use BayLang.LangPHP.TranslatorPHPExpression;
+use BayLang.LangPHP.TranslatorPHPHtml;
+use BayLang.LangPHP.TranslatorPHPOperator;
+use BayLang.LangPHP.TranslatorPHPProgram;
+use BayLang.OpCodes.BaseOpCode;
 
 
 struct TranslatorPHP extends CoreTranslator

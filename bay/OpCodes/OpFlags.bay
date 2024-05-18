@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
 use Runtime.BaseStruct;
 

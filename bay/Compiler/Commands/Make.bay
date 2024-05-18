@@ -16,13 +16,13 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler.Commands;
+namespace BayLang.Compiler.Commands;
 
 use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
-use Bayrell.Lang.Compiler.Commands.Modules;
-use Bayrell.Lang.Compiler.SettingsProvider;
+use BayLang.Compiler.Commands.Modules;
+use BayLang.Compiler.SettingsProvider;
 
 
 class Make extends BaseCommand

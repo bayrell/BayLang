@@ -16,11 +16,11 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler;
+namespace BayLang.Compiler;
 
 use Runtime.Entity.Provider;
 use Runtime.Console.Annotations.ConsoleCommand;
-use Bayrell.Lang.ModuleDescription as BayLangModuleDescription;
+use BayLang.ModuleDescription as BayLangModuleDescription;
 
 
 static class ModuleDescription
@@ -29,7 +29,7 @@ static class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleName() => "Bayrell.Lang.Compiler";
+	pure string getModuleName() => "BayLang.Compiler";
 	
 	
 	/**
@@ -45,8 +45,8 @@ static class ModuleDescription
 	 */
 	pure Map<string> requiredModules() =>
 	{
-		'Bayrell.Lang': '*',
-		'Bayrell.Lang.Test': '*',
+		'BayLang': '*',
+		'BayLang.Test': '*',
 		'Runtime.Unit': '*',
 	};
 	
@@ -56,11 +56,11 @@ static class ModuleDescription
 	 */
 	pure Collection<Dict> entities() => 
 	[
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Make"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.MakeAll"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Modules"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Version"),
-		new ConsoleCommand("Bayrell.Lang.Compiler.Commands.Watch"),
-		new Provider("Bayrell.Lang.Compiler.SettingsProvider"),
+		new ConsoleCommand("BayLang.Compiler.Commands.Make"),
+		new ConsoleCommand("BayLang.Compiler.Commands.MakeAll"),
+		new ConsoleCommand("BayLang.Compiler.Commands.Modules"),
+		new ConsoleCommand("BayLang.Compiler.Commands.Version"),
+		new ConsoleCommand("BayLang.Compiler.Commands.Watch"),
+		new Provider("BayLang.Compiler.SettingsProvider"),
 	];
 }

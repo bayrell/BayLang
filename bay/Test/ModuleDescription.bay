@@ -16,10 +16,10 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Test;
+namespace BayLang.Test;
 
 use Runtime.Unit.UnitTest;
-use Bayrell.Lang.ModuleDescription as BayLangDescription;
+use BayLang.ModuleDescription as BayLangDescription;
 
 
 static class ModuleDescription
@@ -28,7 +28,7 @@ static class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleName() => "Bayrell.Lang.Test";
+	pure string getModuleName() => "BayLang.Test";
 	
 	
 	/**
@@ -44,7 +44,7 @@ static class ModuleDescription
 	 */
 	pure Map<string> requiredModules() =>
 	{
-		'Bayrell.Lang': '>=0.12',
+		'BayLang': '>=0.12',
 	};
 	
 	
@@ -52,10 +52,10 @@ static class ModuleDescription
 	 * Returns enities
 	 */
 	pure Collection<Dict> entities() => [
-		new UnitTest("Bayrell.Lang.Test.LangBay.Base"),
-		new UnitTest("Bayrell.Lang.Test.LangBay.Expression"),
-		new UnitTest("Bayrell.Lang.Test.LangBay.Html"),
-		new UnitTest("Bayrell.Lang.Test.LangBay.Operator"),
-		new UnitTest("Bayrell.Lang.Test.LangBay.Program"),
+		new UnitTest("BayLang.Test.LangBay.Base"),
+		new UnitTest("BayLang.Test.LangBay.Expression"),
+		new UnitTest("BayLang.Test.LangBay.Html"),
+		new UnitTest("BayLang.Test.LangBay.Operator"),
+		new UnitTest("BayLang.Test.LangBay.Program"),
 	];
 }

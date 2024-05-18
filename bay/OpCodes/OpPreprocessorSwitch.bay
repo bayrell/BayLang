@@ -16,10 +16,10 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpPreprocessorIfCode;
 
 
 struct OpPreprocessorSwitch extends BaseOpCode

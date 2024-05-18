@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler;
+namespace BayLang.Compiler;
 
 use Runtime.fs;
 use Runtime.re;

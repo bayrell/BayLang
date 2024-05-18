@@ -1,0 +1,320 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Helper;
+
+use Runtime.fs;
+use Runtime.BaseObject;
+use BayLang.Helper.Module;
+
+
+class Project extends BaseObject
+{
+	string project_path = "";
+	Map project_info = null;
+	Map project_cache = null;
+	Map<Module> modules = null;
+	
+	
+	/**
+	 * Read projects
+	 */
+	async static Collection<Project> readProjects(string projects_path)
+	{
+		if (not(await fs::isFolder(projects_path))) return [];
+		
+		Vector<string> result = [];
+		Collection<string> items = await fs::listDir(projects_path);
+		for (int i=0; i<items.count(); i++)
+		{
+			string file_name = items.get(i);
+			Project project = await static::readProject(fs::join([projects_path, file_name]));
+			if (project) result.push(project);
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * Read project from folder
+	 */
+	async static Project readProject(string project_path)
+	{
+		Project project = new Project();
+		await project.initFromFile(project_path);
+		if (not project.exists()) return null;
+		return project;
+	}
+	
+	
+	/**
+	 * Init from file
+	 */
+	async void initFromFile(string project_path)
+	{
+		this.module_info = null;
+		string file_name = rs::basename(project_path);
+		
+		if (file_name == "") return;
+		if (file_name[0] == ".") return;
+		
+		string project_json_path = fs::join([project_path, "project.json"]);
+		if (not(await fs::isFolder(project_path))) return;
+		if (not(await fs::isFile(project_json_path))) return;
+		
+		/* Read file */
+		string content = await fs::readFile(project_json_path);
+		Dict project_info = rtl::json_decode(content);
+		
+		/* Init project */
+		this.init(project_path, project_info);
+	}
+	
+	
+	/**
+	 * Init project
+	 */
+	void init(string project_path, Dict project_info)
+	{
+		this.project_info = null;
+		
+		if (not project_info) return;
+		if (not project_info.has("name")) return;
+		
+		this.project_path = project_path;
+		this.project_info = project_info;
+	}
+	
+	
+	/**
+	 * Returns true if project is exists
+	 */
+	void exists() => this.project_info != null;
+	
+	
+	/**
+	 * Returns project path
+	 */
+	string getPath() => this.exists() ? this.project_path : "";
+	
+	
+	/**
+	 * Returns project file_name
+	 */
+	string getID() => this.exists() ? rs::basename(this.project_path) : "";
+	
+	
+	/**
+	 * Returns project name
+	 */
+	string getName() => this.exists() ? this.project_info.get("name") : "";
+	
+	
+	/**
+	 * Set project name
+	 */
+	void setName(string name)
+	{
+		if (not this.exists()) return;
+		this.project_info.set("name", name);
+	}
+	
+	
+	/**
+	 * Returns project description
+	 */
+	string getDescription() => this.exists() ? this.project_info.get("description") : "";
+	
+	
+	/**
+	 * Set project description
+	 */
+	void setDescription(string description)
+	{
+		if (not this.exists()) return;
+		this.project_info.set("description", description);
+	}
+	
+	
+	/**
+	 * Returns project type
+	 */
+	string getType() => this.exists() ? this.project_info.get("type") : "";
+	
+	
+	/**
+	 * Set project type
+	 */
+	void setType(string project_type)
+	{
+		if (not this.exists()) return;
+		this.project_info.set("type", project_type);
+	}
+	
+	
+	/**
+	 * Save project
+	 */
+	async void saveInfo()
+	{
+		string project_json_path = fs::join([this.project_path, "project.json"]);
+		string content = rtl::json_encode(this.project_info, rtl::JSON_PRETTY);
+		await fs::saveFile(project_json_path, content);
+	}
+	
+	
+	/**
+	 * Read modules
+	 */
+	void readModules()
+	{
+		if (not this.exists()) return;
+		
+		this.modules = {};
+		
+		/* Read sub modules */
+		this.readSubModules(this.project_path, this.project_info.get("modules"));
+	}
+	
+	
+	/**
+	 * Read sub modules
+	 */
+	async void readSubModules(string path, Collection<Dict> items)
+	{
+		if (not items) return;
+		for (int i=0; i<items.count(); i++)
+		{
+			Dict item = items.get(i);
+			string module_src = item.get("src");
+			string module_type = item.get("type");
+			string folder_path = fs::join([ path, module_src ]);
+			
+			/* Read from folder */
+			if (module_type == "folder")
+			{
+				await this.readModuleFromFolder(folder_path);
+			}
+			
+			/* Read module */
+			else if (module_type == "folder")
+			{
+				Module module = Module::readModule(this, folder_path);
+				if (module)
+				{
+					/* Set module */
+					this.modules.set(module.getName(), module);
+					
+					/* Read sub modules */
+					await this.readSubModules(module.getPath(), module.module_info.get("modules"));
+				}
+			}
+		}
+	}
+	
+	
+	/**
+	 * Read sub modules
+	 */
+	async void readModuleFromFolder(string folder_path)
+	{
+		if (not(await fs::isFolder(folder_path))) return;
+		
+		Collection<string> items = await fs::listDir(folder_path);
+		for (int i=0; i<items.count(); i++)
+		{
+			string file_name = items.get(i);
+			
+			/* Read module */
+			Module module = Module::readModule(this, fs::join([folder_path, file_name]));
+			if (module)
+			{
+				/* Set module */
+				this.modules.set(module.getName(), module);
+				
+				/* Read sub modules */
+				this.readSubModules(module.getPath(), module.module_info.get("modules"));
+			}
+		}
+	}
+	
+	
+	/**
+	 * Build project cache
+	 */
+	async void buildCache()
+	{
+		/* Read cache */
+		await this.readCache();
+		
+		Map modules_cache = {};
+		this.project_cache.set("modules", modules_cache);
+		
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			
+			/* Build module cache */
+			modules_cache.set(module_name, {});
+			await module.buildCache(modules_cache.get(module_name));
+		}
+		
+		/* Save */
+		await this.saveCache();
+	}
+	
+	
+	/**
+	 * Read project cache
+	 */
+	async void readCache()
+	{
+		this.project_cache = {};
+		
+		/* Get cache path */
+		string cache_json_path = fs::join([this.getPath(), ".cache", "cache.json"]);
+		if (not(await fs::isFile(cache_json_path))) return;
+		
+		/* Read file */
+		string content = await fs::readFile(cache_json_path);
+		this.project_cache = rtl::json_decode(content);
+		
+		if (not this.project_cache) this.project_cache = {};
+	}
+	
+	
+	/**
+	 * Save project cache
+	 */
+	async void saveCache()
+	{
+		/* Get cache folder */
+		string cache_path = fs::join([this.getPath(), ".cache"]);
+		if (not(await fs::isFolder(cache_path)))
+		{
+			await fs::mkdir(cache_path);
+		}
+		
+		/* Save cache to file */
+		string cache_json_path = fs::join([cache_path, "cache.json"]);
+		string content = rtl::json_encode(this.project_cache, rtl::JSON_PRETTY);
+		await fs::saveFile(cache_json_path, content);
+	}
+}

@@ -16,14 +16,14 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Compiler.Commands;
+namespace BayLang.Compiler.Commands;
 
 use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
-use Bayrell.Lang.Compiler.Module;
-use Bayrell.Lang.Compiler.SettingsProvider;
-use Bayrell.Lang.Exceptions.ParserUnknownError;
+use BayLang.Compiler.Module;
+use BayLang.Compiler.SettingsProvider;
+use BayLang.Exceptions.ParserUnknownError;
 
 
 class Watch extends BaseCommand

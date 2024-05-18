@@ -16,25 +16,25 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangBay;
+namespace BayLang.LangBay;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.CoreParser;
-use Bayrell.Lang.CoreToken;
-use Bayrell.Lang.LangBay.ParserBayBase;
-use Bayrell.Lang.LangBay.ParserBayExpression;
-use Bayrell.Lang.LangBay.ParserBayHtml;
-use Bayrell.Lang.LangBay.ParserBayOperator;
-use Bayrell.Lang.LangBay.ParserBayPreprocessor;
-use Bayrell.Lang.LangBay.ParserBayProgram;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpDeclareClass;
-use Bayrell.Lang.OpCodes.OpNamespace;
-use Bayrell.Lang.OpCodes.OpFlags;
+use BayLang.Caret;
+use BayLang.CoreParser;
+use BayLang.CoreToken;
+use BayLang.LangBay.ParserBayBase;
+use BayLang.LangBay.ParserBayExpression;
+use BayLang.LangBay.ParserBayHtml;
+use BayLang.LangBay.ParserBayOperator;
+use BayLang.LangBay.ParserBayPreprocessor;
+use BayLang.LangBay.ParserBayProgram;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpFlags;
 
 
-class ParserBay extends CoreParser
+struct ParserBay extends CoreParser
 {
 	/* Work */
 	Dict<bool> vars = null;

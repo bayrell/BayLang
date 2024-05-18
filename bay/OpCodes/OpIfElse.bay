@@ -16,10 +16,10 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.BaseOpCode;
 
 
 struct OpIfElse extends BaseStruct

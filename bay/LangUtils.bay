@@ -16,16 +16,16 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.CoreParser;
 use Runtime.Interfaces.ContextInterface;
-use Bayrell.Lang.LangBay.TranslatorBay;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.LangNode.TranslatorNode;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.CoreTranslator;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangNode.TranslatorNode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
 
 
 static class LangUtils

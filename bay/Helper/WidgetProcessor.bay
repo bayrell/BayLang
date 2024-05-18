@@ -1,0 +1,184 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Helper;
+
+use Runtime.fs;
+use Runtime.lib;
+use Runtime.BaseObject;
+use BayLang.Helper.Module;
+use BayLang.Exceptions.ParserUnknownError;
+use BayLang.LangBay.ParserBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
+use BayLang.OpCodes.OpNew;
+use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTypeIdentifier;
+
+
+class WidgetProcessor extends BaseObject
+{
+	Module module = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(Module module)
+	{
+		parent();
+		this.module = module;
+	}
+	
+	
+	/**
+	 * Returns file path
+	 */
+	string getModuleDescriptionFilePath() => fs::join([
+		this.module.getSourcePath(),
+		"ModuleDescription.bay"
+	]);
+	
+	
+	/**
+	 * Build cache
+	 */
+	async void buildCache(Map cache_info)
+	{
+		string file_path = this.getModuleDescriptionFilePath();
+		
+		/* Read file */
+		if (not(await fs::isFile(file_path))) return;
+		string content = await fs::readFile(file_path);
+		
+		try
+		{
+			/* Parse file */
+			ParserBay parser = new ParserBay();
+			list res = parser::parse(parser, content);
+			BaseOpCode op_code = res.get(1);
+			
+			/* Get widgets */
+			Collection<string> widgets = static::getWidgets(op_code);
+			if (widgets.count() > 0)
+			{
+				cache_info.set("widgets", widgets);
+			}
+		}
+		catch (ParserUnknownError e)
+		{
+		}
+	}
+	
+	
+	/**
+	 * Returns widgets
+	 */
+	static Collection<string> getWidgets(BaseOpCode op_code)
+	{
+		OpDeclareClass class_op_code = static::findClass(op_code);
+		if (not class_op_code) return [];
+		
+		OpDeclareFunction entities_op_code = static::findEntities(class_op_code);
+		if (not entities_op_code) return [];
+		
+		return static::findWidgets(entities_op_code);
+	}
+	
+	
+	/**
+	 * Find class
+	 */
+	static OpDeclareClass findClass(OpModule op_code) =>
+		(op_code instanceof OpModule)
+			? op_code.items.findItem(lib::isInstance(classof OpDeclareClass))
+			: null
+	;
+	
+	
+	/**
+	 * Find entities
+	 */
+	static OpDeclareFunction findEntities(OpDeclareClass op_code) =>
+		(op_code instanceof OpDeclareClass)
+			? op_code.items.findItem(
+				bool (BaseOpCode op_code) =>
+					op_code instanceof OpDeclareFunction and op_code.name == "entities"
+			)
+			: null
+	;
+	
+	
+	/**
+	 * Find expression
+	 */
+	static BaseOpCode findExpression(OpDeclareFunction op_code)
+	{
+		if (op_code.expression != null)
+		{
+			return op_code.expression;
+		}
+		
+		if (not(op_code.items instanceof OpItems)) return null;
+		
+		BaseOpCode op_code_item = op_code.items.items.get(0);
+		if (not(op_code_item instanceof OpReturn)) return null;
+		
+		return op_code_item.expression;
+	}
+	
+	
+	/**
+	 * Find widgets
+	 */
+	static Collection<string> findWidgets(OpDeclareFunction op_code)
+	{
+		BaseOpCode expression = static::findExpression(op_code);
+		
+		if (expression == null) return [];
+		if (expression.values == null) return [];
+		
+		return expression.values
+			.filter(
+				bool (BaseOpCode op_code) => static::isWidget(op_code)
+			)
+			.map(
+				string (BaseObject op_code) => op_code.args.get(0).value
+			)
+		;
+	}
+	
+	
+	/**
+	 * Returns true if op_code is widget
+	 */
+	static bool isWidget(BaseOpCode op_code)
+	{
+		if (not(op_code instanceof OpNew)) return false;
+		if (not(op_code.value instanceof OpTypeIdentifier)) return false;
+		if (op_code.value.entity_name.names.count() != 1) return false;
+		if (op_code.value.entity_name.names.get(0) != "Widget") return false;
+		if (op_code.args.count() != 1) return false;
+		if (not(op_code.args.get(0) instanceof OpString)) return false;
+		return true;
+	}
+}

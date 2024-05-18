@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 
 static class ModuleDescription
@@ -25,7 +25,7 @@ static class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleName() => "Bayrell.Lang";
+	pure string getModuleName() => "BayLang";
 	
 	
 	/**

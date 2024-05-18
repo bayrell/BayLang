@@ -16,15 +16,15 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Test.LangBay;
+namespace BayLang.Test.LangBay;
 
 use Runtime.io;
 use Runtime.Unit.AssertHelper;
 use Runtime.Unit.Test;
-use Bayrell.Lang.LangBay.ParserBay;
-use Bayrell.Lang.LangBay.TranslatorBay;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.CoreTranslator;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
 
 
 class Expression
