@@ -28,9 +28,8 @@ use BayLang.Helper.WidgetProcessor;
 class Module extends BaseObject
 {
 	Project project = null;
-	string module_path = "";
-	Dict cache_info = null;
-	Dict module_info = null;
+	string path = "";
+	Dict info = null;
 	
 	
 	/**
@@ -46,10 +45,10 @@ class Module extends BaseObject
 	/**
 	 * Read project from folder
 	 */
-	static Module readModule(Project project, string module_path)
+	static Module readModule(Project project, string path)
 	{
 		Module module = new Module(project);
-		module.initFromFile(module_path);
+		module.initFromFile(path);
 		if (not module.exists()) return null;
 		return module;
 	}
@@ -60,7 +59,7 @@ class Module extends BaseObject
 	 */
 	void initFromFile(string module_path)
 	{
-		this.module_info = null;
+		this.info = null;
 		string file_name = rs::basename(module_path);
 		
 		if (file_name == "") return;
@@ -83,26 +82,26 @@ class Module extends BaseObject
 	 */
 	void init(string module_path, Dict module_info)
 	{
-		this.module_info = null;
+		this.info = null;
 		
 		if (not module_info) return;
 		if (not module_info.has("name")) return;
 		
-		this.module_path = module_path;
-		this.module_info = module_info;
+		this.path = module_path;
+		this.info = module_info;
 	}
 	
 	
 	/**
 	 * Returns true if project is exists
 	 */
-	void exists() => this.module_info != null;
+	void exists() => this.info != null;
 	
 	
 	/**
 	 * Returns module path
 	 */
-	string getPath() => this.exists() ? this.module_path : "";
+	string getPath() => this.exists() ? this.path : "";
 	
 	
 	/**
@@ -110,7 +109,7 @@ class Module extends BaseObject
 	 */
 	string getSourcePath()
 	{
-		string module_src = this.module_info["src"] |> default string "";
+		string module_src = this.info["src"] |> default string "";
 		string module_src_path = fs::join([ this.getPath(), module_src ]);
 		return module_src_path;
 	}
@@ -119,7 +118,13 @@ class Module extends BaseObject
 	/**
 	 * Returns module name
 	 */
-	string getName() => this.exists() ? this.module_info.get("name") : "";
+	string getName() => this.exists() ? this.info.get("name") : "";
+	
+	
+	/**
+	 * Returns info
+	 */
+	Dict getInfo() => this.info;
 	
 	
 	/**
@@ -129,7 +134,7 @@ class Module extends BaseObject
 	{
 		if (rs::substr(group_name, 0, 1) != "@") return false;
 		group_name = rs::substr(group_name, 1);
-		Collection groups = this.module_info.get("groups");
+		Collection groups = this.info.get("groups");
 		if (groups == null) return false;
 		if (groups.indexOf(group_name) == -1) return false;
 		return true;
@@ -164,17 +169,17 @@ class Module extends BaseObject
 		string old_file_name = this.file_name;
 		
 		/* Set new module name */
-		this.module_info.set("name", new_module_name);
+		this.info.set("name", new_module_name);
 		
 		/* Save file */
 		string module_path = "/data/projects/" ~ old_file_name;
 		string module_json_path = module_path ~ "/" ~ "module.json";
-		string content = rtl::json_encode(this.module_info, rtl::JSON_PRETTY);
+		string content = rtl::json_encode(this.info, rtl::JSON_PRETTY);
 		await fs::saveFile(module_json_path, content);
 		
 		/* Rename folder */
 		#ifcode PHP then
-		rename($module_path, "/data/projects/" . $new_file_name);
+		rename($this.path, "/data/projects/" . $new_file_name);
 		#endif
 	}
 	
