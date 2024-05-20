@@ -180,6 +180,12 @@ class Project extends BaseObject
 	
 	
 	/**
+	 * Returns entry_points
+	 */
+	void getEntryPoints() => this.info.get("entry_points");
+	
+	
+	/**
 	 * Save project
 	 */
 	async void saveInfo()
