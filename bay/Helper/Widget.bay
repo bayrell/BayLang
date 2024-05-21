@@ -1,0 +1,206 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Helper;
+
+use Runtime.fs;
+use Runtime.BaseObject;
+use Runtime.Serializer;
+use BayLang.Helper.Module;
+use BayLang.Helper.Project;
+use BayLang.OpCodes.BaseOpCode;
+
+
+class Widget extends BaseObject
+{
+	Module module = null;
+	string name = "";
+	BaseOpCode model = null;
+	BaseOpCode component = null;
+	
+	/* Content */
+	string model_content = null;
+	string component_content = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(Module module)
+	{
+		parent();
+		this.module = module;
+	}
+	
+	
+	/**
+	 * Is model based widget
+	 */
+	bool isModelBased() => rs::substr(this.name, -5) == "Model";
+	
+	
+	/**
+	 * Process project cache
+	 */
+	void projectCache(Serializer serializer, Map data)
+	{
+		serializer.process(this, "name", data);
+	}
+	
+	
+	/**
+	 * Returns project
+	 */
+	Project getProject() => this.module ? this.module.getProject() : null;
+	
+	
+	/**
+	 * Load widget
+	 */
+	async void load()
+	{
+		if (this.isModelBased())
+		{
+			/* Load model from cache */
+			if (not this.model)
+			{
+				await this.loadModelFromCache();
+			}
+			
+			/* Load model from file */
+			if (not this.model)
+			{
+				await this.loadModelFromFile();
+			}
+		}
+		
+		/* Load component from cache */
+		if (not this.component)
+		{
+			await this.loadComponentFromCache();
+		}
+		
+		/* Load component from file */
+		if (not this.component)
+		{
+			await this.loadComponentFromFile();
+		}
+	}
+	
+	
+	/** Model **/
+	
+	/**
+	 * Returns model name
+	 */
+	string getModelName() => "";
+	
+	
+	/**
+	 * Returns model path
+	 */
+	string getModelPath()
+	{
+		if (not this.isModelBased()) return "";
+		return this.module.resolveClassName(this.name);
+	}
+	
+	
+	/**
+	 * Returns model content
+	 */
+	async string getModelContent() => this.model_content;
+	
+	
+	/**
+	 * Read model op_code
+	 */
+	async void loadModelFromCache()
+	{
+	}
+	
+	
+	/**
+	 * Read model op_code
+	 */
+	async void loadModelFromFile()
+	{
+		if (this.model_content !== null) return;
+		this.model_content = "";
+		
+		string file_path = this.getModelPath();
+		if (not(await fs::isFile(file_path))) return;
+		
+		this.model_content = await fs::readFile(file_path);
+	}
+	
+	
+	/**
+	 * Returns model op code
+	 */
+	async BaseOpCode getModelOpCode() => this.model;
+	
+	
+	/** Component **/
+	
+	/**
+	 * Returns component name
+	 */
+	string getComponetName() => "";
+	
+	
+	/**
+	 * Returns component path
+	 */
+	string getComponetPath() => "";
+	
+	
+	/**
+	 * Returns component content
+	 */
+	async string getComponetContent() => this.component_content;
+	
+	
+	/**
+	 * Read component op_code
+	 */
+	async void loadComponentFromCache()
+	{
+	}
+	
+	
+	/**
+	 * Read component op_code
+	 */
+	async void loadComponentFromFile()
+	{
+		if (this.component_content !== null) return;
+		this.component_content = "";
+		
+		string file_path = this.getComponetPath();
+		if (not(await fs::isFile(file_path))) return;
+		
+		this.component_content = await fs::readFile(file_path);
+	}
+	
+	
+	/**
+	 * Returns component op code
+	 */
+	async BaseOpCode getComponentOpCode() => this.component;
+}

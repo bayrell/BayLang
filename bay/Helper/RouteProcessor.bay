@@ -62,9 +62,9 @@ class RouteProcessor extends BaseObject
 	
 	
 	/**
-	 * Build cache
+	 * Load routes
 	 */
-	async void buildCache(Map cache_info)
+	async void load()
 	{
 		string file_path = this.getRoutesFilePath();
 		
@@ -80,11 +80,7 @@ class RouteProcessor extends BaseObject
 			BaseOpCode op_code = res.get(1);
 			
 			/* Get routes */
-			Collection<Dict> routes = static::getRoutes(op_code);
-			if (routes.count() > 0)
-			{
-				cache_info.set("routes", routes);
-			}
+			this.module.routes = static::getRoutes(op_code);
 		}
 		catch (ParserUnknownError e)
 		{
@@ -95,7 +91,7 @@ class RouteProcessor extends BaseObject
 	/**
 	 * Returns routes
 	 */
-	static Collection<string> getRoutes(BaseOpCode op_code)
+	static Collection<Dict> getRoutes(BaseOpCode op_code)
 	{
 		OpDeclareClass class_op_code = static::findClass(op_code);
 		if (not class_op_code) return [];
@@ -152,7 +148,7 @@ class RouteProcessor extends BaseObject
 	/**
 	 * Find routes
 	 */
-	static Collection<string> findRoutes(OpDeclareFunction op_code)
+	static Collection<Dict> findRoutes(OpDeclareFunction op_code)
 	{
 		BaseOpCode expression = static::findExpression(op_code);
 		

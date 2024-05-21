@@ -20,14 +20,15 @@ namespace BayLang.Helper;
 
 use Runtime.fs;
 use Runtime.BaseObject;
+use Runtime.Serializer;
 use BayLang.Helper.Module;
+use BayLang.Helper.Widget;
 
 
 class Project extends BaseObject
 {
 	string path = "";
 	Map info = null;
-	Map cache = null;
 	Map<Module> modules = null;
 	
 	
@@ -67,7 +68,6 @@ class Project extends BaseObject
 	 */
 	async void initFromFile(string project_path)
 	{
-		this.info = null;
 		string file_name = rs::basename(project_path);
 		
 		if (file_name == "") return;
@@ -83,6 +83,9 @@ class Project extends BaseObject
 		
 		/* Init project */
 		this.init(project_path, project_info);
+		
+		/* Load data from cache */
+		await this.loadCache();
 	}
 	
 	
@@ -91,8 +94,6 @@ class Project extends BaseObject
 	 */
 	void init(string project_path, Dict project_info)
 	{
-		this.info = null;
-		
 		if (not project_info) return;
 		if (not project_info.has("name")) return;
 		
@@ -102,9 +103,85 @@ class Project extends BaseObject
 	
 	
 	/**
+	 * Returns project cache path
+	 */
+	string getCachePath() =>
+		this.exists()
+			? fs::join([this.getPath(), ".cache", "cache.json"])
+			: ""
+	;
+	
+	
+	/**
+	 * Load project from cache
+	 */
+	async void loadCache()
+	{
+		/* Get json path */
+		string cache_path = this.getCachePath();
+		if (not(await fs::isFile(cache_path))) return;
+		
+		/* Create serializer */
+		Serializer serializer = new Serializer();
+		
+		/* Read file */
+		string content = await fs::readFile(cache_path);
+		Dict data = serializer.json_decode(content);
+		if (not data) return;
+		
+		/* Import data */
+		serializer.setCallback("projectCache");
+		serializer.setFlag(Serializer::ALLOW_CLASS_NAME);
+		serializer.setFlag(Serializer::IMPORT);
+		this.projectCache(serializer, data);
+	}
+	
+	
+	/**
+	 * Save project to cache
+	 */
+	async void saveCache()
+	{
+		/* Get json folder */
+		string cache_path = this.getCachePath();
+		string folder_path = rs::dirname(cache_path);
+		if (not(await fs::isFolder(folder_path)))
+		{
+			await fs::mkdir(folder_path);
+		}
+		
+		/* Create serializer */
+		Serializer serializer = new Serializer();
+		serializer.setCallback("projectCache");
+		/*serializer.setFlag(Serializer::ALLOW_CLASS_NAME);*/
+		serializer.setFlag(Serializer::EXPORT);
+		serializer.setFlag(Serializer::JSON_PRETTY);
+		
+		/* Export data */
+		Dict data = {};
+		this.projectCache(serializer, data);
+		
+		/* Save cache to file */
+		string content = serializer.json_encode(data);
+		await fs::saveFile(cache_path, content);
+	}
+	
+	
+	/**
+	 * Process project cache
+	 */
+	void projectCache(Serializer serializer, Map data)
+	{
+		serializer.processItems(this, "modules", data,
+			Module (Dict module) => new Module(this)
+		);
+	}
+	
+	
+	/**
 	 * Returns true if project is exists
 	 */
-	void exists() => this.info != null;
+	void exists() => this.info != "";
 	
 	
 	/**
@@ -168,21 +245,30 @@ class Project extends BaseObject
 	
 	
 	/**
-	 * Returns cache
+	 * Returns module
 	 */
-	Dict getCache() => this.cache;
+	Module getModule(string module_name) => this.modules.get(module_name);
 	
 	
 	/**
-	 * Returns info
+	 * Returns widget
 	 */
-	Dict getInfo() => this.info;
-	
-	
-	/**
-	 * Returns entry_points
-	 */
-	void getEntryPoints() => this.info.get("entry_points");
+	async Widget getWidget(string widget_name)
+	{
+		if (not this.modules) return null;
+		
+		/* Find widget by name */
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			Widget widget = module.getWidget(widget_name);
+			if (widget) return widget;
+		}
+		
+		return null;
+	}
 	
 	
 	/**
@@ -199,14 +285,30 @@ class Project extends BaseObject
 	/**
 	 * Read modules
 	 */
-	void readModules()
+	async void readModules()
 	{
 		if (not this.exists()) return;
 		
 		this.modules = {};
 		
 		/* Read sub modules */
-		this.readSubModules(this.path, this.info.get("modules"));
+		await this.readSubModules(this.path, this.info.get("modules"));
+	}
+	
+	
+	/**
+	 * Load modules
+	 */
+	async void loadModules()
+	{
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			await module.loadRoutes();
+			await module.loadWidgets();
+		}
 	}
 	
 	
@@ -266,73 +368,8 @@ class Project extends BaseObject
 				this.modules.set(module.getName(), module);
 				
 				/* Read sub modules */
-				this.readSubModules(module.getPath(), module.getInfo().get("modules"));
+				this.readSubModules(module.getPath(), module.submodules);
 			}
 		}
-	}
-	
-	
-	/**
-	 * Build project cache
-	 */
-	async void buildCache()
-	{
-		/* Read cache */
-		await this.readCache();
-		
-		Map modules_cache = {};
-		this.cache.set("modules", modules_cache);
-		
-		Collection<string> modules = this.modules.keys().sort();
-		for (int i=0; i<modules.count(); i++)
-		{
-			string module_name = modules.get(i);
-			Module module = this.modules.get(module_name);
-			
-			/* Build module cache */
-			modules_cache.set(module_name, {});
-			await module.buildCache(modules_cache.get(module_name));
-		}
-		
-		/* Save */
-		await this.saveCache();
-	}
-	
-	
-	/**
-	 * Read project cache
-	 */
-	async void readCache()
-	{
-		this.cache = {};
-		
-		/* Get cache path */
-		string cache_json_path = fs::join([this.getPath(), ".cache", "cache.json"]);
-		if (not(await fs::isFile(cache_json_path))) return;
-		
-		/* Read file */
-		string content = await fs::readFile(cache_json_path);
-		this.cache = rtl::json_decode(content);
-		
-		if (not this.cache) this.cache = {};
-	}
-	
-	
-	/**
-	 * Save project cache
-	 */
-	async void saveCache()
-	{
-		/* Get cache folder */
-		string cache_path = fs::join([this.getPath(), ".cache"]);
-		if (not(await fs::isFolder(cache_path)))
-		{
-			await fs::mkdir(cache_path);
-		}
-		
-		/* Save cache to file */
-		string cache_json_path = fs::join([cache_path, "cache.json"]);
-		string content = rtl::json_encode(this.cache, rtl::JSON_PRETTY);
-		await fs::saveFile(cache_json_path, content);
 	}
 }

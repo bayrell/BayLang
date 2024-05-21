@@ -102,6 +102,9 @@
 		"LangNode/TranslatorNodeProgram.bay",
 		"ModuleDescription.bay"
 	],
+	"groups": [
+		"baylang"
+	],
 	"modules":
 	[
 		{

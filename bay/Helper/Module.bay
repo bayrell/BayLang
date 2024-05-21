@@ -19,8 +19,12 @@
 namespace BayLang.Helper;
 
 use Runtime.fs;
+use Runtime.lib;
 use Runtime.BaseObject;
+use Runtime.Serializer;
+use BayLang.Helper.Cache;
 use BayLang.Helper.Project;
+use BayLang.Helper.Widget;
 use BayLang.Helper.RouteProcessor;
 use BayLang.Helper.WidgetProcessor;
 
@@ -29,7 +33,12 @@ class Module extends BaseObject
 {
 	Project project = null;
 	string path = "";
-	Dict info = null;
+	string src_path = "";
+	string name = "";
+	Dict submodules = null;
+	Vector<Map> routes = null;
+	Vector<string> groups = null;
+	Vector<Widget> widgets = null;
 	
 	
 	/**
@@ -88,43 +97,103 @@ class Module extends BaseObject
 		if (not module_info.has("name")) return;
 		
 		this.path = module_path;
-		this.info = module_info;
+		this.name = module_info.get("name");
+		this.src_path = module_info.get("src");
+		this.groups = module_info.get("groups");
+		this.submodules = module_info.get("modules");
+	}
+	
+	
+	/**
+	 * Process project cache
+	 */
+	void projectCache(Serializer serializer, Map data)
+	{
+		serializer.process(this, "groups", data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "path", data);
+		serializer.process(this, "routes", data);
+		serializer.process(this, "src_path", data);
+		serializer.process(this, "submodules", data);
+		serializer.processItems(this, "widgets", data,
+			Widget (Dict widget) => new Widget(this)
+		);
 	}
 	
 	
 	/**
 	 * Returns true if project is exists
 	 */
-	void exists() => this.info != null;
+	void exists() => this.path != null;
 	
 	
 	/**
 	 * Returns module path
 	 */
-	string getPath() => this.exists() ? this.path : "";
-	
-	
-	/**
-	 * Returns source path
-	 */
-	string getSourcePath()
-	{
-		string module_src = this.info["src"] |> default string "";
-		string module_src_path = fs::join([ this.getPath(), module_src ]);
-		return module_src_path;
-	}
+	string getPath() => this.path;
 	
 	
 	/**
 	 * Returns module name
 	 */
-	string getName() => this.exists() ? this.info.get("name") : "";
+	string getName() => this.name;
 	
 	
 	/**
-	 * Returns info
+	 * Returns routes
 	 */
-	Dict getInfo() => this.info;
+	Collection<Dict> getRoutes() => this.routes ? this.routes : [];
+	
+	
+	/**
+	 * Returns route by name
+	 */
+	Dict getRoute(string route_name) =>
+		this.getRoutes().findItem(lib::equalAttr("name", route_name))
+	;
+	
+	
+	/**
+	 * Returns widgets
+	 */
+	Collection<Widget> getWidgets() => this.widgets ? this.widgets : [];
+	
+	
+	/**
+	 * Returns widget by name
+	 */
+	Widget getWidget(string widget_name) =>
+		this.getWidgets().findItem(lib::equalAttr("name", widget_name))
+	;
+	
+	
+	/**
+	 * Returns source path
+	 */
+	string getSourcePath() => fs::join([ this.getPath(), this.src_path ]);
+	
+	
+	/**
+	 * Returns class name file path
+	 */
+	string resolveClassName(string class_name)
+	{
+		/* Check if class name start with module name */
+		int module_name_sz = rs::strlen(this.getName());
+		if (rs::substr(class_name, 0, module_name_sz) != this.getName())
+		{
+			return;
+		}
+		
+		/* Remove module name from class name */
+		class_name = rs::substr(class_name, module_name_sz);
+		
+		/* Return path to class name */
+		string path = this.getSourcePath();
+		Vector<string> arr = rs::split(".", class_name);
+		arr.prepend(path);
+		return fs::join(arr) ~ ".bay";
+	}
 	
 	
 	/**
@@ -134,9 +203,8 @@ class Module extends BaseObject
 	{
 		if (rs::substr(group_name, 0, 1) != "@") return false;
 		group_name = rs::substr(group_name, 1);
-		Collection groups = this.info.get("groups");
-		if (groups == null) return false;
-		if (groups.indexOf(group_name) == -1) return false;
+		if (this.groups == null) return false;
+		if (this.groups.indexOf(group_name) == -1) return false;
 		return true;
 	}
 	
@@ -185,19 +253,21 @@ class Module extends BaseObject
 	
 	
 	/**
-	 * Build cache
+	 * Load routes
 	 */
-	async void buildCache(Map cache_info)
+	async void loadRoutes()
 	{
-		/* Set path */
-		cache_info.set("path", this.getPath());
-		
-		/* Build widgets cache */
-		WidgetProcessor widget_processor = new WidgetProcessor(this);
-		await widget_processor.buildCache(cache_info);
-		
-		/* Build routes cache */
 		RouteProcessor route_processor = new RouteProcessor(this);
-		await route_processor.buildCache(cache_info);
+		await route_processor.load();
+	}
+	
+	
+	/**
+	 * Load widgets
+	 */
+	async void loadWidgets()
+	{
+		WidgetProcessor widget_processor = new WidgetProcessor(this);
+		await widget_processor.load();
 	}
 }

@@ -33,6 +33,7 @@ use BayLang.OpCodes.OpNew;
 use BayLang.OpCodes.OpReturn;
 use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.Helper.Widget;
 
 
 class WidgetProcessor extends BaseObject
@@ -60,9 +61,9 @@ class WidgetProcessor extends BaseObject
 	
 	
 	/**
-	 * Build cache
+	 * Load widgets
 	 */
-	async void buildCache(Map cache_info)
+	async void load()
 	{
 		string file_path = this.getModuleDescriptionFilePath();
 		
@@ -79,10 +80,14 @@ class WidgetProcessor extends BaseObject
 			
 			/* Get widgets */
 			Collection<string> widgets = static::getWidgets(op_code);
-			if (widgets.count() > 0)
-			{
-				cache_info.set("widgets", widgets);
-			}
+			this.module.widgets = widgets.map(
+				Widget (string widget_name)
+				{
+					Widget widget = new Widget(this.module);
+					widget.name = widget_name;
+					return widget;
+				}
+			);
 		}
 		catch (ParserUnknownError e)
 		{

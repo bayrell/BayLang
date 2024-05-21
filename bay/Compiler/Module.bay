@@ -47,7 +47,7 @@ class Module extends BaseStruct
 	{
 		string module_src = this.config["src"] |> default string "";
 		string module_src_path = fs::join([ this.path, module_src ]);
-		return module_src_path;
+		return rs::removeLastSlash(module_src_path);
 	}
 	
 	
