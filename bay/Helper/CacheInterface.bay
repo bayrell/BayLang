@@ -15,23 +15,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
-namespace BayLang.OpCodes;
 
-use BayLang.OpCodes.BaseOpCode;
+namespace BayLang.Helper;
 
 
-struct OpAttr extends BaseOpCode
+interface CacheInterface
 {
-	static const string KIND_ATTR = "attr";
-	static const string KIND_STATIC = "static";
-	static const string KIND_DYNAMIC = "dynamic";
-	static const string KIND_DYNAMIC_ATTRS = "dynamic_attrs";
-	static const string KIND_PIPE = "pipe";
+	/**
+	 * Load object
+	 */
+	async void load();
 	
-	string op = "op_attr";
-	string kind = "";
-	BaseOpCode obj = null;
-	BaseOpCode value = null;
-	Collection<BaseOpCode> attrs = null;
+	
+	/**
+	 * Read object from cache
+	 */
+	async bool readCache();
+	
+	
+	/**
+	 * Save object to cache
+	 */
+	async void saveCache();
+	
+	
+	/**
+	 * Load object from file system
+	 */
+	async void loadObject();
 }

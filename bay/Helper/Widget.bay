@@ -19,14 +19,24 @@
 namespace BayLang.Helper;
 
 use Runtime.fs;
+use Runtime.lib;
 use Runtime.BaseObject;
 use Runtime.Serializer;
+use BayLang.Exceptions.ParserUnknownError;
 use BayLang.Helper.Module;
 use BayLang.Helper.Project;
+use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpClassOf;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpModule;
+use BayLang.OpCodes.OpString;
+use BayLang.Helper.CacheInterface;
 
 
-class Widget extends BaseObject
+class Widget extends BaseObject implements CacheInterface
 {
 	Module module = null;
 	string name = "";
@@ -36,6 +46,8 @@ class Widget extends BaseObject
 	/* Content */
 	string model_content = null;
 	string component_content = null;
+	ParserUnknownError model_error = null;
+	ParserUnknownError component_error = null;
 	
 	
 	/**
@@ -74,32 +86,52 @@ class Widget extends BaseObject
 	 */
 	async void load()
 	{
+		bool is_loaded = await this.readCache();
+		if (not is_loaded)
+		{
+			await this.loadObject();
+			
+			/* Save to cache */
+			await this.saveCache();
+		}
+	}
+	
+	
+	/**
+	 * Read widget from cache
+	 */
+	async bool readCache()
+	{
 		if (this.isModelBased())
 		{
-			/* Load model from cache */
-			if (not this.model)
-			{
-				await this.loadModelFromCache();
-			}
-			
-			/* Load model from file */
-			if (not this.model)
-			{
-				await this.loadModelFromFile();
-			}
-		}
-		
-		/* Load component from cache */
-		if (not this.component)
-		{
+			await this.loadModelFromCache();
 			await this.loadComponentFromCache();
+			return this.model !== null and this.component !== null;
 		}
 		
-		/* Load component from file */
-		if (not this.component)
+		await this.loadComponentFromCache();
+		return this.component !== null;
+	}
+	
+	
+	/**
+	 * Save widget to cache
+	 */
+	async void saveCache()
+	{
+	}
+	
+	
+	/**
+	 * Load project from file system
+	 */
+	async void loadObject()
+	{
+		if (this.isModelBased())
 		{
-			await this.loadComponentFromFile();
+			await this.loadModelFromFile();
 		}
+		await this.loadComponentFromFile();
 	}
 	
 	
@@ -108,7 +140,7 @@ class Widget extends BaseObject
 	/**
 	 * Returns model name
 	 */
-	string getModelName() => "";
+	string getModelName() => this.isModelBased() ? this.name : "";
 	
 	
 	/**
@@ -117,7 +149,7 @@ class Widget extends BaseObject
 	string getModelPath()
 	{
 		if (not this.isModelBased()) return "";
-		return this.module.resolveClassName(this.name);
+		return this.module.resolveClassName(this.getModelName());
 	}
 	
 	
@@ -147,6 +179,20 @@ class Widget extends BaseObject
 		if (not(await fs::isFile(file_path))) return;
 		
 		this.model_content = await fs::readFile(file_path);
+		
+		/* Parse model */
+		try
+		{
+			/* Parse file */
+			ParserBay parser = new ParserBay();
+			list res = parser::parse(parser, this.model_content);
+			this.model = res.get(1);
+		}
+		catch (ParserUnknownError e)
+		{
+			this.model = false;
+			this.model_error = e;
+		}
 	}
 	
 	
@@ -161,19 +207,28 @@ class Widget extends BaseObject
 	/**
 	 * Returns component name
 	 */
-	string getComponetName() => "";
+	string getComponetName()
+	{
+		if (not this.isModelBased()) return this.name;
+		if (this.model == null) return "";
+		
+		OpDeclareClass op_code_class = static::findClass(this.model);
+		OpAssignValue op_code_assign = static::findComponentName(op_code_class);
+		
+		return static::extractComponentName(this.model, op_code_assign);
+	}
 	
 	
 	/**
 	 * Returns component path
 	 */
-	string getComponetPath() => "";
+	string getComponetPath() => this.module.resolveClassName(this.getComponetName());
 	
 	
 	/**
 	 * Returns component content
 	 */
-	async string getComponetContent() => this.component_content;
+	async string getComponentContent() => this.component_content;
 	
 	
 	/**
@@ -196,6 +251,20 @@ class Widget extends BaseObject
 		if (not(await fs::isFile(file_path))) return;
 		
 		this.component_content = await fs::readFile(file_path);
+		
+		/* Parse component */
+		try
+		{
+			/* Parse file */
+			ParserBay parser = new ParserBay();
+			list res = parser::parse(parser, this.component_content);
+			this.component = res.get(1);
+		}
+		catch (ParserUnknownError e)
+		{
+			this.component = false;
+			this.component_error = e;
+		}
 	}
 	
 	
@@ -203,4 +272,63 @@ class Widget extends BaseObject
 	 * Returns component op code
 	 */
 	async BaseOpCode getComponentOpCode() => this.component;
+	
+	
+	/**
+	 * Find class
+	 */
+	static OpDeclareClass findClass(OpModule op_code) =>
+		(op_code instanceof OpModule)
+			? op_code.items.findItem(lib::isInstance(classof OpDeclareClass))
+			: null
+	;
+	
+	
+	/**
+	 * Find component name
+	 */
+	static OpAssignValue findComponentName(OpDeclareClass op_code)
+	{
+		if (op_code == null) return null;
+		if (not(op_code instanceof OpDeclareClass)) return null;
+		
+		Collection<OpAssignValue> items = op_code.items
+			.filter(
+				bool (BaseOpCode op_code) =>
+					op_code instanceof OpAssign
+			)
+			.map(
+				bool (OpAssign op_code) => op_code.values
+			)
+			.flatten()
+		;
+		
+		OpAssignValue op_code_component = items.findItem(
+			bool (OpAssignValue op_code) => op_code.var_name == "component"
+		);
+		
+		return op_code_component;
+	}
+	
+	
+	/**
+	 * Extract component name
+	 */
+	static string extractComponentName(OpModule component, OpAssignValue op_code)
+	{
+		if (op_code == null) return null;
+		
+		if (op_code.expression instanceof OpClassOf)
+		{
+			string class_name = op_code.expression.entity_name.names.get(0);
+			return component.uses.get(class_name);
+		}
+		
+		else if (op_code.expression instanceof OpString)
+		{
+			return op_code.expression.value;
+		}
+		
+		return "";
+	}
 }

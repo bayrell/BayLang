@@ -23,9 +23,10 @@ use Runtime.BaseObject;
 use Runtime.Serializer;
 use BayLang.Helper.Module;
 use BayLang.Helper.Widget;
+use BayLang.Helper.CacheInterface;
 
 
-class Project extends BaseObject
+class Project extends BaseObject implements CacheInterface
 {
 	string path = "";
 	Map info = null;
@@ -85,7 +86,7 @@ class Project extends BaseObject
 		this.init(project_path, project_info);
 		
 		/* Load data from cache */
-		await this.loadCache();
+		await this.readCache();
 	}
 	
 	
@@ -113,13 +114,13 @@ class Project extends BaseObject
 	
 	
 	/**
-	 * Load project from cache
+	 * Read project from cache
 	 */
-	async void loadCache()
+	async bool readCache()
 	{
 		/* Get json path */
 		string cache_path = this.getCachePath();
-		if (not(await fs::isFile(cache_path))) return;
+		if (not(await fs::isFile(cache_path))) return false;
 		
 		/* Create serializer */
 		Serializer serializer = new Serializer();
@@ -127,13 +128,15 @@ class Project extends BaseObject
 		/* Read file */
 		string content = await fs::readFile(cache_path);
 		Dict data = serializer.json_decode(content);
-		if (not data) return;
+		if (not data) return false;
 		
 		/* Import data */
 		serializer.setCallback("projectCache");
 		serializer.setFlag(Serializer::ALLOW_CLASS_NAME);
 		serializer.setFlag(Serializer::IMPORT);
 		this.projectCache(serializer, data);
+		
+		return true;
 	}
 	
 	
@@ -175,6 +178,38 @@ class Project extends BaseObject
 		serializer.processItems(this, "modules", data,
 			Module (Dict module) => new Module(this)
 		);
+	}
+	
+	
+	/**
+	 * Load object
+	 */
+	async void load()
+	{
+		bool is_loaded = await this.readCache();
+		if (not is_loaded)
+		{
+			await this.loadObject();
+			
+			/* Save to cache */
+			await this.saveCache();
+		}
+	}
+	
+	
+	/**
+	 * Load project from file system
+	 */
+	async void loadObject()
+	{
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			await module.loadRoutes();
+			await module.loadWidgets();
+		}
 	}
 	
 	
@@ -293,22 +328,6 @@ class Project extends BaseObject
 		
 		/* Read sub modules */
 		await this.readSubModules(this.path, this.info.get("modules"));
-	}
-	
-	
-	/**
-	 * Load modules
-	 */
-	async void loadModules()
-	{
-		Collection<string> modules = this.modules.keys().sort();
-		for (int i=0; i<modules.count(); i++)
-		{
-			string module_name = modules.get(i);
-			Module module = this.modules.get(module_name);
-			await module.loadRoutes();
-			await module.loadWidgets();
-		}
 	}
 	
 	

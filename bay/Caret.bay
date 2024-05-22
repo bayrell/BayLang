@@ -20,10 +20,12 @@ namespace BayLang;
 
 use Runtime.BaseObject;
 use Runtime.Reference;
+use Runtime.SerializeInterface;
+use Runtime.Serializer;
 use BayLang.Exceptions.ParserExpected;
 
 
-class Caret extends BaseObject
+class Caret extends BaseObject implements SerializeInterface
 {
 	/**
 	 * Content
@@ -89,6 +91,17 @@ class Caret extends BaseObject
 		"x": items ? items.get("x", this.x) : this.x,
 		"y": items ? items.get("y", this.y) : this.y,
 	};
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		serializer.process(this, "pos", data);
+		serializer.process(this, "x", data);
+		serializer.process(this, "y", data);
+	}
 	
 	
 	/**
