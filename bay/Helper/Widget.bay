@@ -21,6 +21,7 @@ namespace BayLang.Helper;
 use Runtime.fs;
 use Runtime.lib;
 use Runtime.BaseObject;
+use Runtime.SerializeInterface;
 use Runtime.Serializer;
 use BayLang.Exceptions.ParserUnknownError;
 use BayLang.Helper.Module;
@@ -36,7 +37,7 @@ use BayLang.OpCodes.OpString;
 use BayLang.Helper.CacheInterface;
 
 
-class Widget extends BaseObject implements CacheInterface
+class Widget extends BaseObject implements CacheInterface, SerializeInterface
 {
 	Module module = null;
 	string name = "";
@@ -69,7 +70,7 @@ class Widget extends BaseObject implements CacheInterface
 	/**
 	 * Process project cache
 	 */
-	void projectCache(Serializer serializer, Map data)
+	void serialize(Serializer serializer, Map data)
 	{
 		serializer.process(this, "name", data);
 	}
