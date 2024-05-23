@@ -1017,7 +1017,8 @@ struct TranslatorES6Expression extends BaseStruct
 	/**
 	 * OpDeclareFunction
 	 */
-	pure list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
+	pure list<TranslatorES6, string> OpDeclareFunction
+		(TranslatorES6 t, OpDeclareFunction op_code, bool is_arrow = true)
 	{
 		string content = "";
 		string is_async = "";
@@ -1028,7 +1029,14 @@ struct TranslatorES6Expression extends BaseStruct
 		t <= current_function <= op_code;
 		
 		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
-		content ~= is_async ~ "(" ~ args ~ ") => ";
+		if (is_arrow)
+		{
+			content ~= is_async ~ "(" ~ args ~ ") => ";
+		}
+		else
+		{
+			content ~= is_async ~ "function (" ~ args ~ ")";
+		}
 		list res = t.operator::OpDeclareFunctionBody(t, op_code);
 		content ~= res[1];
 		

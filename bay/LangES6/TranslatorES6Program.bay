@@ -1526,6 +1526,21 @@ struct TranslatorES6Program extends BaseStruct
 	
 	
 	/**
+	 * Remove ctx
+	 */
+	pure string removeContext(string content)
+	{
+		content = rs::replace("\\("~"ctx\\)", "()", content);
+		content = rs::replace("\\("~"ctx, ", "(", content);
+		content = rs::replace("\\("~"ctx,", "(", content);
+		content = rs::replace(","~"ctx,", ",", content);
+		content = rs::replace("this,"~"ctx", "this", content);
+		content = rs::replace("this,"~" ctx", "this", content);
+		return content;
+	}
+	
+	
+	/**
 	 * Translate program
 	 */
 	pure list<TranslatorES6, string> translateProgram(TranslatorES6 t, OpItems op_code)
@@ -1555,15 +1570,9 @@ struct TranslatorES6Program extends BaseStruct
 		/* Disable context */
 		if (t.enable_context == false)
 		{
-			content = rs::replace("\\("~"ctx\\)", "()", content);
-			content = rs::replace("\\("~"ctx, ", "(", content);
-			content = rs::replace("\\("~"ctx,", "(", content);
-			content = rs::replace(","~"ctx,", ",", content);
-			content = rs::replace("this,"~"ctx", "this", content);
-			content = rs::replace("this,"~" ctx", "this", content);
+			content = static::removeContext(content);
 		}
 		
 		return [t, content];
 	}
-	
 }

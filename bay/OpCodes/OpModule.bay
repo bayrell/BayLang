@@ -18,7 +18,9 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.lib;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
 
 
 struct OpModule extends BaseOpCode
@@ -26,4 +28,27 @@ struct OpModule extends BaseOpCode
 	Dict<string> uses = null;
 	Collection<BaseOpCode> items = null;
 	bool is_component = false;
+	
+	
+	/**
+	 * Find class
+	 */
+	OpDeclareClass findClass() => this.items.findItem(lib::isInstance(classof OpDeclareClass));
+	
+	
+	/**
+	 * Find class by name
+	 */
+	OpDeclareClass findClassByName(string name) =>
+		this.items.findItem(
+			bool (BaseOpCode item) use (name)
+			{
+				if (not(item instanceof OpDeclareClass)) return false;
+				if (item.name == name) return false;
+				return true;
+			}
+		)
+	;
+	
+	
 }

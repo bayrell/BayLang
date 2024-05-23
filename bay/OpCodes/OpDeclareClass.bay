@@ -53,4 +53,15 @@ struct OpDeclareClass extends BaseOpCode
 	bool is_declare = false;
 	bool is_component = false;
 	bool is_model = false;
+	
+	
+	/**
+	 * Find function
+	 */
+	OpDeclareFunction findFunction(string name) =>
+		this.items.findItem(
+			bool (BaseOpCode op_code) use (name) =>
+				op_code instanceof OpDeclareFunction and op_code.name == name
+		)
+	;
 }

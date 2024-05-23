@@ -100,55 +100,15 @@ class WidgetProcessor extends BaseObject
 	 */
 	static Collection<string> getWidgets(BaseOpCode op_code)
 	{
-		OpDeclareClass class_op_code = static::findClass(op_code);
+		if (not(op_code instanceof OpModule)) return [];
+		
+		OpDeclareClass class_op_code = op_code.findClass();
 		if (not class_op_code) return [];
 		
-		OpDeclareFunction entities_op_code = static::findEntities(class_op_code);
+		OpDeclareFunction entities_op_code = class_op_code.findFunction("entities");
 		if (not entities_op_code) return [];
 		
 		return static::findWidgets(entities_op_code);
-	}
-	
-	
-	/**
-	 * Find class
-	 */
-	static OpDeclareClass findClass(OpModule op_code) =>
-		(op_code instanceof OpModule)
-			? op_code.items.findItem(lib::isInstance(classof OpDeclareClass))
-			: null
-	;
-	
-	
-	/**
-	 * Find entities
-	 */
-	static OpDeclareFunction findEntities(OpDeclareClass op_code) =>
-		(op_code instanceof OpDeclareClass)
-			? op_code.items.findItem(
-				bool (BaseOpCode op_code) =>
-					op_code instanceof OpDeclareFunction and op_code.name == "entities"
-			)
-			: null
-	;
-	
-	
-	/**
-	 * Find expression
-	 */
-	static BaseOpCode findExpression(OpDeclareFunction op_code)
-	{
-		if (op_code.expression != null)
-		{
-			return op_code.expression;
-		}
-		
-		if (not(op_code.items instanceof OpItems)) return null;
-		
-		BaseOpCode op_code_item = op_code.items.items.get(0);
-		if (not(op_code_item instanceof OpReturn)) return null;
-		
-		return op_code_item.expression;
 	}
 	
 	
@@ -157,7 +117,7 @@ class WidgetProcessor extends BaseObject
 	 */
 	static Collection<string> findWidgets(OpDeclareFunction op_code)
 	{
-		BaseOpCode expression = static::findExpression(op_code);
+		BaseOpCode expression = op_code.getExpression();
 		
 		if (expression == null) return [];
 		if (expression.values == null) return [];
