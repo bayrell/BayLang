@@ -18,11 +18,22 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpDelete extends BaseOpCode
+class OpDelete extends BaseOpCode
 {
 	string op = "op_delete";
 	BaseOpCode op_code = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "op_code", data);
+	}
 }

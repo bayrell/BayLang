@@ -18,12 +18,24 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpSafe extends BaseOpCode
+class OpSafe extends BaseOpCode
 {
 	string op = "op_safe";
 	BaseOpCode obj = null;
 	BaseOpCode items = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "obj", data);
+	}
 }

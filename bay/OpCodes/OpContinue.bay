@@ -18,10 +18,11 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpContinue extends BaseOpCode
+class OpContinue extends BaseOpCode
 {
 	string op = "op_continue";
 }

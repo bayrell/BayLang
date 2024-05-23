@@ -18,10 +18,11 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpAttr extends BaseOpCode
+class OpAttr extends BaseOpCode
 {
 	static const string KIND_ATTR = "attr";
 	static const string KIND_STATIC = "static";
@@ -34,4 +35,17 @@ struct OpAttr extends BaseOpCode
 	BaseOpCode obj = null;
 	BaseOpCode value = null;
 	Collection<BaseOpCode> attrs = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "attrs", data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "obj", data);
+		serializer.process(this, "value", data);
+	}
 }

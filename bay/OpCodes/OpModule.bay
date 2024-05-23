@@ -19,11 +19,12 @@
 namespace BayLang.OpCodes;
 
 use Runtime.lib;
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareClass;
 
 
-struct OpModule extends BaseOpCode
+class OpModule extends BaseOpCode
 {
 	Dict<string> uses = null;
 	Collection<BaseOpCode> items = null;
@@ -31,9 +32,23 @@ struct OpModule extends BaseOpCode
 	
 	
 	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "is_component", data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "uses", data);
+	}
+	
+	
+	/**
 	 * Find class
 	 */
-	OpDeclareClass findClass() => this.items.findItem(lib::isInstance(classof OpDeclareClass));
+	OpDeclareClass findClass() =>
+		this.items ? this.items.findItem(lib::isInstance(classof OpDeclareClass)) : null
+	;
 	
 	
 	/**
@@ -49,6 +64,4 @@ struct OpModule extends BaseOpCode
 			}
 		)
 	;
-	
-	
 }

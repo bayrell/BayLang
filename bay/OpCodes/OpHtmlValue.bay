@@ -18,11 +18,12 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlAttribute;
 
 
-struct OpHtmlValue extends BaseOpCode
+class OpHtmlValue extends BaseOpCode
 {
 	static const string KIND_RAW = "raw";
 	static const string KIND_JSON = "json";
@@ -31,4 +32,15 @@ struct OpHtmlValue extends BaseOpCode
 	string op = "op_html_value";
 	string kind = "";
 	BaseOpCode value = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "value", data);
+	}
 }

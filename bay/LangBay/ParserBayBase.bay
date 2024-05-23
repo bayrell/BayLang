@@ -1795,7 +1795,13 @@ class ParserBayBase
 		
 		op_code_first = op_code;
 		if (caret_start == null) caret_start = op_code.caret_start;		
-		if (op_code.kind == OpIdentifier::KIND_CONTEXT or op_code.kind == OpIdentifier::KIND_SYS_FUNCTION)
+		if (
+			op_code instanceof OpIdentifier and
+			(
+				op_code.kind == OpIdentifier::KIND_CONTEXT or
+				op_code.kind == OpIdentifier::KIND_SYS_FUNCTION
+			)
+		)
 		{
 			is_context_call = false;
 		}

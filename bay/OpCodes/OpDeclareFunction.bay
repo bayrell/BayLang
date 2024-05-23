@@ -18,6 +18,7 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpComment;
@@ -27,7 +28,7 @@ use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpReturn;
 
 
-struct OpDeclareFunction extends BaseOpCode
+class OpDeclareFunction extends BaseOpCode
 {
 	string op = "op_function";
 	string name = "";
@@ -42,6 +43,27 @@ struct OpDeclareFunction extends BaseOpCode
 	bool is_context = true;
 	bool is_html = false;
 	bool is_html_default_args = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "annotations", data);
+		serializer.process(this, "args", data);
+		serializer.process(this, "comments", data);
+		serializer.process(this, "expression", data);
+		serializer.process(this, "flags", data);
+		serializer.process(this, "is_context", data);
+		serializer.process(this, "is_html", data);
+		serializer.process(this, "is_html_default_args", data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "result_type", data);
+		serializer.process(this, "vars", data);
+	}
 	
 	
 	/**

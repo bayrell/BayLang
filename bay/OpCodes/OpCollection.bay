@@ -18,11 +18,22 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpCollection extends BaseOpCode
+class OpCollection extends BaseOpCode
 {
 	string op = "op_collection";
 	Collection<BaseOpCode> values = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "values", data);
+	}
 }

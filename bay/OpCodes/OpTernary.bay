@@ -18,13 +18,26 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpTernary extends BaseOpCode
+class OpTernary extends BaseOpCode
 {
 	string op = "op_ternary";
 	BaseOpCode condition = null;
 	BaseOpCode if_true = null;
 	BaseOpCode if_false = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "condition", data);
+		serializer.process(this, "if_false", data);
+		serializer.process(this, "if_true", data);
+	}
 }

@@ -19,9 +19,10 @@
 namespace BayLang.OpCodes;
 
 use Runtime.BaseStruct;
+use Runtime.Serializer;
 
 
-struct OpFlags extends BaseStruct
+class OpFlags extends BaseStruct
 {
 	public bool p_async = false;
 	public bool p_export = false;
@@ -42,12 +43,37 @@ struct OpFlags extends BaseStruct
 	
 	
 	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "p_assignable", data);
+		serializer.process(this, "p_async", data);
+		serializer.process(this, "p_cloneable", data);
+		serializer.process(this, "p_const", data);
+		serializer.process(this, "p_declare", data);
+		serializer.process(this, "p_export", data);
+		serializer.process(this, "p_lambda", data);
+		serializer.process(this, "p_memorize", data);
+		serializer.process(this, "p_multiblock", data);
+		serializer.process(this, "p_private", data);
+		serializer.process(this, "p_props", data);
+		serializer.process(this, "p_protected", data);
+		serializer.process(this, "p_public", data);
+		serializer.process(this, "p_pure", data);
+		serializer.process(this, "p_serializable", data);
+		serializer.process(this, "p_static", data);
+	}
+	
+	
+	/**
 	 * Read is Flag
 	 */
 	public bool isFlag(string name)
 	{
 		if (not OpFlags::hasFlag(name))	return false;
-		return this.takeValue("p_"~name);
+		return rtl::attr(this, "p_"~name);
 	}
 	
 	

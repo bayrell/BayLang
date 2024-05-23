@@ -18,12 +18,23 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpEntityName;
 
 
-struct OpClassOf extends BaseOpCode
+class OpClassOf extends BaseOpCode
 {
 	string op = "op_classof";
 	OpEntityName entity_name = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "entity_name", data);
+	}
 }

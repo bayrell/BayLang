@@ -18,11 +18,22 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpWidgetData extends BaseOpCode
+class OpWidgetData extends BaseOpCode
 {
 	string op = "op_widget_data";
 	BaseOpCode value = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "value", data);
+	}
 }

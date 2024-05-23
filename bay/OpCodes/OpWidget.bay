@@ -18,12 +18,24 @@
 
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpWidget extends BaseOpCode
+class OpWidget extends BaseOpCode
 {
 	public string op = "op_widget";
 	Collection items;
 	Dict settings;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "settings", data);
+	}
 }

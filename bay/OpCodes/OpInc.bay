@@ -18,10 +18,11 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpInc extends BaseOpCode
+class OpInc extends BaseOpCode
 {
 	static const string KIND_PRE_INC = "pre_inc";
 	static const string KIND_PRE_DEC = "pre_dec";
@@ -30,4 +31,15 @@ struct OpInc extends BaseOpCode
 	string op = "op_inc";
 	string kind = "";
 	BaseOpCode value = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "value", data);
+	}
 }

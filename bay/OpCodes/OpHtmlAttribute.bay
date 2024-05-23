@@ -18,13 +18,26 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpHtmlAttribute extends BaseOpCode
+class OpHtmlAttribute extends BaseOpCode
 {
 	string op = "op_html_attr";
 	string key = "";
 	BaseOpCode value = "";
 	bool is_spread = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "is_spread", data);
+		serializer.process(this, "key", data);
+		serializer.process(this, "value", data);
+	}
 }

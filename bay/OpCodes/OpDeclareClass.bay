@@ -18,6 +18,7 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
@@ -27,7 +28,7 @@ use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
-struct OpDeclareClass extends BaseOpCode
+class OpDeclareClass extends BaseOpCode
 {
 	static const string KIND_CLASS = "class";
 	static const string KIND_STRUCT = "struct";
@@ -53,6 +54,33 @@ struct OpDeclareClass extends BaseOpCode
 	bool is_declare = false;
 	bool is_component = false;
 	bool is_model = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "annotations", data);
+		serializer.process(this, "class_extends", data);
+		serializer.process(this, "class_implements", data);
+		serializer.process(this, "comments", data);
+		serializer.process(this, "extend_name", data);
+		serializer.process(this, "flags", data);
+		serializer.process(this, "fn_create", data);
+		serializer.process(this, "fn_destroy", data);
+		serializer.process(this, "functions", data);
+		serializer.process(this, "is_abstract", data);
+		serializer.process(this, "is_component", data);
+		serializer.process(this, "is_declare", data);
+		serializer.process(this, "is_model", data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "template", data);
+		serializer.process(this, "vars", data);
+	}
 	
 	
 	/**

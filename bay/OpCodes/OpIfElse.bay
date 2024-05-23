@@ -19,11 +19,23 @@
 namespace BayLang.OpCodes;
 
 use Runtime.BaseStruct;
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpIfElse extends BaseStruct
+class OpIfElse extends BaseStruct
 {
 	BaseOpCode condition = null;
 	BaseOpCode if_true = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "condition", data);
+		serializer.process(this, "if_true", data);
+	}
 }

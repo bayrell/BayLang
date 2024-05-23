@@ -20,13 +20,76 @@ namespace BayLang.OpCodes;
 
 use Runtime.BaseObject;
 use Runtime.BaseStruct;
-use Runtime.Interfaces.SerializeInterface;
+use Runtime.SerializeInterface;
+use Runtime.Serializer;
 use BayLang.Caret;
 
 
-struct BaseOpCode extends BaseStruct
+class BaseOpCode extends BaseObject implements SerializeInterface
 {
 	static const string op = "";
 	Caret caret_start = null;
 	Caret caret_end = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	public void constructor(Dict params = null)
+	{
+		parent();
+		this._assign_values(params);
+	}
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		serializer.process(this, "caret_start", data);
+		serializer.process(this, "caret_end", data);
+	}
+	
+	
+	/**
+	 * Clone this struct with new values
+	 * @param Map obj = null
+	 * @return BaseStruct
+	 */
+	public BaseStruct clone(Dict obj = null)
+	{
+		if (obj == null) return this;
+		
+		#switch
+		#case ifcode PHP then
+		
+		$item = clone $this;
+		$item->_assign_values($ctx, $obj);
+		return $item;
+		
+		#case ifcode JAVASCRIPT then
+		
+		var proto = Object.getPrototypeOf(this);
+		var item = Object.create(proto);
+		item = Object.assign(item, this);
+		item._assign_values(ctx, obj);
+		
+		return item;
+		
+		#endswitch
+		
+		return this;
+	}
+	
+	
+	/**
+	 * Copy this struct with new values
+	 * @param Map obj = null
+	 * @return BaseStruct
+	 */
+	public BaseStruct copy(Dict obj = null)
+	{
+		return this.clone(obj);
+	}
 }

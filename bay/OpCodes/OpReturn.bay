@@ -18,11 +18,22 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpReturn extends BaseOpCode
+class OpReturn extends BaseOpCode
 {
 	string op = "op_return";
 	BaseOpCode expression = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "expression", data);
+	}
 }

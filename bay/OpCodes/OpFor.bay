@@ -18,14 +18,28 @@
 
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpFor extends BaseOpCode
+class OpFor extends BaseOpCode
 {	
 	string op = "op_for";
 	BaseOpCode expr1 = null;
 	BaseOpCode expr2 = null;
 	BaseOpCode expr3 = null;
 	BaseOpCode value = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "expr1", data);
+		serializer.process(this, "expr2", data);
+		serializer.process(this, "expr3", data);
+		serializer.process(this, "value", data);
+	}
 }

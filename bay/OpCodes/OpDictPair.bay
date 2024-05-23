@@ -19,12 +19,25 @@
 namespace BayLang.OpCodes;
 
 use Runtime.BaseStruct;
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpDictPair extends BaseStruct
+class OpDictPair extends BaseStruct
 {
 	string key = "";
 	BaseOpCode value = null;
 	BaseOpCode condition = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "condition", data);
+		serializer.process(this, "key", data);
+		serializer.process(this, "value", data);
+	}
 }

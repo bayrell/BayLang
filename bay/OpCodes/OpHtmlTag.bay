@@ -18,12 +18,13 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlItems;
 
 
-struct OpHtmlTag extends BaseOpCode
+class OpHtmlTag extends BaseOpCode
 {
 	string op = "op_html_tag";
 	string tag_name = "";
@@ -31,4 +32,18 @@ struct OpHtmlTag extends BaseOpCode
 	Collection<OpHtmlAttribute> attrs = null;
 	Collection<primitive> spreads = null;
 	OpHtmlItems items = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "attrs", data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "op_code_name", data);
+		serializer.process(this, "spreads", data);
+		serializer.process(this, "tag_name", data);
+	}
 }

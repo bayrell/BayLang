@@ -18,13 +18,26 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpMath extends BaseOpCode
+class OpMath extends BaseOpCode
 {
 	string op = "op_math";
 	BaseOpCode value1 = null;
 	BaseOpCode value2 = null;	
 	string math = "";
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "math", data);
+		serializer.process(this, "value1", data);
+		serializer.process(this, "value2", data);
+	}
 }

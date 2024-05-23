@@ -18,14 +18,27 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
-struct OpTryCatchItem extends BaseOpCode
+class OpTryCatchItem extends BaseOpCode
 {
 	string op = "op_try_catch_item";
 	string name = "";
 	OpTypeIdentifier pattern = null;
 	BaseOpCode value = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "pattern", data);
+		serializer.process(this, "value", data);
+	}
 }

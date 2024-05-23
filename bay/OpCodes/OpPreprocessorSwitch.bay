@@ -18,12 +18,23 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpPreprocessorIfCode;
 
 
-struct OpPreprocessorSwitch extends BaseOpCode
+class OpPreprocessorSwitch extends BaseOpCode
 {
 	string op = "op_preprocessor_switch";
 	Collection<OpPreprocessorIfCode> items = null;	
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+	}
 }

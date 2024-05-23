@@ -18,13 +18,26 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpDeclareFunctionArg extends BaseOpCode
+class OpDeclareFunctionArg extends BaseOpCode
 {
 	string op = "op_function_arg";
 	BaseOpCode pattern = null;
 	string name = "";
 	BaseOpCode expression = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "expression", data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "pattern", data);
+	}
 }

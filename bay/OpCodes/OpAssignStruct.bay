@@ -18,6 +18,7 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssignValue;
@@ -26,11 +27,25 @@ use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
-struct OpAssignStruct extends BaseOpCode
+class OpAssignStruct extends BaseOpCode
 {
 	string var_name = "";
 	Collection<OpAnnotation> annotations = null;
 	Collection<OpComment> comments = null;
 	Collection<var> names = null;
 	BaseOpCode expression = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "annotations", data);
+		serializer.process(this, "comments", data);
+		serializer.process(this, "expression", data);
+		serializer.process(this, "names", data);
+		serializer.process(this, "var_name", data);
+	}
 }

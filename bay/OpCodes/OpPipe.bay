@@ -18,10 +18,11 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpPipe extends BaseOpCode
+class OpPipe extends BaseOpCode
 {
 	static const string KIND_ATTR = "attr";
 	static const string KIND_CALL = "call";
@@ -33,4 +34,18 @@ struct OpPipe extends BaseOpCode
 	BaseOpCode value = null;
 	bool is_async = false;
 	bool is_monad = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "is_async", data);
+		serializer.process(this, "is_monad", data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "obj", data);
+		serializer.process(this, "value", data);
+	}
 }

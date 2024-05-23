@@ -18,10 +18,11 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpCall extends BaseOpCode
+class OpCall extends BaseOpCode
 {	
 	string op = "op_call";
 	BaseOpCode obj = null;
@@ -29,4 +30,18 @@ struct OpCall extends BaseOpCode
 	bool is_await = false;
 	bool is_context = true;
 	bool is_html = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "args", data);
+		serializer.process(this, "is_await", data);
+		serializer.process(this, "is_context", data);
+		serializer.process(this, "is_html", data);
+		serializer.process(this, "obj", data);
+	}
 }

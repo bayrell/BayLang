@@ -18,12 +18,23 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlTag;
 
 
-struct OpHtmlItems extends BaseOpCode
+class OpHtmlItems extends BaseOpCode
 {
 	string op = "op_html";
 	Collection<BaseOpCode> items = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+	}
 }

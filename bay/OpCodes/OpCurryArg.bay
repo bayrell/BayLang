@@ -18,11 +18,22 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpCurryArg extends BaseOpCode
+class OpCurryArg extends BaseOpCode
 {
 	string op = "op_curry";
 	int pos = 0;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "pos", data);
+	}
 }

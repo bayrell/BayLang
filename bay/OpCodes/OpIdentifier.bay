@@ -18,10 +18,11 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpIdentifier extends BaseOpCode
+class OpIdentifier extends BaseOpCode
 {
 	static const string KIND_PIPE = "pipe";
 	static const string KIND_VARIABLE = "var";
@@ -36,4 +37,15 @@ struct OpIdentifier extends BaseOpCode
 	string op = "op_identifier";
 	string value = "";
 	string kind = "";
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "value", data);
+	}
 }

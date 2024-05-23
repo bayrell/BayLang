@@ -18,13 +18,25 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpTryCatchItem;
 
 
-struct OpTryCatch extends BaseOpCode
+class OpTryCatch extends BaseOpCode
 {
 	string op = "op_try_catch";
 	BaseOpCode op_try = null;
-	Collection<OpTryCatchItem> items = null;	
+	Collection<OpTryCatchItem> items = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "op_try", data);
+	}
 }

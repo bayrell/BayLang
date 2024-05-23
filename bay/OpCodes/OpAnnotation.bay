@@ -18,13 +18,25 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDict;
 
 
-struct OpAnnotation extends BaseOpCode
+class OpAnnotation extends BaseOpCode
 {
 	string op = "op_annotation";
 	BaseOpCode name = null;
 	OpDict params = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "params", data);
+	}
 }
