@@ -249,7 +249,7 @@ class SettingsProvider extends BaseProvider
 		}
 		
 		string src_file_name = rs::substr(file_path, rs::strlen(module_src_path));
-		src_file_name = fs::removeFirstSlash(src_file_name);
+		src_file_name = rs::removeFirstSlash(src_file_name);
 		d.set("src_file_name", src_file_name);
 		
 		if (module.checkExclude(src_file_name))

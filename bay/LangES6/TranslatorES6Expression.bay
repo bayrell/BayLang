@@ -1031,7 +1031,7 @@ struct TranslatorES6Expression extends BaseStruct
 		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
 		if (is_arrow)
 		{
-			content ~= is_async ~ "(" ~ args ~ ") => ";
+			content ~= is_async ~ "(" ~ args ~ ") =>";
 		}
 		else
 		{
