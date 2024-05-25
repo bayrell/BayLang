@@ -18,6 +18,7 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.lib;
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlTag;
@@ -36,5 +37,47 @@ class OpHtmlItems extends BaseOpCode
 	{
 		parent(serializer, data);
 		serializer.process(this, "items", data);
+	}
+	
+	
+	/**
+	 * Find op_code position
+	 */
+	int find(BaseOpCode op_code) =>
+		op_code ? this.items.find(lib::equal(op_code)) : -1
+	;
+	
+	
+	/**
+	 * Add op_code
+	 */
+	BaseOpCode addItem(BaseOpCode op_code, BaseOpCode dest = null, string kind = "after")
+	{
+		int pos = -1;
+		if (dest != null)
+		{
+			pos = this.find(dest);
+		}
+		if (pos >= 0)
+		{
+			if (kind == "before") this.items.insert(pos, op_code);
+			else this.items.insert(pos + 1, op_code);
+		}
+		else
+		{
+			if (kind == "before") this.items.prepend(op_code);
+			else this.items.push(op_code);
+		}
+		return op_code;
+	}
+	
+	
+	/**
+	 * Remove op_code
+	 */
+	void removeItem(BaseOpCode op_code)
+	{
+		int pos = this.find(op_code);
+		this.items.remove(pos);
 	}
 }
