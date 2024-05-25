@@ -435,7 +435,7 @@ class TranslatorES6Html
 	pure list<TranslatorES6, string> OpHtmlSlot
 		(TranslatorES6 t, OpHtmlItems op_code)
 	{
-		string content = "Runtime.Dict.from({";
+		string content = "{";
 		t = t.levelInc();
 		
 		for (int i=0; i<op_code.items.count(); i++)
@@ -449,7 +449,7 @@ class TranslatorES6Html
 		}
 		
 		t = t.levelDec();
-		content ~= t.s("})");
+		content ~= t.s("}");
 		return [t, content];
 	}
 	
