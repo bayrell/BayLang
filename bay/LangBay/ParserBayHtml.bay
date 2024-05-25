@@ -19,6 +19,7 @@
 namespace BayLang.LangBay;
 
 use Runtime.re;
+use Runtime.lib;
 use Runtime.BaseObject;
 use Runtime.BaseStruct;
 use Runtime.Reference;
@@ -43,6 +44,7 @@ use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlMeta;
+use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpHtmlValue;
@@ -1379,20 +1381,49 @@ class ParserBayHtml extends BaseObject
 			}
 		}
 		
-		OpHtmlTag op_code = new OpHtmlTag
+		BaseOpCode op_code = null;
+		if (tag_name == "slot")
 		{
-			"attrs": attrs,
-			"tag_name": tag_name,
-			"op_code_name": op_code_name,
-			"caret_start": caret_start,
-			"caret_end": parser.caret,
-			"items": (items != null) ? new OpHtmlItems
+			OpHtmlAttribute op_attr_name = attrs.findItem(lib::equalAttr("key", "name"));
+			attrs = attrs.filter(lib::equalAttrNot("key", "name"));
+			
+			string name = "";
+			if (op_attr_name and op_attr_name.value instanceof OpString)
 			{
-				"caret_start": caret_items_start,
-				"caret_end": caret_items_end,
-				"items": items.toCollection()
-			} : null,
-		};
+				name = op_attr_name.value.value;
+			}
+			
+			op_code = new OpHtmlSlot
+			{
+				"attrs": attrs,
+				"name": name,
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+				"items": (items != null) ? new OpHtmlItems
+				{
+					"caret_start": caret_items_start,
+					"caret_end": caret_items_end,
+					"items": items.toCollection()
+				} : null,
+			};
+		}
+		else
+		{
+			op_code = new OpHtmlTag
+			{
+				"attrs": attrs,
+				"tag_name": tag_name,
+				"op_code_name": op_code_name,
+				"caret_start": caret_start,
+				"caret_end": parser.caret,
+				"items": (items != null) ? new OpHtmlItems
+				{
+					"caret_start": caret_items_start,
+					"caret_end": caret_items_end,
+					"items": items.toCollection()
+				} : null,
+			};
+		}
 		
 		return [parser, op_code];
 	}

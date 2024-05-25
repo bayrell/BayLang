@@ -65,6 +65,7 @@
 		"OpCodes/OpHtmlAttribute.bay",
 		"OpCodes/OpHtmlContent.bay",
 		"OpCodes/OpHtmlItems.bay",
+		"OpCodes/OpHtmlSlot.bay",
 		"OpCodes/OpHtmlStyle.bay",
 		"OpCodes/OpHtmlTag.bay",
 		"OpCodes/OpHtmlValue.bay",
