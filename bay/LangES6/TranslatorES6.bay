@@ -45,6 +45,7 @@ struct TranslatorES6 extends CoreTranslator
 	TranslatorES6Html html = null;
 	TranslatorES6Operator operator = null;
 	TranslatorES6Program program = null;
+	Collection<int> debug_component = null;
 	
 	/* Flags */
 	bool frontend = true;
@@ -80,6 +81,7 @@ struct TranslatorES6 extends CoreTranslator
 		{
 			"value": "",
 			"current_namespace_name": "",
+			"debug_component": [],
 			"modules": new Dict<string>(),
 			"async_await": new TranslatorES6AsyncAwait(),
 			"expression": new TranslatorES6Expression(),
@@ -112,7 +114,6 @@ struct TranslatorES6 extends CoreTranslator
 	 */
 	pure list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
 	{
-		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);
 	}
 	

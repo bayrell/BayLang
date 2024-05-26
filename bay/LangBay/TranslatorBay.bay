@@ -108,7 +108,6 @@ class TranslatorBay extends BaseObject
 	pure list<TranslatorBay, string> translate(TranslatorBay t, BaseOpCode op_code)
 	{
 		Collection<string> content = [];
-		t.reset();
 		if (op_code.is_component)
 		{
 			t.html.translate(op_code, content);

@@ -62,18 +62,22 @@ static class LangUtils
 		if (lang == "bay")
 		{
 			t = new TranslatorBay();
+			t.reset();
 		}
 		else if (lang == "es6")
 		{
 			t = new TranslatorES6();
+			t = t::reset(t);
 		}
 		else if (lang == "nodejs")
 		{
 			t = new TranslatorNode();
+			t = t::reset(t);
 		}
 		else if (lang == "php")
 		{
 			t = new TranslatorPHP();
+			t = t::reset(t);
 		}
 		
 		return t;

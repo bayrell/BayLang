@@ -95,7 +95,8 @@ class TranslatorES6Html
 	 * Translator html template
 	 */
 	pure list<TranslatorES6, string> OpHtmlAttrs(
-		TranslatorES6 t, Collection<OpHtmlAttribute> attrs
+		TranslatorES6 t, Collection<OpHtmlAttribute> attrs,
+		bool is_component = false
 	)
 	{
 		Vector<string> attr_class = new Vector<string>();
@@ -182,6 +183,14 @@ class TranslatorES6Html
 		}
 			
 		res_attrs = res_attrs.filter( bool (string s) => s != "" );
+		
+		/* Add debug component */
+		if (t.preprocessor_flags.get("DEBUG_COMPONENT") and not is_component)
+		{
+			attr_class.push("\"widget_debug\"");
+		}
+		
+		/* Attrs */
 		if (attr_class.count() > 0)
 		{
 			res_attrs.push
@@ -203,6 +212,16 @@ class TranslatorES6Html
 				"\"key\":" ~ attr_elem_name
 			);
 		}
+		
+		/* Add debug component */
+		if (t.preprocessor_flags.get("DEBUG_COMPONENT"))
+		{
+			res_attrs.push
+			(
+				"\"data-widget-path\": \"" ~ rs::join(".", t.debug_component) ~ "\""
+			);
+		}
+		
 		if (res_attrs.count() > 0)
 		{
 			attr_s = "{" ~ rs::join(",", res_attrs) ~ "}";
@@ -219,32 +238,7 @@ class TranslatorES6Html
 		
 		return [t, attr_s];
 	}
-	
-	
-	/**
-	 * Returns class name
-	 */
-	pure string getOpHtmlAttrsClassName(Collection<OpHtmlAttribute> attrs)
-	{
-		Vector<string> class_names = new Vector();
-		if (attrs != "")
-		{
-			for (int attrs_i=0; attrs_i<attrs.count(); attrs_i++)
-			{
-				OpHtmlAttribute attr = attrs[attrs_i];
-				string attr_key = attr.key;
-				if (attr_key == "class")
-				{
-					if (attr.value instanceof OpString)
-					{
-						class_names.push(attr.value.value);
-					}
-				}
-			}
-		}
-		return rs::join(" ", class_names);
-	}
-	
+		
 	
 	/**
 	 * Translator html template
@@ -308,7 +302,7 @@ class TranslatorES6Html
 				bool (OpHtmlAttribute attr) => attr.key != "@render"
 			);
 			
-			list res = static::OpHtmlAttrs(t, op_code_attrs);
+			list res = static::OpHtmlAttrs(t, op_code_attrs, is_component);
 			t = res[0]; string attrs = res[1];
 			
 			if (op_code.tag_name == "")
@@ -438,11 +432,13 @@ class TranslatorES6Html
 		string content = "{";
 		t = t.levelInc();
 		
+		Collection debug_component = t.debug_component.slice();
 		for (int i=0; i<op_code.items.count(); i++)
 		{
 			OpHtmlSlot item = op_code.items.item(i);
 			if (not(item instanceof OpHtmlSlot)) continue;
 			
+			t <= debug_component <= debug_component.pushIm(i);
 			content ~= t.s(t.expression::toString(item.name) ~ ": ");
 			list res = static::OpHtmlItemsAsFunction(t, item.items);
 			t = res.get(0); content ~= res.get(1) ~ ",";
@@ -505,6 +501,7 @@ class TranslatorES6Html
 			return [t, ""];
 		}
 		
+		Collection debug_component = t.debug_component.slice();
 		string save_var_name = t.html_var_name;
 		t <= html_var_name <= var_name;
 		
@@ -561,6 +558,7 @@ class TranslatorES6Html
 			else
 			{
 				add_space(i);
+				t <= debug_component <= debug_component.pushIm(i);
 				list res = static::OpHtmlTag(t, item, var_name);
 				t = res[0]; op_content ~= res[1];
 			}

@@ -28,7 +28,6 @@ use BayLang.OpCodes.OpDeclareFunction;
 
 struct CoreTranslator extends BaseStruct
 {
-	
 	/* State */
 	string current_namespace_name = "";
 	string current_class_name = "";
@@ -53,6 +52,17 @@ struct CoreTranslator extends BaseStruct
 	/* Flags */
 	bool flag_struct_check_types = false;
 	Dict<bool> preprocessor_flags = null;
+	
+	
+	/**
+	 * Set preprocessor flag
+	 */
+	CoreTranslator setFlag(string flag_name, bool value)
+	{
+		CoreTranslator t = this;
+		t <= preprocessor_flags <= { flag_name } <= value;
+		return t;
+	}
 	
 	
 	/**

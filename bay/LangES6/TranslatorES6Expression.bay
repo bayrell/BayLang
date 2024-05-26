@@ -1138,6 +1138,7 @@ struct TranslatorES6Expression extends BaseStruct
 		}
 		else if (op_code instanceof OpHtmlItems)
 		{
+			t <= debug_component <= [];
 			t <= is_html <= true;
 			list res = t.html::OpHtmlExpression(t, op_code); t = res[0]; content = res[1];
 			t <= is_html <= false;
