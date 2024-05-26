@@ -187,7 +187,7 @@ class TranslatorES6Html
 		/* Add debug component */
 		if (t.preprocessor_flags.get("DEBUG_COMPONENT") and not is_component)
 		{
-			attr_class.push("\"widget_debug\"");
+			attr_class.push("\"debug_component\"");
 		}
 		
 		/* Attrs */
@@ -216,10 +216,20 @@ class TranslatorES6Html
 		/* Add debug component */
 		if (t.preprocessor_flags.get("DEBUG_COMPONENT"))
 		{
-			res_attrs.push
-			(
-				"\"data-widget-path\": \"" ~ rs::join(".", t.debug_component) ~ "\""
-			);
+			if (is_component)
+			{
+				res_attrs.push
+				(
+					"\"data_widget_path\": \"" ~ rs::join(".", t.debug_component) ~ "\""
+				);
+			}
+			else
+			{
+				res_attrs.push
+				(
+					"\"data-widget-path\": \"" ~ rs::join(".", t.debug_component) ~ "\""
+				);
+			}
 		}
 		
 		if (res_attrs.count() > 0)
