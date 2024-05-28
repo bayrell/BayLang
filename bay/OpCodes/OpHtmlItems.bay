@@ -44,7 +44,7 @@ class OpHtmlItems extends BaseOpCode
 	 * Find op_code position
 	 */
 	int find(BaseOpCode op_code) =>
-		op_code ? this.items.find(lib::equal(op_code)) : -1
+		op_code ? this.items.indexOf(op_code) : -1
 	;
 	
 	

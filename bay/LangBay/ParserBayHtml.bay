@@ -494,7 +494,6 @@ class ParserBayHtml extends BaseObject
 					parser = res[0];
 					selectors.push(res[1]);
 					caret = parser.getCaret();
-					caret.skipChar();
 					if (caret.isNextChar(","))
 					{
 						caret.readChar();
