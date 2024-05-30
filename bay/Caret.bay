@@ -71,6 +71,10 @@ class Caret extends BaseObject implements SerializeInterface
 			if (items.has("file_name")) this.file_name = items.get("file_name");
 			if (items.has("content")) this.content = items.get("content");
 			if (items.has("content_sz")) this.content_sz = items.get("content_sz");
+			if (items.has("content") and not items.has("content_sz"))
+			{
+				this.content_sz = rs::strlen(this.content.ref);
+			}
 			if (items.has("tab_size")) this.tab_size = items.get("tab_size");
 			if (items.has("pos")) this.pos = items.get("pos");
 			if (items.has("x")) this.x = items.get("x");
@@ -94,6 +98,12 @@ class Caret extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Copy caret
+	 */
+	Caret copy(Dict items = null) => this.clone(items);
+	
+	
+	/**
 	 * Serialize object
 	 */
 	void serialize(Serializer serializer, Map data)
@@ -101,6 +111,17 @@ class Caret extends BaseObject implements SerializeInterface
 		serializer.process(this, "pos", data);
 		serializer.process(this, "x", data);
 		serializer.process(this, "y", data);
+	}
+	
+	
+	/**
+	 * Seek caret
+	 */
+	void seek(Caret caret)
+	{
+		this.pos = caret.pos;
+		this.x = caret.x;
+		this.y = caret.y;
 	}
 	
 	
@@ -282,10 +303,36 @@ class Caret extends BaseObject implements SerializeInterface
 	
 	
 	/**
-	 * Skip null chars
+	 * Skip space
 	 */
-	void skipNullChar()
+	void skipSpace()
 	{
 		while (not this.eof() and static::isSkipChar(this.nextChar())) this.readChar();
+	}
+	
+	
+	/**
+	 * Returns true if token char
+	 */
+	bool isTokenChar(char ch)
+	{
+		return rs::indexOf('qazwsxedcrfvtgbyhnujmikolp0123456789_', rs::lower(ch)) !== -1;
+	}
+	
+	
+	/**
+	 * Read next token
+	 */
+	string readToken()
+	{
+		Vector items = [];
+		this.skipSpace();
+		if (this.eof()) return "";
+		if (not this.isTokenChar(this.nextChar())) return this.readChar();
+		while (not this.eof() and this.isTokenChar(this.nextChar()))
+		{
+			items.push(this.readChar());
+		}
+		return rs::join("", items);
 	}
 }

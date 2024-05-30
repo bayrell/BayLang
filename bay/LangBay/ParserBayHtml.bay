@@ -497,7 +497,7 @@ class ParserBayHtml extends BaseObject
 					if (caret.isNextChar(","))
 					{
 						caret.readChar();
-						caret.skipNullChar();
+						caret.skipSpace();
 					}
 				}
 				

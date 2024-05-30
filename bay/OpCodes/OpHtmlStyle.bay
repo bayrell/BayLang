@@ -18,7 +18,10 @@
  
 namespace BayLang.OpCodes;
 
+use Runtime.Reference;
 use Runtime.Serializer;
+use BayLang.Caret;
+use BayLang.TokenReader;
 use BayLang.OpCodes.BaseOpCode;
 
 
@@ -28,6 +31,7 @@ class OpHtmlStyle extends BaseOpCode
 	string content = "";
 	bool is_global = false;
 	BaseOpCode value = null;
+	Dict<string> styles = {};
 	
 	
 	/**
@@ -39,5 +43,64 @@ class OpHtmlStyle extends BaseOpCode
 		serializer.process(this, "content", data);
 		serializer.process(this, "is_global", data);
 		serializer.process(this, "value", data);
+	}
+	
+	
+	/**
+	 * Update styles from content
+	 */
+	void updateStylesFromContent()
+	{
+		TokenReader reader = new TokenReader();
+		reader.init(
+			new Caret{
+				"content": new Reference(this.content),
+			}
+		);
+		
+		while (not reader.eof() and reader.nextToken() == ".")
+		{
+			reader.matchToken(".");
+			string selector = this.readSelector(reader);
+			string code = this.readCssBlock(reader);
+			this.styles.set(selector, code);
+		}
+	}
+	
+	
+	/**
+	 * Read selector
+	 */
+	string readSelector(TokenReader reader)
+	{
+		Collection items = [];
+		while (not reader.eof() and reader.nextToken() != "{")
+		{
+			items.push(reader.readToken());
+		}
+		return rs::join("", items);
+	}
+	
+	
+	/**
+	 * Read css block
+	 */
+	string readCssBlock(TokenReader reader)
+	{
+		reader.matchToken("{");
+		Caret caret = reader.main_caret;
+		caret.skipSpace();
+		
+		Collection items = [];
+		while (not caret.eof() and caret.nextChar() != "}")
+		{
+			string ch = caret.readChar();
+			if (ch != "\t") items.push(ch);
+		}
+		
+		reader.init(caret);
+		reader.matchToken("}");
+		
+		return rs::trim(rs::join("", items));
 	}
 }

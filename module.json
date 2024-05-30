@@ -9,6 +9,7 @@
 		"LangConstant.bay",
 		"LangUtils.bay",
 		"SaveOpCode.bay",
+		"TokenReader.bay",
 		"Exceptions/ParserUnknownError.bay",
 		"Exceptions/ParserError.bay",
 		"Exceptions/ParserEOF.bay",
