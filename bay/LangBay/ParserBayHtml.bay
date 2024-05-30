@@ -367,7 +367,7 @@ class ParserBayHtml extends BaseObject
 		caret = caret.clone();
 		
 		char ch = caret.nextChar();
-		if (ch == "%" or ch == "." or ch == "#" or ch == ":" or ch == "*") return true;
+		if (ch == "@" or ch == "%" or ch == "." or ch == "#" or ch == ":" or ch == "*") return true;
 		if (not caret::isChar(ch)) return false;
 		
 		while (not caret.eof() and ch != "{" and ch != "}" and ch != "<")

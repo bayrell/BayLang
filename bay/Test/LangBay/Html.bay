@@ -395,4 +395,27 @@ class Html
 		list res = this.translate(content);
 		AssertHelper::equalValue(content, res.get(1), content);
 	}
+	
+	
+	@Test{}
+	void testStyle3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<style global=\"true\">",
+				"@font-face{",
+				"}",
+				"</style>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
 }
