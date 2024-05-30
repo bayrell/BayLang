@@ -34,7 +34,6 @@ class OpHtmlStyle extends BaseOpCode
 	string content = "";
 	bool is_global = false;
 	BaseOpCode value = null;
-	Dict<string> styles = {};
 	
 	
 	/**
@@ -50,9 +49,9 @@ class OpHtmlStyle extends BaseOpCode
 	
 	
 	/**
-	 * Setup styles from content
+	 * Read styles from content
 	 */
-	void setupStyles()
+	Dict readStyles()
 	{
 		TokenReader reader = new TokenReader();
 		reader.init(
@@ -61,54 +60,15 @@ class OpHtmlStyle extends BaseOpCode
 			}
 		);
 		
-		this.styles = {};
+		Map styles = {};
 		while (not reader.eof() and reader.nextToken() == ".")
 		{
 			string selector = this.readSelector(reader);
 			string code = this.readCssBlock(reader);
-			this.styles.set(selector, code);
-		}
-	}
-	
-	
-	/**
-	 * Setup content from styles
-	 */
-	void setupContent(Dict params = null)
-	{
-		/* Get items */
-		Collection items = [];
-		Collection keys = this.styles.keys().sort();
-		for (int i=0; i<keys.count(); i++)
-		{
-			string key_name = keys.get(i);
-			items.push(key_name ~ "{");
-			items.push(this.styles.get(key_name));
-			items.push("}");
+			styles.set(selector, code);
 		}
 		
-		/* Set content */
-		this.content = rs::join("\n", items);
-		try
-		{
-			/* Parse new content */
-			ParserBay parser = new ParserBay();
-			parser = parser::reset(parser);
-			parser = parser::setContent(parser, this.content ~ "}");
-			if (params.has("current_namespace_name"))
-				parser <= current_namespace_name <= params.get("current_namespace_name");
-			if (params.has("current_class_name"))
-				parser <= current_class_name <= params.get("current_class_name");
-			if (params.has("uses"))
-				parser <= uses <= params.get("uses");
-			list res = parser.parser_html::readCssBody(parser);
-			
-			/* Set new value */
-			this.value = res.get(1);
-		}
-		catch (ParserUnknownError e)
-		{
-		}
+		return styles;
 	}
 	
 	
