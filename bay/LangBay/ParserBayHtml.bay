@@ -695,9 +695,18 @@ class ParserBayHtml extends BaseObject
 		list res = parser.parser_base::matchToken(parser, "style"); parser = res[0];
 		list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
 		
+		/* Get style content */
+		int start_pos = css_op_code.caret_start.pos;
+		int end_pos = css_op_code.caret_end.pos;
+		string style_content = rs::trim(
+			rs::substr(parser.content.ref, start_pos, end_pos - start_pos)
+		);
+		
+		/* Create op code */
 		BaseOpCode op_code = new OpHtmlStyle{
 			"caret_start": caret_start,
 			"caret_end": parser.caret,
+			"content": style_content,
 			"is_global": is_global,
 			"value": css_op_code,
 		};

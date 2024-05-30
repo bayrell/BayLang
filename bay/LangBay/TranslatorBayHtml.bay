@@ -208,9 +208,6 @@ class TranslatorBayHtml extends BaseObject
 	 */
 	void translateStyle(OpHtmlStyle op_code, Collection<string> result)
 	{
-		int start_pos = op_code.value.caret_start.pos;
-		int end_pos = op_code.value.caret_end.pos;
-		string content = rs::substr(this.translator.content, start_pos, end_pos - start_pos);
 		if (op_code.is_global)
 		{
 			result.push("<style global=\"true\">");
@@ -219,7 +216,9 @@ class TranslatorBayHtml extends BaseObject
 		{
 			result.push("<style>");
 		}
-		result.push(content);
+		result.push(this.translator.newLine());
+		result.push(op_code.content);
+		result.push(this.translator.newLine());
 		result.push("</style>");
 		result.push(this.translator.newLine());
 	}

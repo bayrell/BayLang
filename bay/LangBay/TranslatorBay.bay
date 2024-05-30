@@ -31,7 +31,6 @@ class TranslatorBay extends BaseObject
 {
 	int opcode_level = 0;
 	int indent_level = 0;
-	string content = "";
 	string indent = "\t";
 	string crlf = "\n";
 	
@@ -49,15 +48,6 @@ class TranslatorBay extends BaseObject
 	{
 		this.opcode_level = 0;
 		this.indent_level = 0;
-	}
-	
-	
-	/**
-	 * Set content
-	 */
-	void setContent(string content)
-	{
-		this.content = content;
 	}
 	
 	

@@ -51,7 +51,6 @@ class Html
 	void setContent(string content)
 	{
 		this.parser = this.parser::setContent(this.parser, content);
-		this.translator.setContent(content);
 	}
 	
 	

@@ -25,6 +25,7 @@ use BayLang.OpCodes.BaseOpCode;
 class OpHtmlStyle extends BaseOpCode
 {
 	string op = "op_html_style";
+	string content = "";
 	bool is_global = false;
 	BaseOpCode value = null;
 	
@@ -35,6 +36,7 @@ class OpHtmlStyle extends BaseOpCode
 	void serialize(Serializer serializer, Map data)
 	{
 		parent(serializer, data);
+		serializer.process(this, "content", data);
 		serializer.process(this, "is_global", data);
 		serializer.process(this, "value", data);
 	}
