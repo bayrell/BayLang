@@ -22,6 +22,9 @@ use Runtime.Reference;
 use Runtime.Serializer;
 use BayLang.Caret;
 use BayLang.TokenReader;
+use BayLang.Exceptions.ParserUnknownError;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.ParserBayHtml;
 use BayLang.OpCodes.BaseOpCode;
 
 
@@ -47,9 +50,9 @@ class OpHtmlStyle extends BaseOpCode
 	
 	
 	/**
-	 * Update styles from content
+	 * Setup styles from content
 	 */
-	void updateStylesFromContent()
+	void setupStyles()
 	{
 		TokenReader reader = new TokenReader();
 		reader.init(
@@ -58,12 +61,53 @@ class OpHtmlStyle extends BaseOpCode
 			}
 		);
 		
+		this.styles = {};
 		while (not reader.eof() and reader.nextToken() == ".")
 		{
-			reader.matchToken(".");
 			string selector = this.readSelector(reader);
 			string code = this.readCssBlock(reader);
 			this.styles.set(selector, code);
+		}
+	}
+	
+	
+	/**
+	 * Setup content from styles
+	 */
+	void setupContent(Dict params = null)
+	{
+		/* Get items */
+		Collection items = [];
+		Collection keys = this.styles.keys().sort();
+		for (int i=0; i<keys.count(); i++)
+		{
+			string key_name = keys.get(i);
+			items.push(key_name ~ "{");
+			items.push(this.styles.get(key_name));
+			items.push("}");
+		}
+		
+		/* Set content */
+		this.content = rs::join("\n", items);
+		try
+		{
+			/* Parse new content */
+			ParserBay parser = new ParserBay();
+			parser = parser::reset(parser);
+			parser = parser::setContent(parser, this.content ~ "}");
+			if (params.has("current_namespace_name"))
+				parser <= current_namespace_name <= params.get("current_namespace_name");
+			if (params.has("current_class_name"))
+				parser <= current_class_name <= params.get("current_class_name");
+			if (params.has("uses"))
+				parser <= uses <= params.get("uses");
+			list res = parser.parser_html::readCssBody(parser);
+			
+			/* Set new value */
+			this.value = res.get(1);
+		}
+		catch (ParserUnknownError e)
+		{
 		}
 	}
 	
