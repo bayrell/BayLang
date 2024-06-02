@@ -23,6 +23,8 @@ use Runtime.Serializer;
 use Runtime.Exceptions.RuntimeException;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpUse;
 
 
 class OpModule extends BaseOpCode
@@ -54,6 +56,30 @@ class OpModule extends BaseOpCode
 			throw new RuntimeException(alias_name ~ " already exists");
 		}
 		this.uses.set(alias_name, class_name);
+		
+		/* Add op_code */
+		int pos = this.items.find(lib::isInstance(classof OpNamespace));
+		OpUse op_code = new OpUse{
+			"alias": alias_name,
+			"name": class_name,
+		};
+		if (pos != -1)
+		{
+			pos = pos + 1;
+			while (pos < this.items.count())
+			{
+				BaseOpCode item = this.items.get(pos);
+				if (item == null) break;
+				if (not (item instanceof OpUse)) break;
+				if (rs::compare(class_name, item.name) == -1) break;
+				pos = pos + 1;
+			}
+			this.items.insert(pos, op_code);
+		}
+		else
+		{
+			this.items.prepend(op_code);
+		}
 	}
 	
 	
