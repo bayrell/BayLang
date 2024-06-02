@@ -20,6 +20,7 @@ namespace BayLang.OpCodes;
 
 use Runtime.lib;
 use Runtime.Serializer;
+use Runtime.Exceptions.RuntimeException;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareClass;
 
@@ -40,6 +41,40 @@ class OpModule extends BaseOpCode
 		serializer.process(this, "is_component", data);
 		serializer.process(this, "items", data);
 		serializer.process(this, "uses", data);
+	}
+	
+	
+	/**
+	 * Add module
+	 */
+	void addModule(string class_name, string alias_name)
+	{
+		if (this.uses.has(alias_name))
+		{
+			throw new RuntimeException(alias_name ~ " already exists");
+		}
+		this.uses.set(alias_name, class_name);
+	}
+	
+	
+	/**
+	 * Has module
+	 */
+	bool hasModule(string alias_name) => this.uses.has(alias_name);
+	
+	
+	/**
+	 * Find module
+	 */
+	string findModule(string class_name)
+	{
+		Collection keys = this.uses.keys();
+		for (int i=0; i<keys.count(); i++)
+		{
+			string key_name = keys.get(i);
+			if (this.uses.get(key_name) == class_name) return key_name;
+		}
+		return null;
 	}
 	
 	

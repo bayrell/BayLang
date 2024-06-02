@@ -27,7 +27,7 @@ use BayLang.OpCodes.OpHtmlTag;
 class OpHtmlItems extends BaseOpCode
 {
 	string op = "op_html";
-	Collection<BaseOpCode> items = null;
+	Collection<BaseOpCode> items = [];
 	
 	
 	/**
@@ -53,6 +53,7 @@ class OpHtmlItems extends BaseOpCode
 	 */
 	BaseOpCode addItem(BaseOpCode op_code, BaseOpCode dest = null, string kind = "after")
 	{
+		if (this.items == null) this.items = [];
 		int pos = -1;
 		if (dest != null)
 		{
