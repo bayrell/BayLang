@@ -541,12 +541,6 @@ struct TranslatorES6Program extends BaseStruct
 		t = t.levelDec();
 		content ~= t.s("},");
 		
-		/* Exit if component */
-		if (op_code.is_component == true)
-		{
-			return [t, content];
-		}
-		
 		/* Class info */
 		content ~= t.s("getClassInfo: function(ctx)");
 		content ~= t.s("{");
