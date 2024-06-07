@@ -390,14 +390,16 @@ static class TranslatorPHPHtml
 		
 		if (
 			detect_multiblock and
-			t.current_function.flags.isFlag("multiblock") and
-			op_code.items.count() > 1
+			(
+				t.current_function.flags.isFlag("multiblock") or
+				t.current_function.name == "render"
+			)
 		)
 		{
 			return [t, "$this->_flatten($__v)"];
 		}
 		
-		return [t, "$__v->join(\"\")"];
+		return [t, "$__v"];
 	}
 	
 	

@@ -1583,10 +1583,6 @@ class ParserBayHtml extends BaseObject
 		
 		/* If multiblock */
 		bool is_multiblock = false;
-		if (fn_name == "render")
-		{
-			is_multiblock = true;
-		}
 		if (item_attrs.has("multiblock"))
 		{
 			if (item_attrs.get("multiblock") == "true")
