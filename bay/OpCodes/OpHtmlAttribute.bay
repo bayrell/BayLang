@@ -26,7 +26,7 @@ class OpHtmlAttribute extends BaseOpCode
 {
 	string op = "op_html_attr";
 	string key = "";
-	BaseOpCode value = "";
+	BaseOpCode value = null;
 	bool is_spread = false;
 	
 	
