@@ -37,10 +37,4 @@ interface CacheInterface
 	 * Save object to cache
 	 */
 	async void saveCache();
-	
-	
-	/**
-	 * Load object from file system
-	 */
-	async void loadObject();
 }

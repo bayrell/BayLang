@@ -85,12 +85,14 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	/**
 	 * Load widget
 	 */
-	async void load()
+	async void load(bool is_force = false)
 	{
-		bool is_loaded = await this.readCache();
+		bool is_loaded = false;
+		if (not is_force) is_loaded = await this.readCache();
 		if (not is_loaded)
 		{
-			await this.loadObject();
+			/* Load widget */
+			await this.loadWidget();
 			
 			/* Save to cache */
 			await this.saveCache();
@@ -124,9 +126,9 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	
 	
 	/**
-	 * Load project from file system
+	 * Load widget from file system
 	 */
-	async void loadObject()
+	async void loadWidget()
 	{
 		if (this.isModelBased())
 		{
@@ -208,7 +210,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	/**
 	 * Returns component name
 	 */
-	string getComponetName()
+	string getComponentName()
 	{
 		if (not this.isModelBased()) return this.name;
 		if (this.model == null) return "";
@@ -223,7 +225,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	/**
 	 * Returns component path
 	 */
-	string getComponetPath() => this.module.resolveClassName(this.getComponetName());
+	string getComponetPath() => this.module.resolveClassName(this.getComponentName());
 	
 	
 	/**

@@ -106,6 +106,7 @@ class TranslatorBayProgram extends BaseObject
 	 */
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
+		if (not (op_code.result_type instanceof OpTypeIdentifier)) return;
 		this.translator.expression.OpTypeIdentifier(op_code.result_type, result);
 		
 		/* Function name */

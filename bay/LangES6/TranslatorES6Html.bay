@@ -57,7 +57,7 @@ class TranslatorES6Html
 	/**
 	 * Translator html value
 	 */
-	pure list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, OpHtmlAttribute attr, int item_pos)
+	pure list<TranslatorES6, string> OpHtmlAttr(TranslatorES6 t, OpHtmlAttribute attr)
 	{
 		BaseOpCode op_code = attr.value;
 		
@@ -195,7 +195,7 @@ class TranslatorES6Html
 		{
 			res_attrs.push
 			(
-				"\"class\":" ~ "this._class_name([" ~ attr_class ~ "])"
+				"\"class\":" ~ "this._class_name([" ~ rs::join(", ", attr_class) ~ "])"
 			);
 		}
 		if (attr_key_value != "")

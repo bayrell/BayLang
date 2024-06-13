@@ -169,7 +169,7 @@ static class TranslatorPHPHtml
 		{
 			res_attrs.push
 			(
-				"\"class\" => " ~ "$this->_class_name([" ~ attr_class ~ "])"
+				"\"class\" => " ~ "$this->_class_name([" ~ rs::join(", ", attr_class) ~ "])"
 			);
 		}
 		

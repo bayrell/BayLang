@@ -60,45 +60,33 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 	async static Project readProject(string project_path)
 	{
 		Project project = new Project();
-		await project.initFromFile(project_path);
+		await project.init(project_path);
 		if (not project.exists()) return null;
 		return project;
 	}
 	
 	
 	/**
-	 * Init from file
+	 * Init project
 	 */
-	async void initFromFile(string project_path)
+	async bool init(string project_path)
 	{
-		string file_name = rs::basename(project_path);
+		this.info = null;
 		
-		if (file_name == "") return;
-		if (file_name[0] == ".") return;
+		string file_name = rs::basename(project_path);
+		if (file_name == "") return false;
+		if (file_name[0] == ".") return false;
 		
 		string project_json_path = fs::join([project_path, "project.json"]);
-		if (not(await fs::isFolder(project_path))) return;
-		if (not(await fs::isFile(project_json_path))) return;
+		if (not(await fs::isFolder(project_path))) return false;
+		if (not(await fs::isFile(project_json_path))) return false;
 		
 		/* Read file */
 		string content = await fs::readFile(project_json_path);
 		Dict project_info = rtl::json_decode(content);
 		
-		/* Init project */
-		this.init(project_path, project_info);
-		
-		/* Load data from cache */
-		await this.readCache();
-	}
-	
-	
-	/**
-	 * Init project
-	 */
-	void init(string project_path, Dict project_info)
-	{
-		if (not project_info) return;
-		if (not project_info.has("name")) return;
+		if (not project_info) return false;
+		if (not project_info.has("name")) return false;
 		
 		this.path = project_path;
 		this.info = project_info;
@@ -176,31 +164,18 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 	/**
 	 * Load object
 	 */
-	async void load()
+	async void load(bool is_force = false)
 	{
-		bool is_loaded = await this.readCache();
+		bool is_loaded = false;
+		if (not is_force) is_loaded = await this.readCache();
 		if (not is_loaded)
 		{
-			await this.loadObject();
+			/* Read and load modules */
+			await this.readModules();
+			await this.loadModules();
 			
 			/* Save to cache */
 			await this.saveCache();
-		}
-	}
-	
-	
-	/**
-	 * Load project from file system
-	 */
-	async void loadObject()
-	{
-		Collection<string> modules = this.modules.keys().sort();
-		for (int i=0; i<modules.count(); i++)
-		{
-			string module_name = modules.get(i);
-			Module module = this.modules.get(module_name);
-			await module.loadRoutes();
-			await module.loadWidgets();
 		}
 	}
 	
@@ -272,6 +247,12 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 	
 	
 	/**
+	 * Returns languages
+	 */
+	Collection<string> getLanguages() => this.exists() ? this.info.get("languages") : [];
+	
+	
+	/**
 	 * Returns module
 	 */
 	Module getModule(string module_name) => this.modules.get(module_name);
@@ -310,6 +291,22 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 	
 	
 	/**
+	 * Load modules
+	 */
+	async void loadModules()
+	{
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			await module.loadRoutes();
+			await module.loadWidgets();
+		}
+	}
+	
+	
+	/**
 	 * Read modules
 	 */
 	async void readModules()
@@ -343,7 +340,7 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 			}
 			
 			/* Read module */
-			else if (module_type == "folder")
+			else
 			{
 				Module module = Module::readModule(this, folder_path);
 				if (module)
@@ -352,7 +349,7 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 					this.modules.set(module.getName(), module);
 					
 					/* Read sub modules */
-					await this.readSubModules(module.getPath(), module.getInfo().get("modules"));
+					await this.readSubModules(module.getPath(), module.submodules);
 				}
 			}
 		}

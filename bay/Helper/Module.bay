@@ -19,15 +19,23 @@
 namespace BayLang.Helper;
 
 use Runtime.fs;
+use Runtime.re;
 use Runtime.lib;
 use Runtime.BaseObject;
 use Runtime.SerializeInterface;
 use Runtime.Serializer;
 use BayLang.Helper.Cache;
 use BayLang.Helper.Project;
-use BayLang.Helper.Widget;
 use BayLang.Helper.RouteProcessor;
+use BayLang.Helper.Widget;
 use BayLang.Helper.WidgetProcessor;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangNode.TranslatorNode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+use BayLang.LangUtils;
 
 
 class Module extends BaseObject implements SerializeInterface
@@ -35,6 +43,7 @@ class Module extends BaseObject implements SerializeInterface
 	Project project = null;
 	string path = "";
 	string src_path = "";
+	Dict<string> dest_path = {};
 	string name = "";
 	Dict submodules = null;
 	Vector<Map> routes = null;
@@ -58,50 +67,43 @@ class Module extends BaseObject implements SerializeInterface
 	static Module readModule(Project project, string path)
 	{
 		Module module = new Module(project);
-		module.initFromFile(path);
+		module.init(path);
 		if (not module.exists()) return null;
 		return module;
 	}
 	
 	
 	/**
-	 * Init module from file
+	 * Init module
 	 */
-	void initFromFile(string module_path)
+	bool init(string module_path)
 	{
-		this.info = null;
+		this.path = "";
+		
 		string file_name = rs::basename(module_path);
+		if (file_name == "") return false;
+		if (file_name[0] == ".") return false;
+		if (not(await fs::isFolder(module_path))) return false;
 		
-		if (file_name == "") return;
-		if (file_name[0] == ".") return;
-		
+		/* Module json file */
 		string module_json_path = module_path ~ "/" ~ "module.json";
-		if (not(await fs::isFile(module_json_path))) return;
+		if (not(await fs::isFile(module_json_path))) return false;
 		
 		/* Read file */
 		string content = await fs::readFile(module_json_path);
 		Dict module_info = rtl::json_decode(content);
 		
-		/* Init module */
-		this.init(module_path, module_info);
-	}
-	
-	
-	/**
-	 * Init module
-	 */
-	void init(string module_path, Dict module_info)
-	{
-		this.info = null;
-		
-		if (not module_info) return;
-		if (not module_info.has("name")) return;
+		if (not module_info) return false;
+		if (not module_info.has("name")) return false;
 		
 		this.path = module_path;
 		this.name = module_info.get("name");
 		this.src_path = module_info.get("src");
+		this.dest_path = module_info.get("dest");
 		this.groups = module_info.get("groups");
 		this.submodules = module_info.get("modules");
+		
+		return true;
 	}
 	
 	
@@ -115,6 +117,7 @@ class Module extends BaseObject implements SerializeInterface
 		serializer.process(this, "path", data);
 		serializer.process(this, "routes", data);
 		serializer.process(this, "src_path", data);
+		serializer.process(this, "dest_path", data);
 		serializer.process(this, "submodules", data);
 		serializer.processItems(this, "widgets", data,
 			Widget (Dict widget) => new Widget(this)
@@ -125,7 +128,7 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Returns true if project is exists
 	 */
-	void exists() => this.path != null;
+	void exists() => this.path != "";
 	
 	
 	/**
@@ -169,9 +172,31 @@ class Module extends BaseObject implements SerializeInterface
 	
 	
 	/**
-	 * Returns source path
+	 * Returns source folder path
 	 */
-	string getSourcePath() => fs::join([ this.getPath(), this.src_path ]);
+	string getSourceFolderPath() => fs::join([ this.getPath(), this.src_path ]);
+	
+	
+	/**
+	 * Returns dest folder path
+	 */
+	string getDestFolderPath(string lang)
+	{
+		if (not this.dest_path.has(lang)) return "";
+		return fs::join([ this.getPath(), this.dest_path.get(lang) ]);
+	}
+	
+	
+	/**
+	 * Returns relative source path
+	 */
+	string getRelativeSourcePath(string file_path)
+	{
+		string source_path = this.getSourceFolderPath();
+		int source_path_sz = rs::strlen(source_path);
+		if (rs::substr(file_path, 0, source_path_sz) != source_path) return "";
+		return rs::addFirstSlash(rs::substr(file_path, source_path_sz));
+	}
 	
 	
 	/**
@@ -183,17 +208,50 @@ class Module extends BaseObject implements SerializeInterface
 		int module_name_sz = rs::strlen(this.getName());
 		if (rs::substr(class_name, 0, module_name_sz) != this.getName())
 		{
-			return;
+			return "";
 		}
 		
 		/* Remove module name from class name */
 		class_name = rs::substr(class_name, module_name_sz);
 		
 		/* Return path to class name */
-		string path = this.getSourcePath();
+		string path = this.getSourceFolderPath();
 		Vector<string> arr = rs::split(".", class_name);
 		arr.prepend(path);
 		return fs::join(arr) ~ ".bay";
+	}
+	
+	
+	/**
+	 * Resolve dest path
+	 */
+	string resolveDestPath(string file_path, string lang)
+	{
+		string dest_folder_path = this.getDestFolderPath(lang);
+		if (dest_folder_path == "") return "";
+		
+		/* Get dest file path */
+		string relative_path = this.getRelativeSourcePath(file_path);
+		string dest_file_path = fs::join([ dest_folder_path, relative_path ]);
+		
+		/* Resolve extension */
+		if (lang == "php")
+		{
+			dest_file_path = re::replace("\\.bay$", ".php", dest_file_path);
+			dest_file_path = re::replace("\\.ui$", ".php", dest_file_path);
+		}
+		else if (lang == "es6")
+		{
+			dest_file_path = re::replace("\\.bay$", ".js", dest_file_path);
+			dest_file_path = re::replace("\\.ui$", ".js", dest_file_path);
+		}
+		else if (lang == "nodejs")
+		{
+			dest_file_path = re::replace("\\.bay$", ".js", dest_file_path);
+			dest_file_path = re::replace("\\.ui$", ".js", dest_file_path);
+		}
+		
+		return dest_file_path;
 	}
 	
 	
@@ -250,6 +308,65 @@ class Module extends BaseObject implements SerializeInterface
 		#ifcode PHP then
 		rename($this.path, "/data/projects/" . $new_file_name);
 		#endif
+	}
+	
+	
+	/**
+	 * Compile file
+	 */
+	bool compile(string file_path)
+	{
+		/* Read file */
+		if (not(await fs::isFile(file_path))) return false;
+		string file_content = await fs::readFile(file_path);
+		
+		/* Parse file */
+		ParserBay parser = new ParserBay();
+		list res = parser::parse(parser, file_content);
+		BaseOpCode file_op_code = res.get(1);
+		if (not file_op_code) return false;
+		
+		/* Translate project languages */
+		Collection languages = this.project.getLanguages();
+		for (int i=0; i<languages.count(); i++)
+		{
+			string lang = languages.get(i);
+			if (lang == "bay") continue;
+			this.translate(file_path, file_op_code, lang);
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Translate file
+	 */
+	bool translate(string src_file_path, BaseOpCode op_code, string lang)
+	{
+		/* Get dest file path */
+		string dest_file_path = this.resolveDestPath(src_file_path, lang);
+		if (dest_file_path == "") return false;
+		
+		/* Create translator */
+		CoreTranslator translator = LangUtils::createTranslator(lang);
+		if (not translator) return false;
+		
+		/* Translate */
+		list res = translator::translate(translator, op_code);
+		string dest_file_content = res.get(1);
+		
+		/* Create dest folder if not exists */
+		string dest_dir_name = rs::dirname(dest_file_path);
+		if (not await fs::isFolder(dest_dir_name))
+		{
+			await fs::mkdir(dest_dir_name);
+		}
+		
+		/* Save file */
+		await fs::saveFile(dest_file_path, dest_file_content);
+		
+		return true;
 	}
 	
 	
