@@ -18,6 +18,7 @@
 
 namespace BayLang.LangPHP;
 
+use Runtime.re;
 use Runtime.lib;
 use Runtime.BaseStruct;
 use BayLang.SaveOpCode;
@@ -1038,10 +1039,10 @@ static class TranslatorPHPProgram
 		/* Disable context */
 		if (t.enable_context == false)
 		{
-			content = rs::replace("\\(\\$ctx\\)", "()", content);
-			content = rs::replace("\\(\\$ctx, ", "(", content);
-			content = rs::replace("\\(\\$ctx,", "(", content);
-			content = rs::replace("\\,\\$ctx,", ",", content);
+			content = rs::replace("($ctx)", "()", content);
+			content = rs::replace("($ctx, ", "(", content);
+			content = rs::replace("($ctx,", "(", content);
+			content = rs::replace(",$ctx,", ",", content);
 		}
 		
 		return [t, content];

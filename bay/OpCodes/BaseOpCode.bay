@@ -57,7 +57,7 @@ class BaseOpCode extends BaseObject implements SerializeInterface
 	 * @param Map obj = null
 	 * @return BaseStruct
 	 */
-	public BaseStruct clone(Dict obj = null)
+	public BaseOpCode clone(Dict obj = null)
 	{
 		if (obj == null) return this;
 		

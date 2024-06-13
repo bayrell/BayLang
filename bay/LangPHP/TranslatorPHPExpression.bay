@@ -136,7 +136,7 @@ static class TranslatorPHPExpression
 	pure string getModuleName(TranslatorPHP t, string module_name)
 	{
 		module_name = static::findModuleName(t, module_name);
-		module_name = rs::replace("\\.", "\\", module_name);
+		module_name = re::replace("\\.", "\\", module_name);
 		return "\\" ~ module_name;
 	}
 	

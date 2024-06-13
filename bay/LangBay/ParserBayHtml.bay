@@ -2069,9 +2069,10 @@ class ParserBayHtml extends BaseObject
 				full_name = item_attrs.get("name", "");
 				short_name = item_attrs.get("as", "");
 				is_component = item_attrs.get("component", "false");
+				is_component = is_component == "true" or is_component == "1";
 				if (short_name == "") short_name = rs::split(".", full_name).last();
 				parser <= uses <= parser.uses.setIm(short_name, full_name);
-				if (is_component == "true" or is_component == "1")
+				if (is_component)
 				{
 					components.push(full_name);
 				}
@@ -2079,6 +2080,7 @@ class ParserBayHtml extends BaseObject
 				{
 					"name": full_name,
 					"alias": short_name,
+					"is_component": is_component,
 				});
 			}
 			

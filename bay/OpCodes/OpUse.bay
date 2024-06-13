@@ -27,6 +27,7 @@ class OpUse extends BaseOpCode
 	string op = "op_use";
 	string alias = "";
 	string name = "";
+	string is_component = false;
 	
 	
 	/**
@@ -37,5 +38,6 @@ class OpUse extends BaseOpCode
 		parent(serializer, data);
 		serializer.process(this, "alias", data);
 		serializer.process(this, "name", data);
+		serializer.process(this, "is_component", data);
 	}
 }

@@ -55,7 +55,7 @@ class WidgetProcessor extends BaseObject
 	 * Returns file path
 	 */
 	string getModuleDescriptionFilePath() => fs::join([
-		this.module.getSourcePath(),
+		this.module.getSourceFolderPath(),
 		"ModuleDescription.bay"
 	]);
 	

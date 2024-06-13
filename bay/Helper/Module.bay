@@ -41,11 +41,14 @@ use BayLang.LangUtils;
 class Module extends BaseObject implements SerializeInterface
 {
 	Project project = null;
+	bool is_exists = false;
 	string path = "";
 	string src_path = "";
 	Dict<string> dest_path = {};
 	string name = "";
 	Dict submodules = null;
+	Vector<string> assets = null;
+	Vector<Map> required_modules = null;
 	Vector<Map> routes = null;
 	Vector<string> groups = null;
 	Vector<Widget> widgets = null;
@@ -54,9 +57,10 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Constructor
 	 */
-	void constructor(Project project)
+	void constructor(Project project, string module_path)
 	{
 		parent();
+		this.path = module_path;
 		this.project = project;
 	}
 	
@@ -64,10 +68,10 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Read project from folder
 	 */
-	static Module readModule(Project project, string path)
+	async static Module readModule(Project project, string path)
 	{
-		Module module = new Module(project);
-		module.init(path);
+		Module module = new Module(project, path);
+		await module.init();
 		if (not module.exists()) return null;
 		return module;
 	}
@@ -76,17 +80,17 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Init module
 	 */
-	bool init(string module_path)
+	async bool init()
 	{
-		this.path = "";
+		this.is_exists = false;
 		
-		string file_name = rs::basename(module_path);
+		string file_name = rs::basename(this.path);
 		if (file_name == "") return false;
 		if (file_name[0] == ".") return false;
-		if (not(await fs::isFolder(module_path))) return false;
+		if (not(await fs::isFolder(this.path))) return false;
 		
 		/* Module json file */
-		string module_json_path = module_path ~ "/" ~ "module.json";
+		string module_json_path = this.path ~ "/" ~ "module.json";
 		if (not(await fs::isFile(module_json_path))) return false;
 		
 		/* Read file */
@@ -96,11 +100,13 @@ class Module extends BaseObject implements SerializeInterface
 		if (not module_info) return false;
 		if (not module_info.has("name")) return false;
 		
-		this.path = module_path;
+		this.is_exists = true;
 		this.name = module_info.get("name");
-		this.src_path = module_info.get("src");
 		this.dest_path = module_info.get("dest");
+		this.src_path = module_info.get("src");
+		this.assets = module_info.get("assets");
 		this.groups = module_info.get("groups");
+		this.required_modules = module_info.get("require");
 		this.submodules = module_info.get("modules");
 		
 		return true;
@@ -112,12 +118,15 @@ class Module extends BaseObject implements SerializeInterface
 	 */
 	void serialize(Serializer serializer, Map data)
 	{
+		serializer.process(this, "is_exists", data);
+		serializer.process(this, "assets", data);
 		serializer.process(this, "groups", data);
 		serializer.process(this, "name", data);
 		serializer.process(this, "path", data);
 		serializer.process(this, "routes", data);
-		serializer.process(this, "src_path", data);
 		serializer.process(this, "dest_path", data);
+		serializer.process(this, "src_path", data);
+		serializer.process(this, "required_modules", data);
 		serializer.process(this, "submodules", data);
 		serializer.processItems(this, "widgets", data,
 			Widget (Dict widget) => new Widget(this)
@@ -126,9 +135,9 @@ class Module extends BaseObject implements SerializeInterface
 	
 	
 	/**
-	 * Returns true if project is exists
+	 * Returns true if module is exists
 	 */
-	void exists() => this.path != "";
+	void exists() => this.is_exists;
 	
 	
 	/**
@@ -223,16 +232,23 @@ class Module extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Resolve source path
+	 */
+	string resolveSourceFilePath(string relative_src_file_path) =>
+		fs::join([ this.getSourceFolderPath(), relative_src_file_path ])
+	;
+	
+	
+	/**
 	 * Resolve dest path
 	 */
-	string resolveDestPath(string file_path, string lang)
+	string resolveDestFilePath(string relative_src_file_path, string lang)
 	{
 		string dest_folder_path = this.getDestFolderPath(lang);
 		if (dest_folder_path == "") return "";
 		
 		/* Get dest file path */
-		string relative_path = this.getRelativeSourcePath(file_path);
-		string dest_file_path = fs::join([ dest_folder_path, relative_path ]);
+		string dest_file_path = fs::join([ dest_folder_path, relative_src_file_path ]);
 		
 		/* Resolve extension */
 		if (lang == "php")
@@ -314,11 +330,15 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Compile file
 	 */
-	bool compile(string file_path)
+	bool compile(string relative_src_file_path)
 	{
+		/* Get src file path */
+		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
+		if (src_file_path == "") return false;
+		
 		/* Read file */
-		if (not(await fs::isFile(file_path))) return false;
-		string file_content = await fs::readFile(file_path);
+		if (not(await fs::isFile(src_file_path))) return false;
+		string file_content = await fs::readFile(src_file_path);
 		
 		/* Parse file */
 		ParserBay parser = new ParserBay();
@@ -332,7 +352,7 @@ class Module extends BaseObject implements SerializeInterface
 		{
 			string lang = languages.get(i);
 			if (lang == "bay") continue;
-			this.translate(file_path, file_op_code, lang);
+			this.translate(relative_src_file_path, file_op_code, lang);
 		}
 		
 		return true;
@@ -342,10 +362,10 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Translate file
 	 */
-	bool translate(string src_file_path, BaseOpCode op_code, string lang)
+	bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
 	{
 		/* Get dest file path */
-		string dest_file_path = this.resolveDestPath(src_file_path, lang);
+		string dest_file_path = this.resolveDestFilePath(relative_src_file_path, lang);
 		if (dest_file_path == "") return false;
 		
 		/* Create translator */
@@ -367,6 +387,47 @@ class Module extends BaseObject implements SerializeInterface
 		await fs::saveFile(dest_file_path, dest_file_content);
 		
 		return true;
+	}
+	
+	
+	/**
+	 * Returns projects assets
+	 */
+	Collection<Dict> getProjectAssets()
+	{
+		Collection<Dict> project_assets = this.project.getAssets();
+		project_assets = project_assets.filter(
+			bool (Dict asset)
+			{
+				if (not asset.has("modules")) return false;
+				
+				/* Check module in modules names */
+				Collection modules = asset.get("modules");
+				if (not modules) return false;
+				if (not (modules instanceof Collection)) return false;
+				if (not this.inModuleList(modules)) return false;
+				
+				return true;
+			}
+		);
+		return project_assets;
+	}
+	
+	
+	/**
+	 * Update assets
+	 */
+	async void updateAssets()
+	{
+		Collection languages = this.project.getLanguages();
+		if (languages.indexOf("es6") == -1) return;
+		
+		/* Builds assets with current module */
+		Collection<Dict> project_assets = this.getProjectAssets();
+		for (int i=0; i<project_assets.count(); i++)
+		{
+			await this.project.buildAsset(project_assets.get(i));
+		}
 	}
 	
 	

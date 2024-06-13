@@ -56,7 +56,7 @@ class RouteProcessor extends BaseObject
 	 * Returns file path
 	 */
 	string getRoutesFilePath() => fs::join([
-		this.module.getSourcePath(),
+		this.module.getSourceFolderPath(),
 		"Routes.bay"
 	]);
 	

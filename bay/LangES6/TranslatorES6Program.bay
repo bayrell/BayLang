@@ -1524,9 +1524,9 @@ struct TranslatorES6Program extends BaseStruct
 	 */
 	pure string removeContext(string content)
 	{
-		content = rs::replace("\\("~"ctx\\)", "()", content);
-		content = rs::replace("\\("~"ctx, ", "(", content);
-		content = rs::replace("\\("~"ctx,", "(", content);
+		content = rs::replace("("~"ctx)", "()", content);
+		content = rs::replace("("~"ctx, ", "(", content);
+		content = rs::replace("("~"ctx,", "(", content);
 		content = rs::replace(","~"ctx,", ",", content);
 		content = rs::replace("this,"~"ctx", "this", content);
 		content = rs::replace("this,"~" ctx", "this", content);

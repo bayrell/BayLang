@@ -33,6 +33,7 @@ class TranslatorBay extends BaseObject
 	int indent_level = 0;
 	string indent = "\t";
 	string crlf = "\n";
+	Dict<bool> preprocessor_flags = {};
 	
 	/* Translators */
 	TranslatorBayExpression expression = new TranslatorBayExpression(this);

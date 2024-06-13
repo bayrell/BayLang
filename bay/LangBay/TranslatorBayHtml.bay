@@ -63,6 +63,23 @@ class TranslatorBayHtml extends BaseObject
 	 */
 	void OpHtmlAttrs(Collection<OpHtmlAttribute> op_code_attrs, Collection<string> result)
 	{
+		/* Filter attrs */
+		op_code_attrs = op_code_attrs.filter
+		(
+			bool (OpHtmlAttribute op_code_attr)
+			{
+				/* Skip @key_debug attr */
+				if (
+					not this.translator.preprocessor_flags.get("DEBUG_COMPONENT") and
+					op_code_attr.key == "@key_debug"
+				)
+				{
+					return false;
+				}
+				return true;
+			}
+		);
+		
 		int attrs_count = op_code_attrs.count();
 		for (int i=0; i<attrs_count; i++)
 		{
@@ -262,7 +279,9 @@ class TranslatorBayHtml extends BaseObject
 		/* Get scripts */
 		Collection<BaseOpCode> scripts = op_code.items.filter(
 			bool (BaseOpCode op_code) =>
-				op_code instanceof OpDeclareFunction and not op_code.is_html
+				op_code instanceof OpDeclareFunction and
+				not op_code.is_html and
+				not op_code.name == "components"
 		);
 		
 		/* Translate scripts */
@@ -311,7 +330,15 @@ class TranslatorBayHtml extends BaseObject
 			result.push(this.translator.newLine());
 			for (int i=0; i<uses.count(); i++)
 			{
-				result.push("<use name=\"" ~ uses.get(i).name ~ "\" />");
+				OpUse use_item = uses.get(i);
+				if (use_item.is_component)
+				{
+					result.push("<use name=\"" ~ uses.get(i).name ~ "\" component=\"true\" />");
+				}
+				else
+				{
+					result.push("<use name=\"" ~ uses.get(i).name ~ "\" />");
+				}
 				result.push(this.translator.newLine());
 			}
 		}

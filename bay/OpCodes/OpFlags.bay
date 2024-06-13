@@ -18,11 +18,12 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.BaseStruct;
+use Runtime.BaseObject;
 use Runtime.Serializer;
+use Runtime.SerializeInterface;
 
 
-class OpFlags extends BaseStruct
+class OpFlags extends BaseObject implements SerializeInterface
 {
 	public bool p_async = false;
 	public bool p_export = false;
@@ -43,11 +44,20 @@ class OpFlags extends BaseStruct
 	
 	
 	/**
+	 * Constructor
+	 */
+	public void constructor(Dict params = null)
+	{
+		parent();
+		this._assign_values(params);
+	}
+	
+	
+	/**
 	 * Serialize object
 	 */
 	void serialize(Serializer serializer, Map data)
 	{
-		parent(serializer, data);
 		serializer.process(this, "p_assignable", data);
 		serializer.process(this, "p_async", data);
 		serializer.process(this, "p_cloneable", data);
