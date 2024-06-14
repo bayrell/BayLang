@@ -205,6 +205,7 @@ class TranslatorES6Html
 				"\"key\":" ~ attr_key_value
 			);
 		}
+		/*
 		else if (attr_elem_name != "")
 		{
 			res_attrs.push
@@ -212,6 +213,7 @@ class TranslatorES6Html
 				"\"key\":" ~ attr_elem_name
 			);
 		}
+		*/
 		
 		/* Add debug component */
 		if (t.preprocessor_flags.get("DEBUG_COMPONENT"))
