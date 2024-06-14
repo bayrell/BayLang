@@ -314,4 +314,53 @@ class Program
 		list res = this.translate(content);
 		AssertHelper::equalValue(content, res.get(1), content);
 	}
+	
+	
+	@Test{}
+	void testAssign1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"namespace App;",
+				"",
+				"use App.IndexPage;",
+				"",
+				"class Test",
+				"{",
+				"\tstring component = classof IndexPage;",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"namespace App;",
+				"",
+				"use App.IndexPage;",
+				"use Runtime.Web.Annotations.Param;",
+				"",
+				"",
+				"class Test",
+				"{",
+				"\t@Param{}",
+				"\tstring component = classof IndexPage;",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
 }

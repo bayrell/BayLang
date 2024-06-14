@@ -22,6 +22,7 @@ use Runtime.BaseObject;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpClassOf;
 use BayLang.OpCodes.OpCollection;
 use BayLang.OpCodes.OpDict;
 use BayLang.OpCodes.OpDictPair;
@@ -121,13 +122,28 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
+		bool is_multiline = op_code.caret_start.y != op_code.caret_end.y;
 		result.push("[");
+		if (is_multiline)
+		{
+			this.translator.levelInc();
+		}
 		int values_count = op_code.values.count();
 		for (int i=0; i<values_count; i++)
 		{
 			BaseOpCode op_code_item = op_code.values.get(i);
+			if (is_multiline)
+			{
+				result.push(this.translator.newLine());
+			}
 			this.translate(op_code_item, result);
-			if (i < values_count - 1) result.push(", ");
+			if (is_multiline) result.push(",");
+			else if (i < values_count - 1) result.push(", ");
+		}
+		if (is_multiline)
+		{
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
 		}
 		result.push("]");
 	}
@@ -138,7 +154,8 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpDict(OpCollection op_code, Collection<string> result)
 	{
-		if (op_code.values.count() == 0)
+		bool is_multiline = op_code.caret_start.y != op_code.caret_end.y;
+		if (op_code.values.count() == 0 and not is_multiline)
 		{
 			result.push("{");
 			result.push("}");
@@ -147,23 +164,33 @@ class TranslatorBayExpression extends BaseObject
 		
 		/* Begin bracket */
 		result.push("{");
-		this.translator.levelInc();
+		if (is_multiline)
+		{
+			this.translator.levelInc();
+		}
 		
 		/* Items */
 		int values_count = op_code.values.count();
 		for (int i=0; i<values_count; i++)
 		{
 			OpDictPair op_code_item = op_code.values.get(i);
-			result.push(this.translator.newLine());
+			if (is_multiline)
+			{
+				result.push(this.translator.newLine());
+			}
 			result.push(this.translator.toString(op_code_item.key));
 			result.push(": ");
 			this.translate(op_code_item.value, result);
-			result.push(",");
+			if (is_multiline) result.push(",");
+			else if (i < values_count - 1) result.push(", ");
 		}
 		
 		/* End bracket */
-		this.translator.levelDec();
-		result.push(this.translator.newLine());
+		if (is_multiline)
+		{
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+		}
 		result.push("}");
 	}
 	
@@ -222,6 +249,16 @@ class TranslatorBayExpression extends BaseObject
 		}
 		
 		this.opcode_level = 20;
+	}
+	
+	
+	/**
+	 * OpClassOf
+	 */
+	void OpClassOf(OpCall op_code, Collection<string> result)
+	{
+		result.push("classof ");
+		result.push(op_code.entity_name.names.last());
 	}
 	
 	
@@ -394,6 +431,10 @@ class TranslatorBayExpression extends BaseObject
 		else if (op_code instanceof OpAttr)
 		{
 			this.OpAttr(op_code, result);
+		}
+		else if (op_code instanceof OpClassOf)
+		{
+			this.OpClassOf(op_code, result);
 		}
 		else if (op_code instanceof OpCollection)
 		{

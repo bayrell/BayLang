@@ -20,6 +20,8 @@ namespace BayLang.LangBay;
 
 use Runtime.BaseObject;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
@@ -63,6 +65,27 @@ class TranslatorBayProgram extends BaseObject
 	{
 		result.push("use ");
 		result.push(op_code.name);
+		result.push(";");
+	}
+	
+	
+	/**
+	 * OpAnnotation
+	 */
+	void OpAnnotation(OpAnnotation op_code, Collection<string> result)
+	{
+		result.push("@");
+		this.translator.expression.OpTypeIdentifier(op_code.name, result);
+		this.translator.expression.OpDict(op_code.params, result);
+	}
+	
+	
+	/**
+	 * OpAssign
+	 */
+	void OpAssign(OpAssign op_code, Collection<string> result)
+	{
+		this.translator.operator.OpAssign(op_code, result);
 		result.push(";");
 	}
 	
@@ -132,10 +155,24 @@ class TranslatorBayProgram extends BaseObject
 	 */
 	bool translateClassItem(BaseOpCode op_code, Collection<string> result)
 	{
-		if (op_code instanceof OpDeclareFunction)
+		if (op_code instanceof OpAnnotation)
+		{
+			this.OpAnnotation(op_code, result);
+		}
+		else if (op_code instanceof OpAssign)
+		{
+			this.OpAssign(op_code, result);
+		}
+		else if (op_code instanceof OpDeclareFunction)
 		{
 			this.OpDeclareFunction(op_code, result);
 		}
+		else
+		{
+			return false;
+		}
+		
+		return true;
 	}
 	
 	
@@ -148,11 +185,16 @@ class TranslatorBayProgram extends BaseObject
 		result.push("{");
 		this.translator.levelInc();
 		
+		/* Class body items */
+		bool next_new_line = true;
 		for (int i=0; i<op_code.items.count(); i++)
 		{
-			result.push(this.translator.newLine());
+			if (next_new_line)
+			{
+				result.push(this.translator.newLine());
+			}
 			BaseOpCode op_code_item = op_code.items.get(i);
-			this.translateClassItem(op_code_item, result);
+			next_new_line = this.translateClassItem(op_code_item, result);
 		}
 		
 		/* End bracket */

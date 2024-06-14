@@ -49,6 +49,17 @@ class TranslatorBay extends BaseObject
 	{
 		this.opcode_level = 0;
 		this.indent_level = 0;
+		this.preprocessor_flags = {};
+	}
+	
+	
+	/**
+	 * Set flag
+	 */
+	TranslatorBay setFlag(string flag_name, bool value)
+	{
+		this.preprocessor_flags.set(flag_name, value);
+		return this;
 	}
 	
 	

@@ -267,6 +267,26 @@ class Base
 	
 	
 	@Test{}
+	void testCollection5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"[",
+					"\t\"a\",",
+					"\t\"b\",",
+					"\t\"c\",",
+				"]"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
 	void testDict1()
 	{
 		this.reset();
@@ -342,9 +362,65 @@ class Base
 			[
 				"{",
 					"\t\"obj\": {",
+					"\t},",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict6()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": [",
+					"\t],",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict7()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": {",
 						"\t\t\"name\": \"test\",",
 						"\t\t\"value\": 10,"
 					"\t},",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict8()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": {\"name\": \"test\", \"value\": 10},",
 				"}"
 			]
 		);

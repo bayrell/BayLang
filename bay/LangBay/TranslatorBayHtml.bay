@@ -21,6 +21,8 @@ namespace BayLang.LangBay;
 use Runtime.lib;
 use Runtime.BaseObject;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpHtmlAttribute;
@@ -234,8 +236,11 @@ class TranslatorBayHtml extends BaseObject
 			result.push("<style>");
 		}
 		result.push(this.translator.newLine());
-		result.push(op_code.content);
-		result.push(this.translator.newLine());
+		if (op_code.content)
+		{
+			result.push(op_code.content);
+			result.push(this.translator.newLine());
+		}
 		result.push("</style>");
 		result.push(this.translator.newLine());
 	}
@@ -279,6 +284,8 @@ class TranslatorBayHtml extends BaseObject
 		/* Get scripts */
 		Collection<BaseOpCode> scripts = op_code.items.filter(
 			bool (BaseOpCode op_code) =>
+				op_code instanceof OpAnnotation or
+				op_code instanceof OpAssign or
 				op_code instanceof OpDeclareFunction and
 				not op_code.is_html and
 				not op_code.name == "components"
