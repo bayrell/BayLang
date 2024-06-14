@@ -53,6 +53,17 @@ class BaseOpCode extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Is multiline
+	 */
+	bool isMultiLine()
+	{
+		if (not this.caret_start) return true;
+		if (not this.caret_end) return true;
+		return this.caret_start.y != this.caret_end.y;
+	}
+	
+	
+	/**
 	 * Clone this struct with new values
 	 * @param Map obj = null
 	 * @return BaseStruct

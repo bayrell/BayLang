@@ -122,7 +122,7 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
-		bool is_multiline = op_code.caret_start.y != op_code.caret_end.y;
+		bool is_multiline = op_code.isMultiLine();
 		result.push("[");
 		if (is_multiline)
 		{
@@ -154,7 +154,7 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpDict(OpCollection op_code, Collection<string> result)
 	{
-		bool is_multiline = op_code.caret_start.y != op_code.caret_end.y;
+		bool is_multiline = op_code.isMultiLine();
 		if (op_code.values.count() == 0 and not is_multiline)
 		{
 			result.push("{");

@@ -28,6 +28,7 @@ use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpNamespace;
@@ -111,6 +112,8 @@ class TranslatorBayHtml extends BaseObject
 	 */
 	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result)
 	{
+		bool is_multiline = op_code.isMultiLine();
+		
 		/* Component attrs */
 		Collection args_content = [];
 		this.OpHtmlAttrs(op_code.attrs, args_content);
@@ -125,16 +128,44 @@ class TranslatorBayHtml extends BaseObject
 		{
 			/* Begin tag */
 			result.push("<" ~ op_code.tag_name ~ args ~ ">");
-			this.translator.levelInc();
+			if (is_multiline) this.translator.levelInc();
 			
 			/* Items */
-			this.OpHtmlItems(op_code.items, result);
+			this.OpHtmlItems(op_code.items, result, is_multiline);
 			
 			/* End tag */
-			this.translator.levelDec();
-			result.push(this.translator.newLine());
+			if (is_multiline)
+			{
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+			}
 			result.push("</" ~ op_code.tag_name ~ ">");
 		}
+	}
+	
+	
+	/**
+	 * OpHtmlSlot
+	 */
+	void OpHtmlSlot(BaseOpCode op_code, Collection<string> result)
+	{
+		/* Slot attrs */
+		Collection args_content = [];
+		this.OpHtmlAttrs(op_code.attrs, args_content);
+		string args = rs::join("", args_content);
+		if (args != "") args = " " ~ args;
+		
+		/* Begin slot */
+		result.push("<slot name=\"" ~ op_code.name ~ "\"" ~ args ~ ">");
+		
+		/* Items */
+		this.translator.levelInc();
+		this.OpHtmlItems(op_code.items, result);
+		this.translator.levelDec();
+		
+		/* End slot */
+		result.push(this.translator.newLine());
+		result.push("</slot>");
 	}
 	
 	
@@ -151,6 +182,10 @@ class TranslatorBayHtml extends BaseObject
 		{
 			this.OpHtmlContent(op_code, result);
 		}
+		else if (op_code instanceof OpHtmlSlot)
+		{
+			this.OpHtmlSlot(op_code, result);
+		}
 		else
 		{
 			result.push("{{ ");
@@ -163,12 +198,12 @@ class TranslatorBayHtml extends BaseObject
 	/**
 	 * Translate html items
 	 */
-	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result)
+	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, bool is_multiline = true)
 	{
 		int items_count = op_code.items.count();
 		for (int i=0; i<items_count; i++)
 		{
-			result.push(this.translator.newLine());
+			if (is_multiline) result.push(this.translator.newLine());
 			this.OpHtmlItem(op_code.items.get(i), result);
 		}
 	}
