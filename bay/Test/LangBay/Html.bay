@@ -29,7 +29,7 @@ use BayLang.CoreTranslator;
 
 class Html
 {
-    ParserBay parser;
+	ParserBay parser;
 	TranslatorBay translator;
 	
 	
@@ -91,9 +91,9 @@ class Html
 		
 		return [op_code, rs::join("", result)];
 	}
-    
-    
-    @Test{}
+	
+	
+	@Test{}
 	void test1()
 	{
 		this.reset();

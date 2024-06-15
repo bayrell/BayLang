@@ -41,8 +41,6 @@ use BayLang.OpCodes.OpUse;
 
 static class ParserBayProgram
 {
-	
-	
 	/**
 	 * Read namespace
 	 */

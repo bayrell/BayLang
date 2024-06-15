@@ -57,5 +57,6 @@ static class ModuleDescription
 		new UnitTest("BayLang.Test.LangBay.Html"),
 		new UnitTest("BayLang.Test.LangBay.Operator"),
 		new UnitTest("BayLang.Test.LangBay.Program"),
+		new UnitTest("BayLang.Test.LangBay.Style"),
 	];
 }

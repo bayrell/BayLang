@@ -183,6 +183,11 @@ class ParserBayHtml extends BaseObject
 		{
 			caret.readChar();
 		}
+		else if (start_ch == "&")
+		{
+			caret.readChar();
+			use_component_name = false;
+		}
 		else if (start_ch == "#" or start_ch == ":")
 		{
 			caret.readChar();
@@ -367,7 +372,10 @@ class ParserBayHtml extends BaseObject
 		caret = caret.clone();
 		
 		char ch = caret.nextChar();
-		if (ch == "@" or ch == "%" or ch == "." or ch == "#" or ch == ":" or ch == "*") return true;
+		if (
+			ch == "@" or ch == "%" or ch == "&" or
+			ch == "." or ch == ":" or ch == "#" or ch == "*"
+		) return true;
 		if (not caret::isChar(ch)) return false;
 		
 		while (not caret.eof() and ch != "{" and ch != "}" and ch != "<")
@@ -379,6 +387,52 @@ class ParserBayHtml extends BaseObject
 		
 		if (ch == "{") return true;
 		return false;
+	}
+	
+	
+	/**
+	 * Split selector by dot
+	 */
+	pure string splitSelector(string selector)
+	{
+		Collection arr1 = rs::split(" ", selector);
+		string prefix = rs::join(" ", arr1.slice(0, -1));
+		if (prefix != "") prefix = prefix ~ " ";
+		
+		Collection arr2 = rs::split(".", arr1.last());
+		string first = "";
+		string second = "";
+		if (arr2.get(0) == "")
+		{
+			first = "." ~ arr2.get(1);
+			second = rs::join(".", arr2.slice(2))
+		}
+		else
+		{
+			first = arr2.get(0);
+			second = rs::join(".", arr2.slice(1));
+		}
+		
+		if (second != "") second = "." ~ second;
+		return [prefix ~ first, second];
+	}
+	
+	
+	/**
+	 * Concat selectors
+	 */
+	pure string concatSelectors(string prev_selector, string selector)
+	{
+		if (prev_selector == "") return selector;
+		
+		/* If first symbol is & */
+		if (rs::charAt(selector, 0) == "&")
+		{
+			list res = static::splitSelector(prev_selector);
+			return res.get(0) ~ rs::substr(selector, 1) ~ res.get(1);
+		}
+		
+		return prev_selector ~ " " ~ selector;
 	}
 	
 	
@@ -399,7 +453,7 @@ class ParserBayHtml extends BaseObject
 				for (int k=0; k<items.count(); k++)
 				{
 					string selector = items.get(k);
-					result.push(prev_selector ~ " " ~ selector);
+					result.push(static::concatSelectors(prev_selector, selector));
 				}
 			}
 		}
@@ -418,6 +472,7 @@ class ParserBayHtml extends BaseObject
 	)
 	{
 		Vector css_content = [];
+		Vector sub_items = [];
 		
 		/* Get caret */
 		Caret caret_start = parser.getCaret();
@@ -481,7 +536,7 @@ class ParserBayHtml extends BaseObject
 				caret = parser.getCaret();
 			}
 			
-			/* If html or tag */
+			/* If next selector */
 			else if (static::isNextSelector(caret))
 			{
 				Vector selectors = [];
@@ -509,9 +564,9 @@ class ParserBayHtml extends BaseObject
 				/* Read body */
 				list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
 				parser = static::readCssBodyItems(
-					parser, items,
+					parser, sub_items,
 					start_selectors.pushIm(selectors),
-					"}", false
+					"}", default_component_name
 				);
 				list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
 				
@@ -519,6 +574,7 @@ class ParserBayHtml extends BaseObject
 				caret = parser.getCaret();
 			}
 			
+			/* Read CSS content */
 			else
 			{
 				Vector arr = new Vector();
@@ -548,6 +604,7 @@ class ParserBayHtml extends BaseObject
 			caret = parser.getCaret();
 		}
 		
+		/* Add CSS content to items */
 		if (css_content.count() > 0)
 		{
 			/* Get content */
@@ -565,6 +622,9 @@ class ParserBayHtml extends BaseObject
 			
 			items.push(op_code_item);
 		}
+		
+		/* Add sub items */
+		items.appendItems(sub_items);
 		
 		parser <= caret <= caret;
 		return parser;
