@@ -2,6 +2,7 @@
 	"name": "BayLang",
 	"assets":
 	[
+		"BuilderOpCode.bay",
 		"Caret.bay",
 		"CoreParser.bay",
 		"CoreToken.bay",
