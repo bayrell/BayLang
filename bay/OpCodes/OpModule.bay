@@ -49,12 +49,14 @@ class OpModule extends BaseOpCode
 	/**
 	 * Add module
 	 */
-	void addModule(string class_name, string alias_name)
+	void addModule(string class_name, bool is_component = true, string alias_name = "")
 	{
-		if (this.uses.has(alias_name))
+		if (alias_name == "")
 		{
-			throw new RuntimeException(alias_name ~ " already exists");
+			string class_name_arr = rs::split(".", class_name);
+			alias_name = class_name_arr.last();
 		}
+		
 		this.uses.set(alias_name, class_name);
 		
 		/* Add op_code */
@@ -62,6 +64,7 @@ class OpModule extends BaseOpCode
 		OpUse op_code = new OpUse{
 			"alias": alias_name,
 			"name": class_name,
+			"is_component": is_component,
 		};
 		if (pos != -1)
 		{
