@@ -1100,7 +1100,7 @@ class ParserBayBase
 			{
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
-				"names": names.toCollection(),
+				"names": names,
 			}
 		];
 	}
@@ -1160,7 +1160,7 @@ class ParserBayBase
 			new OpTypeIdentifier
 			{
 				"entity_name": entity_name,
-				"template": template ? template.toCollection() : null,
+				"template": template,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 			}
@@ -1238,7 +1238,7 @@ class ParserBayBase
 			parser,
 			new OpCollection
 			{
-				"values": values.toCollection(),
+				"values": values,
 				"caret_start": caret_start,
 				"caret_end": token.caret_end,
 			}
@@ -1315,7 +1315,7 @@ class ParserBayBase
 			parser,
 			new OpDict
 			{
-				"values": values.toCollection(),
+				"values": values,
 				"caret_start": caret_start,
 				"caret_end": token.caret_end,
 			}
@@ -1415,7 +1415,7 @@ class ParserBayBase
 			list res = static::matchToken(parser, ")"); parser = res[0];
 		}
 		
-		return [parser, items.toCollection()];
+		return [parser, items];
 	}
 	
 	
@@ -1980,7 +1980,7 @@ class ParserBayBase
 				{
 					"kind": kind,
 					"obj": op_code,
-					"attrs": look_values != null ? look_values.toCollection() : null,
+					"attrs": look_values != null ? look_values : null,
 					"value": look_values == null ? look_value : null,
 					"caret_start": caret_start,
 					"caret_end": parser.caret,

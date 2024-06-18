@@ -131,7 +131,7 @@ static class ParserBayPreprocessor
 			parser,
 			new OpPreprocessorSwitch
 			{
-				"items": items.toCollection(),
+				"items": items,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 			}

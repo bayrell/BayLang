@@ -1169,7 +1169,7 @@ class ParserBayHtml extends BaseObject
 			if (ch2 == "/>") break;
 		}
 		
-		return [parser, items.toCollection()];
+		return [parser, items];
 	}
 	
 	
@@ -1471,7 +1471,7 @@ class ParserBayHtml extends BaseObject
 				{
 					"caret_start": caret_items_start,
 					"caret_end": caret_items_end,
-					"items": items.toCollection()
+					"items": items
 				} : null,
 			};
 		}
@@ -1488,7 +1488,7 @@ class ParserBayHtml extends BaseObject
 				{
 					"caret_start": caret_items_start,
 					"caret_end": caret_items_end,
-					"items": items.toCollection()
+					"items": items
 				} : null,
 			};
 		}
@@ -1745,7 +1745,7 @@ class ParserBayHtml extends BaseObject
 			string ch2 = rs::substr(content.ref, caret.pos, 2);
 			if (ch2 == "/>") break;
 		}
-		return [parser, items.toDict()];
+		return [parser, items];
 	}
 	
 	
@@ -1865,8 +1865,8 @@ class ParserBayHtml extends BaseObject
 		BaseOpCode op_code = new OpWidget{
 			"caret_start": caret_start,
 			"caret_end": parser.caret,
-			"items": items.toCollection(),
-			"settings": settings.toDict(),
+			"items": items,
+			"settings": settings,
 		};
 		
 		return [parser, op_code];
@@ -2231,7 +2231,6 @@ class ParserBayHtml extends BaseObject
 					"caret_end": parser.caret,
 					"values":
 						components
-							.toCollection()
 							.map
 							(
 								OpString (string class_name) use (parser) =>
@@ -2275,7 +2274,7 @@ class ParserBayHtml extends BaseObject
 			"annotations": [],
 			"template": null,
 			"vars": class_body.item("vars"),
-			"annotations": class_annotations.toCollection(),
+			"annotations": class_annotations,
 			"functions": class_body.item("functions"),
 			"fn_create": class_body.item("fn_create"),
 			"fn_destroy": class_body.item("fn_destroy"),
@@ -2337,8 +2336,8 @@ class ParserBayHtml extends BaseObject
 			new OpModule
 			{
 				"is_component": true,
-				"uses": parser.uses.toDict(),
-				"items": items.toCollection(),
+				"uses": parser.uses,
+				"items": items,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 			}

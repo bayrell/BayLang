@@ -209,7 +209,7 @@ static class ParserBayOperator
 			new OpTryCatch
 			{
 				"op_try": op_try,
-				"items": items.toCollection(),
+				"items": items,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 			}
@@ -343,7 +343,7 @@ static class ParserBayOperator
 				"condition": if_condition,
 				"if_true": if_true,
 				"if_false": if_false,
-				"if_else": if_else.toCollection(),
+				"if_else": if_else,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 			}
@@ -528,7 +528,7 @@ static class ParserBayOperator
 				}
 			}
 			
-			names = arr.toCollection();
+			names = arr.slice();
 			list res = parser.parser_expression::readExpression(parser);
 			parser = res[0]; expression = res[1];
 			
@@ -674,7 +674,7 @@ static class ParserBayOperator
 			new OpAssign
 			{
 				"pattern": pattern,
-				"values": (values != null) ? values.toCollection() : null,
+				"values": (values != null) ? values : null,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 				"expression": expression,
@@ -929,7 +929,7 @@ static class ParserBayOperator
 		
 		op_code = new OpItems
 		{
-			"items": arr.toCollection(),
+			"items": arr,
 			"caret_start": caret_start,
 			"caret_end": parser.caret,
 		};
@@ -1085,7 +1085,7 @@ static class ParserBayOperator
 		}
 		
 		if (flag_match) { res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; }
-		return [parser, items.toCollection()];
+		return [parser, items];
 	}
 	
 	
@@ -1138,7 +1138,7 @@ static class ParserBayOperator
 			list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
 		}
 		
-		return [parser, items.toCollection()];
+		return [parser, items];
 	}
 	
 	

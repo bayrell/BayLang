@@ -212,7 +212,7 @@ static class ParserBayProgram
 			parser <= skip_comments <= true;
 		}
 		
-		return [parser, items.toCollection()];
+		return [parser, items];
 	}
 	
 	
@@ -261,8 +261,8 @@ static class ParserBayProgram
 				}
 				
 				item = item.copy({
-					"annotations": annotations.toCollection(),
-					"comments": comments.toCollection(),
+					"annotations": annotations,
+					"comments": comments,
 				});
 				vars.push(item);
 				annotations.clear();
@@ -271,8 +271,8 @@ static class ParserBayProgram
 			else if (item instanceof OpDeclareFunction)
 			{
 				item = item.copy({
-					"annotations": annotations.toCollection(),
-					"comments": comments.toCollection(),
+					"annotations": annotations,
+					"comments": comments,
 				});
 				
 				if (names.has(item.name))
@@ -314,11 +314,11 @@ static class ParserBayProgram
 		
 		items.appendItems(comments);
 		return {
-			"annotations": annotations.toCollection(),
-			"comments": comments.toCollection(),
-			"functions": functions.toCollection(),
-			"items": items.toCollection(),
-			"vars": vars.toCollection(),
+			"annotations": annotations,
+			"comments": comments,
+			"functions": functions,
+			"items": items,
+			"vars": vars,
 			"fn_create": fn_create,
 			"fn_destroy": fn_destroy,
 		};
@@ -469,8 +469,8 @@ static class ParserBayProgram
 			"is_static": is_static,
 			"is_declare": is_declare,
 			"class_extends": class_extends,
-			"class_implements": (class_implements != null) ? class_implements.toCollection() : null,
-			"template": (template != null) ? template.toCollection() : null,
+			"class_implements": (class_implements != null) ? class_implements : null,
+			"template": (template != null) ? template : null,
 			"vars": d.item("vars"),
 			"functions": d.item("functions"),
 			"fn_create": d.item("fn_create"),
@@ -602,8 +602,8 @@ static class ParserBayProgram
 				BaseOpCode item = null;
 				list res = static::readClass(parser); parser = res[0]; item = res[1];
 				item = item.copy({
-					"annotations": annotations.toCollection(),
-					"comments": comments.toCollection(),
+					"annotations": annotations,
+					"comments": comments,
 				});
 				items.push(item);
 				annotations.clear();
@@ -627,7 +627,7 @@ static class ParserBayProgram
 			new OpModule
 			{
 				"uses": parser.uses.toDict(),
-				"items": items.toCollection(),
+				"items": items,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 			}
