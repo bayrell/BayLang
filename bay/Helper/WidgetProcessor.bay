@@ -25,6 +25,7 @@ use BayLang.Helper.Module;
 use BayLang.Exceptions.ParserUnknownError;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCollection;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpItems;
@@ -117,9 +118,10 @@ class WidgetProcessor extends BaseObject
 	 */
 	static Collection<string> findWidgets(OpDeclareFunction op_code)
 	{
-		BaseOpCode expression = op_code.getExpression();
+		OpCollection expression = op_code.getExpression();
 		
 		if (expression == null) return [];
+		if (not(expression instanceof OpCollection)) return [];
 		if (expression.values == null) return [];
 		
 		return expression.values

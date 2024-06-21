@@ -83,10 +83,6 @@ class Module extends BaseObject implements SerializeInterface
 	async bool init()
 	{
 		this.is_exists = false;
-		
-		string file_name = rs::basename(this.path);
-		if (file_name == "") return false;
-		if (file_name[0] == ".") return false;
 		if (not(await fs::isFolder(this.path))) return false;
 		
 		/* Module json file */

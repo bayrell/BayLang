@@ -25,6 +25,7 @@ use BayLang.Helper.Module;
 use BayLang.Exceptions.ParserUnknownError;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCollection;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDict;
@@ -150,9 +151,10 @@ class RouteProcessor extends BaseObject
 	 */
 	static Collection<Dict> findRoutes(OpDeclareFunction op_code)
 	{
-		BaseOpCode expression = static::findExpression(op_code);
+		OpCollection expression = static::findExpression(op_code);
 		
 		if (expression == null) return [];
+		if (not(expression instanceof OpCollection)) return [];
 		if (expression.values == null) return [];
 		
 		return expression.values

@@ -18,12 +18,11 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.BaseStruct;
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-class OpDictPair extends BaseStruct
+class OpDictPair extends BaseOpCode
 {
 	string key = "";
 	BaseOpCode value = null;
