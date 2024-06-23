@@ -261,7 +261,7 @@ static class ParserBayProgram
 				}
 				
 				item = item.copy({
-					"annotations": annotations,
+					"annotations": annotations.slice(),
 					"comments": comments.slice(),
 				});
 				vars.push(item);
@@ -271,7 +271,7 @@ static class ParserBayProgram
 			else if (item instanceof OpDeclareFunction)
 			{
 				item = item.copy({
-					"annotations": annotations,
+					"annotations": annotations.slice(),
 					"comments": comments.slice(),
 				});
 				
