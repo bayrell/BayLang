@@ -202,7 +202,11 @@ class ParserBayHtml extends BaseObject
 			parser <= caret <= caret;
 			return [parser, "*"];
 		}
-		else start_ch = "";
+		else
+		{
+			start_ch = "";
+			use_component_name = false;
+		}
 		
 		/* Save caret */
 		parser <= caret <= caret;

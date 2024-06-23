@@ -323,4 +323,30 @@ class Style
 		list res = this.translate(content);
 		AssertHelper::equalValue(css_content, res.get(1), css_content);
 	}
+	
+	
+	@Test{}
+	void test10()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\tp{",
+				"\t\tfont-weight: bold;",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 p{font-weight: bold}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
 }
