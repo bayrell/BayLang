@@ -262,7 +262,7 @@ static class ParserBayProgram
 				
 				item = item.copy({
 					"annotations": annotations,
-					"comments": comments,
+					"comments": comments.slice(),
 				});
 				vars.push(item);
 				annotations.clear();
@@ -272,7 +272,7 @@ static class ParserBayProgram
 			{
 				item = item.copy({
 					"annotations": annotations,
-					"comments": comments,
+					"comments": comments.slice(),
 				});
 				
 				if (names.has(item.name))
