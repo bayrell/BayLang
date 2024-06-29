@@ -23,7 +23,7 @@ Source code: https://github.com/bayrell
 
 ## BayLang compiler versions
 
-[29 Jun 2014] 0.12.2 - Add submodules, command make_all, opcode OpNegative, reload module.json, translator to BayLang, slot and styles support, tests. First version of website constructor 0.1.
+[29 Jun 2024] 0.12.2 - Add submodules, command make_all, opcode OpNegative, reload module.json, translator to BayLang, slot and styles support, tests. First version of website constructor 0.1.
 
 [20 Mar 2024] 0.12.1 - Template css style fix.
 
