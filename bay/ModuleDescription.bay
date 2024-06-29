@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 
 static class ModuleDescription
@@ -25,14 +25,14 @@ static class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleName() => "Bayrell.Lang";
+	pure string getModuleName() => "BayLang";
 	
 	
 	/**
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleVersion() => "0.12.0";
+	pure string getModuleVersion() => "0.12.2";
 	
 	
 	/**

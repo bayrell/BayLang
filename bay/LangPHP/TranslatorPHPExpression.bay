@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,37 +16,38 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangPHP;
+namespace BayLang.LangPHP;
 
 use Runtime.re;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpClassOf;
-use Bayrell.Lang.OpCodes.OpCollection;
-use Bayrell.Lang.OpCodes.OpCurry;
-use Bayrell.Lang.OpCodes.OpCurryArg;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpDict;
-use Bayrell.Lang.OpCodes.OpDictPair;
-use Bayrell.Lang.OpCodes.OpHtmlItems;
-use Bayrell.Lang.OpCodes.OpHtmlTag;
-use Bayrell.Lang.OpCodes.OpHtmlValue;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpInc;
-use Bayrell.Lang.OpCodes.OpMath;
-use Bayrell.Lang.OpCodes.OpMethod;
-use Bayrell.Lang.OpCodes.OpNew;
-use Bayrell.Lang.OpCodes.OpNumber;
-use Bayrell.Lang.OpCodes.OpPipe;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpString;
-use Bayrell.Lang.OpCodes.OpTernary;
-use Bayrell.Lang.OpCodes.OpTypeConvert;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+use BayLang.SaveOpCode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpClassOf;
+use BayLang.OpCodes.OpCollection;
+use BayLang.OpCodes.OpCurry;
+use BayLang.OpCodes.OpCurryArg;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpDict;
+use BayLang.OpCodes.OpDictPair;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpHtmlValue;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpInc;
+use BayLang.OpCodes.OpMath;
+use BayLang.OpCodes.OpMethod;
+use BayLang.OpCodes.OpNegative;
+use BayLang.OpCodes.OpNew;
+use BayLang.OpCodes.OpNumber;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTernary;
+use BayLang.OpCodes.OpTypeConvert;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 static class TranslatorPHPExpression
@@ -122,7 +123,7 @@ static class TranslatorPHPExpression
 			module_name = static::findModuleName(t, module_name);
 			if (module_name != "")
 			{
-				names = names.removeFirstIm().prependCollectionIm(rs::split(".", module_name));
+				names = rs::split(".", module_name).concat(names.slice(1));
 			}
 		}
 		return names;
@@ -135,7 +136,7 @@ static class TranslatorPHPExpression
 	pure string getModuleName(TranslatorPHP t, string module_name)
 	{
 		module_name = static::findModuleName(t, module_name);
-		module_name = rs::replace("\\.", "\\", module_name);
+		module_name = re::replace("\\.", "\\", module_name);
 		return "\\" ~ module_name;
 	}
 	
@@ -209,11 +210,24 @@ static class TranslatorPHPExpression
 	pure list<TranslatorPHP, string> OpNumber(TranslatorPHP t, OpNumber op_code)
 	{
 		string content = op_code.value;
-		if (op_code.negative)
+		/*if (op_code.negative)
 		{
 			content = "-" ~ content;
 			t <= opcode_level <= 15;
-		}
+		}*/
+		return [t, content];
+	}
+	
+	
+	/**
+	 * OpNegative
+	 */
+	pure list<TranslatorPHP, string> OpNegative(TranslatorPHP t, OpNumber op_code)
+	{
+		list res = static::Expression(t, op_code.value); t = res[0];
+		string content = res[1];
+		content = "-" ~ content;
+		t <= opcode_level <= 15;
 		return [t, content];
 	}
 	
@@ -298,12 +312,12 @@ static class TranslatorPHPExpression
 			
 			while (op_code_next instanceof OpAttr)
 			{
-				attrs.pushValue(op_code_next);
+				attrs.push(op_code_next);
 				op_code_item = op_code_next;
 				op_code_next = op_code_next.obj;
 			}
 			
-			attrs = attrs.reverseIm();
+			attrs = attrs.reverse();
 			
 			if (op_code_next instanceof OpCall)
 			{
@@ -427,7 +441,7 @@ static class TranslatorPHPExpression
 						{
 							s ~= "::" ~ attr_val;
 						}
-						else if (rs::strtoupper(attr_val) == attr_val)
+						else if (rs::upper(attr_val) == attr_val)
 						{
 							s ~= "::" ~ attr_val;
 						}
@@ -461,7 +475,7 @@ static class TranslatorPHPExpression
 						for (int j=0; j<attr.attrs.count(); j++)
 						{
 							list res = static::Expression(t, attr.attrs[j]); t = res[0];
-							items.pushValue(res[1]);
+							items.push(res[1]);
 						}
 					}
 					s = "\\Runtime\\rtl::attr($ctx, " ~ s ~ ", [" ~ rs::join(", ", items) ~ "])";
@@ -647,7 +661,7 @@ static class TranslatorPHPExpression
 		
 		Collection<OpCurryArg> args = op_code.args
 			.filter( bool (BaseOpCode arg) => arg instanceof OpCurryArg )
-			.sortIm(
+			.sort(
 				int (OpCurryArg arg1, OpCurryArg arg2) =>
 					(arg1.pos > arg2.pos) ? 1 : ( (arg1.pos < arg2.pos) ? -1 : 0 )
 			)
@@ -669,7 +683,7 @@ static class TranslatorPHPExpression
 			if (arg instanceof OpCurryArg) continue;
 			if (arg instanceof OpIdentifier)
 			{
-				args_use.pushValue("$" ~ arg.value);
+				args_use.push("$" ~ arg.value);
 			}
 		}
 		
@@ -680,15 +694,15 @@ static class TranslatorPHPExpression
 			
 			string s_use = "";
 			Vector<string> arr_use = new Vector();
-			arr_use.appendVector(args_use);
+			arr_use.appendItems(args_use);
 			for (int j=0; j<i; j++)
 			{
 				OpCurryArg arg_use = args.item(j);
-				arr_use.pushValue("$__varg" ~ arg_use.pos);
+				arr_use.push("$__varg" ~ arg_use.pos);
 			}
 			if (use_obj_item != "")
 			{
-				arr_use.pushValue(use_obj_item);
+				arr_use.push(use_obj_item);
 			}
 			if (arr_use.count() > 0)
 			{
@@ -844,10 +858,10 @@ static class TranslatorPHPExpression
 		BaseOpCode op_code_item = op_code;
 		while (op_code_item instanceof OpPipe)
 		{
-			items.pushValue(op_code_item);
+			items.push(op_code_item);
 			op_code_item = op_code_item.obj;
 		}
-		items = items.reverseIm();
+		items = items.reverse();
 		
 		/* First item */
 		list res = t.expression::Expression(t, op_code_item); t = res[0]; value = res[1];
@@ -997,6 +1011,10 @@ static class TranslatorPHPExpression
 		else if (op_code instanceof OpTypeIdentifier)
 		{
 			list res = static::OpTypeIdentifier(t, op_code); t = res[0]; content = res[1];
+		}
+		else if (op_code instanceof OpNegative)
+		{
+			list res = static::OpNegative(t, op_code); t = res[0]; content = res[1];
 		}
 		else if (op_code instanceof OpNumber)
 		{

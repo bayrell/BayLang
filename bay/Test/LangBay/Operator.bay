@@ -1,0 +1,604 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Test.LangBay;
+
+use Runtime.io;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+
+
+class Operator
+{
+	ParserBay parser;
+	TranslatorBay translator;
+	
+	
+	/**
+	 * Reset
+	 */
+	void reset()
+	{
+		this.parser = new ParserBay();
+		this.parser = this.parser::reset(this.parser);
+		this.translator = new TranslatorBay();
+		this.translator.reset();
+	}
+	
+	
+	/**
+	 * Set content
+	 */
+	void setContent(string content)
+	{
+		this.parser = this.parser::setContent(this.parser, content);
+	}
+	
+	
+	/**
+	 * Add variable
+	 */
+	void addVar(string var_name)
+	{
+		ParserBay parser = this.parser;
+		parser <= vars <= parser.vars.setIm(var_name, true);
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	string translate(string content, bool debug = false)
+	{
+		Collection<string> result = [];
+		
+		this.setContent(content);
+		
+		/* Parse */
+		list res = this.parser.parser_operator::readOperators(this.parser);
+		BaseOpCode op_code = res.get(1);
+		
+		/* Translate */
+		this.translator.operator.translateItems(op_code, result);
+		
+		/* Debug output */
+		if (debug)
+		{
+			log(op_code);
+			log(result);
+			log(rs::join("", result));
+		}
+		
+		return [op_code, rs::join("", result)];
+	}
+	
+	
+	@Test{}
+	void testAssign1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tint a;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tint a = 1;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tint a = 1;",
+					"\ta = 2;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tint a = 1, b = 2;",
+					"\ta = a + b;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tthis.a = 1;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign6()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tCollection<string> content = [];",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAssign7()
+	{
+		this.reset();
+		this.addVar("content");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tstring content = rs::join(\"\\n\", content);",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testBreak()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tbreak;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testContinue()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tcontinue;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testReturn1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\treturn;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testReturn2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\treturn 1;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testReturn3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\treturn true;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testReturn4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\treturn this.result;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testInc1()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\ta++;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testInc2()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t++a;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDec1()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\ta--;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDec2()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t--a;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFor1()
+	{
+		this.reset();
+		this.addVar("io");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tfor (int i = 0; i < 10; i++)",
+					"\t{",
+					"\t\tio::print(i);",
+					"\t}",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testIf1()
+	{
+		this.reset();
+		this.addVar("a");
+		this.addVar("b");
+		this.addVar("io");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tif (a > b)",
+					"\t{",
+					"\t\tio::print(\"Yes\");",
+					"\t}",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testIf2()
+	{
+		this.reset();
+		this.addVar("a");
+		this.addVar("b");
+		this.addVar("io");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tif (a > b)",
+					"\t{",
+					"\t\tio::print(\"Yes\");",
+					"\t}",
+					"\telse",
+					"\t{",
+					"\t\tio::print(\"No\");",
+					"\t}",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testIf3()
+	{
+		this.reset();
+		this.addVar("a");
+		this.addVar("io");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tif (a == 1)",
+					"\t{",
+					"\t\tio::print(1);",
+					"\t}",
+					"\telse if (a == 2)",
+					"\t{",
+					"\t\tio::print(2);",
+					"\t}",
+					"\telse if (a == 3)",
+					"\t{",
+					"\t\tio::print(3);",
+					"\t}",
+					"\telse",
+					"\t{",
+					"\t\tio::print(\"No\");",
+					"\t}",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testThrow1()
+	{
+		this.reset();
+		this.addVar("RuntimeException");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\tthrow new RuntimeException(\"Error\");",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testTry1()
+	{
+		this.reset();
+		this.addVar("io");
+		this.addVar("RuntimeException");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\ttry",
+					"\t{",
+					"\t\tthis.translate();",
+					"\t}",
+					"\tcatch (RuntimeException e)",
+					"\t{",
+					"\t\tio::print_error(e.toString());",
+					"\t}",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testWhile1()
+	{
+		this.reset();
+		this.addVar("i");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\twhile (i < 10)",
+					"\t{",
+					"\t\ti++;",
+					"\t}",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testComment1()
+	{
+		this.reset();
+		this.addVar("i");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t/* Increment value */",
+					"\ti++;",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+}

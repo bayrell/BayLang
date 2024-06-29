@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,29 +16,33 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangES6;
+namespace BayLang.LangES6;
 
+use Runtime.lib;
 use Runtime.BaseStruct;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.Exceptions.DeclaredClass;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAnnotation;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpDeclareClass;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpEntityName;
-use Bayrell.Lang.OpCodes.OpFlags;
-use Bayrell.Lang.OpCodes.OpItems;
-use Bayrell.Lang.OpCodes.OpNamespace;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
-use Bayrell.Lang.OpCodes.OpUse;
+use BayLang.SaveOpCode;
+use BayLang.Exceptions.DeclaredClass;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpHtmlMeta;
+use BayLang.OpCodes.OpHtmlStyle;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
+use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpUse;
+use BayLang.OpCodes.OpWidget;
 
 
 struct TranslatorES6Program extends BaseStruct
@@ -451,6 +455,14 @@ struct TranslatorES6Program extends BaseStruct
 			content ~= res[1];
 		}
 		
+		/* Declare component functions */
+		if (op_code.is_model or op_code.is_component)
+		{
+			list res = static::OpDeclareComponentFunctions(t, op_code);
+			t = res[0];
+			content ~= res[1];
+		}
+		
 		/* Static init Functions */
 		list res = static::OpDeclareClassStaticInitFunctions(t, op_code);
 		t = res[0];
@@ -528,12 +540,6 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= t.s("return " ~ t.expression::toString(current_class_extends_name) ~ ";");
 		t = t.levelDec();
 		content ~= t.s("},");
-		
-		/* Exit if component */
-		if (op_code.is_component == true)
-		{
-			return [t, content];
-		}
 		
 		/* Class info */
 		content ~= t.s("getClassInfo: function(ctx)");
@@ -973,6 +979,57 @@ struct TranslatorES6Program extends BaseStruct
 		content ~= t.s("};");
 		t = t.levelDec();
 		content ~= t.s("},");
+		
+		return [t, content];
+	}
+	
+	
+	/**
+	 * Declare component functions
+	 */
+	pure list<TranslatorES6, string> OpDeclareComponentFunctions
+		(TranslatorES6 t, OpDeclareClass op_code)
+	{
+		string content = "";
+		
+		/* CSS */
+		content ~= t.s("css: function(vars)");
+		content ~= t.s("{");
+		t = t.levelInc();
+		
+		content ~= t.s("var res = \"\";");
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			OpHtmlStyle item = op_code.items.get(i);
+			if (not(item instanceof OpHtmlStyle)) continue;
+			list res = t.expression::Expression(t, item.value); t = res[0];
+			string s = res[1];
+			content ~= t.s( "res += Runtime.rtl.toStr(" ~ s ~ ");" );
+		}
+		
+		content ~= t.s("return res;");
+		t = t.levelDec();
+		content ~= t.s("},");
+		
+		/* Widget data */
+		/*
+		OpWidget op_code_widget = op_code.items.findItem(lib::isInstance(classof OpWidget));
+		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
+		if (op_code_widget)
+		{
+			content ~= t.s("getWidgetData: function()");
+			content ~= t.s("{");
+			t = t.levelInc();
+			content ~= t.s("return {");
+			t = t.levelInc();
+			content ~= t.s("\"data\": null,");
+			content ~= t.s("\"info\": null,");
+			t = t.levelDec();
+			content ~= t.s("};");
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
+		*/
 		
 		return [t, content];
 	}
@@ -1463,6 +1520,21 @@ struct TranslatorES6Program extends BaseStruct
 	
 	
 	/**
+	 * Remove ctx
+	 */
+	pure string removeContext(string content)
+	{
+		content = rs::replace("("~"ctx)", "()", content);
+		content = rs::replace("("~"ctx, ", "(", content);
+		content = rs::replace("("~"ctx,", "(", content);
+		content = rs::replace(","~"ctx,", ",", content);
+		content = rs::replace("this,"~"ctx", "this", content);
+		content = rs::replace("this,"~" ctx", "this", content);
+		return content;
+	}
+	
+	
+	/**
 	 * Translate program
 	 */
 	pure list<TranslatorES6, string> translateProgram(TranslatorES6 t, OpItems op_code)
@@ -1492,15 +1564,9 @@ struct TranslatorES6Program extends BaseStruct
 		/* Disable context */
 		if (t.enable_context == false)
 		{
-			content = rs::replace("\\("~"ctx\\)", "()", content);
-			content = rs::replace("\\("~"ctx, ", "(", content);
-			content = rs::replace("\\("~"ctx,", "(", content);
-			content = rs::replace(","~"ctx,", ",", content);
-			content = rs::replace("this,"~"ctx", "this", content);
-			content = rs::replace("this,"~" ctx", "this", content);
+			content = static::removeContext(content);
 		}
 		
 		return [t, content];
 	}
-	
 }

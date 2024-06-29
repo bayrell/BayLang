@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangES6;
+namespace BayLang.LangES6;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.CoreTranslator;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangES6.AsyncAwait;
-use Bayrell.Lang.LangES6.TranslatorES6AsyncAwait;
-use Bayrell.Lang.LangES6.TranslatorES6Expression;
-use Bayrell.Lang.LangES6.TranslatorES6Html;
-use Bayrell.Lang.LangES6.TranslatorES6Operator;
-use Bayrell.Lang.LangES6.TranslatorES6Program;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+use BayLang.SaveOpCode;
+use BayLang.LangES6.AsyncAwait;
+use BayLang.LangES6.TranslatorES6AsyncAwait;
+use BayLang.LangES6.TranslatorES6Expression;
+use BayLang.LangES6.TranslatorES6Html;
+use BayLang.LangES6.TranslatorES6Operator;
+use BayLang.LangES6.TranslatorES6Program;
+use BayLang.OpCodes.BaseOpCode;
 
 
 struct TranslatorES6 extends CoreTranslator
@@ -45,6 +45,7 @@ struct TranslatorES6 extends CoreTranslator
 	TranslatorES6Html html = null;
 	TranslatorES6Operator operator = null;
 	TranslatorES6Program program = null;
+	Collection<int> debug_component = null;
 	
 	/* Flags */
 	bool frontend = true;
@@ -80,6 +81,7 @@ struct TranslatorES6 extends CoreTranslator
 		{
 			"value": "",
 			"current_namespace_name": "",
+			"debug_component": [],
 			"modules": new Dict<string>(),
 			"async_await": new TranslatorES6AsyncAwait(),
 			"expression": new TranslatorES6Expression(),
@@ -112,7 +114,6 @@ struct TranslatorES6 extends CoreTranslator
 	 */
 	pure list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
 	{
-		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);
 	}
 	

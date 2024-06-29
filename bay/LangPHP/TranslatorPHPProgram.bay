@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,27 +16,31 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangPHP;
+namespace BayLang.LangPHP;
 
+use Runtime.re;
+use Runtime.lib;
 use Runtime.BaseStruct;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.Exceptions.DeclaredClass;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAnnotation;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpDeclareClass;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpFlags;
-use Bayrell.Lang.OpCodes.OpItems;
-use Bayrell.Lang.OpCodes.OpNamespace;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
-use Bayrell.Lang.OpCodes.OpUse;
+use BayLang.SaveOpCode;
+use BayLang.Exceptions.DeclaredClass;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpHtmlMeta;
+use BayLang.OpCodes.OpHtmlStyle;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
+use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpUse;
 
 
 static class TranslatorPHPProgram
@@ -200,7 +204,8 @@ static class TranslatorPHPProgram
 	/**
 	 * OpDeclareClass
 	 */
-	pure list<TranslatorPHP, string> OpDeclareClassConstructor(TranslatorPHP t, OpDeclareClass op_code)
+	pure list<TranslatorPHP, string> OpDeclareClassConstructor
+		(TranslatorPHP t, OpDeclareClass op_code)
 	{
 		if (op_code.fn_create == null) return [t, ""];
 		
@@ -239,6 +244,51 @@ static class TranslatorPHPProgram
 		content ~= t.s("}");
 		
 		return [save_t, content];
+	}
+	
+	
+	/**
+	 * Declare component functions
+	 */
+	pure list<TranslatorPHP, string> OpDeclareComponentFunctions
+		(TranslatorPHP t, OpDeclareClass op_code)
+	{
+		string content = "";
+		
+		/* CSS */
+		content ~= t.s("static function css($vars)");
+		content ~= t.s("{");
+		t = t.levelInc();
+		
+		content ~= t.s("$res = \"\";");
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			OpHtmlStyle item = op_code.items.get(i);
+			if (not(item instanceof OpHtmlStyle)) continue;
+			list res = t.expression::Expression(t, item.value); t = res[0];
+			string s = res[1];
+			content ~= t.s( "$res .= \\Runtime\\rtl::toStr(" ~ s ~ ");" );
+		}
+		
+		content ~= t.s("return $res;");
+		t = t.levelDec();
+		content ~= t.s("}");
+		
+		/* Meta data */
+		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
+		if (op_code_meta)
+		{
+			content ~= t.s("static function getMetaData()");
+			content ~= t.s("{");
+			t = t.levelInc();
+			list res = t.expression::Expression(t, op_code_meta.value); t = res[0];
+			string s = res[1];
+			content ~= t.s("return " ~ s ~ ";");
+			t = t.levelDec();
+			content ~= t.s("}");
+		}
+		
+		return [t, content];
 	}
 	
 	
@@ -339,7 +389,14 @@ static class TranslatorPHPProgram
 			}
 		}
 		
-		if (class_kind != OpDeclareClass::KIND_INTERFACE and op_code.is_component == false)
+		/* Declare component functions */
+		if (op_code.is_model or op_code.is_component)
+		{
+			list res = static::OpDeclareComponentFunctions(t, op_code);
+			t = res[0]; content ~= res[1];
+		}
+		
+		if (class_kind != OpDeclareClass::KIND_INTERFACE)
 		{
 			content ~= t.s("/* ======================= Class Init Functions ======================= */");
 		}
@@ -573,244 +630,240 @@ static class TranslatorPHPProgram
 			content ~= t.s("}");
 			
 			
-			/* If not component */
-			if (op_code.is_component == false)
+			/* Class info */
+			content ~= t.s("static function getClassInfo($ctx)");
+			content ~= t.s("{");
+			t = t.levelInc();
+			t = t::clearSaveOpCode(t);
+			
+			content ~= t.s("return \\Runtime\\Dict::from([");
+			t = t.levelInc();
+			
+			content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
+			t = t.levelInc();
+			
+			for (int j=0; j<op_code.annotations.count(); j++)
 			{
-				/* Class info */
-				content ~= t.s("static function getClassInfo($ctx)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				t = t::clearSaveOpCode(t);
-				
-				content ~= t.s("return \\Runtime\\Dict::from([");
-				t = t.levelInc();
-				
-				content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
-				t = t.levelInc();
-				
-				for (int j=0; j<op_code.annotations.count(); j++)
+				OpAnnotation annotation = op_code.annotations.item(j);
+				list res = t.expression::OpTypeIdentifier(t, annotation.name);
+				t = res[0]; string name = res[1];
+				if (annotation.params != null)
 				{
-					OpAnnotation annotation = op_code.annotations.item(j);
-					list res = t.expression::OpTypeIdentifier(t, annotation.name);
-					t = res[0]; string name = res[1];
-					if (annotation.params != null)
+					list res = t.expression::OpDict(t, annotation.params, true);
+					t = res[0]; string params = res[1];
+					content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
+				}
+				else
+				{
+					content ~= t.s("new " ~ name ~ "($ctx),");
+				}
+			}
+			
+			t = t.levelDec();
+			content ~= t.s("]),");
+			t = t.levelDec();
+			content ~= t.s("]);");
+			
+			t = t.levelDec();
+			content ~= t.s("}");
+			
+			/* Get fields list of the function */
+			content ~= t.s("static function getFieldsList($ctx)");
+			content ~= t.s("{");
+			t = t.levelInc();
+			content ~= t.s("$a = [];");
+			if (op_code.vars != null)
+			{
+				Map<Vector> vars = new Map();
+				
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
+					bool has_annotation = variable.annotations != null and
+						variable.annotations.count() > 0;
+					
+					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (class_kind != OpDeclareClass::KIND_STRUCT)
 					{
+						if (variable.annotations == null) continue;
+						if (variable.annotations.count() == 0) continue;
+					}
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
+					
+					for (int j=0; j<variable.values.count(); j++)
+					{
+						OpAssignValue value = variable.values.item(j);
+						content ~= t.s("$a[]=" ~ t.expression::toString(value.var_name) ~ ";");
+					}
+				}
+			}
+			
+			content ~= t.s("return " ~
+				t.expression::getModuleName(t, "Runtime.Collection") ~ "::from($a);");
+			t = t.levelDec();
+			content ~= t.s("}");
+			
+			/* Get field info by name */
+			content ~= t.s("static function getFieldInfoByName($ctx,$field_name)");
+			content ~= t.s("{");
+			t = t.levelInc();
+			
+			if (op_code.vars != null)
+			{
+				for (int i=0; i<op_code.vars.count(); i++)
+				{
+					OpAssign variable = op_code.vars.item(i);
+					
+					if (variable.kind != OpAssign::KIND_DECLARE) continue;
+					if (variable.condition and
+						t.preprocessor_flags[variable.condition.value] != true
+					) continue;
+					
+					bool is_const = variable.flags.isFlag("const");
+					bool is_static = variable.flags.isFlag("static");
+					bool is_protected = variable.flags.isFlag("protected");
+					bool is_private = variable.flags.isFlag("private");
+					
+					if (is_const or is_static) continue;
+					if (is_protected or is_private) continue;
+					if (variable.annotations == null) continue;
+					if (variable.annotations.count() == 0) continue;
+					
+					Collection<string> v = variable.values.map(
+						string (OpAssignValue value) => value.var_name
+					);
+					v = v.map
+					(
+						string (string var_name) use (t) =>
+							"$field_name == " ~ t.expression::toString(var_name)
+					);
+					
+					string var_type =
+						rs::join(
+							".",
+							t.expression::findModuleNames(
+								t, variable.pattern.entity_name.names
+							)
+						)
+					;
+					Collection<string> var_sub_types = (variable.pattern.template != null) ?
+						variable.pattern.template.map
+						(
+							string (OpTypeIdentifier op_code) use (t) =>
+								rs::join(
+									".",
+									t.expression::findModuleNames(t, op_code.entity_name.names)
+								)
+						)
+						: []
+					;
+					var_sub_types = var_sub_types.map( t.expression::toString );
+					
+					t = t::clearSaveOpCode(t);
+					
+					content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
+						"return \\Runtime\\Dict::from([");
+					t = t.levelInc();
+					
+					content ~= t.s("\"t\"=>" ~ t.expression::toString(var_type) ~ ",");
+					if (var_sub_types.count() > 0)
+					{
+						content ~= t.s("\"s\"=> [" ~ rs::join(", ", var_sub_types) ~ "],");
+					}
+					content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
+					t = t.levelInc();
+					
+					for (int j=0; j<variable.annotations.count(); j++)
+					{
+						OpAnnotation annotation = variable.annotations.item(j);
+						list res = t.expression::OpTypeIdentifier(t, annotation.name);
+						t = res[0]; string name = res[1];
 						list res = t.expression::OpDict(t, annotation.params, true);
 						t = res[0]; string params = res[1];
 						content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
 					}
-					else
-					{
-						content ~= t.s("new " ~ name ~ "($ctx),");
-					}
-				}
-				
-				t = t.levelDec();
-				content ~= t.s("]),");
-				t = t.levelDec();
-				content ~= t.s("]);");
-				
-				t = t.levelDec();
-				content ~= t.s("}");
-				
-				/* Get fields list of the function */
-				content ~= t.s("static function getFieldsList($ctx)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				content ~= t.s("$a = [];");
-				if (op_code.vars != null)
-				{
-					Map<Vector> vars = new Map();
 					
-					for (int i=0; i<op_code.vars.count(); i++)
-					{
-						OpAssign variable = op_code.vars.item(i);
-						
-						bool is_const = variable.flags.isFlag("const");
-						bool is_static = variable.flags.isFlag("static");
-						bool is_protected = variable.flags.isFlag("protected");
-						bool is_private = variable.flags.isFlag("private");
-						bool has_annotation = variable.annotations != null and
-							variable.annotations.count() > 0;
-						
-						if (is_const or is_static) continue;
-						if (is_protected or is_private) continue;
-						if (variable.kind != OpAssign::KIND_DECLARE) continue;
-						if (class_kind != OpDeclareClass::KIND_STRUCT)
-						{
-							if (variable.annotations == null) continue;
-							if (variable.annotations.count() == 0) continue;
-						}
-						if (variable.condition and
-							t.preprocessor_flags[variable.condition.value] != true
-						) continue;
-						
-						for (int j=0; j<variable.values.count(); j++)
-						{
-							OpAssignValue value = variable.values.item(j);
-							content ~= t.s("$a[]=" ~ t.expression::toString(value.var_name) ~ ";");
-						}
-					}
+					t = t.levelDec();
+					content ~= t.s("]),");
+					t = t.levelDec();
+					content ~= t.s("]);");
 				}
-				
-				content ~= t.s("return " ~
-					t.expression::getModuleName(t, "Runtime.Collection") ~ "::from($a);");
-				t = t.levelDec();
-				content ~= t.s("}");
-				
-				/* Get field info by name */
-				content ~= t.s("static function getFieldInfoByName($ctx,$field_name)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				
-				if (op_code.vars != null)
-				{
-					for (int i=0; i<op_code.vars.count(); i++)
-					{
-						OpAssign variable = op_code.vars.item(i);
-						
-						if (variable.kind != OpAssign::KIND_DECLARE) continue;
-						if (variable.condition and
-							t.preprocessor_flags[variable.condition.value] != true
-						) continue;
-						
-						bool is_const = variable.flags.isFlag("const");
-						bool is_static = variable.flags.isFlag("static");
-						bool is_protected = variable.flags.isFlag("protected");
-						bool is_private = variable.flags.isFlag("private");
-						
-						if (is_const or is_static) continue;
-						if (is_protected or is_private) continue;
-						if (variable.annotations == null) continue;
-						if (variable.annotations.count() == 0) continue;
-						
-						Collection<string> v = variable.values.map(
-							string (OpAssignValue value) => value.var_name
-						);
-						v = v.map
-						(
-							string (string var_name) use (t) =>
-								"$field_name == " ~ t.expression::toString(var_name)
-						);
-						
-						string var_type =
-							rs::join(
-								".",
-								t.expression::findModuleNames(
-									t, variable.pattern.entity_name.names
-								)
-							)
-						;
-						Collection<string> var_sub_types = (variable.pattern.template != null) ?
-							variable.pattern.template.map
-							(
-								string (OpTypeIdentifier op_code) use (t) =>
-									rs::join(
-										".",
-										t.expression::findModuleNames(t, op_code.entity_name.names)
-									)
-							)
-							: []
-						;
-						var_sub_types = var_sub_types.map( t.expression::toString );
-						
-						t = t::clearSaveOpCode(t);
-						
-						content ~= t.s("if (" ~ rs::join(" or ", v) ~ ") "~
-							"return \\Runtime\\Dict::from([");
-						t = t.levelInc();
-						
-						content ~= t.s("\"t\"=>" ~ t.expression::toString(var_type) ~ ",");
-						if (var_sub_types.count() > 0)
-						{
-							content ~= t.s("\"s\"=> [" ~ rs::join(", ", var_sub_types) ~ "],");
-						}
-						content ~= t.s("\"annotations\"=>\\Runtime\\Collection::from([");
-						t = t.levelInc();
-						
-						for (int j=0; j<variable.annotations.count(); j++)
-						{
-							OpAnnotation annotation = variable.annotations.item(j);
-							list res = t.expression::OpTypeIdentifier(t, annotation.name);
-							t = res[0]; string name = res[1];
-							list res = t.expression::OpDict(t, annotation.params, true);
-							t = res[0]; string params = res[1];
-							content ~= t.s("new " ~ name ~ "($ctx, " ~ params ~ "),");
-						}
-						
-						t = t.levelDec();
-						content ~= t.s("]),");
-						t = t.levelDec();
-						content ~= t.s("]);");
-					}
-				}
-				
-				content ~= t.s("return null;");
-				t = t.levelDec();
-				content ~= t.s("}");
-				
-				/* Get methods list of the function */
-				content ~= t.s("static function getMethodsList($ctx)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				content ~= t.s("$a=[");
-				t = t.levelInc();
-				if (op_code.functions != null)
-				{
-					for (int i=0; i<op_code.functions.count(); i++)
-					{
-						OpDeclareFunction f = op_code.functions.item(i);
-						if (f.flags.isFlag("declare")) continue;
-						if (f.flags.isFlag("protected")) continue;
-						if (f.flags.isFlag("private")) continue;
-						if (f.annotations.count() == 0) continue;
-						content ~= t.s( t.expression::toString(f.name) ~ "," );
-					}
-				}
-				if (op_code.items != null)
-				{
-					for (int i=0; i<op_code.items.count(); i++)
-					{
-						BaseOpCode item = op_code.items.item(i);
-						list res = static::OpClassBodyItemMethodsList(t, item);
-						t = res[0]; content ~= res[1];
-					}
-				}
-				t = t.levelDec();
-				content ~= t.s("];");
-				content ~= t.s("return " ~
-					t.expression::getModuleName(t, "Runtime.Collection") ~
-					"::from($a);"
-				);
-				t = t.levelDec();
-				content ~= t.s("}");
-				
-				/* Get method info by name */
-				content ~= t.s("static function getMethodInfoByName($ctx,$field_name)");
-				content ~= t.s("{");
-				t = t.levelInc();
-				if (op_code.functions != null)
-				{
-					for (int i=0; i<op_code.functions.count(); i++)
-					{
-						OpDeclareFunction f = op_code.functions.item(i);
-						list res = static::OpFunctionAnnotations(t, f);
-						t = res[0]; content ~= res[1];
-					}
-				}
-				if (op_code.items != null)
-				{
-					for (int i=0; i<op_code.items.count(); i++)
-					{
-						BaseOpCode item = op_code.items.item(i);
-						list res = static::OpClassBodyItemAnnotations(t, item);
-						t = res[0]; content ~= res[1];
-					}
-				}
-				content ~= t.s("return null;");
-				t = t.levelDec();
-				content ~= t.s("}");
 			}
+			
+			content ~= t.s("return null;");
+			t = t.levelDec();
+			content ~= t.s("}");
+			
+			/* Get methods list of the function */
+			content ~= t.s("static function getMethodsList($ctx)");
+			content ~= t.s("{");
+			t = t.levelInc();
+			content ~= t.s("$a=[");
+			t = t.levelInc();
+			if (op_code.functions != null)
+			{
+				for (int i=0; i<op_code.functions.count(); i++)
+				{
+					OpDeclareFunction f = op_code.functions.item(i);
+					if (f.flags.isFlag("declare")) continue;
+					if (f.flags.isFlag("protected")) continue;
+					if (f.flags.isFlag("private")) continue;
+					if (f.annotations.count() == 0) continue;
+					content ~= t.s( t.expression::toString(f.name) ~ "," );
+				}
+			}
+			if (op_code.items != null)
+			{
+				for (int i=0; i<op_code.items.count(); i++)
+				{
+					BaseOpCode item = op_code.items.item(i);
+					list res = static::OpClassBodyItemMethodsList(t, item);
+					t = res[0]; content ~= res[1];
+				}
+			}
+			t = t.levelDec();
+			content ~= t.s("];");
+			content ~= t.s("return " ~
+				t.expression::getModuleName(t, "Runtime.Collection") ~
+				"::from($a);"
+			);
+			t = t.levelDec();
+			content ~= t.s("}");
+			
+			/* Get method info by name */
+			content ~= t.s("static function getMethodInfoByName($ctx,$field_name)");
+			content ~= t.s("{");
+			t = t.levelInc();
+			if (op_code.functions != null)
+			{
+				for (int i=0; i<op_code.functions.count(); i++)
+				{
+					OpDeclareFunction f = op_code.functions.item(i);
+					list res = static::OpFunctionAnnotations(t, f);
+					t = res[0]; content ~= res[1];
+				}
+			}
+			if (op_code.items != null)
+			{
+				for (int i=0; i<op_code.items.count(); i++)
+				{
+					BaseOpCode item = op_code.items.item(i);
+					list res = static::OpClassBodyItemAnnotations(t, item);
+					t = res[0]; content ~= res[1];
+				}
+			}
+			content ~= t.s("return null;");
+			t = t.levelDec();
+			content ~= t.s("}");
 		}
 		
 		
@@ -986,10 +1039,10 @@ static class TranslatorPHPProgram
 		/* Disable context */
 		if (t.enable_context == false)
 		{
-			content = rs::replace("\\(\\$ctx\\)", "()", content);
-			content = rs::replace("\\(\\$ctx, ", "(", content);
-			content = rs::replace("\\(\\$ctx,", "(", content);
-			content = rs::replace("\\,\\$ctx,", ",", content);
+			content = rs::replace("($ctx)", "()", content);
+			content = rs::replace("($ctx, ", "(", content);
+			content = rs::replace("($ctx,", "(", content);
+			content = rs::replace(",$ctx,", ",", content);
 		}
 		
 		return [t, content];

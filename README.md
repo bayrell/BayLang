@@ -1,13 +1,35 @@
-# Description
+# BayLang Technology
 
-Bayrell Language
+BayLang Technology is an innovative technology that significantly speeds up the process of developing web applications, websites and CRM systems using constructor and set of plugins.
 
+The technology consists of:
+- BayLang compiler
+- Runtime library
+- Web framework
+- Web constructor
+- Widgets
 
-Versions:
+BayLang is an innovative FullStack programming language that has the unique functionality of automatically converting program code into backend and frontend, without needs to develop separate code for the server and client parts.
+
+This eliminates the need to constantly switch between different programming languages ​​and significantly improves the speed of web application development.
+
+BayLang programming language has reactivity, which allows you to automatically change the page if the data model changes, and also allows you to render the page on the server side (SSR).
+
+BayLang allows you to maintain a single code base and, if necessary, change the technology platform on which the program will run.
+
+Documentation: https://bayrell.org/
+
+Source code: https://github.com/bayrell
+
+## BayLang compiler versions
+
+[29 Jun 2014] 0.12.2 - Add submodules, command make_all, opcode OpNegative, reload module.json, translator to BayLang, slot and styles support, tests. First version of website constructor 0.1.
+
+[20 Mar 2024] 0.12.1 - Template css style fix.
 
 [29 Dec 2023] 0.12.0 - Component VueJS Support
 
-[02 Aug 2023] 0.11.6 - Deploy first site on bay-lang. Ready Runtime.Web application.
+[02 Aug 2023] 0.11.6 - Deploy first site on BayLang. Ready Runtime.Web application.
 
 [20 Feb 2023] 0.11.5 - Ready version 0.11 version
 
@@ -47,7 +69,7 @@ Versions:
 
 [25 Mar 2019] 0.7.1 - Add memorize, Dict, Collection, rtl::method, UIStruct normalization, DateTime as Struct
 
-[27 Jan 2019] 0.7.0-alpha - Combine Bayrell Template and Lang. Add lambda and pure functions
+[27 Jan 2019] 0.7.0-alpha - Combine template and BayLang. Add lambda and pure functions
 
 [16 Dec 2018] 0.6.0 - Add structure and annotations
 

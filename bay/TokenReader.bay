@@ -1,0 +1,79 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang;
+
+use Runtime.BaseObject;
+use BayLang.Caret;
+use BayLang.Exceptions.ParserExpected;
+
+
+class TokenReader extends BaseObject
+{
+	Caret main_caret = null;
+	Caret next_caret = null;
+	string next_token = "";
+	
+	
+	/**
+	 * Init token reader
+	 */
+	void init(Caret caret)
+	{
+		this.main_caret = caret;
+		this.next_caret = caret.copy();
+		this.readToken();
+	}
+	
+	
+	/**
+	 * Returns eof
+	 */
+	bool eof() => this.main_caret.eof();
+	
+	
+	/**
+	 * Returns next token
+	 */
+	string nextToken() => this.next_token;
+	
+	
+	/**
+	 * Read token
+	 */
+	string readToken()
+	{
+		string token = this.next_token;
+		this.main_caret.seek(this.next_caret);
+		this.next_token = this.next_caret.readToken();
+		return token;
+	}
+	
+	
+	/**
+	 * Match next token
+	 */
+	void matchToken(string ch)
+	{
+		if (this.nextToken() != ch)
+		{
+			throw new ParserExpected(ch, this.main_caret, this.main_caret.file_name);
+		}
+		this.readToken();
+	}
+}

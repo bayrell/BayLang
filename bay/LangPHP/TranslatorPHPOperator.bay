@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,39 +16,39 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangPHP;
+namespace BayLang.LangPHP;
 
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAssignStruct;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpAttr;
-use Bayrell.Lang.OpCodes.OpBreak;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpContinue;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpDelete;
-use Bayrell.Lang.OpCodes.OpFor;
-use Bayrell.Lang.OpCodes.OpHtmlItems;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpIf;
-use Bayrell.Lang.OpCodes.OpIfElse;
-use Bayrell.Lang.OpCodes.OpInc;
-use Bayrell.Lang.OpCodes.OpItems;
-use Bayrell.Lang.OpCodes.OpPipe;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfDef;
-use Bayrell.Lang.OpCodes.OpPreprocessorSwitch;
-use Bayrell.Lang.OpCodes.OpReturn;
-use Bayrell.Lang.OpCodes.OpSafe;
-use Bayrell.Lang.OpCodes.OpThrow;
-use Bayrell.Lang.OpCodes.OpTryCatch;
-use Bayrell.Lang.OpCodes.OpTryCatchItem;
-use Bayrell.Lang.OpCodes.OpWhile;
+use BayLang.SaveOpCode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignStruct;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpBreak;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpContinue;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpDelete;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpIfElse;
+use BayLang.OpCodes.OpInc;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
+use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpSafe;
+use BayLang.OpCodes.OpThrow;
+use BayLang.OpCodes.OpTryCatch;
+use BayLang.OpCodes.OpTryCatchItem;
+use BayLang.OpCodes.OpWhile;
 
 
 static class TranslatorPHPOperator
@@ -115,11 +115,11 @@ static class TranslatorPHPOperator
 					BaseOpCode op_code_next = item.op_code;
 					while (op_code_next instanceof OpAttr)
 					{
-						items.pushValue(op_code_next);
+						items.push(op_code_next);
 						op_code_next = op_code_next.obj;
 					}
 					
-					items = items.reverseIm();
+					items = items.reverse();
 					list res = t.expression::OpIdentifier(t, op_code_next);
 					t = res[0]; string obj_s = res[1];
 					
@@ -130,13 +130,13 @@ static class TranslatorPHPOperator
 						if (item.kind == OpAttr::KIND_ATTR)
 						{
 							obj_s ~= "->" ~ item.value.value;
-							items2.pushValue( t.expression::toString(item.value.value) );
+							items2.push( t.expression::toString(item.value.value) );
 						}
 						else if (item.kind == OpAttr::KIND_DYNAMIC)
 						{
 							list res = t.expression::Expression(t, item.value); t = res[0];
 							obj_s ~= "[" ~ res[1] ~ "]";
-							items2.pushValue(res[1]);
+							items2.push(res[1]);
 						}
 						else if (item.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 						{
@@ -146,7 +146,7 @@ static class TranslatorPHPOperator
 								{
 									list res = t.expression::Expression(t, item.attrs[j]);
 									t = res[0]; obj_s ~= "[" ~ res[1] ~ "]";
-									items2.pushValue(res[1]);
+									items2.push(res[1]);
 								}
 							}
 						}

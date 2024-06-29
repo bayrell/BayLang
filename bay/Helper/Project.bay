@@ -1,0 +1,560 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Helper;
+
+use Runtime.fs;
+use Runtime.lib;
+use Runtime.BaseObject;
+use Runtime.SerializeInterface;
+use Runtime.Serializer;
+use Runtime.SerializerJson;
+use BayLang.Helper.Module;
+use BayLang.Helper.Widget;
+use BayLang.Helper.CacheInterface;
+
+
+class Project extends BaseObject implements CacheInterface, SerializeInterface
+{
+	string path = "";
+	Map info = null;
+	Map<Module> modules = null;
+	
+	
+	/**
+	 * Read projects
+	 */
+	async static Collection<Project> readProjects(string projects_path)
+	{
+		if (not(await fs::isFolder(projects_path))) return [];
+		
+		Vector<string> result = [];
+		Collection<string> items = await fs::listDir(projects_path);
+		for (int i=0; i<items.count(); i++)
+		{
+			string file_name = items.get(i);
+			if (file_name == ".") continue;
+			if (file_name == "..") continue;
+			Project project = await static::readProject(fs::join([projects_path, file_name]));
+			if (project) result.push(project);
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * Read project from folder
+	 */
+	async static Project readProject(string project_path)
+	{
+		Project project = new Project(project_path);
+		await project.init();
+		if (not project.exists()) return null;
+		return project;
+	}
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(string project_path)
+	{
+		parent();
+		this.path = project_path;
+	}
+	
+	
+	/**
+	 * Init project
+	 */
+	async bool init()
+	{
+		this.info = null;
+		string project_json_path = fs::join([this.path, "project.json"]);
+		if (not(await fs::isFolder(this.path))) return false;
+		if (not(await fs::isFile(project_json_path))) return false;
+		
+		/* Read file */
+		string content = await fs::readFile(project_json_path);
+		Dict project_info = rtl::json_decode(content);
+		
+		if (not project_info) return false;
+		if (not project_info.has("name")) return false;
+		
+		this.info = project_info;
+	}
+	
+	
+	/**
+	 * Returns project cache path
+	 */
+	string getCachePath() =>
+		this.exists()
+			? fs::join([this.getPath(), ".cache", "cache.json"])
+			: ""
+	;
+	
+	
+	/**
+	 * Read project from cache
+	 */
+	async bool readCache()
+	{
+		/* Get json path */
+		string cache_path = this.getCachePath();
+		if (not(await fs::isFile(cache_path))) return false;
+		
+		/* Read file */
+		string content = await fs::readFile(cache_path);
+		Dict data = rtl::json_decode(content);
+		if (not data) return false;
+		
+		/* Import data */
+		Serializer serializer = new Serializer();
+		serializer.setFlag(Serializer::ALLOW_OBJECTS);
+		serializer.setFlag(Serializer::DECODE);
+		this.serialize(serializer, data);
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Save project to cache
+	 */
+	async void saveCache()
+	{
+		/* Get json folder */
+		string cache_path = this.getCachePath();
+		string folder_path = rs::dirname(cache_path);
+		if (not(await fs::isFolder(folder_path)))
+		{
+			await fs::mkdir(folder_path);
+		}
+		
+		/* Create serializer */
+		Serializer serializer = new SerializerJson();
+		serializer.setFlag(Serializer::JSON_PRETTY);
+		
+		/* Save cache to file */
+		string content = serializer.encode(this);
+		await fs::saveFile(cache_path, content);
+	}
+	
+	
+	/**
+	 * Process project cache
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		serializer.processItems(
+			this, "modules", data,
+			Module (Serializer serializer, Dict module) =>
+				new Module(this, module.get("path"))
+		);
+	}
+	
+	
+	/**
+	 * Load object
+	 */
+	async void load(bool is_force = false)
+	{
+		if (not this.exists()) return;
+		
+		bool is_loaded = false;
+		if (not is_force) is_loaded = await this.readCache();
+		if (not is_loaded)
+		{
+			/* Read and load modules */
+			await this.readModules();
+			await this.loadModules();
+			
+			/* Save to cache */
+			await this.saveCache();
+		}
+	}
+	
+	
+	/**
+	 * Returns true if project is exists
+	 */
+	void exists() => this.info != null;
+	
+	
+	/**
+	 * Returns project path
+	 */
+	string getPath() => this.exists() ? this.path : "";
+	
+	
+	/**
+	 * Returns project file_name
+	 */
+	string getID() => this.exists() ? rs::basename(this.path) : "";
+	
+	
+	/**
+	 * Returns project name
+	 */
+	string getName() => this.exists() ? this.info.get("name") : "";
+	
+	
+	/**
+	 * Set project name
+	 */
+	void setName(string name)
+	{
+		if (not this.exists()) return;
+		this.info.set("name", name);
+	}
+	
+	
+	/**
+	 * Returns project description
+	 */
+	string getDescription() => this.exists() ? this.info.get("description") : "";
+	
+	
+	/**
+	 * Set project description
+	 */
+	void setDescription(string description)
+	{
+		if (not this.exists()) return;
+		this.info.set("description", description);
+	}
+	
+	
+	/**
+	 * Returns project type
+	 */
+	string getType() => this.exists() ? this.info.get("type") : "";
+	
+	
+	/**
+	 * Set project type
+	 */
+	void setType(string project_type)
+	{
+		if (not this.exists()) return;
+		this.info.set("type", project_type);
+	}
+	
+	
+	/**
+	 * Returns assets
+	 */
+	Collection<Dict> getAssets() => this.exists() ? this.info.get("assets") : [];
+	
+	
+	/**
+	 * Returns languages
+	 */
+	Collection<string> getLanguages() => this.exists() ? this.info.get("languages") : [];
+	
+	
+	/**
+	 * Returns module
+	 */
+	Module getModule(string module_name) => this.modules.get(module_name);
+	
+	
+	/**
+	 * Returns modules by group name
+	 */
+	Collection getModulesByGroupName(string group_name)
+	{
+		/* Get modules */
+		Collection<Module> modules = this.modules.transition(
+			Module (Module module, string module_name) => module
+		);
+		
+		/* Filter modules by group */
+		modules = modules.filter(
+			bool (Module module) use (group_name) =>
+				module.hasGroup(group_name)
+		);
+		
+		/* Get names */
+		modules = modules.map(lib::attr("name"));
+		
+		/* Return modules */
+		return modules;
+	}
+	
+	
+	/**
+	 * Returns widget
+	 */
+	async Widget getWidget(string widget_name)
+	{
+		if (not this.modules) return null;
+		
+		/* Find widget by name */
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			Widget widget = module.getWidget(widget_name);
+			if (widget) return widget;
+		}
+		
+		return null;
+	}
+	
+	
+	/**
+	 * Save project
+	 */
+	async void saveInfo()
+	{
+		string project_json_path = fs::join([this.path, "project.json"]);
+		string content = rtl::json_encode(this.info, rtl::JSON_PRETTY);
+		await fs::saveFile(project_json_path, content);
+	}
+	
+	
+	/**
+	 * Load modules
+	 */
+	async void loadModules()
+	{
+		Collection<string> modules = this.modules.keys().sort();
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			await module.loadRoutes();
+			await module.loadWidgets();
+		}
+	}
+	
+	
+	/**
+	 * Read modules
+	 */
+	async void readModules()
+	{
+		if (not this.exists()) return;
+		
+		this.modules = {};
+		
+		/* Read sub modules */
+		await this.readSubModules(this.path, this.info.get("modules"));
+	}
+	
+	
+	/**
+	 * Read sub modules
+	 */
+	async void readSubModules(string path, Collection<Dict> items)
+	{
+		if (not items) return;
+		for (int i=0; i<items.count(); i++)
+		{
+			Dict item = items.get(i);
+			string module_src = item.get("src");
+			string module_type = item.get("type");
+			string folder_path = fs::join([ path, module_src ]);
+			
+			/* Read from folder */
+			if (module_type == "folder")
+			{
+				await this.readModuleFromFolder(folder_path);
+			}
+			
+			/* Read module */
+			else
+			{
+				Module module = Module::readModule(this, folder_path);
+				if (module)
+				{
+					/* Set module */
+					this.modules.set(module.getName(), module);
+					
+					/* Read sub modules */
+					await this.readSubModules(module.getPath(), module.submodules);
+				}
+			}
+		}
+	}
+	
+	
+	/**
+	 * Read sub modules
+	 */
+	async void readModuleFromFolder(string folder_path)
+	{
+		if (not(await fs::isFolder(folder_path))) return;
+		
+		Collection<string> items = await fs::listDir(folder_path);
+		for (int i=0; i<items.count(); i++)
+		{
+			string file_name = items.get(i);
+			if (file_name == ".") continue;
+			if (file_name == "..") continue;
+			
+			/* Read module */
+			Module module = Module::readModule(this, fs::join([folder_path, file_name]));
+			if (module)
+			{
+				/* Set module */
+				this.modules.set(module.getName(), module);
+				
+				/* Read sub modules */
+				this.readSubModules(module.getPath(), module.submodules);
+			}
+		}
+	}
+	
+	
+	/**
+	 * Sort modules
+	 */
+	Collection<string> sortRequiredModules(Collection<string> modules)
+	{
+		Vector result = [];
+		
+		fn add_module;
+		add_module = void (string module_name) use (modules, result, add_module)
+		{
+			if (modules.indexOf(module_name) == -1) return;
+			
+			/* Get module by name */
+			Module module = this.modules.get(module_name);
+			if (not module) return;
+			
+			/* Add required modules */
+			if (module.required_modules != null)
+			{
+				for (int i=0; i<module.required_modules.count(); i++)
+				{
+					add_module(module.required_modules.get(i));
+				}
+			}
+			
+			/* Add module if not exists */
+			if (result.indexOf(module_name) == -1)
+			{
+				result.push(module_name);
+			}
+		};
+		
+		for (int i=0; i<modules.count(); i++)
+		{
+			add_module(modules.get(i));
+		}
+		
+		return result;
+	}
+	
+	
+	/**
+	 * Returns assets modules
+	 */
+	Collection<string> getAssetModules(Dict asset)
+	{
+		Collection modules = asset.get("modules");
+		
+		/* Extends modules */
+		Vector new_modules = [];
+		modules.each(
+			void (string module_name) use (new_modules)
+			{
+				if (rs::substr(module_name, 0, 1) == "@")
+				{
+					/* Get group modules by name */
+					Collection group_modules = this.getModulesByGroupName(module_name);
+					
+					/* Append group modules */
+					new_modules.appendItems(group_modules);
+				}
+				else
+				{
+					new_modules.push(module_name);
+				}
+			}
+		);
+		modules = new_modules.removeDuplicates();
+		
+		/* Sort modules by requires */
+		modules = this.sortRequiredModules(modules);
+		
+		return modules;
+	}
+	
+	
+	/**
+	 * Build asset
+	 */
+	async void buildAsset(Dict asset)
+	{
+		string asset_path_relative = asset["dest"] |> default string "";
+		if (asset_path_relative == "") return;
+		
+		/* Get asset dest path */
+		string asset_path = fs::join([ this.path, asset_path_relative ]);
+		string asset_content = "";
+		
+		/* Get modules names in asset */
+		Collection modules = this.getAssetModules(asset);
+		for (int i=0; i<modules.count(); i++)
+		{
+			string module_name = modules.get(i);
+			Module module = this.modules.get(module_name);
+			if (not module) continue;
+			
+			/* Get files */
+			for (int j=0; j<module.assets.count(); j++)
+			{
+				string file_name = module.assets.get(j);
+				string file_source_path = module.resolveSourceFilePath(file_name);
+				string file_dest_path = module.resolveDestFilePath(file_name, "es6");
+				
+				if (file_dest_path)
+				{
+					if (await fs::isFile(file_dest_path))
+					{
+						string content = await fs::readFile(file_dest_path);
+						asset_content ~= content ~ "\n";
+					}
+					else if (
+						await fs::isFile(file_source_path) and
+						rs::extname(file_source_path) == "js"
+					)
+					{
+						string content = await fs::readFile(file_source_path);
+						asset_content ~= content ~ "\n";
+					}
+				}
+			}
+		}
+		
+		/* Create directory if does not exists */
+		string dir_name = rs::dirname(asset_path);
+		if (not await fs::isDir(dir_name))
+		{
+			await fs::mkdir(dir_name);
+		}
+		
+		/* Save file */
+		await fs::saveFile(asset_path, asset_content);
+	}
+}

@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,16 +16,19 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAnnotation;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpDeclareFunctionArg;
-use Bayrell.Lang.OpCodes.OpFlags;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpReturn;
 
 
-struct OpDeclareFunction extends BaseOpCode
+class OpDeclareFunction extends BaseOpCode
 {
 	string op = "op_function";
 	string name = "";
@@ -42,6 +45,26 @@ struct OpDeclareFunction extends BaseOpCode
 	bool is_html_default_args = false;
 	
 	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "annotations", data);
+		serializer.process(this, "args", data);
+		serializer.process(this, "comments", data);
+		serializer.process(this, "expression", data);
+		serializer.process(this, "flags", data);
+		serializer.process(this, "is_context", data);
+		serializer.process(this, "is_html", data);
+		serializer.process(this, "is_html_default_args", data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "result_type", data);
+		serializer.process(this, "vars", data);
+	}
+	
 	
 	/**
 	 * Returns true if static function
@@ -56,7 +79,6 @@ struct OpDeclareFunction extends BaseOpCode
 	;
 	
 	
-	
 	/**
 	 * Returns true if is flag
 	 */
@@ -64,4 +86,22 @@ struct OpDeclareFunction extends BaseOpCode
 		this.flags != null and this.flags.isFlag(flag_name)
 	;
 	
+	
+	/**
+	 * Returns function expression
+	 */
+	BaseOpCode getExpression()
+	{
+		if (this.expression != null)
+		{
+			return this.expression;
+		}
+		
+		if (not(this.items instanceof OpItems)) return null;
+		
+		BaseOpCode op_code_item = this.items.items.get(0);
+		if (not(op_code_item instanceof OpReturn)) return null;
+		
+		return op_code_item.expression;
+	}
 }

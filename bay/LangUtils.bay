@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,20 +16,20 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.CoreParser;
 use Runtime.Interfaces.ContextInterface;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.LangNode.TranslatorNode;
-use Bayrell.Lang.LangPHP.TranslatorPHP;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.CoreTranslator;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangNode.TranslatorNode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
 
 
 static class LangUtils
 {
-	
 	/**
 	 * Parse file and convert to BaseOpCode
 	 */
@@ -59,17 +59,25 @@ static class LangUtils
 	{
 		CoreTranslator t = null;
 		
-		if (lang == "php")
+		if (lang == "bay")
 		{
-			t = new TranslatorPHP();
+			t = new TranslatorBay();
+			t.reset();
 		}
-		if (lang == "es6")
+		else if (lang == "es6")
 		{
 			t = new TranslatorES6();
+			t = t::reset(t);
 		}
-		if (lang == "nodejs")
+		else if (lang == "nodejs")
 		{
 			t = new TranslatorNode();
+			t = t::reset(t);
+		}
+		else if (lang == "php")
+		{
+			t = new TranslatorPHP();
+			t = t::reset(t);
 		}
 		
 		return t;

@@ -1,0 +1,120 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Compiler.Commands;
+
+use Runtime.io;
+use Runtime.Console.BaseCommand;
+use Runtime.Console.CommandsList;
+use BayLang.Compiler.Module;
+use BayLang.Compiler.SettingsProvider;
+use BayLang.Exceptions.ParserUnknownError;
+
+
+class Watch extends BaseCommand
+{
+	SettingsProvider settings;
+	
+	
+	/**
+	 * Returns name
+	 */
+	static string getName() => "watch";
+	
+	
+	/**
+	 * Returns description
+	 */
+	static string getDescription() => "Watch changes";
+	
+	
+	/**
+	 * On change file
+	 */
+	async void onChangeFile(string changed_file_path)
+	{
+		try
+		{
+			if (changed_file_path == this.settings.project_json_path)
+			{
+				io::print("Reload project.json");
+				await this.settings.reload();
+				return;
+			}
+			
+			Map file_info = await this.settings.compileFile(changed_file_path, "", 3);
+			if (not file_info) return;
+			
+			Module module = file_info.get("module");
+			Collection assets = module.config.get("assets");
+			string src_file_name = file_info.get("src_file_name");
+			
+			if (file_info.get("file_name") == "/module.json")
+			{
+				io::print("Reload module.json");
+				await this.settings.reload();
+			}
+			
+			else if (assets.indexOf(src_file_name) >= 0)
+			{
+				await this.settings.updateModule(module.name);
+			}
+		}
+		catch (ParserUnknownError e)
+		{
+			io::print_error("Error: " + e.toString());
+		}
+		catch (var e)
+		{
+			io::print_error(e);
+		}
+	}
+	
+	
+	/**
+	 * Run task
+	 */
+	async int run()
+	{
+		this.settings = @.provider(classof SettingsProvider);
+		
+		#ifcode NODEJS then
+		
+		let watch_dir = (ctx) =>
+		{
+			let io = use("Runtime.io");
+			let chokidar = require("chokidar");
+			return new Promise(() => {
+				io.print(ctx, "Start watch");
+				chokidar
+					.watch(ctx.base_path)
+					.on('change', (path, stat) => {
+						setTimeout(()=>{ this.onChangeFile(ctx, path); }, 500);
+					})
+				;
+				
+			});
+		};
+		
+		await watch_dir(ctx);
+		
+		#endif
+		
+		return static::SUCCESS;
+	}
+}

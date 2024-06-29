@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,14 +16,26 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpWhile extends BaseOpCode
+class OpWhile extends BaseOpCode
 {	
 	public string op = "op_while";	
 	BaseOpCode condition = null;
 	BaseOpCode value = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "condition", data);
+		serializer.process(this, "value", data);
+	}
 }

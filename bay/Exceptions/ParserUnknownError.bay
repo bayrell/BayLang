@@ -16,25 +16,23 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Exceptions;
+namespace BayLang.Exceptions;
 
 use Runtime.Context;
 use Runtime.RuntimeUtils;
-use Runtime.Exceptions.RuntimeException;
-use Bayrell.Lang.LangConstant;
+use Runtime.Exceptions.AbstractException;
+use BayLang.LangConstant;
 
 
-class ParserUnknownError extends RuntimeException
+class ParserUnknownError extends AbstractException
 {
-	
-	void constructor(string s, int code, Context context, Object prev = null)
+	void constructor(string s, int code, Object prev = null)
 	{
 		if (code == -1)
 		{
 			code = LangConstant::ERROR_PARSER;
 		}
-		parent(s, code, context, prev);
+		parent(s, code, prev);
 		
 	}
-	
 }

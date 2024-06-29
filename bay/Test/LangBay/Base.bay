@@ -1,0 +1,612 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Test.LangBay;
+
+use Runtime.io;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+
+
+class Base
+{
+	ParserBay parser;
+	TranslatorBay translator;
+	
+	
+	/**
+	 * Reset
+	 */
+	void reset()
+	{
+		this.parser = new ParserBay();
+		this.parser = this.parser::reset(this.parser);
+		this.translator = new TranslatorBay();
+		this.translator.reset();
+	}
+	
+	
+	/**
+	 * Set content
+	 */
+	void setContent(string content)
+	{
+		this.parser = this.parser::setContent(this.parser, content);
+	}
+	
+	
+	/**
+	 * Add variable
+	 */
+	void addVar(string var_name)
+	{
+		ParserBay parser = this.parser;
+		parser <= vars <= parser.vars.setIm(var_name, true);
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	string translate(string content, bool debug = false)
+	{
+		Collection<string> result = [];
+		
+		this.setContent(content);
+		
+		/* Parse */
+		list res = this.parser.parser_expression::readExpression(this.parser);
+		BaseOpCode op_code = res.get(1);
+		
+		/* Translate */
+		this.translator.expression.translate(op_code, result);
+		
+		/* Debug output */
+		if (debug)
+		{
+			log(op_code);
+			log(result);
+			log(rs::join("", result));
+		}
+		
+		return [op_code, rs::join("", result)];
+	}
+	
+	
+	@Test{}
+	void testNumber()
+	{
+		this.reset();
+		
+		string content = "1";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testReal()
+	{
+		this.reset();
+		
+		string content = "0.1";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testString()
+	{
+		this.reset();
+		
+		string content = "\"test\"";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testIdentifier()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr1()
+	{
+		this.reset();
+		
+		string content = "this.a";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr2()
+	{
+		this.reset();
+		
+		string content = "this.a.b";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr3()
+	{
+		this.reset();
+		
+		string content = "static::a";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr4()
+	{
+		this.reset();
+		
+		string content = "parent::a";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr5()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a[1]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr6()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a[1, 2]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testAttr7()
+	{
+		this.reset();
+		this.addVar("a");
+		this.addVar("name");
+		
+		string content = "a[name]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testCollection1()
+	{
+		this.reset();
+		
+		string content = "[]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testCollection2()
+	{
+		this.reset();
+		
+		string content = "[1, 2, 3]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testCollection3()
+	{
+		this.reset();
+		this.addVar("a");
+		this.addVar("b");
+		this.addVar("c");
+		
+		string content = "[a, b, c]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testCollection4()
+	{
+		this.reset();
+		
+		string content = "[\"a\", \"b\", \"c\"]";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testCollection5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"[",
+					"\t\"a\",",
+					"\t\"b\",",
+					"\t\"c\",",
+				"]"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict1()
+	{
+		this.reset();
+		
+		string content = "{}";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"name\": \"test\","
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"name\": \"test\",",
+					"\t\"value\": 10,"
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": {},",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": {",
+					"\t},",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict6()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": [",
+					"\t],",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict7()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": {",
+						"\t\t\"name\": \"test\",",
+						"\t\t\"value\": 10,"
+					"\t},",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testDict8()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"obj\": {\"name\": \"test\", \"value\": 10},",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn1()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a()";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn2()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a(1, 2)";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn3()
+	{
+		this.reset();
+		
+		string content = "this.a(1, 2)";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn4()
+	{
+		this.reset();
+		
+		string content = "parent(1, 2)";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn5()
+	{
+		this.reset();
+		
+		string content = "static::getName(1, 2)";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn6()
+	{
+		this.reset();
+		this.addVar("a");
+		this.addVar("b");
+		this.addVar("c");
+		
+		string content = "a(b, c)";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn7()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a().b()";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn8()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = "a{}";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn9()
+	{
+		this.reset();
+		this.addVar("a");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"a{",
+					"\t\"name\": \"test\",",
+					"\t\"value\": 10,"
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testNew1()
+	{
+		this.reset();
+		this.addVar("Test");
+		
+		string content = "new Test()";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testNew2()
+	{
+		this.reset();
+		this.addVar("Test");
+		
+		string content = "new Test(this.name, this.value)";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testNew3()
+	{
+		this.reset();
+		this.addVar("Test");
+		
+		string content = rs::join(
+			"\n",
+			[
+				"new Test{",
+					"\t\"name\": \"test\",",
+					"\t\"value\": 10,"
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testNew4()
+	{
+		this.reset();
+		this.addVar("Query");
+		
+		string content = "new Query().select(\"table\")";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testNew5()
+	{
+		this.reset();
+		
+		string content = "new Collection<string>()";
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+}

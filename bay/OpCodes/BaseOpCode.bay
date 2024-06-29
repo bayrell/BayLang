@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,17 +16,91 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
 use Runtime.BaseObject;
 use Runtime.BaseStruct;
-use Runtime.Interfaces.SerializeInterface;
-use Bayrell.Lang.Caret;
+use Runtime.SerializeInterface;
+use Runtime.Serializer;
+use BayLang.Caret;
 
 
-struct BaseOpCode extends BaseStruct
+class BaseOpCode extends BaseObject implements SerializeInterface
 {
 	static const string op = "";
 	Caret caret_start = null;
 	Caret caret_end = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	public void constructor(Dict params = null)
+	{
+		parent();
+		this._assign_values(params);
+	}
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		serializer.process(this, "caret_start", data);
+		serializer.process(this, "caret_end", data);
+	}
+	
+	
+	/**
+	 * Is multiline
+	 */
+	bool isMultiLine()
+	{
+		if (not this.caret_start) return true;
+		if (not this.caret_end) return true;
+		return this.caret_start.y != this.caret_end.y;
+	}
+	
+	
+	/**
+	 * Clone this struct with new values
+	 * @param Map obj = null
+	 * @return BaseStruct
+	 */
+	public BaseOpCode clone(Dict obj = null)
+	{
+		if (obj == null) return this;
+		
+		#switch
+		#case ifcode PHP then
+		
+		$item = clone $this;
+		$item->_assign_values($ctx, $obj);
+		return $item;
+		
+		#case ifcode JAVASCRIPT then
+		
+		var proto = Object.getPrototypeOf(this);
+		var item = Object.create(proto);
+		item = Object.assign(item, this);
+		item._assign_values(ctx, obj);
+		
+		return item;
+		
+		#endswitch
+		
+		return this;
+	}
+	
+	
+	/**
+	 * Copy this struct with new values
+	 * @param Map obj = null
+	 * @return BaseStruct
+	 */
+	public BaseStruct copy(Dict obj = null)
+	{
+		return this.clone(obj);
+	}
 }

@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,19 +16,32 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAnnotation;
-use Bayrell.Lang.OpCodes.OpComment;
-use Bayrell.Lang.OpCodes.OpEntityName;
-use Bayrell.Lang.OpCodes.OpFlags;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpFlags;
 
 
-struct OpAssignValue extends BaseOpCode
+class OpAssignValue extends BaseOpCode
 {
 	string op = "";
 	string var_name = "";
 	BaseOpCode op_code = null;
 	BaseOpCode expression = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "expression", data);
+		serializer.process(this, "op_code", data);
+		serializer.process(this, "var_name", data);
+	}
 }

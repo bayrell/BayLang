@@ -1,0 +1,396 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.LangBay;
+
+use Runtime.lib;
+use Runtime.BaseObject;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpHtmlAttribute;
+use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlSlot;
+use BayLang.OpCodes.OpHtmlStyle;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpUse;
+use BayLang.LangBay.TranslatorBay;
+
+
+class TranslatorBayHtml extends BaseObject
+{
+	TranslatorBay translator = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(TranslatorBay translator)
+	{
+		parent();
+		this.translator = translator;
+	}
+	
+	
+	/**
+	 * Translate html content
+	 */
+	void OpHtmlContent(OpHtmlContent op_code, Collection<string> result)
+	{
+		result.push(op_code.value);
+	}
+	
+	
+	/**
+	 * Translate attrs
+	 */
+	void OpHtmlAttrs(Collection<OpHtmlAttribute> op_code_attrs, Collection<string> result)
+	{
+		/* Filter attrs */
+		op_code_attrs = op_code_attrs.filter
+		(
+			bool (OpHtmlAttribute op_code_attr)
+			{
+				/* Skip @key_debug attr */
+				if (
+					not this.translator.preprocessor_flags.get("DEBUG_COMPONENT") and
+					op_code_attr.key == "@key_debug"
+				)
+				{
+					return false;
+				}
+				return true;
+			}
+		);
+		
+		int attrs_count = op_code_attrs.count();
+		for (int i=0; i<attrs_count; i++)
+		{
+			OpHtmlAttribute op_code_attr = op_code_attrs.get(i);
+			result.push(op_code_attr.key);
+			result.push("=");
+			
+			/* Value */
+			if (op_code_attr.value instanceof OpString)
+			{
+				this.translator.expression.translate(op_code_attr.value, result);
+			}
+			else
+			{
+				result.push("{{ ");
+				this.translator.expression.translate(op_code_attr.value, result);
+				result.push(" }}");
+			}
+			
+			if (i < attrs_count - 1) result.push(" ");
+		}
+	}
+	
+	
+	/**
+	 * Translate html tag
+	 */
+	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result)
+	{
+		bool is_multiline = op_code.isMultiLine();
+		
+		/* Component attrs */
+		Collection args_content = [];
+		this.OpHtmlAttrs(op_code.attrs, args_content);
+		string args = rs::join("", args_content);
+		if (args != "") args = " " ~ args;
+		
+		if (op_code.items == null)
+		{
+			result.push("<" ~ op_code.tag_name ~ args ~ " />");
+		}
+		else
+		{
+			/* Begin tag */
+			result.push("<" ~ op_code.tag_name ~ args ~ ">");
+			if (is_multiline) this.translator.levelInc();
+			
+			/* Items */
+			this.OpHtmlItems(op_code.items, result, is_multiline);
+			
+			/* End tag */
+			if (is_multiline)
+			{
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+			}
+			result.push("</" ~ op_code.tag_name ~ ">");
+		}
+	}
+	
+	
+	/**
+	 * OpHtmlSlot
+	 */
+	void OpHtmlSlot(BaseOpCode op_code, Collection<string> result)
+	{
+		/* Slot attrs */
+		Collection args_content = [];
+		this.OpHtmlAttrs(op_code.attrs, args_content);
+		string args = rs::join("", args_content);
+		if (args != "") args = " " ~ args;
+		
+		/* Begin slot */
+		result.push("<slot name=\"" ~ op_code.name ~ "\"" ~ args ~ ">");
+		
+		/* Items */
+		this.translator.levelInc();
+		this.OpHtmlItems(op_code.items, result);
+		this.translator.levelDec();
+		
+		/* End slot */
+		result.push(this.translator.newLine());
+		result.push("</slot>");
+	}
+	
+	
+	/**
+	 * Translate html item
+	 */
+	void OpHtmlItem(BaseOpCode op_code, Collection<string> result)
+	{
+		if (op_code instanceof OpHtmlTag)
+		{
+			this.OpHtmlTag(op_code, result);
+		}
+		else if (op_code instanceof OpHtmlContent)
+		{
+			this.OpHtmlContent(op_code, result);
+		}
+		else if (op_code instanceof OpHtmlSlot)
+		{
+			this.OpHtmlSlot(op_code, result);
+		}
+		else
+		{
+			result.push("{{ ");
+			this.translator.expression.translate(op_code, result);
+			result.push(" }}");
+		}
+	}
+	
+	
+	/**
+	 * Translate html items
+	 */
+	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, bool is_multiline = true)
+	{
+		int items_count = op_code.items.count();
+		for (int i=0; i<items_count; i++)
+		{
+			if (is_multiline) result.push(this.translator.newLine());
+			this.OpHtmlItem(op_code.items.get(i), result);
+		}
+	}
+	
+	
+	/**
+	 * Translate template
+	 */
+	void translateTemplate(OpDeclareFunction op_code, Collection<string> result)
+	{
+		if (not op_code.is_html) return;
+		
+		/* Begin template */
+		if (op_code.name == "render")
+		{
+			result.push("<template>");
+		}
+		else
+		{
+			Collection args_content = [];
+			if (op_code.args and op_code.args.count() > 0)
+			{
+				this.translator.program.OpDeclareFunctionArgs(op_code, args_content);
+			}
+			string args = rs::join("", args_content);
+			if (args != "") args = " args=\"" ~ args ~ "\"";
+			result.push("<template name=\"" ~ op_code.name ~ "\"" ~ args ~ ">");
+		}
+		
+		/* Items */
+		this.translator.levelInc();
+		this.OpHtmlItems(op_code.expression, result);
+		this.translator.levelDec();
+		
+		/* End template */
+		result.push(this.translator.newLine());
+		result.push("</template>");
+		result.push(this.translator.newLine());
+	}
+	
+	
+	/**
+	 * Translate class item
+	 */
+	bool translateClassItem(BaseOpCode op_code, Collection<string> result)
+	{
+		if (op_code instanceof OpDeclareFunction)
+		{
+			this.translateTemplate(op_code, result);
+		}
+	}
+	
+	
+	/**
+	 * Translate style
+	 */
+	void translateStyle(OpHtmlStyle op_code, Collection<string> result)
+	{
+		if (op_code.is_global)
+		{
+			result.push("<style global=\"true\">");
+		}
+		else
+		{
+			result.push("<style>");
+		}
+		result.push(this.translator.newLine());
+		if (op_code.content)
+		{
+			result.push(op_code.content);
+			result.push(this.translator.newLine());
+		}
+		result.push("</style>");
+		result.push(this.translator.newLine());
+	}
+	
+	
+	/**
+	 * Translate class
+	 */
+	void translateClassBody(OpDeclareClass op_code, Collection<string> result)
+	{
+		if (op_code.items.count() == 0) return;
+		
+		/* Get styles */
+		Collection<BaseOpCode> styles = op_code.items.filter(
+			bool (BaseOpCode op_code) =>
+				op_code instanceof OpHtmlStyle
+		);
+		
+		/* Translate styles */
+		for (int i=0; i<styles.count(); i++)
+		{
+			result.push(this.translator.newLine());
+			OpHtmlStyle op_code_item = styles.get(i);
+			this.translateStyle(op_code_item, result);
+		}
+		
+		/* Get templates */
+		Collection<BaseOpCode> templates = op_code.items.filter(
+			bool (BaseOpCode op_code) =>
+				op_code instanceof OpDeclareFunction and op_code.is_html
+		);
+		
+		/* Translate template */
+		for (int i=0; i<templates.count(); i++)
+		{
+			result.push(this.translator.newLine());
+			BaseOpCode op_code_item = templates.get(i);
+			this.translateClassItem(op_code_item, result);
+		}
+		
+		/* Get scripts */
+		Collection<BaseOpCode> scripts = op_code.items.filter(
+			bool (BaseOpCode op_code) =>
+				op_code instanceof OpAnnotation or
+				op_code instanceof OpAssign or
+				op_code instanceof OpDeclareFunction and
+				not op_code.is_html and
+				not op_code.name == "components"
+		);
+		
+		/* Translate scripts */
+		if (scripts.count() > 0)
+		{
+			result.push(this.translator.newLine());
+			result.push("<script>");
+			result.push(this.translator.newLine());
+			result.push(this.translator.newLine());
+			for (int i=0; i<scripts.count(); i++)
+			{
+				BaseOpCode op_code_item = scripts.get(i);
+				this.translator.program.translateClassItem(op_code_item, result);
+				result.push(this.translator.newLine());
+			}
+			result.push(this.translator.newLine());
+			result.push("</script>");
+			result.push(this.translator.newLine());
+		}
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	void translate(BaseOpCode op_code, Collection<string> result)
+	{
+		OpNamespace space = op_code.items.findItem(lib::isInstance(classof OpNamespace));
+		OpDeclareClass component = op_code.items.findItem(lib::isInstance(classof OpDeclareClass));
+		Collection<OpUse> uses = op_code.items.filter(lib::isInstance(classof OpUse));
+		
+		if (not component) return;
+		
+		/* Get component name */
+		Collection<string> component_names = [];
+		if (space) component_names.push(space.name);
+		component_names.push(component.name);
+		string component_name = rs::join(".", component_names);
+		
+		result.push("<class name=\"" ~ component_name ~ "\">");
+		result.push(this.translator.newLine());
+		
+		/* Add uses */
+		if (uses.count() > 0)
+		{
+			result.push(this.translator.newLine());
+			for (int i=0; i<uses.count(); i++)
+			{
+				OpUse use_item = uses.get(i);
+				if (use_item.is_component)
+				{
+					result.push("<use name=\"" ~ uses.get(i).name ~ "\" component=\"true\" />");
+				}
+				else
+				{
+					result.push("<use name=\"" ~ uses.get(i).name ~ "\" />");
+				}
+				result.push(this.translator.newLine());
+			}
+		}
+		
+		/* Declare class */
+		this.translateClassBody(component, result);
+		if (component.items.count() > 0 or uses.count() > 0)
+		{
+			result.push(this.translator.newLine());
+		}
+		result.push("</class>");
+	}
+}

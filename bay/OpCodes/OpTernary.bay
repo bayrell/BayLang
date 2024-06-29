@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,15 +16,28 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpTernary extends BaseOpCode
+class OpTernary extends BaseOpCode
 {
 	string op = "op_ternary";
 	BaseOpCode condition = null;
 	BaseOpCode if_true = null;
 	BaseOpCode if_false = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "condition", data);
+		serializer.process(this, "if_false", data);
+		serializer.process(this, "if_true", data);
+	}
 }

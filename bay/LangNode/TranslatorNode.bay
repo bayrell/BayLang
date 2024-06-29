@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,25 +16,24 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangNode;
+namespace BayLang.LangNode;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.CoreTranslator;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.LangES6.TranslatorES6AsyncAwait;
-use Bayrell.Lang.LangES6.TranslatorES6Expression;
-use Bayrell.Lang.LangES6.TranslatorES6Html;
-use Bayrell.Lang.LangES6.TranslatorES6Operator;
-use Bayrell.Lang.LangES6.TranslatorES6Program;
-use Bayrell.Lang.LangNode.TranslatorNodeExpression;
-use Bayrell.Lang.LangNode.TranslatorNodeProgram;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+use BayLang.SaveOpCode;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangES6.TranslatorES6AsyncAwait;
+use BayLang.LangES6.TranslatorES6Expression;
+use BayLang.LangES6.TranslatorES6Html;
+use BayLang.LangES6.TranslatorES6Operator;
+use BayLang.LangES6.TranslatorES6Program;
+use BayLang.LangNode.TranslatorNodeExpression;
+use BayLang.LangNode.TranslatorNodeProgram;
+use BayLang.OpCodes.BaseOpCode;
 
 
 struct TranslatorNode extends TranslatorES6
 {
-	
 	/* Translators */
 	TranslatorES6AsyncAwait async_await = null;
 	TranslatorES6Expression expression = null;
@@ -58,7 +57,7 @@ struct TranslatorNode extends TranslatorES6
 		t = parent::reset(t);
 		t <= expression <= new TranslatorNodeExpression();
 		t <= program <= new TranslatorNodeProgram();
-		t <= preprocessor_flags <= t.preprocessor_flags.copy({
+		t <= preprocessor_flags <= t.preprocessor_flags.concat({
 			"BACKEND": true,
 			"NODEJS": true,
 			"ES6": false,
@@ -73,8 +72,6 @@ struct TranslatorNode extends TranslatorES6
 	 */
 	pure list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
 	{
-		t = static::reset(t);
 		return t.program::translateProgram(t, op_code);
 	}
-	
 }

@@ -16,12 +16,13 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpPreprocessorIfDef extends BaseOpCode
+class OpPreprocessorIfDef extends BaseOpCode
 {
 	static const string KIND_PROGRAM = "program";
 	static const string KIND_CLASS_BODY = "class_body";
@@ -31,4 +32,15 @@ struct OpPreprocessorIfDef extends BaseOpCode
 	string op = "op_preprocessor_ifdef";
 	BaseOpCode condition = null;
 	Collection<BaseOpCode> items = null;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "condition", data);
+		serializer.process(this, "items", data);
+	}
 }

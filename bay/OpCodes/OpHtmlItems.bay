@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,14 +16,26 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpHtmlTag;
+use Runtime.lib;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpHtmlTag;
 
 
-struct OpHtmlItems extends BaseOpCode
+class OpHtmlItems extends BaseOpCode
 {
 	string op = "op_html";
-	Collection<BaseOpCode> items = null;
+	Collection<BaseOpCode> items = [];
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+	}
 }

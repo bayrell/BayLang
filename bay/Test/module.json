@@ -1,0 +1,30 @@
+{
+	"name": "BayLang.Test",
+	"assets":
+	[
+		"LangBay/Base.bay",
+		"LangBay/Expression.bay",
+		"LangBay/Html.bay",
+		"LangBay/Operator.bay",
+		"LangBay/Program.bay",
+		"LangBay/Style.bay",
+		"ModuleDescription.bay"
+	],
+	"require": [
+		"Runtime.Unit"
+	],
+	"groups": [
+		"test"
+	],
+	"src": "./",
+	"dest":
+	{
+		"php": "./../../php/Test",
+		"es6": "./../../es6/Test",
+		"nodejs": "./../../nodejs/Test"
+	},
+	"allow":
+	[
+		"\\.bay$"
+	]
+}

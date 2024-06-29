@@ -1,5 +1,5 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
  *  (c) Copyright 2016-2018 "Ildar Bikmamatov" <support@bayrell.org>
  *
@@ -16,13 +16,116 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use Runtime.lib;
+use Runtime.Serializer;
+use Runtime.Exceptions.RuntimeException;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpUse;
 
 
-struct OpModule extends BaseOpCode
+class OpModule extends BaseOpCode
 {
 	Dict<string> uses = null;
 	Collection<BaseOpCode> items = null;
+	bool is_component = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "is_component", data);
+		serializer.process(this, "items", data);
+		serializer.process(this, "uses", data);
+	}
+	
+	
+	/**
+	 * Add module
+	 */
+	void addModule(string class_name, bool is_component = true, string alias_name = "")
+	{
+		if (alias_name == "")
+		{
+			string class_name_arr = rs::split(".", class_name);
+			alias_name = class_name_arr.last();
+		}
+		
+		this.uses.set(alias_name, class_name);
+		
+		/* Add op_code */
+		int pos = this.items.find(lib::isInstance(classof OpNamespace));
+		OpUse op_code = new OpUse{
+			"alias": alias_name,
+			"name": class_name,
+			"is_component": is_component,
+		};
+		if (pos != -1)
+		{
+			pos = pos + 1;
+			while (pos < this.items.count())
+			{
+				BaseOpCode item = this.items.get(pos);
+				if (item == null) break;
+				if (not (item instanceof OpUse)) break;
+				if (rs::compare(class_name, item.name) == -1) break;
+				pos = pos + 1;
+			}
+			this.items.insert(pos, op_code);
+		}
+		else
+		{
+			this.items.prepend(op_code);
+		}
+	}
+	
+	
+	/**
+	 * Has module
+	 */
+	bool hasModule(string alias_name) => this.uses.has(alias_name);
+	
+	
+	/**
+	 * Find module
+	 */
+	string findModule(string class_name)
+	{
+		Collection keys = this.uses.keys();
+		for (int i=0; i<keys.count(); i++)
+		{
+			string key_name = keys.get(i);
+			if (this.uses.get(key_name) == class_name) return key_name;
+		}
+		return null;
+	}
+	
+	
+	/**
+	 * Find class
+	 */
+	OpDeclareClass findClass() =>
+		this.items ? this.items.findItem(lib::isInstance(classof OpDeclareClass)) : null
+	;
+	
+	
+	/**
+	 * Find class by name
+	 */
+	OpDeclareClass findClassByName(string name) =>
+		this.items.findItem(
+			bool (BaseOpCode item) use (name)
+			{
+				if (not(item instanceof OpDeclareClass)) return false;
+				if (item.name == name) return false;
+				return true;
+			}
+		)
+	;
 }

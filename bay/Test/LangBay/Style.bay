@@ -1,0 +1,352 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Test.LangBay;
+
+use Runtime.io;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use BayLang.LangBay.ParserBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpString;
+use BayLang.CoreTranslator;
+
+
+class Style
+{
+	ParserBay parser;
+	
+	
+	/**
+	 * Reset
+	 */
+	void reset()
+	{
+		/* Create parser */
+		ParserBay parser = new ParserBay();
+		parser = parser::reset(parser);
+		parser <= current_namespace_name <= "App";
+		parser <= current_class_name <= "Test";
+		parser <= uses <= parser.uses.setIm("Button", "Runtime.Widget.Button");
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Set content
+	 */
+	void setContent(string content)
+	{
+		this.parser = this.parser::setContent(this.parser, content);
+	}
+	
+	
+	/**
+	 * Translate
+	 */
+	string translate(string content, bool debug = false)
+	{
+		this.setContent(content ~ "}");
+		
+		/* Parse */
+		Vector items = [];
+		list res = this.parser.parser_html::readCssBodyItems(this.parser, items, []);
+		BaseOpCode op_code = res.get(1);
+		
+		/* Get items */
+		items = items.map(string (OpString op_code) => op_code.value);
+		string result = rs::join("\n", items);
+		
+		/* Debug output */
+		if (debug)
+		{
+			log(items);
+			log(result);
+		}
+		
+		return [op_code, result];
+	}
+	
+	
+	@Test{}
+	void test1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\tpadding: 20px;",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t.test1{",
+				"\t\tpadding: 20px;",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 .test1.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t&__test1{",
+				"\t\tpadding: 20px;",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page__test1.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t&__test1{",
+				"\t\t&_test2{",
+				"\t\t\tpadding: 20px;",
+				"\t\t}",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page__test1_test2.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t&__test1{",
+				"\t\t.test2{",
+				"\t\t\tpadding: 20px;",
+				"\t\t}",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page__test1.h-71c3 .test2.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test6()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t.test1{",
+				"\t\t&__test2{",
+				"\t\t\tpadding: 20px;",
+				"\t\t}",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 .test1__test2.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test7()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t%(Button)widget_button{",
+				"\t\tpadding: 20px;",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 .widget_button.h-8dd7{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test8()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t%(Button)widget_button{",
+				"\t\t&__test1{",
+				"\t\t\tpadding: 20px;",
+				"\t\t}",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 .widget_button__test1.h-8dd7{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test9()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\t%(Button)widget_button{",
+				"\t\t.test1{",
+				"\t\t\tpadding: 20px;",
+				"\t\t}",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 .widget_button.h-8dd7 .test1.h-71c3{padding: 20px}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+	
+	
+	@Test{}
+	void test10()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\tp{",
+				"\t\tfont-weight: bold;",
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3 p{font-weight: bold}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
+}

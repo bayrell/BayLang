@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangNode;
+namespace BayLang.LangNode;
 
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.LangES6.TranslatorES6Expression;
-use Bayrell.Lang.LangES6.TranslatorES6Operator;
-use Bayrell.Lang.LangES6.TranslatorES6Program;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpCollection;
-use Bayrell.Lang.OpCodes.OpDict;
-use Bayrell.Lang.OpCodes.OpDictPair;
-use Bayrell.Lang.OpCodes.OpIdentifier;
-use Bayrell.Lang.OpCodes.OpTypeIdentifier;
+use BayLang.SaveOpCode;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangES6.TranslatorES6Expression;
+use BayLang.LangES6.TranslatorES6Operator;
+use BayLang.LangES6.TranslatorES6Program;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCollection;
+use BayLang.OpCodes.OpDict;
+use BayLang.OpCodes.OpDictPair;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 static class TranslatorNodeExpression extends TranslatorES6Expression

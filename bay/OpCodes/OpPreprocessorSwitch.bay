@@ -16,14 +16,25 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpPreprocessorIfCode;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpPreprocessorIfCode;
 
 
-struct OpPreprocessorSwitch extends BaseOpCode
+class OpPreprocessorSwitch extends BaseOpCode
 {
 	string op = "op_preprocessor_switch";
 	Collection<OpPreprocessorIfCode> items = null;	
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "items", data);
+	}
 }

@@ -16,32 +16,31 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Exceptions;
+namespace BayLang.Exceptions;
 
 use Runtime.Context;
 use Runtime.RuntimeUtils;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.Exceptions.ParserUnknownError;
+use BayLang.Caret;
+use BayLang.Exceptions.ParserUnknownError;
 
 
 class ParserError extends ParserUnknownError
 {
-	
 	void constructor
 	(
 		string s, Caret caret, string file="", 
-		int code, Context context, Object prev = null
+		int code = -1, Object prev = null
 	){
-		parent(s, code, context, prev);
+		parent(s, code, prev);
 		this.error_line = caret.y + 1;
 		this.error_pos = caret.x + 1;
 		this.error_file = file;
 	}
 	
 	
-	public string buildMessage()
+	public string buildErrorMessage()
 	{
-		string error_str = this.error_str;
+		string error_str = this.getErrorMessage();
 		string file = this.getFileName();
 		string line = this.getErrorLine();
 		string pos = this.getErrorPos();
@@ -57,5 +56,4 @@ class ParserError extends ParserUnknownError
 		
 		return error_str;
 	}
-	
 }

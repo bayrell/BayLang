@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.BaseStruct;
 use Runtime.FakeStruct;
@@ -24,14 +24,14 @@ use Runtime.lib;
 use Runtime.rs;
 use Runtime.Reference;
 use Runtime.Interfaces.ContextInterface;
-use Bayrell.Lang.Caret;
-use Bayrell.Lang.CoreToken;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.Exceptions.ParserExpected;
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use BayLang.Caret;
+use BayLang.CoreToken;
+use BayLang.SaveOpCode;
+use BayLang.Exceptions.ParserExpected;
+use BayLang.OpCodes.BaseOpCode;
 
 
-class CoreParser extends BaseStruct
+struct CoreParser extends BaseStruct
 {
 	/* Settings */
 	int tab_size = 4;
@@ -53,6 +53,15 @@ class CoreParser extends BaseStruct
 	bool isEof() => this.caret.pos >= this.content_sz;
 	
 	
+	/**
+	 * Returns caret
+	 */
+	Caret getCaret() => this.caret.clone{
+		"file_name": this.file_name,
+		"content": this.content,
+		"content_sz": this.content_sz,
+	};
+	
 	
 	/**
 	 * Reset parser
@@ -65,7 +74,6 @@ class CoreParser extends BaseStruct
 	;
 	
 	
-	
 	/**
 	 * Set content
 	 */
@@ -74,7 +82,6 @@ class CoreParser extends BaseStruct
 			"content": new Reference(content), "content_sz": rs::strlen(content)
 		})
 	;
-	
 	
 	
 	/**
@@ -90,5 +97,4 @@ class CoreParser extends BaseStruct
 		}
 		return parser;
 	}
-	
 }

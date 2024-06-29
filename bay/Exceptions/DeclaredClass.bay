@@ -16,17 +16,15 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.Exceptions;
+namespace BayLang.Exceptions;
 
-use Runtime.Exceptions.RuntimeException;
+use Runtime.Exceptions.AbstractException;
 
 
-class DeclaredClass extends RuntimeException
+class DeclaredClass extends AbstractException
 {
-	
 	void constructor(Object prev = null)
 	{
 		parent("Declared class", -1, prev);
 	}
-	
 }

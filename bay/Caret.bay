@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,14 +16,24 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
-use Runtime.BaseStruct;
-use Runtime.FakeStruct;
+use Runtime.BaseObject;
+use Runtime.Reference;
+use Runtime.SerializeInterface;
+use Runtime.Serializer;
+use BayLang.Exceptions.ParserExpected;
 
 
-class Caret extends BaseStruct
+class Caret extends BaseObject implements SerializeInterface
 {
+	/**
+	 * Content
+	 */
+	string file_name = null;
+	Reference<string> content = null;
+	int content_sz = 0;
+	
 	
 	/**
 	 * Caret pos in file
@@ -37,10 +47,292 @@ class Caret extends BaseStruct
 	int x = 0;
 	
 	
-	
 	/**
 	 * Caret pos Y
 	 */
 	int y = 0;
 	
+	
+	/**
+	 * Tab size
+	 */
+	int tab_size = 4;
+	
+	
+	/**
+	 * Constructor
+	 */
+	public void constructor(Dict items = null)
+	{
+		parent();
+		
+		if (items)
+		{
+			if (items.has("file_name")) this.file_name = items.get("file_name");
+			if (items.has("content")) this.content = items.get("content");
+			if (items.has("content_sz")) this.content_sz = items.get("content_sz");
+			if (items.has("content") and not items.has("content_sz"))
+			{
+				this.content_sz = rs::strlen(this.content.ref);
+			}
+			if (items.has("tab_size")) this.tab_size = items.get("tab_size");
+			if (items.has("pos")) this.pos = items.get("pos");
+			if (items.has("x")) this.x = items.get("x");
+			if (items.has("y")) this.y = items.get("y");
+		}
+	}
+	
+	
+	/**
+	 * Clone
+	 */
+	Caret clone(Dict items = null) => new Caret{
+		"file_name": items ? items.get("file_name", this.file_name) : this.file_name,
+		"content": items ? items.get("content", this.content) : this.content,
+		"content_sz": items ? items.get("content_sz", this.content_sz) : this.content_sz,
+		"tab_size": items ? items.get("tab_size", this.tab_size) : this.tab_size,
+		"pos": items ? items.get("pos", this.pos) : this.pos,
+		"x": items ? items.get("x", this.x) : this.x,
+		"y": items ? items.get("y", this.y) : this.y,
+	};
+	
+	
+	/**
+	 * Copy caret
+	 */
+	Caret copy(Dict items = null) => this.clone(items);
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		serializer.process(this, "pos", data);
+		serializer.process(this, "x", data);
+		serializer.process(this, "y", data);
+	}
+	
+	
+	/**
+	 * Seek caret
+	 */
+	void seek(Caret caret)
+	{
+		this.pos = caret.pos;
+		this.x = caret.x;
+		this.y = caret.y;
+	}
+	
+	
+	/**
+	 * Returns true if eof
+	 */
+	bool eof() => this.pos >= this.content_sz;
+	
+	
+	/**
+	 * Returns next X
+	 */
+	int nextX(char ch, int direction = 1)
+	{
+		if (ch == "\t") return this.x + this.tab_size * direction;
+		if (ch == "\n") return 0;
+		return this.x + direction;
+	}
+	
+	
+	/**
+	 * Returns next Y
+	 */
+	int nextY(char ch, int direction = 1)
+	{
+		if (ch == "\n") return this.y + direction;
+		return this.y;
+	}
+	
+	
+	/**
+	 * Returns next char
+	 */
+	char nextChar() => rs::charAt(this.content.ref, this.pos, 1);
+	
+	
+	/**
+	 * Returns string
+	 */
+	string getString(int start_pos, int count) => rs::substr(this.content.ref, start_pos, count);
+	
+	
+	/**
+	 * Returns next string
+	 */
+	string nextString(int count) => rs::substr(this.content.ref, this.pos, count);
+	
+	
+	/**
+	 * Returns true if next char
+	 */
+	bool isNextChar(char ch) => this.nextChar() == ch;
+	
+	
+	/**
+	 * Returns true if next string
+	 */
+	bool isNextString(string s) => this.nextString(rs::strlen(s)) == s;
+	
+	
+	/**
+	 * Shift by char
+	 */
+	void shift(char ch)
+	{
+		this.x = this.nextX(ch);
+		this.y = this.nextY(ch);
+		this.pos = this.pos + 1;
+	}
+	
+	
+	/**
+	 * Read char
+	 */
+	char readChar()
+	{
+		char ch = rs::charAt(this.content.ref, this.pos);
+		this.shift(ch);
+		return ch;
+	}
+	
+	
+	/**
+	 * Read char
+	 */
+	string readString(int count)
+	{
+		string s = this.nextString(count);
+		int count = rs::strlen(s);
+		for (int i=0; i<count; i++)
+		{
+			char ch = rs::charAt(s, i);
+			this.shift(ch);
+		}
+		return s;
+	}
+	
+	
+	/**
+	 * Match char
+	 */
+	void matchChar(char ch)
+	{
+		char next = this.nextChar();
+		if (next != ch)
+		{
+			throw new ParserExpected(ch, this, this.file_name);
+		}
+		
+		this.readChar();
+	}
+	
+	
+	/**
+	 * Return true if is char
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isChar(char ch) =>
+		rs::indexOf('qazwsxedcrfvtgbyhnujmikolp', rs::lower(ch)) !== -1
+	;
+	
+	
+	/**
+	 * Return true if is number
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isNumber(char ch) =>
+		rs::indexOf('0123456789', ch) !== -1
+	;
+	
+	
+	/**
+	 * Return true if char is number
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isHexChar(char ch) =>
+		rs::indexOf('0123456789abcdef', rs::lower(ch)) !== -1
+	;
+	
+	
+	/**
+	 * Return true if is string of numbers
+	 * @param string s
+	 * @return boolean
+	 */
+	pure memorize bool isStringOfNumbers(string s)
+	{
+		int sz = rs::strlen(s);
+		for (int i=0; i<sz; i++)
+		{
+			if (not static::isNumber( rs::charAt(s, i) )) return false;
+		}
+		return true;
+	}
+	
+	
+	/**
+	 * Return true if char is system or space. ASCII code <= 32.
+	 * @param char ch
+	 * @return boolean
+	 */
+	pure memorize bool isSkipChar(char ch)
+	{
+		if (rs::ord(ch) <= 32) return true;
+		return false;
+	}
+	
+	
+	/**
+	 * Skip chars
+	 */
+	void skipChar(char ch)
+	{
+		if (this.nextChar() == ch) this.readChar();
+	}
+	
+	
+	/**
+	 * Skip space
+	 */
+	void skipSpace()
+	{
+		while (not this.eof() and static::isSkipChar(this.nextChar())) this.readChar();
+	}
+	
+	
+	/**
+	 * Returns true if token char
+	 */
+	bool isTokenChar(char ch)
+	{
+		return rs::indexOf('qazwsxedcrfvtgbyhnujmikolp0123456789_', rs::lower(ch)) !== -1;
+	}
+	
+	
+	/**
+	 * Read next token
+	 */
+	string readToken()
+	{
+		Vector items = [];
+		this.skipSpace();
+		if (this.eof()) return "";
+		if (not this.isTokenChar(this.nextChar())) return this.readChar();
+		while (not this.eof() and this.isTokenChar(this.nextChar()))
+		{
+			items.push(this.readChar());
+		}
+		return rs::join("", items);
+	}
 }

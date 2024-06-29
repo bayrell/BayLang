@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,28 +16,28 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang.LangES6;
+namespace BayLang.LangES6;
 
 use Runtime.BaseStruct;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.LangES6.AsyncAwait;
-use Bayrell.Lang.LangES6.TranslatorES6;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpAssign;
-use Bayrell.Lang.OpCodes.OpAssignValue;
-use Bayrell.Lang.OpCodes.OpBreak;
-use Bayrell.Lang.OpCodes.OpCall;
-use Bayrell.Lang.OpCodes.OpContinue;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
-use Bayrell.Lang.OpCodes.OpFor;
-use Bayrell.Lang.OpCodes.OpIf;
-use Bayrell.Lang.OpCodes.OpIfElse;
-use Bayrell.Lang.OpCodes.OpPipe;
-use Bayrell.Lang.OpCodes.OpReturn;
-use Bayrell.Lang.OpCodes.OpThrow;
-use Bayrell.Lang.OpCodes.OpTryCatch;
-use Bayrell.Lang.OpCodes.OpTryCatchItem;
-use Bayrell.Lang.OpCodes.OpWhile;
+use BayLang.SaveOpCode;
+use BayLang.LangES6.AsyncAwait;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpBreak;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpContinue;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpIfElse;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpThrow;
+use BayLang.OpCodes.OpTryCatch;
+use BayLang.OpCodes.OpTryCatchItem;
+use BayLang.OpCodes.OpWhile;
 
 
 struct TranslatorES6AsyncAwait extends BaseStruct

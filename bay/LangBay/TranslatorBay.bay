@@ -1,0 +1,124 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.LangBay;
+
+use Runtime.re;
+use Runtime.BaseObject;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.LangBay.TranslatorBayExpression;
+use BayLang.LangBay.TranslatorBayHtml;
+use BayLang.LangBay.TranslatorBayOperator;
+use BayLang.LangBay.TranslatorBayProgram;
+
+
+class TranslatorBay extends BaseObject
+{
+	int opcode_level = 0;
+	int indent_level = 0;
+	string indent = "\t";
+	string crlf = "\n";
+	Dict<bool> preprocessor_flags = {};
+	
+	/* Translators */
+	TranslatorBayExpression expression = new TranslatorBayExpression(this);
+	TranslatorBayOperator operator = new TranslatorBayOperator(this);
+	TranslatorBayProgram program = new TranslatorBayProgram(this);
+	TranslatorBayHtml html = new TranslatorBayHtml(this);
+	
+	
+	/**
+	 * Reset translator
+	 */
+	void reset()
+	{
+		this.opcode_level = 0;
+		this.indent_level = 0;
+		this.preprocessor_flags = {};
+	}
+	
+	
+	/**
+	 * Set flag
+	 */
+	TranslatorBay setFlag(string flag_name, bool value)
+	{
+		this.preprocessor_flags.set(flag_name, value);
+		return this;
+	}
+	
+	
+	/**
+	 * Increment indent level
+	 */
+	void levelInc()
+	{
+		this.indent_level = this.indent_level + 1;
+	}
+	
+	
+	/**
+	 * Decrease indent level
+	 */
+	void levelDec()
+	{
+		this.indent_level = this.indent_level - 1;
+	}
+	
+	
+	/**
+	 * Returns new line with indent
+	 */
+	string newLine()
+	{
+		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
+	}
+	
+	
+	/**
+	 * Returns string
+	 */
+	string toString(string s)
+	{
+		s = re::replace('\\\\', '\\\\', s);
+		s = re::replace('"', '\\\"', s);
+		s = re::replace('\n', '\\n', s);
+		s = re::replace('\r', '\\r', s);
+		s = re::replace('\t', '\\t', s);
+		return "\"" ~ s ~ "\"";
+	}
+	
+	
+	/**
+	 * Translate BaseOpCode
+	 */
+	pure list<TranslatorBay, string> translate(TranslatorBay t, BaseOpCode op_code)
+	{
+		Collection<string> content = [];
+		if (op_code.is_component)
+		{
+			t.html.translate(op_code, content);
+		}
+		else
+		{
+			t.program.translate(op_code, content);
+		}
+		string result = rs::join("", content);
+		return [t, result];
+	}
+}

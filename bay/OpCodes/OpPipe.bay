@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
  *  limitations under the License.
  */
  
-namespace Bayrell.Lang.OpCodes;
+namespace BayLang.OpCodes;
 
-use Bayrell.Lang.OpCodes.BaseOpCode;
+use Runtime.Serializer;
+use BayLang.OpCodes.BaseOpCode;
 
 
-struct OpPipe extends BaseOpCode
+class OpPipe extends BaseOpCode
 {
 	static const string KIND_ATTR = "attr";
 	static const string KIND_CALL = "call";
@@ -33,4 +34,18 @@ struct OpPipe extends BaseOpCode
 	BaseOpCode value = null;
 	bool is_async = false;
 	bool is_monad = false;
+	
+	
+	/**
+	 * Serialize object
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		parent(serializer, data);
+		serializer.process(this, "is_async", data);
+		serializer.process(this, "is_monad", data);
+		serializer.process(this, "kind", data);
+		serializer.process(this, "obj", data);
+		serializer.process(this, "value", data);
+	}
 }

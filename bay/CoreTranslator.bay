@@ -1,7 +1,7 @@
 /*!
- *  Bayrell Language
+ *  BayLang Technology
  *
- *  (c) Copyright 2016-2023 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
  *  limitations under the License.
  */
 
-namespace Bayrell.Lang;
+namespace BayLang;
 
 use Runtime.lib;
 use Runtime.BaseStruct;
-use Bayrell.Lang.SaveOpCode;
-use Bayrell.Lang.OpCodes.BaseOpCode;
-use Bayrell.Lang.OpCodes.OpDeclareClass;
-use Bayrell.Lang.OpCodes.OpDeclareFunction;
+use BayLang.SaveOpCode;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
 
 
 struct CoreTranslator extends BaseStruct
 {
-	
 	/* State */
 	string current_namespace_name = "";
 	string current_class_name = "";
@@ -53,6 +52,17 @@ struct CoreTranslator extends BaseStruct
 	/* Flags */
 	bool flag_struct_check_types = false;
 	Dict<bool> preprocessor_flags = null;
+	
+	
+	/**
+	 * Set preprocessor flag
+	 */
+	CoreTranslator setFlag(string flag_name, bool value)
+	{
+		CoreTranslator t = this;
+		t <= preprocessor_flags <= { flag_name } <= value;
+		return t;
+	}
 	
 	
 	/**
