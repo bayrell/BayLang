@@ -49,7 +49,7 @@ class OpModule extends BaseOpCode
 	/**
 	 * Add module
 	 */
-	void addModule(string class_name, bool is_component = true, string alias_name = "")
+	void addModule(string class_name, string alias_name = "", bool is_component = true)
 	{
 		if (alias_name == "")
 		{
