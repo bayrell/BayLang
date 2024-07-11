@@ -343,15 +343,25 @@ class Module extends BaseObject implements SerializeInterface
 		if (not file_op_code) return false;
 		
 		/* Translate project languages */
+		this.translateLanguages(relative_src_file_path, file_op_code);
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Translate file
+	 */
+	void translateLanguages(string relative_src_file_path, BaseOpCode op_code)
+	{
+		/* Translate project languages */
 		Collection languages = this.project.getLanguages();
 		for (int i=0; i<languages.count(); i++)
 		{
 			string lang = languages.get(i);
 			if (lang == "bay") continue;
-			this.translate(relative_src_file_path, file_op_code, lang);
+			this.translate(relative_src_file_path, op_code, lang);
 		}
-		
-		return true;
 	}
 	
 	

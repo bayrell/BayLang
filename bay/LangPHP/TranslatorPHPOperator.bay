@@ -125,26 +125,26 @@ static class TranslatorPHPOperator
 					
 					for (int j=0; j<items.count(); j++)
 					{
-						OpAttr item = items[j];
+						OpAttr item_attr = items[j];
 						
-						if (item.kind == OpAttr::KIND_ATTR)
+						if (item_attr.kind == OpAttr::KIND_ATTR)
 						{
-							obj_s ~= "->" ~ item.value.value;
-							items2.push( t.expression::toString(item.value.value) );
+							obj_s ~= "->" ~ item_attr.value.value;
+							items2.push( t.expression::toString(item_attr.value.value) );
 						}
-						else if (item.kind == OpAttr::KIND_DYNAMIC)
+						else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
 						{
-							list res = t.expression::Expression(t, item.value); t = res[0];
+							list res = t.expression::Expression(t, item_attr.value); t = res[0];
 							obj_s ~= "[" ~ res[1] ~ "]";
 							items2.push(res[1]);
 						}
-						else if (item.kind == OpAttr::KIND_DYNAMIC_ATTRS)
+						else if (item_attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
 						{
-							if (item.attrs != null)
+							if (item_attr.attrs != null)
 							{
-								for (int j=item.attrs.count() - 1; j>=0; j--)
+								for (int j=item_attr.attrs.count() - 1; j>=0; j--)
 								{
-									list res = t.expression::Expression(t, item.attrs[j]);
+									list res = t.expression::Expression(t, item_attr.attrs[j]);
 									t = res[0]; obj_s ~= "[" ~ res[1] ~ "]";
 									items2.push(res[1]);
 								}
