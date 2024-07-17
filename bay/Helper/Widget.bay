@@ -225,7 +225,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	/**
 	 * Returns component path
 	 */
-	string getComponetPath() => this.module.resolveClassName(this.getComponentName());
+	string getComponentPath() => this.module.resolveClassName(this.getComponentName());
 	
 	
 	/**
@@ -250,7 +250,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 		if (this.component_content !== null) return;
 		this.component_content = "";
 		
-		string file_path = this.getComponetPath();
+		string file_path = this.getComponentPath();
 		if (not(await fs::isFile(file_path))) return;
 		
 		this.component_content = await fs::readFile(file_path);
