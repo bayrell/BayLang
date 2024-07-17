@@ -61,7 +61,8 @@ class OpModule extends BaseOpCode
 		
 		/* Add op_code */
 		int pos = this.items.find(lib::isInstance(classof OpNamespace));
-		OpUse op_code = new OpUse{
+		OpUse op_code = new OpUse
+		{
 			"alias": alias_name,
 			"name": class_name,
 			"is_component": is_component,
