@@ -444,6 +444,7 @@ class Module extends BaseObject implements SerializeInterface
 	{
 		RouteProcessor route_processor = new RouteProcessor(this);
 		await route_processor.load();
+		this.routes = route_processor.getRoutes();
 	}
 	
 	
@@ -454,5 +455,50 @@ class Module extends BaseObject implements SerializeInterface
 	{
 		WidgetProcessor widget_processor = new WidgetProcessor(this);
 		await widget_processor.load();
+		this.widgets = widget_processor.getWidgets().map(
+			Widget (string widget_name)
+			{
+				Widget widget = new Widget(this);
+				widget.name = widget_name;
+				return widget;
+			}
+		);
+	}
+	
+	
+	/**
+	 * Add widget
+	 */
+	async void addWidget(Widget widget)
+	{
+		/* Add widget */
+		this.widgets.push(widget);
+		
+		/* Get path */
+		string model_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getModelPath())
+		);
+		string component_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getComponentPath())
+		);
+		
+		/* Add assets to module.json */
+		string module_json_path = this.path ~ "/" ~ "module.json";
+		string content = await fs::readFile(module_json_path);
+		Dict module_info = rtl::json_decode(content);
+		module_info.get("assets").push(model_path);
+		module_info.get("assets").push(component_path);
+		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
+		await fs::saveFile(module_json_path, content);
+		
+		/* Add assets to cache */
+		this.assets.push(model_path);
+		this.assets.push(component_path);
+		
+		/* Add to ModuleDescription */
+		WidgetProcessor widget_processor = new WidgetProcessor(this);
+		await widget_processor.load();
+		await widget_processor.addWidget(widget.name);
+		await widget_processor.save();
 	}
 }

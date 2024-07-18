@@ -43,6 +43,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	string name = "";
 	BaseOpCode model = null;
 	BaseOpCode component = null;
+	string component_name = "";
 	
 	/* Content */
 	string model_content = null;
@@ -196,6 +197,9 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 			this.model = false;
 			this.model_error = e;
 		}
+		
+		/* Get component name */
+		this.component_name = this.getComponentNameFromModel();
 	}
 	
 	
@@ -208,17 +212,26 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	/** Component **/
 	
 	/**
-	 * Returns component name
+	 * Returns component name from model
 	 */
-	string getComponentName()
+	string getComponentNameFromModel()
 	{
-		if (not this.isModelBased()) return this.name;
 		if (this.model == null) return "";
 		
 		OpDeclareClass op_code_class = static::findClass(this.model);
 		OpAssignValue op_code_assign = static::findComponentName(op_code_class);
 		
 		return static::extractComponentName(this.model, op_code_assign);
+	}
+	
+	
+	/**
+	 * Returns component name
+	 */
+	string getComponentName()
+	{
+		if (not this.isModelBased()) return this.name;
+		return this.component_name;
 	}
 	
 	

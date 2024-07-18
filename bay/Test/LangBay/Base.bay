@@ -430,6 +430,51 @@ class Base
 	
 	
 	@Test{}
+	void testPreprocessor1()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"[",
+					"\t\"1\",",
+					"\t#ifdef BACKEND then",
+					"\t\"2\",",
+					"\t\"3\",",
+					"\t#endif",
+					"\t\"4\",",
+				"]"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testPreprocessor2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"{",
+					"\t\"name\": \"test\",",
+					"\t#ifdef BACKEND then",
+					"\t\"value1\": 1,"
+					"\t\"value2\": 2,"
+					"\t#endif",
+				"}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
 	void testFn1()
 	{
 		this.reset();

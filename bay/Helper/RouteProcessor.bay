@@ -41,6 +41,7 @@ use BayLang.OpCodes.OpTypeIdentifier;
 class RouteProcessor extends BaseObject
 {
 	Module module = null;
+	BaseOpCode op_code = null;
 	
 	
 	/**
@@ -79,9 +80,6 @@ class RouteProcessor extends BaseObject
 			ParserBay parser = new ParserBay();
 			list res = parser::parse(parser, content);
 			BaseOpCode op_code = res.get(1);
-			
-			/* Get routes */
-			this.module.routes = static::getRoutes(op_code);
 		}
 		catch (ParserUnknownError e)
 		{
@@ -92,9 +90,9 @@ class RouteProcessor extends BaseObject
 	/**
 	 * Returns routes
 	 */
-	static Collection<Dict> getRoutes(BaseOpCode op_code)
+	Collection<Dict> getRoutes()
 	{
-		OpDeclareClass class_op_code = static::findClass(op_code);
+		OpDeclareClass class_op_code = static::findClass(this.op_code);
 		if (not class_op_code) return [];
 		
 		OpDeclareFunction routes_op_code = static::findFunction(class_op_code);

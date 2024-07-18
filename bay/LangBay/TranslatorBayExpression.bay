@@ -30,6 +30,7 @@ use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpMath;
 use BayLang.OpCodes.OpNew;
 use BayLang.OpCodes.OpNumber;
+use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.LangBay.TranslatorBay;
@@ -128,17 +129,46 @@ class TranslatorBayExpression extends BaseObject
 		{
 			this.translator.levelInc();
 		}
+		int i = 0;
 		int values_count = op_code.values.count();
-		for (int i=0; i<values_count; i++)
+		while (i < values_count)
 		{
 			BaseOpCode op_code_item = op_code.values.get(i);
 			if (is_multiline)
 			{
 				result.push(this.translator.newLine());
 			}
+			
+			/* Preprocessor */
+			if (op_code_item instanceof OpPreprocessorIfDef)
+			{
+				Collection<OpPreprocessorIfDef> items = [];
+				string condition = op_code_item.condition.value;
+				while (
+					op_code_item != null and
+					op_code_item instanceof OpPreprocessorIfDef and
+					op_code_item.condition.value == condition
+				)
+				{
+					items.push(op_code_item);
+					
+					/* Get next item */
+					i++;
+					op_code_item = op_code.values.get(i);
+				}
+				this.OpPreprocessorCollection(items, result);
+				continue;
+			}
+			
+			/* Translate item */
 			this.translate(op_code_item, result);
-			if (is_multiline) result.push(",");
-			else if (i < values_count - 1) result.push(", ");
+			if (not(op_code_item instanceof OpPreprocessorIfDef))
+			{
+				if (is_multiline) result.push(",");
+				else if (i < values_count - 1) result.push(", ");
+			}
+			
+			i++;
 		}
 		if (is_multiline)
 		{
@@ -146,6 +176,25 @@ class TranslatorBayExpression extends BaseObject
 			result.push(this.translator.newLine());
 		}
 		result.push("]");
+	}
+	
+	
+	/**
+	 * Collection preprocessor
+	 */
+	void OpPreprocessorCollection(Collection<OpPreprocessorIfDef> items, Collection<string> result)
+	{
+		string condition = items.get(0).condition.value;
+		result.push("#ifdef " ~ condition ~ " then");
+		for (int i=0; i<items.count(); i++)
+		{
+			BaseOpCode op_code_item = items.get(i);
+			result.push(this.translator.newLine());
+			this.translate(op_code_item.items, result);
+			result.push(",");
+		}
+		result.push(this.translator.newLine());
+		result.push("#endif");
 	}
 	
 	
@@ -170,19 +219,44 @@ class TranslatorBayExpression extends BaseObject
 		}
 		
 		/* Items */
+		int i = 0;
 		int values_count = op_code.values.count();
-		for (int i=0; i<values_count; i++)
+		while (i < values_count)
 		{
 			OpDictPair op_code_item = op_code.values.get(i);
 			if (is_multiline)
 			{
 				result.push(this.translator.newLine());
 			}
+			
+			/* Preprocessor */
+			if (op_code_item.condition != null)
+			{
+				Collection<OpPreprocessorIfDef> items = [];
+				string condition = op_code_item.condition.value;
+				while (
+					op_code_item != null and
+					op_code_item.condition != null
+				)
+				{
+					items.push(op_code_item);
+					
+					/* Get next item */
+					i++;
+					op_code_item = op_code.values.get(i);
+				}
+				this.OpPreprocessorDict(items, result);
+				continue;
+			}
+			
+			/* Translate item */
 			result.push(this.translator.toString(op_code_item.key));
 			result.push(": ");
 			this.translate(op_code_item.value, result);
 			if (is_multiline) result.push(",");
 			else if (i < values_count - 1) result.push(", ");
+			
+			i++;
 		}
 		
 		/* End bracket */
@@ -192,6 +266,27 @@ class TranslatorBayExpression extends BaseObject
 			result.push(this.translator.newLine());
 		}
 		result.push("}");
+	}
+	
+	
+	/**
+	 * Dict preprocessor
+	 */
+	void OpPreprocessorDict(Collection<OpPreprocessorIfDef> items, Collection<string> result)
+	{
+		string condition = items.get(0).condition.value;
+		result.push("#ifdef " ~ condition ~ " then");
+		for (int i=0; i<items.count(); i++)
+		{
+			OpDictPair op_code_item = items.get(i);
+			result.push(this.translator.newLine());
+			result.push(this.translator.toString(op_code_item.key));
+			result.push(": ");
+			this.translate(op_code_item.value, result);
+			result.push(",");
+		}
+		result.push(this.translator.newLine());
+		result.push("#endif");
 	}
 	
 	

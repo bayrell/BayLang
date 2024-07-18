@@ -24,10 +24,12 @@ use Runtime.BaseObject;
 use BayLang.Helper.Module;
 use BayLang.Exceptions.ParserUnknownError;
 use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.TranslatorBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpCollection;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpModule;
 use BayLang.OpCodes.OpNew;
@@ -40,6 +42,7 @@ use BayLang.Helper.Widget;
 class WidgetProcessor extends BaseObject
 {
 	Module module = null;
+	BaseOpCode op_code = null;
 	
 	
 	/**
@@ -77,18 +80,7 @@ class WidgetProcessor extends BaseObject
 			/* Parse file */
 			ParserBay parser = new ParserBay();
 			list res = parser::parse(parser, content);
-			BaseOpCode op_code = res.get(1);
-			
-			/* Get widgets */
-			Collection<string> widgets = static::getWidgets(op_code);
-			this.module.widgets = widgets.map(
-				Widget (string widget_name)
-				{
-					Widget widget = new Widget(this.module);
-					widget.name = widget_name;
-					return widget;
-				}
-			);
+			this.op_code = res.get(1);
 		}
 		catch (ParserUnknownError e)
 		{
@@ -97,10 +89,67 @@ class WidgetProcessor extends BaseObject
 	
 	
 	/**
+	 * Save op_code
+	 */
+	async void save()
+	{
+		string file_path = this.getModuleDescriptionFilePath();
+		
+		/* Translate */
+		TranslatorBay translator = new TranslatorBay();
+		list res = translator::translate(translator, this.op_code);
+		string content = res.get(1);
+		
+		/* Save content */
+		await fs::saveFile(file_path, content);
+	}
+	
+	
+	/**
+	 * Add widget
+	 */
+	async void addWidget(string widget_name)
+	{
+		BaseOpCode op_code = this.op_code;
+		if (not(op_code instanceof OpModule)) return;
+		
+		OpDeclareClass class_op_code = op_code.findClass();
+		if (not class_op_code) return;
+		
+		OpDeclareFunction entities_op_code = class_op_code.findFunction("entities");
+		if (not entities_op_code) return;
+		
+		/* Create op_code */
+		OpNew op_code_widget = new OpNew
+		{
+			"args":
+			[
+				new OpString
+				{
+					"value": widget_name,
+				}
+			],
+			"value": new OpTypeIdentifier
+			{
+				"entity_name": new OpEntityName
+				{
+					"names": ["Widget"]
+				}
+			},
+		};
+		
+		/* Add widget */
+		OpCollection expression = entities_op_code.getExpression()
+		expression.values.push(op_code_widget);
+	}
+	
+	
+	/**
 	 * Returns widgets
 	 */
-	static Collection<string> getWidgets(BaseOpCode op_code)
+	Collection<string> getWidgets()
 	{
+		BaseOpCode op_code = this.op_code;
 		if (not(op_code instanceof OpModule)) return [];
 		
 		OpDeclareClass class_op_code = op_code.findClass();
