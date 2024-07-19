@@ -52,6 +52,7 @@ class Module extends BaseObject implements SerializeInterface
 	Vector<Map> routes = null;
 	Vector<string> groups = null;
 	Vector<Widget> widgets = null;
+	WidgetProcessor widget_processor;
 	
 	
 	/**
@@ -62,6 +63,7 @@ class Module extends BaseObject implements SerializeInterface
 		parent();
 		this.path = module_path;
 		this.project = project;
+		this.widget_processor = new WidgetProcessor(this);
 	}
 	
 	
@@ -486,19 +488,69 @@ class Module extends BaseObject implements SerializeInterface
 		string module_json_path = this.path ~ "/" ~ "module.json";
 		string content = await fs::readFile(module_json_path);
 		Dict module_info = rtl::json_decode(content);
-		module_info.get("assets").push(model_path);
-		module_info.get("assets").push(component_path);
+		if (module_info.get("assets").indexOf(model_path) == -1)
+			module_info.get("assets").push(model_path);
+		if (module_info.get("assets").indexOf(component_path) == -1)
+			module_info.get("assets").push(component_path);
 		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
 		await fs::saveFile(module_json_path, content);
 		
 		/* Add assets to cache */
-		this.assets.push(model_path);
-		this.assets.push(component_path);
+		if (this.assets.indexOf(model_path) == -1) this.assets.push(model_path);
+		if (this.assets.indexOf(component_path) == -1) this.assets.push(component_path);
 		
 		/* Add to ModuleDescription */
-		WidgetProcessor widget_processor = new WidgetProcessor(this);
-		await widget_processor.load();
-		await widget_processor.addWidget(widget.name);
-		await widget_processor.save();
+		await this.widget_processor.load();
+		await this.widget_processor.addWidget(widget.name);
+		await this.widget_processor.save();
+	}
+	
+	
+	/**
+	 * Remove widget
+	 */
+	async void removeWidget(Widget widget)
+	{
+		/* Remove item */
+		this.widgets.removeItem(widget);
+		
+		/* Get path */
+		string model_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getModelPath())
+		);
+		string component_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getComponentPath())
+		);
+		
+		/* Remove assets from module.json */
+		string module_json_path = this.path ~ "/" ~ "module.json";
+		string content = await fs::readFile(module_json_path);
+		Dict module_info = rtl::json_decode(content);
+		Collection assets = module_info.get("assets");
+		for (int i=assets.count() - 1; i>=0; i--)
+		{
+			string file_name = assets.get(i);
+			if (file_name == model_path or file_name == component_path)
+			{
+				assets.remove(i);
+			}
+		}
+		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
+		await fs::saveFile(module_json_path, content);
+		
+		/* Remove assets from cache */
+		for (int i=this.assets.count() - 1; i>=0; i--)
+		{
+			string file_name = this.assets.get(i);
+			if (file_name == model_path or file_name == component_path)
+			{
+				this.assets.remove(i);
+			}
+		}
+		
+		/* Remove from ModuleDescription */
+		await this.widget_processor.load();
+		await this.widget_processor.removeWidget(widget.name);
+		await this.widget_processor.save();
 	}
 }

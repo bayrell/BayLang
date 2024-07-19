@@ -43,6 +43,7 @@ class WidgetProcessor extends BaseObject
 {
 	Module module = null;
 	BaseOpCode op_code = null;
+	bool is_loaded = false;
 	
 	
 	/**
@@ -67,8 +68,9 @@ class WidgetProcessor extends BaseObject
 	/**
 	 * Load widgets
 	 */
-	async void load()
+	async void load(bool force = false)
 	{
+		if (this.is_loaded and not force) return;
 		string file_path = this.getModuleDescriptionFilePath();
 		
 		/* Read file */
@@ -85,6 +87,8 @@ class WidgetProcessor extends BaseObject
 		catch (ParserUnknownError e)
 		{
 		}
+		
+		this.is_loaded = true;
 	}
 	
 	
@@ -110,14 +114,8 @@ class WidgetProcessor extends BaseObject
 	 */
 	async void addWidget(string widget_name)
 	{
-		BaseOpCode op_code = this.op_code;
-		if (not(op_code instanceof OpModule)) return;
-		
-		OpDeclareClass class_op_code = op_code.findClass();
-		if (not class_op_code) return;
-		
-		OpDeclareFunction entities_op_code = class_op_code.findFunction("entities");
-		if (not entities_op_code) return;
+		OpCollection expression = this.getEntityExpression();
+		if (not expression) return;
 		
 		/* Create op_code */
 		OpNew op_code_widget = new OpNew
@@ -139,39 +137,57 @@ class WidgetProcessor extends BaseObject
 		};
 		
 		/* Add widget */
-		OpCollection expression = entities_op_code.getExpression()
 		expression.values.push(op_code_widget);
 	}
 	
 	
 	/**
-	 * Returns widgets
+	 * Remove widget
 	 */
-	Collection<string> getWidgets()
+	async void removeWidget(string widget_name)
+	{
+		OpCollection expression = this.getEntityExpression();
+		if (not expression) return;
+		for (int i=expression.values.count() - 1; i>= 0; i--)
+		{
+			BaseOpCode op_code = expression.values.get(i);
+			if (not static::isWidget(op_code)) continue;
+			if (op_code.args.get(0).value != widget_name) continue;
+			expression.values.remove(i);
+		}
+	}
+	
+	
+	/**
+	 * Get widgets
+	 */
+	OpCollection getEntityExpression()
 	{
 		BaseOpCode op_code = this.op_code;
-		if (not(op_code instanceof OpModule)) return [];
+		if (not(op_code instanceof OpModule)) return null;
 		
 		OpDeclareClass class_op_code = op_code.findClass();
-		if (not class_op_code) return [];
+		if (not class_op_code) return null;
 		
 		OpDeclareFunction entities_op_code = class_op_code.findFunction("entities");
-		if (not entities_op_code) return [];
+		if (not entities_op_code) return null;
 		
-		return static::findWidgets(entities_op_code);
+		OpCollection expression = entities_op_code.getExpression();
+		if (expression == null) return null;
+		if (not(expression instanceof OpCollection)) return null;
+		if (expression.values == null) return null;
+		
+		return expression;
 	}
 	
 	
 	/**
 	 * Find widgets
 	 */
-	static Collection<string> findWidgets(OpDeclareFunction op_code)
+	Collection<string> getWidgets()
 	{
-		OpCollection expression = op_code.getExpression();
-		
-		if (expression == null) return [];
-		if (not(expression instanceof OpCollection)) return [];
-		if (expression.values == null) return [];
+		OpCollection expression = this.getEntityExpression();
+		if (expression) return [];
 		
 		return expression.values
 			.filter(
