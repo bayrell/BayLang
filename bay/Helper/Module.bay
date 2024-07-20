@@ -47,11 +47,13 @@ class Module extends BaseObject implements SerializeInterface
 	Dict<string> dest_path = {};
 	string name = "";
 	Dict submodules = null;
+	Vector<string> allow = null;
 	Vector<string> assets = null;
 	Vector<Map> required_modules = null;
 	Vector<Map> routes = null;
 	Vector<string> groups = null;
 	Vector<Widget> widgets = null;
+	Vector<string> exclude = null;
 	WidgetProcessor widget_processor;
 	
 	
@@ -102,10 +104,12 @@ class Module extends BaseObject implements SerializeInterface
 		this.name = module_info.get("name");
 		this.dest_path = module_info.get("dest");
 		this.src_path = module_info.get("src");
+		this.allow = module_info.get("allow");
 		this.assets = module_info.get("assets");
 		this.groups = module_info.get("groups");
 		this.required_modules = module_info.get("require");
 		this.submodules = module_info.get("modules");
+		this.exclude = module_info.get("exclude");
 		
 		return true;
 	}
@@ -181,7 +185,9 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Returns source folder path
 	 */
-	string getSourceFolderPath() => fs::join([ this.getPath(), this.src_path ]);
+	string getSourceFolderPath() =>
+		this.src_path ? fs::join([ this.getPath(), this.src_path ]) : null
+	;
 	
 	
 	/**
@@ -200,9 +206,76 @@ class Module extends BaseObject implements SerializeInterface
 	string getRelativeSourcePath(string file_path)
 	{
 		string source_path = this.getSourceFolderPath();
+		if (not source_path) return null;
 		int source_path_sz = rs::strlen(source_path);
-		if (rs::substr(file_path, 0, source_path_sz) != source_path) return "";
+		if (rs::substr(file_path, 0, source_path_sz) != source_path) return null;
 		return rs::addFirstSlash(rs::substr(file_path, source_path_sz));
+	}
+	
+	
+	/**
+	 * Returns true if module contains file
+	 */
+	bool checkFile(string file_full_path) => rs::indexOf(file_full_path, this.path) == 0;
+	
+	
+	/**
+	 * Check allow list
+	 */
+	bool checkAllow(string file_name)
+	{
+		if (not this.allow) return false;
+		
+		bool success = false;
+		for (int i=0; i<this.allow.count(); i++)
+		{
+			string file_match = this.allow.get(i);
+			if (file_match == "") continue;
+			
+			bool res = re::match(file_match, file_name);
+			
+			/* Ignore */
+			if (rs::charAt(file_match, 0) == "!")
+			{
+				if (res)
+				{
+					success = false;
+				}
+			}
+			
+			/* Allow */
+			else
+			{
+				if (res)
+				{
+					success = true;
+				}
+			}
+			
+		}
+		
+		return success;
+	}
+	
+	
+	/**
+	 * Check exclude
+	 */
+	bool checkExclude(string relative_src_file_path)
+	{
+		if (not this.exclude) return false;
+		for (int i=0; i<this.exclude.count(); i++)
+		{
+			string file_match = this.exclude.get(i);
+			if (file_match == "") continue;
+			
+			bool res = re::match(file_match, relative_src_file_path);
+			if (res)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	
@@ -328,11 +401,12 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Compile file
 	 */
-	bool compile(string relative_src_file_path)
+	async bool compile(string relative_src_file_path)
 	{
 		/* Get src file path */
 		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
 		if (src_file_path == "") return false;
+		if (not this.checkFile(src_file_path)) return false;
 		
 		/* Read file */
 		if (not(await fs::isFile(src_file_path))) return false;
@@ -354,7 +428,7 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Translate file
 	 */
-	void translateLanguages(string relative_src_file_path, BaseOpCode op_code)
+	async void translateLanguages(string relative_src_file_path, BaseOpCode op_code)
 	{
 		/* Translate project languages */
 		Collection languages = this.project.getLanguages();
@@ -362,7 +436,7 @@ class Module extends BaseObject implements SerializeInterface
 		{
 			string lang = languages.get(i);
 			if (lang == "bay") continue;
-			this.translate(relative_src_file_path, op_code, lang);
+			await this.translate(relative_src_file_path, op_code, lang);
 		}
 	}
 	
@@ -370,7 +444,7 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Translate file
 	 */
-	bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
+	async bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
 	{
 		/* Get dest file path */
 		string dest_file_path = this.resolveDestFilePath(relative_src_file_path, lang);

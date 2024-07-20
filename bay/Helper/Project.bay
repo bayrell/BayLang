@@ -332,6 +332,32 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 	
 	
 	/**
+	 * Find module by file name
+	 */
+	Module findModuleByFileName(string file_name)
+	{
+		Module res = null;
+		int module_path_sz = -1;
+		Collection<string> module_names = this.modules.keys();
+		for (int i=0; i<module_names.count(); i++)
+		{
+			string module_name = module_names.get(i);
+			Module module = this.modules.get(module_name);
+			if (module.checkFile(file_name))
+			{
+				int sz = rs::strlen(module.path);
+				if (module_path_sz < sz)
+				{
+					module_path_sz = sz;
+					res = module;
+				}
+			}
+		}
+		return res;
+	}
+	
+	
+	/**
 	 * Load modules
 	 */
 	async void loadModules()
