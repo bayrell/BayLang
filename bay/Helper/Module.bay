@@ -269,6 +269,7 @@ class Module extends BaseObject implements SerializeInterface
 			string file_match = this.exclude.get(i);
 			if (file_match == "") continue;
 			
+			file_match = re::replace("\\/", "\\/", file_match);
 			bool res = re::match(file_match, relative_src_file_path);
 			if (res)
 			{

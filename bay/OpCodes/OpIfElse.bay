@@ -18,12 +18,12 @@
 
 namespace BayLang.OpCodes;
 
-use Runtime.BaseStruct;
+use Runtime.BaseOpCode;
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 
 
-class OpIfElse extends BaseStruct
+class OpIfElse extends BaseOpCode
 {
 	BaseOpCode condition = null;
 	BaseOpCode if_true = null;
