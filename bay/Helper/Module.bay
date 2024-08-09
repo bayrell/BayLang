@@ -47,11 +47,14 @@ class Module extends BaseObject implements SerializeInterface
 	Dict<string> dest_path = {};
 	string name = "";
 	Dict submodules = null;
+	Vector<string> allow = null;
 	Vector<string> assets = null;
 	Vector<Map> required_modules = null;
 	Vector<Map> routes = null;
 	Vector<string> groups = null;
 	Vector<Widget> widgets = null;
+	Vector<string> exclude = null;
+	WidgetProcessor widget_processor;
 	
 	
 	/**
@@ -62,6 +65,7 @@ class Module extends BaseObject implements SerializeInterface
 		parent();
 		this.path = module_path;
 		this.project = project;
+		this.widget_processor = new WidgetProcessor(this);
 	}
 	
 	
@@ -100,10 +104,12 @@ class Module extends BaseObject implements SerializeInterface
 		this.name = module_info.get("name");
 		this.dest_path = module_info.get("dest");
 		this.src_path = module_info.get("src");
+		this.allow = module_info.get("allow");
 		this.assets = module_info.get("assets");
 		this.groups = module_info.get("groups");
 		this.required_modules = module_info.get("require");
 		this.submodules = module_info.get("modules");
+		this.exclude = module_info.get("exclude");
 		
 		return true;
 	}
@@ -179,7 +185,9 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Returns source folder path
 	 */
-	string getSourceFolderPath() => fs::join([ this.getPath(), this.src_path ]);
+	string getSourceFolderPath() =>
+		this.src_path ? fs::join([ this.getPath(), this.src_path ]) : null
+	;
 	
 	
 	/**
@@ -198,9 +206,77 @@ class Module extends BaseObject implements SerializeInterface
 	string getRelativeSourcePath(string file_path)
 	{
 		string source_path = this.getSourceFolderPath();
+		if (not source_path) return null;
 		int source_path_sz = rs::strlen(source_path);
-		if (rs::substr(file_path, 0, source_path_sz) != source_path) return "";
+		if (rs::substr(file_path, 0, source_path_sz) != source_path) return null;
 		return rs::addFirstSlash(rs::substr(file_path, source_path_sz));
+	}
+	
+	
+	/**
+	 * Returns true if module contains file
+	 */
+	bool checkFile(string file_full_path) => rs::indexOf(file_full_path, this.path) == 0;
+	
+	
+	/**
+	 * Check allow list
+	 */
+	bool checkAllow(string file_name)
+	{
+		if (not this.allow) return false;
+		
+		bool success = false;
+		for (int i=0; i<this.allow.count(); i++)
+		{
+			string file_match = this.allow.get(i);
+			if (file_match == "") continue;
+			
+			bool res = re::match(file_match, file_name);
+			
+			/* Ignore */
+			if (rs::charAt(file_match, 0) == "!")
+			{
+				if (res)
+				{
+					success = false;
+				}
+			}
+			
+			/* Allow */
+			else
+			{
+				if (res)
+				{
+					success = true;
+				}
+			}
+			
+		}
+		
+		return success;
+	}
+	
+	
+	/**
+	 * Check exclude
+	 */
+	bool checkExclude(string relative_src_file_path)
+	{
+		if (not this.exclude) return false;
+		for (int i=0; i<this.exclude.count(); i++)
+		{
+			string file_match = this.exclude.get(i);
+			if (file_match == "") continue;
+			
+			file_match = re::replace("\\/", "\\/", file_match);
+			bool res = re::match(file_match, relative_src_file_path);
+			if (res)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	
@@ -326,11 +402,12 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Compile file
 	 */
-	bool compile(string relative_src_file_path)
+	async bool compile(string relative_src_file_path)
 	{
 		/* Get src file path */
 		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
 		if (src_file_path == "") return false;
+		if (not this.checkFile(src_file_path)) return false;
 		
 		/* Read file */
 		if (not(await fs::isFile(src_file_path))) return false;
@@ -343,13 +420,7 @@ class Module extends BaseObject implements SerializeInterface
 		if (not file_op_code) return false;
 		
 		/* Translate project languages */
-		Collection languages = this.project.getLanguages();
-		for (int i=0; i<languages.count(); i++)
-		{
-			string lang = languages.get(i);
-			if (lang == "bay") continue;
-			this.translate(relative_src_file_path, file_op_code, lang);
-		}
+		this.translateLanguages(relative_src_file_path, file_op_code);
 		
 		return true;
 	}
@@ -358,7 +429,23 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Translate file
 	 */
-	bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
+	async void translateLanguages(string relative_src_file_path, BaseOpCode op_code)
+	{
+		/* Translate project languages */
+		Collection languages = this.project.getLanguages();
+		for (int i=0; i<languages.count(); i++)
+		{
+			string lang = languages.get(i);
+			if (lang == "bay") continue;
+			await this.translate(relative_src_file_path, op_code, lang);
+		}
+	}
+	
+	
+	/**
+	 * Translate file
+	 */
+	async bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
 	{
 		/* Get dest file path */
 		string dest_file_path = this.resolveDestFilePath(relative_src_file_path, lang);
@@ -434,6 +521,7 @@ class Module extends BaseObject implements SerializeInterface
 	{
 		RouteProcessor route_processor = new RouteProcessor(this);
 		await route_processor.load();
+		this.routes = route_processor.getRoutes();
 	}
 	
 	
@@ -444,5 +532,100 @@ class Module extends BaseObject implements SerializeInterface
 	{
 		WidgetProcessor widget_processor = new WidgetProcessor(this);
 		await widget_processor.load();
+		this.widgets = widget_processor.getWidgets().map(
+			Widget (string widget_name)
+			{
+				Widget widget = new Widget(this);
+				widget.name = widget_name;
+				return widget;
+			}
+		);
+	}
+	
+	
+	/**
+	 * Add widget
+	 */
+	async void addWidget(Widget widget)
+	{
+		/* Add widget */
+		this.widgets.push(widget);
+		
+		/* Get path */
+		string model_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getModelPath())
+		);
+		string component_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getComponentPath())
+		);
+		
+		/* Add assets to module.json */
+		string module_json_path = this.path ~ "/" ~ "module.json";
+		string content = await fs::readFile(module_json_path);
+		Dict module_info = rtl::json_decode(content);
+		if (module_info.get("assets").indexOf(model_path) == -1)
+			module_info.get("assets").push(model_path);
+		if (module_info.get("assets").indexOf(component_path) == -1)
+			module_info.get("assets").push(component_path);
+		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
+		await fs::saveFile(module_json_path, content);
+		
+		/* Add assets to cache */
+		if (this.assets.indexOf(model_path) == -1) this.assets.push(model_path);
+		if (this.assets.indexOf(component_path) == -1) this.assets.push(component_path);
+		
+		/* Add to ModuleDescription */
+		await this.widget_processor.load();
+		await this.widget_processor.addWidget(widget.name);
+		await this.widget_processor.save();
+	}
+	
+	
+	/**
+	 * Remove widget
+	 */
+	async void removeWidget(Widget widget)
+	{
+		/* Remove item */
+		this.widgets.removeItem(widget);
+		
+		/* Get path */
+		string model_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getModelPath())
+		);
+		string component_path = rs::removeFirstSlash(
+			this.getRelativeSourcePath(widget.getComponentPath())
+		);
+		
+		/* Remove assets from module.json */
+		string module_json_path = this.path ~ "/" ~ "module.json";
+		string content = await fs::readFile(module_json_path);
+		Dict module_info = rtl::json_decode(content);
+		Collection assets = module_info.get("assets");
+		for (int i=assets.count() - 1; i>=0; i--)
+		{
+			string file_name = assets.get(i);
+			if (file_name == model_path or file_name == component_path)
+			{
+				assets.remove(i);
+			}
+		}
+		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
+		await fs::saveFile(module_json_path, content);
+		
+		/* Remove assets from cache */
+		for (int i=this.assets.count() - 1; i>=0; i--)
+		{
+			string file_name = this.assets.get(i);
+			if (file_name == model_path or file_name == component_path)
+			{
+				this.assets.remove(i);
+			}
+		}
+		
+		/* Remove from ModuleDescription */
+		await this.widget_processor.load();
+		await this.widget_processor.removeWidget(widget.name);
+		await this.widget_processor.save();
 	}
 }

@@ -273,7 +273,8 @@ static class ParserBayOperator
 		
 		/* Read expression */
 		list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; if_condition = res[1];
+		list res = parser.parser_expression::readExpression(parser); parser = res[0];
+		if_condition = res[1];
 		list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
 		list res = static::readThen(parser); parser = res[0];
 		

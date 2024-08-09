@@ -49,7 +49,7 @@ class OpModule extends BaseOpCode
 	/**
 	 * Add module
 	 */
-	void addModule(string class_name, bool is_component = true, string alias_name = "")
+	void addModule(string class_name, string alias_name = "", bool is_component = true)
 	{
 		if (alias_name == "")
 		{
@@ -61,7 +61,8 @@ class OpModule extends BaseOpCode
 		
 		/* Add op_code */
 		int pos = this.items.find(lib::isInstance(classof OpNamespace));
-		OpUse op_code = new OpUse{
+		OpUse op_code = new OpUse
+		{
 			"alias": alias_name,
 			"name": class_name,
 			"is_component": is_component,

@@ -43,6 +43,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	string name = "";
 	BaseOpCode model = null;
 	BaseOpCode component = null;
+	string component_name = "";
 	
 	/* Content */
 	string model_content = null;
@@ -196,6 +197,9 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 			this.model = false;
 			this.model_error = e;
 		}
+		
+		/* Get component name */
+		this.component_name = this.getComponentNameFromModel();
 	}
 	
 	
@@ -208,11 +212,10 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	/** Component **/
 	
 	/**
-	 * Returns component name
+	 * Returns component name from model
 	 */
-	string getComponentName()
+	string getComponentNameFromModel()
 	{
-		if (not this.isModelBased()) return this.name;
 		if (this.model == null) return "";
 		
 		OpDeclareClass op_code_class = static::findClass(this.model);
@@ -223,9 +226,19 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	
 	
 	/**
+	 * Returns component name
+	 */
+	string getComponentName()
+	{
+		if (not this.isModelBased()) return this.name;
+		return this.component_name;
+	}
+	
+	
+	/**
 	 * Returns component path
 	 */
-	string getComponetPath() => this.module.resolveClassName(this.getComponentName());
+	string getComponentPath() => this.module.resolveClassName(this.getComponentName());
 	
 	
 	/**
@@ -250,7 +263,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 		if (this.component_content !== null) return;
 		this.component_content = "";
 		
-		string file_path = this.getComponetPath();
+		string file_path = this.getComponentPath();
 		if (not(await fs::isFile(file_path))) return;
 		
 		this.component_content = await fs::readFile(file_path);

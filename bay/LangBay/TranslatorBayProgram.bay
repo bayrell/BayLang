@@ -130,6 +130,16 @@ class TranslatorBayProgram extends BaseObject
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
 		if (not (op_code.result_type instanceof OpTypeIdentifier)) return;
+		
+		/* Function flags */
+		Collection<string> flags = ["async", "static", "pure"];
+		flags = flags.filter(
+			bool (string flag_name) use (op_code) => op_code.flags.isFlag(flag_name)
+		);
+		result.push(rs::join(" ", flags));
+		if (flags.count() > 0) result.push(" ");
+		
+		/* Function result type */
 		this.translator.expression.OpTypeIdentifier(op_code.result_type, result);
 		
 		/* Function name */
@@ -141,12 +151,32 @@ class TranslatorBayProgram extends BaseObject
 		this.OpDeclareFunctionArgs(op_code, result);
 		result.push(")");
 		
-		/* Items */
-		if (op_code.items.items.count() > 0)
+		/* Expression */
+		if (op_code.expression)
 		{
-			result.push(this.translator.newLine());
+			bool is_multiline = op_code.expression.isMultiLine();
+			if (is_multiline)
+			{
+				result.push(" =>");
+				result.push(this.translator.newLine());
+			}
+			else
+			{
+				result.push(" => ");
+			}
+			this.translator.expression.translate(op_code.expression, result);
+			result.push(";");
 		}
-		this.translator.operator.translateItems(op_code.items, result);
+		
+		/* Items */
+		else if (op_code.items)
+		{
+			if (op_code.items.items.count() > 0)
+			{
+				result.push(this.translator.newLine());
+			}
+			this.translator.operator.translateItems(op_code.items, result);
+		}
 	}
 	
 	

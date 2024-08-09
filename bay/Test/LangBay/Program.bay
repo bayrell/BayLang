@@ -304,10 +304,48 @@ class Program
 			[
 				"class Test",
 				"{",
-				"\tvoid main()",
+				"\tbool main()",
 				"\t{",
 				"\t\treturn true;",
 				"\t}",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test",
+				"{",
+				"\tbool main() => true;",
+				"}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testFn5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"class Test",
+				"{",
+				"\tstatic bool main() => true;",
 				"}",
 			]
 		);
