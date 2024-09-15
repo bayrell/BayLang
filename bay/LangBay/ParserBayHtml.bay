@@ -384,7 +384,7 @@ class ParserBayHtml extends BaseObject
 		
 		while (not caret.eof() and ch != "{" and ch != "}" and ch != "<")
 		{
-			if (ch == ";" or ch == "(" or ch == ")") return false;
+			if (ch == ";" or ch == "(" or ch == ")" or ch == "$") return false;
 			caret.nextChar();
 			ch = caret.readChar();
 		}
@@ -583,20 +583,47 @@ class ParserBayHtml extends BaseObject
 			{
 				Vector arr = new Vector();
 				string ch = caret.nextChar();
+				string ch2 = caret.nextString(2);
 				while (not caret.eof() and ch != "}" and ch != ";")
 				{
-					if (ch != "\t" and ch != "\n")
+					if (ch2 == "${")
 					{
-						arr.push(ch);
+						/* Save caret */
+						caret.matchString("${");
+						parser <= caret <= caret;
+						
+						/* Read expression */
+						list res = parser.parser_expression::readExpression(parser);
+						parser = res[0];
+						
+						/* Append to css content */
+						if (arr.count() != 0) css_content.push(rs::join("", arr));
+						css_content.push(res[1]);
+						arr = [];
+						
+						/* Restore caret */
+						caret = parser.getCaret();
+						caret.skipSpace();
+						caret.matchChar("}");
 					}
-					caret.readChar();
+					else
+					{
+						if (ch != "\t" and ch != "\n")
+						{
+							arr.push(ch);
+						}
+						caret.readChar();
+					}
 					ch = caret.nextChar();
+					ch2 = caret.nextString(2);
 				}
 				
 				string s = rs::trim(rs::join("", arr));
 				css_content.push(s);
 				
+				/* Skip semicolon */
 				caret.skipChar(";");
+				css_content.push(";");
 				
 				/* Setup caret */
 				parser <= caret <= caret;
@@ -611,19 +638,83 @@ class ParserBayHtml extends BaseObject
 		/* Add CSS content to items */
 		if (css_content.count() > 0)
 		{
-			/* Get content */
-			string content = rs::join(";", css_content);
-			Collection selectors = static::getSelectors(start_selectors);
-			content = rs::join(",", selectors) ~ "{" ~ content ~ "}";
+			/* Filter css content */
+			css_content = css_content.filter(bool (var item) => item != "");
 			
-			/* Create op code */
-			BaseOpCode op_code_item = new OpString
+			/* Extend op code */
+			fn extendItem = BaseOpCode(BaseOpCode op_code_item, Vector arr)
+				use (parser, caret_start)
 			{
-				"caret_start": caret_start,
-				"caret_end": parser.getCaret(),
-				"value": rs::trim(content),
+				if (arr.count() > 0)
+				{
+					OpString css_str_op_code = new OpString
+					{
+						"caret_start": caret_start,
+						"caret_end": parser.getCaret(),
+						"value": rs::join("", arr),
+					};
+					if (op_code_item != null)
+					{
+						op_code_item = new OpMath
+						{
+							"caret_start": caret_start,
+							"caret_end": parser.getCaret(),
+							"value1": op_code_item,
+							"value2": css_str_op_code,
+							"math": "~",
+						};
+					}
+					else
+					{
+						op_code_item = css_str_op_code;
+					}
+				}
+				return op_code_item;
 			};
 			
+			/* Init arr */
+			Vector arr = new Vector();
+			Collection selectors = static::getSelectors(start_selectors);
+			arr.push(rs::join(",", selectors) ~ "{");
+			
+			/* Build op_code_item */
+			BaseOpCode op_code_item = null;
+			for (int i=0; i<css_content.count(); i++)
+			{
+				var item = css_content.get(i);
+				if (rtl::isString(item))
+				{
+					arr.push(item);
+				}
+				else
+				{
+					op_code_item = extendItem(op_code_item, arr);
+					if (op_code_item != null)
+					{
+						op_code_item = new OpMath
+						{
+							"caret_start": caret_start,
+							"caret_end": parser.getCaret(),
+							"value1": op_code_item,
+							"value2": item,
+							"math": "~",
+						};
+					}
+					else
+					{
+						op_code_item = item;
+					}
+					arr = [];
+				}
+			}
+			
+			/* Add close bracket */
+			arr.push("}");
+			
+			/* Extend op_code */
+			op_code_item = extendItem(op_code_item, arr);
+			
+			/* Append op_code */
 			items.push(op_code_item);
 		}
 		
