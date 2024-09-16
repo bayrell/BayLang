@@ -618,12 +618,14 @@ class ParserBayHtml extends BaseObject
 					ch2 = caret.nextString(2);
 				}
 				
+				/* Skip semicolon */
+				if (caret.skipChar(";"))
+				{
+					arr.push(";");
+				}
+				
 				string s = rs::trim(rs::join("", arr));
 				css_content.push(s);
-				
-				/* Skip semicolon */
-				caret.skipChar(";");
-				css_content.push(";");
 				
 				/* Setup caret */
 				parser <= caret <= caret;
@@ -640,6 +642,14 @@ class ParserBayHtml extends BaseObject
 		{
 			/* Filter css content */
 			css_content = css_content.filter(bool (var item) => item != "");
+			
+			/* Remove last semicolon */
+			if (css_content.count() > 0 and rtl::isString(css_content.last()))
+			{
+				string item = css_content.last();
+				if (rs::substr(item, -1) == ";") item = rs::substr(item, 0, -1);
+				css_content.set(css_content.count() - 1, item);
+			}
 			
 			/* Extend op code */
 			fn extendItem = BaseOpCode(BaseOpCode op_code_item, Vector arr)

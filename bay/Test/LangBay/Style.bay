@@ -349,4 +349,29 @@ class Style
 		list res = this.translate(content);
 		AssertHelper::equalValue(css_content, res.get(1), css_content);
 	}
+	
+	
+	@Test{}
+	void test11()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\tpadding: 20px;",
+				"\tcolor: green;",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3{padding: 20px;color: green}",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
 }

@@ -23,14 +23,17 @@ use Runtime.BaseObject;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpUse;
@@ -49,6 +52,17 @@ class TranslatorBayHtml extends BaseObject
 	{
 		parent();
 		this.translator = translator;
+	}
+	
+	
+	/**
+	 * OpAssign
+	 */
+	void OpAssign(OpAssign op_code, Collection<string> result)
+	{
+		result.push("%set ");
+		this.translator.operator.OpAssign(op_code, result);
+		result.push(";");
 	}
 	
 	
@@ -152,6 +166,37 @@ class TranslatorBayHtml extends BaseObject
 		/* Slot attrs */
 		Collection args_content = [];
 		this.OpHtmlAttrs(op_code.attrs, args_content);
+		
+		/* Add slot args */
+		if (op_code.args)
+		{
+			Collection<string> args = op_code.args.map
+			(
+				string (OpDeclareFunctionArg item)
+				{
+					Collection<string> res = new Vector();
+					this.translator.expression.OpTypeIdentifier(item.pattern, res);
+					res.push(" ");
+					res.push(item.name);
+					return rs::join("", res);
+				}
+			);
+			if (args_content.count() > 0) args_content.push(" ");
+			args_content.push("args=\"" ~ rs::join(",", args) ~ "\"");
+		}
+		
+		/* Add slot vars */
+		if (op_code.vars)
+		{
+			Collection<string> vars = op_code.vars.map
+			(
+				string (OpIdentifier item) => item.value
+			);
+			if (args_content.count() > 0) args_content.push(" ");
+			args_content.push("use=\"" ~ rs::join(",", vars) ~ "\"");
+		}
+		
+		/* Slot args */
 		string args = rs::join("", args_content);
 		if (args != "") args = " " ~ args;
 		
@@ -174,7 +219,11 @@ class TranslatorBayHtml extends BaseObject
 	 */
 	void OpHtmlItem(BaseOpCode op_code, Collection<string> result)
 	{
-		if (op_code instanceof OpHtmlTag)
+		if (op_code instanceof OpAssign)
+		{
+			this.OpAssign(op_code, result);
+		}
+		else if (op_code instanceof OpHtmlTag)
 		{
 			this.OpHtmlTag(op_code, result);
 		}
@@ -185,6 +234,12 @@ class TranslatorBayHtml extends BaseObject
 		else if (op_code instanceof OpHtmlSlot)
 		{
 			this.OpHtmlSlot(op_code, result);
+		}
+		else if (op_code instanceof OpCall and op_code.is_html)
+		{
+			result.push("%render ");
+			this.translator.expression.translate(op_code, result);
+			result.push(";");
 		}
 		else
 		{

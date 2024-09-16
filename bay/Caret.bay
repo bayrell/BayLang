@@ -310,9 +310,14 @@ class Caret extends BaseObject implements SerializeInterface
 	/**
 	 * Skip chars
 	 */
-	void skipChar(char ch)
+	bool skipChar(char ch)
 	{
-		if (this.nextChar() == ch) this.readChar();
+		if (this.nextChar() == ch)
+		{
+			this.readChar();
+			return true;
+		}
+		return false;
 	}
 	
 	

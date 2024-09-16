@@ -423,6 +423,39 @@ class Html
 	
 	
 	@Test{}
+	void testSlot2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<use name=\"Runtime.Widget.Button\" component=\"true\" />",
+				"<use name=\"Runtime.Widget.Image\" component=\"true\" />",
+				"<use name=\"Runtime.Widget.TextImage\" component=\"true\" />",
+				"",
+				"<template>",
+				"\t<TextImage>",
+				"\t\t<slot name=\"image\" args=\"Dict params\">",
+				"\t\t\t<Image src={{ params.get(\"image\") }} />",
+				"\t\t</slot>",
+				"\t\t<slot name=\"text\" args=\"Dict params\">",
+				"\t\t\t<div class=\"image_text\">{{ params.get(\"label\") }}</div>",
+				"\t\t</slot>",
+				"\t</TextImage>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
 	void testStyle1()
 	{
 		this.reset();
