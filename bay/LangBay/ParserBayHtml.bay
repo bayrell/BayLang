@@ -1478,6 +1478,63 @@ class ParserBayHtml extends BaseObject
 		list res = static::readHTMLAttrs(parser);
 		parser = res[0]; Collection<OpHtmlAttribute> attrs = res[1];
 		
+		/* Save vars */
+		Dict<bool> save_vars = parser.vars;
+		Collection<OpDeclareFunctionArg> slot_args = null;
+		Collection<OpIdentifier> slot_use = null;
+		
+		/* Read slot args */
+		if (tag_name == "slot")
+		{
+			/* Slot args */
+			OpHtmlAttribute args_item = attrs.findItem(lib::equalAttr("key", "args"));
+			if (args_item)
+			{
+				string args_str = args_item.value.value;
+				
+				/* Create parser */
+				ParserBay parser2 = new ParserBay();
+				parser2 = parser2::reset(parser2);
+				parser2 = parser2::setContent(parser2, args_str);
+				parser2 <= caret <= new Caret{};
+				
+				/* Parse args */
+				list res = parser2.parser_operator::readDeclareFunctionArgs(parser2, false, false);
+				parser2 = res[0]; slot_args = res[1];
+				Dict<bool> parser2_vars = parser2.vars;
+				
+				/* Add slot args */
+				parser <= vars <= parser2_vars;
+			}
+			
+			/* Slot use */
+			args_item = attrs.findItem(lib::equalAttr("key", "use"));
+			if (args_item)
+			{
+				string args_str = args_item.value.value;
+				slot_use = new Vector();
+				
+				/* Each items */
+				Map parser2_vars = {};
+				Vector<string> items = rs::split(",", args_str);
+				for (int i=0; i<items.count(); i++)
+				{
+					slot_use.push
+					(
+						new OpIdentifier
+						{
+							"value": items.get(i),
+							"kind": OpIdentifier::KIND_VARIABLE,
+						}
+					);
+					parser2_vars.set(items.get(i), true);
+				}
+				
+				/* Add slot args */
+				parser <= vars <= parser.vars.concat(parser2_vars);
+			}
+		}
+		
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "/")
 		{
@@ -1544,11 +1601,19 @@ class ParserBayHtml extends BaseObject
 			}
 		}
 		
+		/* Restore vars */
+		parser <= vars <= save_vars;
+		
+		/* Create op_code */
 		BaseOpCode op_code = null;
 		if (tag_name == "slot")
 		{
 			OpHtmlAttribute op_attr_name = attrs.findItem(lib::equalAttr("key", "name"));
+			
+			/* Filter attrs */
+			attrs = attrs.filter(lib::equalAttrNot("key", "args"));
 			attrs = attrs.filter(lib::equalAttrNot("key", "name"));
+			attrs = attrs.filter(lib::equalAttrNot("key", "use"));
 			
 			string name = "";
 			if (op_attr_name and op_attr_name.value instanceof OpString)
@@ -1558,8 +1623,10 @@ class ParserBayHtml extends BaseObject
 			
 			op_code = new OpHtmlSlot
 			{
+				"args": slot_args,
 				"attrs": attrs,
 				"name": name,
+				"vars": slot_use,
 				"caret_start": caret_start,
 				"caret_end": parser.caret,
 				"items": (items != null) ? new OpHtmlItems
@@ -1751,13 +1818,13 @@ class ParserBayHtml extends BaseObject
 		}
 		
 		/* Register variable in parser */
-		parser2_vars = parser2_vars
+		/*parser2_vars = parser2_vars
 			.setIm("layout", true)
 			.setIm("model", true)
 			.setIm("model_path", true)
 			.setIm("render_params", true)
 			.setIm("render_content", true)
-		;
+		;*/
 		
 		/* Read template content */
 		Dict<bool> save_vars = parser.vars;

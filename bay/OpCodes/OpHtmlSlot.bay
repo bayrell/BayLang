@@ -20,6 +20,7 @@ namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlItems;
 
@@ -28,7 +29,9 @@ class OpHtmlSlot extends BaseOpCode
 {
     string op = "op_html_slot";
 	string name = "";
+	Collection<OpDeclareFunctionArg> args = null;
 	Collection<OpHtmlAttribute> attrs = null;
+	Collection<string> vars = null;
 	OpHtmlItems items = null;
 	
 	

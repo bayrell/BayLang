@@ -28,6 +28,8 @@ use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
@@ -418,7 +420,7 @@ static class TranslatorPHPHtml
 			if (not(item instanceof OpHtmlSlot)) continue;
 			
 			content ~= t.s(t.expression::toString(item.name) ~ " => ");
-			list res = static::OpHtmlItemsAsFunction(t, item.items);
+			list res = static::OpHtmlItemsAsFunction(t, item.items, item.args, item.vars);
 			t = res.get(0); content ~= res.get(1) ~ ",";
 		}
 		
@@ -432,7 +434,11 @@ static class TranslatorPHPHtml
 	 * Translator html items as function
 	 */
 	pure list<TranslatorPHP, string> OpHtmlItemsAsFunction
-		(TranslatorPHP t, OpHtmlItems op_code)
+	(
+		TranslatorPHP t, OpHtmlItems op_code,
+		Collection<OpDeclareFunctionArg> args = null,
+		Collection<string> vars = null
+	)
 	{
 		/* If slot */
 		if (op_code.items.get(0) instanceof OpHtmlSlot)
@@ -444,17 +450,42 @@ static class TranslatorPHPHtml
 		int save_op_code_inc = t.save_op_code_inc;
 		t <= save_op_code_inc <= 0;
 		
-		/* Get used vars */
+		/* Use vars */
 		string use_vars = "";
 		Vector used_vars = [];
+		
+		/* Html slot */
+		string f_args = "";
+		if (args != null)
+		{
+			list res = t.operator::OpDeclareFunctionArgs(t,
+				new OpDeclareFunction
+				{
+					"args": args,
+					"is_context": false,
+				}
+			);
+			f_args = res[1];
+		}
+		
+		/* Slot vars */
+		if (vars != null)
+		{
+			for (int i=0; i<vars.count(); i++)
+			{
+				used_vars.push(vars.get(i).value);
+			}
+		}
+		
+		/* Get used vars */
 		static::exportUsedVars(used_vars, op_code);
 		if (used_vars.count() > 0)
 		{
-			used_vars = used_vars.map(string (string s) => "$" ~ s);
+			used_vars = used_vars.map(string (string s) => "&$" ~ s);
 			use_vars = " use (" ~ used_vars.join(", ") ~ ") ";
 		}
 		
-		string content = "function ()" ~ use_vars ~ "{";
+		string content = "function (" ~ f_args ~ ")" ~ use_vars ~ "{";
 		t = t.levelInc();
 		
 		list res = static::OpHtmlExpression(t, op_code, false);

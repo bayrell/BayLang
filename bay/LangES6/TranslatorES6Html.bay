@@ -27,6 +27,8 @@ use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
@@ -452,7 +454,7 @@ class TranslatorES6Html
 			
 			t <= debug_component <= debug_component.pushIm(i);
 			content ~= t.s(t.expression::toString(item.name) ~ ": ");
-			list res = static::OpHtmlItemsAsFunction(t, item.items);
+			list res = static::OpHtmlItemsAsFunction(t, item.items, item.args);
 			t = res.get(0); content ~= res.get(1) ~ ",";
 		}
 		
@@ -466,7 +468,7 @@ class TranslatorES6Html
 	 * Translator html items as function
 	 */
 	pure list<TranslatorES6, string> OpHtmlItemsAsFunction
-		(TranslatorES6 t, OpHtmlItems op_code)
+		(TranslatorES6 t, OpHtmlItems op_code, Collection<OpDeclareFunctionArg> args = null)
 	{
 		/* If slot */
 		if (op_code.items.get(0) instanceof OpHtmlSlot)
@@ -479,6 +481,17 @@ class TranslatorES6Html
 		t <= save_op_code_inc <= 0;
 		
 		string content = "() => {";
+		if (args != null)
+		{
+			list res = t.operator::OpDeclareFunctionArgs(t,
+				new OpDeclareFunction
+				{
+					"args": args,
+					"is_context": false,
+				}
+			);
+			content = "(" ~ res[1] ~ ") => {";
+		}
 		t = t.levelInc();
 		
 		list res = static::OpHtmlExpression(t, op_code);
