@@ -57,7 +57,7 @@ class TranslatorBayExpression extends BaseObject
 	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
 	{
 		result.push(op_code.value);
-		this.opcode_level = 20;
+		this.translator.opcode_level = 20;
 	}
 	
 	
@@ -67,7 +67,7 @@ class TranslatorBayExpression extends BaseObject
 	void OpNumber(OpNumber op_code, Collection<string> result)
 	{
 		result.push(op_code.value);
-		this.opcode_level = 20;
+		this.translator.opcode_level = 20;
 	}
 	
 	
@@ -77,7 +77,7 @@ class TranslatorBayExpression extends BaseObject
 	void OpString(OpNumber op_code, Collection<string> result)
 	{
 		result.push(this.translator.toString(op_code.value));
-		this.opcode_level = 20;
+		this.translator.opcode_level = 20;
 	}
 	
 	
@@ -343,7 +343,7 @@ class TranslatorBayExpression extends BaseObject
 			}
 		}
 		
-		this.opcode_level = 20;
+		this.translator.opcode_level = 20;
 	}
 	
 	
@@ -381,7 +381,7 @@ class TranslatorBayExpression extends BaseObject
 			result.push(")");
 		}
 		
-		this.opcode_level = 20;
+		this.translator.opcode_level = 20;
 	}
 	
 	
@@ -410,7 +410,7 @@ class TranslatorBayExpression extends BaseObject
 			result.push(")");
 		}
 		
-		this.opcode_level = 20;
+		this.translator.opcode_level = 20;
 	}
 	
 	
@@ -421,7 +421,7 @@ class TranslatorBayExpression extends BaseObject
 	{
 		Collection<string> result1 = [];
 		this.Expression(op_code.value1, result1);
-		int opcode_level1 = this.opcode_level;
+		int opcode_level1 = this.translator.opcode_level;
 		
 		string op = "";
 		int opcode_level = 0;
@@ -488,7 +488,7 @@ class TranslatorBayExpression extends BaseObject
 			
 			Collection<string> result2 = [];
 			this.Expression(op_code.value2, result2);
-			int opcode_level2 = this.opcode_level;
+			int opcode_level2 = this.translator.opcode_level;
 			
 			if (opcode_level2 < opcode_level)
 			{
@@ -502,7 +502,7 @@ class TranslatorBayExpression extends BaseObject
 			}
 		}
 		
-		this.opcode_level = opcode_level;
+		this.translator.opcode_level = opcode_level;
 	}
 	
 	
