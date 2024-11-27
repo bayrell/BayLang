@@ -31,6 +31,7 @@ use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpHtmlValue;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpUse;
@@ -185,6 +186,21 @@ class TranslatorBayHtml extends BaseObject
 		else if (op_code instanceof OpHtmlSlot)
 		{
 			this.OpHtmlSlot(op_code, result);
+		}
+		else if (op_code instanceof OpHtmlValue)
+		{
+			if (op_code.kind == "raw")
+			{
+				result.push("@raw{{ ");
+				this.translator.expression.translate(op_code.value, result);
+				result.push(" }}");
+			}
+			else
+			{
+				result.push("{{ ");
+				this.translator.expression.translate(op_code.value, result);
+				result.push(" }}");
+			}
 		}
 		else
 		{

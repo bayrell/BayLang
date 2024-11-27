@@ -339,7 +339,7 @@ class Html
 	
 	
 	@Test{}
-	void testMultiLine1()
+	void testContent1()
 	{
 		this.reset();
 		
@@ -350,6 +350,50 @@ class Html
 				"",
 				"<template>",
 				"\t<div class=\"widget_test\">Text</div>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testContent2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template>",
+				"\t<div class=\"widget_test\">{{ \"Text\" }}</div>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testContent3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template>",
+				"\t<div class=\"widget_test\">@raw{{ \"Text\" }}</div>",
 				"</template>",
 				"",
 				"</class>"
