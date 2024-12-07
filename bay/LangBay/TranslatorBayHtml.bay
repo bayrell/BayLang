@@ -54,6 +54,36 @@ class TranslatorBayHtml extends BaseObject
 	
 	
 	/**
+	 * OpUse
+	 */
+	void OpUse(OpUse op_code, Collection<string> result)
+	{
+		Collection items = rs::split(".", op_code.name);
+		string last_name = items.last();
+		
+		/* Get attrs */
+		Collection attrs = [
+			"name=\"" ~ op_code.name ~ "\"",
+		];
+		
+		/* Add alias name */
+		if (op_code.alias != "" and op_code.alias != last_name)
+		{
+			attrs.push("as=\"" ~ op_code.alias ~ "\"");
+		}
+		
+		/* Add component */
+		if (op_code.is_component)
+		{
+			attrs.push("component=\"true\"");
+		}
+		
+		/* Add result */
+		result.push("<use " ~ rs::join(" ", attrs) ~ " />");
+	}
+	
+	
+	/**
 	 * Translate html content
 	 */
 	void OpHtmlContent(OpHtmlContent op_code, Collection<string> result)
@@ -389,14 +419,7 @@ class TranslatorBayHtml extends BaseObject
 			for (int i=0; i<uses.count(); i++)
 			{
 				OpUse use_item = uses.get(i);
-				if (use_item.is_component)
-				{
-					result.push("<use name=\"" ~ uses.get(i).name ~ "\" component=\"true\" />");
-				}
-				else
-				{
-					result.push("<use name=\"" ~ uses.get(i).name ~ "\" />");
-				}
+				this.OpUse(use_item, result);
 				result.push(this.translator.newLine());
 			}
 		}

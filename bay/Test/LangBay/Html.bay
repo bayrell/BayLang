@@ -140,6 +140,26 @@ class Html
 			[
 				"<class name=\"App.Component\">",
 				"",
+				"<use name=\"App.Test\" as=\"TestAlias\" />",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void test4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
 				"<use name=\"Runtime.Web.Button\" component=\"true\" />",
 				"<use name=\"Runtime.Web.Text\" component=\"true\" />",
 				"",

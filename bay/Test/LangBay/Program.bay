@@ -127,6 +127,22 @@ class Program
 	
 	
 	@Test{}
+	void testUse2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"use Runtime.Unit.Test as TestAlias;",
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
 	void testClass1()
 	{
 		this.reset();
