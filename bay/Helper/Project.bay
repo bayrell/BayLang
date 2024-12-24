@@ -368,7 +368,6 @@ class Project extends BaseObject implements CacheInterface, SerializeInterface
 			string module_name = modules.get(i);
 			Module module = this.modules.get(module_name);
 			await module.loadRoutes();
-			await module.loadWidgets();
 		}
 	}
 	

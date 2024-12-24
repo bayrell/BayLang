@@ -54,7 +54,6 @@ class Module extends BaseObject implements SerializeInterface
 	Vector<string> groups = null;
 	Vector<Widget> widgets = null;
 	Vector<string> exclude = null;
-	WidgetProcessor widget_processor;
 	
 	
 	/**
@@ -65,7 +64,6 @@ class Module extends BaseObject implements SerializeInterface
 		parent();
 		this.path = module_path;
 		this.project = project;
-		this.widget_processor = new WidgetProcessor(this);
 	}
 	
 	
@@ -110,6 +108,22 @@ class Module extends BaseObject implements SerializeInterface
 		this.required_modules = module_info.get("require");
 		this.submodules = module_info.get("modules");
 		this.exclude = module_info.get("exclude");
+		
+		/* Load widgets */
+		this.widgets = [];
+		if (module_info.has("widgets"))
+		{
+			Collection widgets = module_info.get("widgets");
+			this.widgets = module_info.get("widgets").map(
+				Widget (Dict item)
+				{
+					Widget widget = new Widget(this);
+					widget.kind = item.get("kind");
+					widget.name = item.get("name");
+					return widget;
+				}
+			);
+		}
 		
 		return true;
 	}
@@ -526,24 +540,6 @@ class Module extends BaseObject implements SerializeInterface
 	
 	
 	/**
-	 * Load widgets
-	 */
-	async void loadWidgets()
-	{
-		WidgetProcessor widget_processor = new WidgetProcessor(this);
-		await widget_processor.load();
-		this.widgets = widget_processor.getWidgets().map(
-			Widget (string widget_name)
-			{
-				Widget widget = new Widget(this);
-				widget.name = widget_name;
-				return widget;
-			}
-		);
-	}
-	
-	
-	/**
 	 * Add widget
 	 */
 	async void addWidget(Widget widget)
@@ -567,17 +563,21 @@ class Module extends BaseObject implements SerializeInterface
 			module_info.get("assets").push(model_path);
 		if (module_info.get("assets").indexOf(component_path) == -1)
 			module_info.get("assets").push(component_path);
+		
+		/* Add widget to module.json */
+		if (not module_info.has("widgets")) module_info.set("widgets", []);
+		module_info.get("widgets").push({
+			"kind": widget.kind,
+			"name": widget.name,
+		});
+		
+		/* Save module.json */
 		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
 		await fs::saveFile(module_json_path, content);
 		
 		/* Add assets to cache */
 		if (this.assets.indexOf(model_path) == -1) this.assets.push(model_path);
 		if (this.assets.indexOf(component_path) == -1) this.assets.push(component_path);
-		
-		/* Add to ModuleDescription */
-		await this.widget_processor.load();
-		await this.widget_processor.addWidget(widget.name);
-		await this.widget_processor.save();
 	}
 	
 	
@@ -610,6 +610,19 @@ class Module extends BaseObject implements SerializeInterface
 				assets.remove(i);
 			}
 		}
+		
+		/* Remove widget from module.json */
+		if (module_info.has("widgets"))
+		{
+			Collection widgets = module_info.get("widgets");
+			int pos = widgets.find(lib::equalAttr("name", widget.name));
+			if (pos >= 0)
+			{
+				widgets.remove(pos);
+			}
+		}
+		
+		/* Save module.json */
 		content = rtl::json_encode(module_info, Serializer::JSON_PRETTY);
 		await fs::saveFile(module_json_path, content);
 		
@@ -622,10 +635,5 @@ class Module extends BaseObject implements SerializeInterface
 				this.assets.remove(i);
 			}
 		}
-		
-		/* Remove from ModuleDescription */
-		await this.widget_processor.load();
-		await this.widget_processor.removeWidget(widget.name);
-		await this.widget_processor.save();
 	}
 }

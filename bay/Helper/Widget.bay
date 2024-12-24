@@ -40,6 +40,7 @@ use BayLang.Helper.CacheInterface;
 class Widget extends BaseObject implements CacheInterface, SerializeInterface
 {
 	Module module = null;
+	string kind = "";
 	string name = "";
 	BaseOpCode model = null;
 	BaseOpCode component = null;
@@ -73,6 +74,7 @@ class Widget extends BaseObject implements CacheInterface, SerializeInterface
 	 */
 	void serialize(Serializer serializer, Map data)
 	{
+		serializer.process(this, "kind", data);
 		serializer.process(this, "name", data);
 	}
 	
