@@ -51,13 +51,10 @@ class OpModule extends BaseOpCode
 	 */
 	void addModule(string class_name, string alias_name = "", bool is_component = true)
 	{
-		if (alias_name == "")
+		if (alias_name != "")
 		{
-			string class_name_arr = rs::split(".", class_name);
-			alias_name = class_name_arr.last();
+			this.uses.set(alias_name, class_name);
 		}
-		
-		this.uses.set(alias_name, class_name);
 		
 		/* Add op_code */
 		int pos = this.items.find(lib::isInstance(classof OpNamespace));
@@ -94,7 +91,7 @@ class OpModule extends BaseOpCode
 	
 	
 	/**
-	 * Find module
+	 * Find alias name
 	 */
 	string findModule(string class_name)
 	{

@@ -63,8 +63,15 @@ class TranslatorBayProgram extends BaseObject
 	 */
 	void OpUse(OpUse op_code, Collection<string> result)
 	{
+		Collection items = rs::split(".", op_code.name);
+		string last_name = items.last();
 		result.push("use ");
 		result.push(op_code.name);
+		if (op_code.alias != "" and op_code.alias != last_name)
+		{
+			result.push(" as ");
+			result.push(op_code.alias);
+		}
 		result.push(";");
 	}
 	

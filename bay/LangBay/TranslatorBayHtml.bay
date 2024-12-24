@@ -33,6 +33,7 @@ use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpHtmlValue;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpString;
@@ -63,6 +64,36 @@ class TranslatorBayHtml extends BaseObject
 		result.push("%set ");
 		this.translator.operator.OpAssign(op_code, result);
 		result.push(";");
+	}
+	
+	
+	/**
+	 * OpUse
+	 */
+	void OpUse(OpUse op_code, Collection<string> result)
+	{
+		Collection items = rs::split(".", op_code.name);
+		string last_name = items.last();
+		
+		/* Get attrs */
+		Collection attrs = [
+			"name=\"" ~ op_code.name ~ "\"",
+		];
+		
+		/* Add alias name */
+		if (op_code.alias != "" and op_code.alias != last_name)
+		{
+			attrs.push("as=\"" ~ op_code.alias ~ "\"");
+		}
+		
+		/* Add component */
+		if (op_code.is_component)
+		{
+			attrs.push("component=\"true\"");
+		}
+		
+		/* Add result */
+		result.push("<use " ~ rs::join(" ", attrs) ~ " />");
 	}
 	
 	
@@ -240,6 +271,21 @@ class TranslatorBayHtml extends BaseObject
 			result.push("%render ");
 			this.translator.expression.translate(op_code, result);
 			result.push(";");
+		}
+		else if (op_code instanceof OpHtmlValue)
+		{
+			if (op_code.kind == "raw")
+			{
+				result.push("@raw{{ ");
+				this.translator.expression.translate(op_code.value, result);
+				result.push(" }}");
+			}
+			else
+			{
+				result.push("{{ ");
+				this.translator.expression.translate(op_code.value, result);
+				result.push(" }}");
+			}
 		}
 		else
 		{
@@ -428,14 +474,7 @@ class TranslatorBayHtml extends BaseObject
 			for (int i=0; i<uses.count(); i++)
 			{
 				OpUse use_item = uses.get(i);
-				if (use_item.is_component)
-				{
-					result.push("<use name=\"" ~ uses.get(i).name ~ "\" component=\"true\" />");
-				}
-				else
-				{
-					result.push("<use name=\"" ~ uses.get(i).name ~ "\" />");
-				}
+				this.OpUse(use_item, result);
 				result.push(this.translator.newLine());
 			}
 		}

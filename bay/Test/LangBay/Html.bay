@@ -140,6 +140,26 @@ class Html
 			[
 				"<class name=\"App.Component\">",
 				"",
+				"<use name=\"App.Test\" as=\"TestAlias\" />",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void test4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
 				"<use name=\"Runtime.Web.Button\" component=\"true\" />",
 				"<use name=\"Runtime.Web.Text\" component=\"true\" />",
 				"",
@@ -339,7 +359,7 @@ class Html
 	
 	
 	@Test{}
-	void testMultiLine1()
+	void testContent1()
 	{
 		this.reset();
 		
@@ -350,6 +370,50 @@ class Html
 				"",
 				"<template>",
 				"\t<div class=\"widget_test\">Text</div>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testContent2()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template>",
+				"\t<div class=\"widget_test\">{{ \"Text\" }}</div>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testContent3()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template>",
+				"\t<div class=\"widget_test\">@raw{{ \"Text\" }}</div>",
 				"</template>",
 				"",
 				"</class>"
@@ -516,7 +580,57 @@ class Html
 				"<class name=\"App.Component\">",
 				"",
 				"<style global=\"true\">",
+				".main_page{",
+				"background-image: ${ \"test\" };",
+				"}",
+				"</style>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testStyle4()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<style global=\"true\">",
 				"@font-face{",
+				"}",
+				"</style>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
+	void testStyle5()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<style global=\"true\">",
+				".main_page{",
+				".test{",
+				"font-size: 16px;",
+				"}",
 				"}",
 				"</style>",
 				"",
