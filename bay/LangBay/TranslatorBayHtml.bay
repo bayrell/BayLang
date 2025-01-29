@@ -180,14 +180,25 @@ class TranslatorBayHtml extends BaseObject
 	 */
 	void isOpHtmlTagMultiline(OpHtmlTag op_code)
 	{
-		if (op_code.attrs.count() > 3) return true;
+		int attrs_count = 0;
 		for (int i=0; i<op_code.attrs.count(); i++)
 		{
 			OpHtmlAttribute op_code_attr = op_code.attrs.get(i);
-			if (op_code_attr.isMultiLine()) return true;
-			if (op_code_attr.caret_start.y != op_code.caret_start.y) return true;
+			if (op_code_attr.key != "@key_debug") attrs_count++;
+			if (op_code_attr.caret_start and op_code_attr.caret_start.y > 0)
+			{
+				if (op_code_attr.isMultiLine()) return true;
+				if (
+					op_code.caret_start.y > 0 and
+					op_code_attr.caret_start.y != op_code.caret_start.y
+				)
+				{
+					return true;
+				}
+			}
 			if (op_code_attr.value instanceof OpDeclareFunction) return true;
 		}
+		if (attrs_count > 3) return true;
 		return false;
 	}
 	
