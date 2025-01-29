@@ -141,7 +141,8 @@ class TranslatorBayProgram extends BaseObject
 		/* Function flags */
 		Collection<string> flags = ["async", "static", "pure"];
 		flags = flags.filter(
-			bool (string flag_name) use (op_code) => op_code.flags.isFlag(flag_name)
+			bool (string flag_name) use (op_code) =>
+				op_code.flags ? op_code.flags.isFlag(flag_name) : false
 		);
 		result.push(rs::join(" ", flags));
 		if (flags.count() > 0) result.push(" ");

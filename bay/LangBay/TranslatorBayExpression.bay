@@ -24,6 +24,7 @@ use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpClassOf;
 use BayLang.OpCodes.OpCollection;
+use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDict;
 use BayLang.OpCodes.OpDictPair;
 use BayLang.OpCodes.OpIdentifier;
@@ -538,6 +539,10 @@ class TranslatorBayExpression extends BaseObject
 		else if (op_code instanceof OpDict)
 		{
 			this.OpDict(op_code, result);
+		}
+		else if (op_code instanceof OpDeclareFunction)
+		{
+			this.translator.program.OpDeclareFunction(op_code, result);
 		}
 		else if (op_code instanceof OpCall)
 		{

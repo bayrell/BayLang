@@ -425,6 +425,38 @@ class Html
 	
 	
 	@Test{}
+	void testClick()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				"<class name=\"App.Component\">",
+				"",
+				"<template>",
+				"\t<button",
+				"\t\tclass=\"widget_test\"",
+				"\t\t@event:click={{",
+				"\t\t\tvoid ()",
+				"\t\t\t{",
+				"\t\t\t\tthis.onClick();",
+				"\t\t\t}",
+				"\t\t}}",
+				"\t>",
+				"\t\tTest",
+				"\t</button>",
+				"</template>",
+				"",
+				"</class>"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(content, res.get(1), content);
+	}
+	
+	
+	@Test{}
 	void testScript1()
 	{
 		this.reset();

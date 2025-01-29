@@ -109,7 +109,11 @@ class TranslatorBayHtml extends BaseObject
 	/**
 	 * Translate attrs
 	 */
-	void OpHtmlAttrs(Collection<OpHtmlAttribute> op_code_attrs, Collection<string> result)
+	void OpHtmlAttrs(
+		Collection<OpHtmlAttribute> op_code_attrs,
+		Collection<string> result,
+		bool is_multiline
+	)
 	{
 		/* Filter attrs */
 		op_code_attrs = op_code_attrs.filter
@@ -128,10 +132,13 @@ class TranslatorBayHtml extends BaseObject
 			}
 		);
 		
+		if (is_multiline) this.translator.levelInc();
+		
 		int attrs_count = op_code_attrs.count();
 		for (int i=0; i<attrs_count; i++)
 		{
 			OpHtmlAttribute op_code_attr = op_code_attrs.get(i);
+			if (is_multiline) result.push(this.translator.newLine());
 			result.push(op_code_attr.key);
 			result.push("=");
 			
@@ -140,6 +147,16 @@ class TranslatorBayHtml extends BaseObject
 			{
 				this.translator.expression.translate(op_code_attr.value, result);
 			}
+			else if (op_code_attr.value instanceof OpDeclareFunction)
+			{
+				result.push("{{");
+				this.translator.levelInc();
+				result.push(this.translator.newLine());
+				this.translator.expression.translate(op_code_attr.value, result);
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+				result.push("}}");
+			}
 			else
 			{
 				result.push("{{ ");
@@ -147,8 +164,31 @@ class TranslatorBayHtml extends BaseObject
 				result.push(" }}");
 			}
 			
-			if (i < attrs_count - 1) result.push(" ");
+			if (i < attrs_count - 1 and not is_multiline) result.push(" ");
 		}
+		
+		if (is_multiline)
+		{
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+		}
+	}
+	
+	
+	/**
+	 * Html code multiline
+	 */
+	void isOpHtmlTagMultiline(OpHtmlTag op_code)
+	{
+		if (op_code.attrs.count() > 3) return true;
+		for (int i=0; i<op_code.attrs.count(); i++)
+		{
+			OpHtmlAttribute op_code_attr = op_code.attrs.get(i);
+			if (op_code_attr.isMultiLine()) return true;
+			if (op_code_attr.caret_start.y != op_code.caret_start.y) return true;
+			if (op_code_attr.value instanceof OpDeclareFunction) return true;
+		}
+		return false;
 	}
 	
 	
@@ -158,12 +198,13 @@ class TranslatorBayHtml extends BaseObject
 	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
+		bool is_multiline_attrs = this.isOpHtmlTagMultiline(op_code);
 		
 		/* Component attrs */
 		Collection args_content = [];
-		this.OpHtmlAttrs(op_code.attrs, args_content);
+		this.OpHtmlAttrs(op_code.attrs, args_content, is_multiline_attrs);
 		string args = rs::join("", args_content);
-		if (args != "") args = " " ~ args;
+		if (args != "" and not is_multiline_attrs) args = " " ~ args;
 		
 		if (op_code.items == null)
 		{
