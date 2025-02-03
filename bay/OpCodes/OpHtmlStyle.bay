@@ -93,21 +93,20 @@ class OpHtmlStyle extends BaseOpCode
 	{
 		reader.matchToken("{");
 		Caret caret = reader.main_caret;
-		caret.skipSpace();
 		
 		int level = 0;
 		Collection items = [];
 		while (not caret.eof() and (caret.nextChar() != "}" and level == 0 or level > 0))
 		{
 			string ch = caret.readChar();
-			if (ch != "\t") items.push(ch);
 			if (ch == "{") level = level + 1;
 			if (ch == "}") level = level - 1;
+			items.push(ch);
 		}
 		
 		reader.init(caret);
 		reader.matchToken("}");
 		
-		return rs::trim(rs::join("", items));
+		return rs::join("", items);
 	}
 }
