@@ -374,4 +374,33 @@ class Style
 		list res = this.translate(content);
 		AssertHelper::equalValue(css_content, res.get(1), css_content);
 	}
+	
+	
+	@Test{}
+	void test12()
+	{
+		this.reset();
+		
+		string content = rs::join(
+			"\n",
+			[
+				".main_page{",
+				"\tpadding: 20px;",
+				"\tcolor: green;",
+				"\t@media (max-width: 950px){",
+				"\t\tdisplay: none;"
+				"\t}",
+				"}",
+			]
+		);
+		string css_content = rs::join(
+			"\n",
+			[
+				".main_page.h-71c3{padding: 20px;color: green}",
+				"@media (max-width: 950px){.main_page.h-71c3{display: none}}"
+			]
+		);
+		list res = this.translate(content);
+		AssertHelper::equalValue(css_content, res.get(1), css_content);
+	}
 }

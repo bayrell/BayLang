@@ -21,6 +21,24 @@ Documentation: https://bayrell.org/
 
 Source code: https://github.com/bayrell
 
+## Install BayLang compiler
+
+Install as root:
+```
+npm install -g bay-lang@latest
+```
+
+Install in code server:
+```
+cd /data/home
+npm install --save bay-lang@latest
+```
+
+Check version:
+```
+bay-lang-nodejs version
+```
+
 ## BayLang compiler versions
 
 [27 Dec 2024] 0.12.3 - BayLang Constructor for WordPress.
