@@ -533,7 +533,7 @@ class ParserBayHtml extends BaseObject
 						media_selector,
 						item
 					);
-					items.push(item);
+					sub_items.push(item);
 				}
 				
 				/* Get caret */
