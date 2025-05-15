@@ -7,7 +7,6 @@
 		"CoreParser.bay",
 		"CoreToken.bay",
 		"CoreTranslator.bay",
-		"LangConstant.bay",
 		"LangUtils.bay",
 		"SaveOpCode.bay",
 		"TokenReader.bay",

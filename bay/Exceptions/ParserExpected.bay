@@ -21,7 +21,7 @@ namespace BayLang.Exceptions;
 use Runtime.Context;
 use Runtime.RuntimeUtils;
 use BayLang.Caret;
-use BayLang.LangConstant;
+use BayLang.LangUtils;
 use BayLang.Exceptions.ParserError;
 
 
@@ -35,7 +35,7 @@ class ParserExpected extends ParserError
 		parent(
 			s ~ " expected",
 			caret, file,
-			LangConstant::ERROR_PARSER_EXPECTED,
+			LangUtils::ERROR_PARSER_EXPECTED,
 			prev
 		);
 	}

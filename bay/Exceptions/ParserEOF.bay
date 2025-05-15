@@ -21,7 +21,7 @@ namespace BayLang.Exceptions;
 use Runtime.Context;
 use Runtime.RuntimeUtils;
 use BayLang.Exceptions.ParserUnknownError;
-use BayLang.LangConstant;
+use BayLang.LangUtils;
 
 
 class ParserEOF extends ParserUnknownError
@@ -30,7 +30,7 @@ class ParserEOF extends ParserUnknownError
 	{
 		parent(
 			"ERROR_PARSER_EOF",
-			LangConstant::ERROR_PARSER_EOF,
+			LangUtils::ERROR_PARSER_EOF,
 			prev
 		);
 	}

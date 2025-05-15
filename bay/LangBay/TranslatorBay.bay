@@ -20,6 +20,7 @@ namespace BayLang.LangBay;
 
 use Runtime.re;
 use Runtime.BaseObject;
+use BayLang.CoreTranslator;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.LangBay.TranslatorBayExpression;
 use BayLang.LangBay.TranslatorBayHtml;
@@ -27,30 +28,13 @@ use BayLang.LangBay.TranslatorBayOperator;
 use BayLang.LangBay.TranslatorBayProgram;
 
 
-class TranslatorBay extends BaseObject
-{
-	int opcode_level = 0;
-	int indent_level = 0;
-	string indent = "\t";
-	string crlf = "\n";
-	Dict<bool> preprocessor_flags = {};
-	
+class TranslatorBay extends CoreTranslator
+{	
 	/* Translators */
 	TranslatorBayExpression expression = new TranslatorBayExpression(this);
 	TranslatorBayOperator operator = new TranslatorBayOperator(this);
 	TranslatorBayProgram program = new TranslatorBayProgram(this);
 	TranslatorBayHtml html = new TranslatorBayHtml(this);
-	
-	
-	/**
-	 * Reset translator
-	 */
-	void reset()
-	{
-		this.opcode_level = 0;
-		this.indent_level = 0;
-		this.preprocessor_flags = {};
-	}
 	
 	
 	/**
@@ -107,18 +91,17 @@ class TranslatorBay extends BaseObject
 	/**
 	 * Translate BaseOpCode
 	 */
-	pure list<TranslatorBay, string> translate(TranslatorBay t, BaseOpCode op_code)
+	string translate(BaseOpCode op_code)
 	{
 		Collection<string> content = [];
 		if (op_code.is_component)
 		{
-			t.html.translate(op_code, content);
+			this.html.translate(op_code, content);
 		}
 		else
 		{
-			t.program.translate(op_code, content);
+			this.program.translate(op_code, content);
 		}
-		string result = rs::join("", content);
-		return [t, result];
+		return rs::join("", content);
 	}
 }

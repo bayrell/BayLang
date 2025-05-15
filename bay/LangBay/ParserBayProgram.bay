@@ -18,8 +18,10 @@
 
 namespace BayLang.LangBay;
 
+use Runtime.BaseObject;
 use BayLang.Caret;
 use BayLang.CoreToken;
+use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
@@ -39,38 +41,43 @@ use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpUse;
 
 
-static class ParserBayProgram
+class ParserBayProgram extends BaseObject
 {
+	ParserBay parser = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(ParserBay parser)
+	{
+		parent();
+		this.parser = parser;
+	}
+	
+	
 	/**
 	 * Read namespace
 	 */
-	pure ParserBay readNamespace(ParserBay parser)
+	OpNamespace readNamespace(TokenReader reader)
 	{
-		CoreToken token = null;
-		OpEntityName name = null;
+		Caret caret_start = reader.main_caret.copy();
 		
-		list res = parser.parser_base::matchToken(parser, "namespace");
-		parser = res[0]; token = res[1];
+		/* Read module name */
+		reader.matchToken("namespace");
+		string module_name = reader.readToken();
 		
-		Caret caret_start = token.caret_start;
+		/* Set current namespace */
+		this.parser.current_namespace = module_name;
+		this.parser.current_namespace_name = module_name;
 		
-		list res = parser.parser_base::readEntityName(parser, false);
-		parser = res[0]; name = res[1];
-		
-		string current_namespace_name = rs::join(".", name.names);
-		
-		OpNamespace current_namespace = new OpNamespace
+		return new OpNamespace
 		{
-			"name": current_namespace_name,
 			"caret_start": caret_start,
-			"caret_end": parser.caret,
+			"caret_end": reader.next_caret.copy(),
+			"name": module_name,
 		};
-		parser <= current_namespace <= current_namespace;
-		parser <= current_namespace_name <= current_namespace_name;
-		
-		return [parser, current_namespace];
 	}
-	
 	
 	
 	/**
@@ -634,4 +641,61 @@ static class ParserBayProgram
 		];
 	}
 	
+	
+	/**
+	 * Read module
+	 */
+	Collection<BaseOpCode> readModuleItem(TokenReader reader)
+	{
+		string next_token = reader.nextToken();
+		
+		/* Namespace */
+		if (next_token == "namespace")
+		{
+			return this.readNamespace(reader);
+		}
+		
+		return null;
+	}
+	
+	
+	/**
+	 * Parse program
+	 */
+	void parse(TokenReader reader)
+	{
+		Collection<BaseOpCode> items = [];
+		Caret caret_start = reader.main_caret.copy();
+		
+		/* Read module */
+		while (not reader.eof())
+		{
+			string next_token = reader.nextToken();
+			
+			/* Read module item */
+			BaseOpCode op_code = this.readModuleItem(reader);
+			if (op_code)
+			{
+				items.push(op_code);
+			}
+			else
+			{
+				break;
+			}
+			
+			/* Match semicolon */
+			if (reader.nextToken() == ";")
+			{
+				reader.matchToken(";");
+			}
+		}
+		
+		/* Returns op_code */
+		return new OpModule
+		{
+			"caret_start": caret_start,
+			"caret_end": reader.next_caret.copy(),
+			"items": items,
+		};
+	}
 }

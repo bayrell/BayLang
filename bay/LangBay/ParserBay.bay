@@ -19,9 +19,10 @@
 namespace BayLang.LangBay;
 
 use Runtime.BaseStruct;
+use Runtime.Reference;
 use BayLang.Caret;
 use BayLang.CoreParser;
-use BayLang.CoreToken;
+use BayLang.TokenReader;
 use BayLang.LangBay.ParserBayBase;
 use BayLang.LangBay.ParserBayExpression;
 use BayLang.LangBay.ParserBayHtml;
@@ -34,7 +35,7 @@ use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpFlags;
 
 
-struct ParserBay extends CoreParser
+class ParserBay extends CoreParser
 {
 	/* Work */
 	Dict<bool> vars = null;
@@ -55,59 +56,26 @@ struct ParserBay extends CoreParser
 	
 	
 	/* Parsers */
-	ParserBayBase parser_base = null;
-	ParserBayExpression parser_expression = null;
-	ParserBayHtml parser_html = null;
-	ParserBayOperator parser_operator = null;
-	ParserBayPreprocessor parser_preprocessor = null;
-	ParserBayProgram parser_program = null;
-	
-	
-	/**
-	 * Reset parser
-	 */
-	pure ParserBay reset(ParserBay parser) =>
-		parser.copy({
-			"vars": new Dict<string>(),
-			"uses": new Dict<string>(),
-			"caret": new Caret{},
-			"token": null,
-			"parser_base": new ParserBayBase(),
-			"parser_expression": new ParserBayExpression(),
-			"parser_html": new ParserBayHtml(),
-			"parser_operator": new ParserBayOperator(),
-			"parser_preprocessor": new ParserBayPreprocessor(),
-			"parser_program": new ParserBayProgram(),
-		})
-	;
-	
+	ParserBayBase parser_base = new ParserBayBase(this);
+	ParserBayExpression parser_expression = new ParserBayExpression(this);
+	ParserBayHtml parser_html = new ParserBayHtml(this);
+	ParserBayOperator parser_operator = new ParserBayOperator(this);
+	ParserBayPreprocessor parser_preprocessor = new ParserBayPreprocessor(this);
+	ParserBayProgram parser_program = new ParserBayProgram(this);
 	
 	
 	/**
 	 * Parse file and convert to BaseOpCode
 	 */
-	pure list<ParserBay, BaseOpCode> parse(ParserBay parser, string content)
+	BaseOpCode parse()
 	{
-		parser = static::reset(parser);
-		parser = static::setContent(parser, content);
-		return parser.parser_program::readProgram(parser);
-	}
-	
-	
-	
-	/**
-	 * Find module name
-	 */
-	pure string findModuleName(ParserBay parser, string module_name)
-	{
-		if (module_name == "Collection") return "Runtime.Collection";
-		else if (module_name == "Dict") return "Runtime.Dict";
-		else if (module_name == "Map") return "Runtime.Map";
-		else if (module_name == "Vector") return "Runtime.Vector";
-		else if (module_name == "rs") return "Runtime.rs";
-		else if (module_name == "rtl") return "Runtime.rtl";
-		else if (module_name == "ArrayInterface") return "";
-		else if (parser.uses.has(module_name)) return parser.uses.item(module_name);
-		return module_name;
+		TokenReader reader = new TokenReader();
+		reader.init(
+			new Caret{
+				"content": new Reference(this.content),
+				"tab_size": this.tab_size,
+			}
+		);
+		return this.parser_program.parse(reader);
 	}
 }

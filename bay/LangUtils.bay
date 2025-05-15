@@ -20,6 +20,7 @@ namespace BayLang;
 
 use Runtime.CoreParser;
 use Runtime.Interfaces.ContextInterface;
+use BayLang.LangBay.ParserBay;
 use BayLang.LangBay.TranslatorBay;
 use BayLang.LangES6.TranslatorES6;
 use BayLang.LangNode.TranslatorNode;
@@ -30,26 +31,19 @@ use BayLang.CoreTranslator;
 
 static class LangUtils
 {
-	/**
-	 * Parse file and convert to BaseOpCode
-	 */
-	static BaseOpCode parse(CoreParser parser, string text)
-	{
-		list res = parser :: parse(parser, text);
-		return res[1];
-	}
-	
+	static const int ERROR_PARSER = -1000;
+	static const int ERROR_PARSER_EOF = -1001;
+	static const int ERROR_PARSER_EXPECTED = -1002;	
 	
 	
 	/**
-	 * Translate BaseOpCode to string
+	 * Create parser
 	 */
-	static string translate(CoreParser translator, BaseOpCode op_code)
+	static CoreParser createParser(string lang = "")
 	{
-		list res = translator :: translate(translator, op_code);
-		return res[1];
+		if (lang == "bay") return new ParserBay();
+		return null;
 	}
-	
 	
 	
 	/**
@@ -57,29 +51,10 @@ static class LangUtils
 	 */
 	static CoreTranslator createTranslator(string lang = "")
 	{
-		CoreTranslator t = null;
-		
-		if (lang == "bay")
-		{
-			t = new TranslatorBay();
-			t.reset();
-		}
-		else if (lang == "es6")
-		{
-			t = new TranslatorES6();
-			t = t::reset(t);
-		}
-		else if (lang == "nodejs")
-		{
-			t = new TranslatorNode();
-			t = t::reset(t);
-		}
-		else if (lang == "php")
-		{
-			t = new TranslatorPHP();
-			t = t::reset(t);
-		}
-		
-		return t;
+		if (lang == "bay") return new TranslatorBay();
+		else if (lang == "es6") return new TranslatorES6();
+		else if (lang == "nodejs") return new TranslatorNode();
+		else if (lang == "php") return new TranslatorPHP();
+		return null;
 	}
 }

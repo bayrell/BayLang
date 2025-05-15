@@ -21,6 +21,7 @@ namespace BayLang;
 use Runtime.lib;
 use Runtime.BaseStruct;
 use BayLang.SaveOpCode;
+use BayLang.LangBay.TranslatorBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
@@ -29,91 +30,55 @@ use BayLang.OpCodes.OpDeclareFunction;
 struct CoreTranslator extends BaseStruct
 {
 	/* State */
-	string current_namespace_name = "";
-	string current_class_name = "";
-	string current_class_full_name = "";
-	string current_class_extends_name = "";
-	OpDeclareClass current_class = null;
-	OpDeclareFunction current_function = null;
-	Dict<string> modules = null;
-	Dict<bool> vars = null;
-	Collection<string> save_vars = null;
-	Collection<SaveOpCode> save_op_codes = null;
-	int save_op_code_inc = 0;
-	
-	/* Work */
-	bool is_static_function = false;
-	bool is_operation = false;
 	int opcode_level = 0;
 	int indent_level = 0;
 	string indent = "\t";
 	string crlf = "\n";
-	
-	/* Flags */
-	bool flag_struct_check_types = false;
-	Dict<bool> preprocessor_flags = null;
+	Dict<bool> preprocessor_flags = {};
 	
 	
 	/**
-	 * Set preprocessor flag
+	 * Set flag
 	 */
-	CoreTranslator setFlag(string flag_name, bool value)
+	TranslatorBay setFlag(string flag_name, bool value)
 	{
-		CoreTranslator t = this;
-		t <= preprocessor_flags <= { flag_name } <= value;
-		return t;
+		this.preprocessor_flags.set(flag_name, value);
+		return this;
 	}
-	
-	
-	/**
-	 * Find save op code
-	 */
-	SaveOpCode findSaveOpCode(BaseOpCode op_code) =>
-		this.save_op_codes.findItem( lib::equalAttr("op_code", op_code) )
-	;
 	
 	
 	/**
 	 * Increment indent level
 	 */
-	CoreTranslator levelInc() => this.copy({ "indent_level": this.indent_level + 1 });
+	void levelInc()
+	{
+		this.indent_level = this.indent_level + 1;
+	}
 	
 	
 	/**
 	 * Decrease indent level
 	 */
-	CoreTranslator levelDec() => this.copy({ "indent_level": this.indent_level - 1 });
-	
-	
-	
-	/**
-	 * Output content with indent
-	 */
-	string s(string s, var content = null)
+	void levelDec()
 	{
-		if (s == "") return "";
-		if (content === "") return s;
-		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level) ~ s;
+		this.indent_level = this.indent_level - 1;
 	}
 	
 	
-	
 	/**
-	 * Output content with indent
+	 * Returns new line with indent
 	 */
-	string s2(string s)
+	string newLine()
 	{
-		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level) ~ s;
+		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
 	}
 	
 	
-	
 	/**
-	 * Output content with opcode level
+	 * Returns string
 	 */
-	string o(string s, int opcode_level_in, int opcode_level_out)
+	string toString(string s)
 	{
-		if (opcode_level_in < opcode_level_out) return "("~s~")";
 		return s;
 	}
 	
@@ -122,107 +87,8 @@ struct CoreTranslator extends BaseStruct
 	/**
 	 * Translate BaseOpCode
 	 */
-	pure list<CoreTranslator, string> translate(CoreTranslator t, BaseOpCode op_code)
+	string translate(BaseOpCode op_code)
 	{
 		return "";
 	}
-	
-	
-	
-	/**
-	 * Inc save op code
-	 */
-	pure CoreTranslator nextSaveOpCode(CoreTranslator t)
-	{
-		return "__v" ~ t.save_op_code_inc;
-	}
-	
-	
-	
-	/**
-	 * Inc save op code
-	 */
-	pure CoreTranslator incSaveOpCode(CoreTranslator t)
-	{
-		string var_name = static::nextSaveOpCode(t);
-		int save_op_code_inc = t.save_op_code_inc + 1;
-		t = t.copy({
-			"save_op_code_inc": save_op_code_inc,
-		});
-		return [t, var_name];
-	}
-	
-	
-	
-	/**
-	 * Add save op code
-	 */
-	pure CoreTranslator addSaveOpCode(CoreTranslator t, Dict data)
-	{
-		string var_name = data.get("var_name", "");
-		string content = data.get("content", "");
-		string var_content = data.get("var_content", "");
-		int save_op_code_inc = t.save_op_code_inc;
-		
-		if (var_name == "" and content == "")
-		{
-			var_name = static::nextSaveOpCode(t);
-			data = data.setIm("var_name", var_name);
-			save_op_code_inc += 1;
-		}
-		
-		SaveOpCode s = new SaveOpCode(data);
-		t = t.copy({
-			"save_op_codes": t.save_op_codes.pushIm(s),
-			"save_op_code_inc": save_op_code_inc,
-		});
-		return [t, var_name];
-	}
-	
-	
-	
-	/**
-	 * Clear save op code
-	 */
-	pure CoreTranslator clearSaveOpCode(CoreTranslator t)
-	{
-		t <= save_op_codes <= new Collection<SaveOpCode>();
-		t <= save_op_code_inc <= 0;
-		return t;
-	}
-	
-	
-	
-	/**
-	 * Output save op code content
-	 */
-	pure string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
-	{
-		return "";
-	}
-	
-	
-	
-	/**
-	 * Call f and return result with save op codes
-	 */
-	pure string saveOpCodeCall(CoreTranslator t, fn f, Collection args)
-	{
-		/* Clear save op codes */
-		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-		int save_op_code_inc = t.save_op_code_inc;
-		
-		list res = rtl::apply(f, args.unshiftIm(t)); t = res[0];
-		string value = res[1];
-		
-		/* Output save op code */
-		string save = t::outputSaveOpCode(t, save_op_codes.count());
-		
-		/* Restore save op codes */
-		t <= save_op_codes <= save_op_codes;
-		t <= save_op_code_inc <= save_op_code_inc;
-		
-		return [t, save, value];
-	}
-	
 }

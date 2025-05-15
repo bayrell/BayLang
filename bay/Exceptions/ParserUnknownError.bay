@@ -21,7 +21,7 @@ namespace BayLang.Exceptions;
 use Runtime.Context;
 use Runtime.RuntimeUtils;
 use Runtime.Exceptions.AbstractException;
-use BayLang.LangConstant;
+use BayLang.LangUtils;
 
 
 class ParserUnknownError extends AbstractException
@@ -30,7 +30,7 @@ class ParserUnknownError extends AbstractException
 	{
 		if (code == -1)
 		{
-			code = LangConstant::ERROR_PARSER;
+			code = LangUtils::ERROR_PARSER;
 		}
 		parent(s, code, prev);
 		

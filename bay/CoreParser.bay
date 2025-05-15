@@ -18,8 +18,7 @@
 
 namespace BayLang;
 
-use Runtime.BaseStruct;
-use Runtime.FakeStruct;
+use Runtime.BaseObject;
 use Runtime.lib;
 use Runtime.rs;
 use Runtime.Reference;
@@ -31,70 +30,30 @@ use BayLang.Exceptions.ParserExpected;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct CoreParser extends BaseStruct
+class CoreParser extends BaseObject
 {
-	/* Settings */
-	int tab_size = 4;
-	
-	/* Content */
 	string file_name = "";
-	Reference content = null;
-	/*string content = "";*/
-	int content_sz = 0;
-	
-	/* Work */
-	Caret caret = null;
-	bool find_ident = true;
-	
-	
-	/**
-	 * Returns true if eof
-	 */
-	bool isEof() => this.caret.pos >= this.content_sz;
-	
-	
-	/**
-	 * Returns caret
-	 */
-	Caret getCaret() => this.caret.clone{
-		"file_name": this.file_name,
-		"content": this.content,
-		"content_sz": this.content_sz,
-	};
-	
-	
-	/**
-	 * Reset parser
-	 */
-	pure CoreParser reset(CoreParser parser) =>
-		parser.copy({
-			"caret": new Caret{},
-			"token": null,
-		})
-	;
+	string content = "";
+	int content_size = 0;
+	int tab_size = 4;
 	
 	
 	/**
 	 * Set content
 	 */
-	pure CoreParser setContent(CoreParser parser, string content) =>
-		parser.copy({
-			"content": new Reference(content), "content_sz": rs::strlen(content)
-		})
-	;
+	CoreParser setContent(string content)
+	{
+		this.content = content;
+		this.content_size = rs::strlen(content);
+		return this;
+	}
 	
 	
 	/**
 	 * Parse file and convert to BaseOpCode
 	 */
-	pure CoreParser parse(CoreParser parser, string content)
+	BaseOpCode parse()
 	{
-		parser = static::reset(parser);
-		parser = static::setContent(parser, content);
-		while ( parser.caret.pos < parser.content_sz )
-		{
-			parser = parser::nextToken(parser);
-		}
-		return parser;
+		return null;
 	}
 }
