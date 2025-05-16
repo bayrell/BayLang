@@ -18,9 +18,11 @@
 
 namespace BayLang.LangBay;
 
+use Runtime.BaseObject;
 use Runtime.Reference;
 use BayLang.Caret;
 use BayLang.CoreToken;
+use BayLang.TokenReader;
 use BayLang.Exceptions.ParserEOF;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
@@ -50,62 +52,25 @@ use BayLang.OpCodes.OpTypeConvert;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
-class ParserBayBase
+class ParserBayBase extends BaseObject
 {
-	
-	/**
-	 * Return true if is char
-	 * @param char ch
-	 * @return boolean
-	 */
-	pure memorize bool isChar (char ch) =>
-		rs::indexOf('qazwsxedcrfvtgbyhnujmikolp', rs::lower(ch)) !== -1
-	;
-	
+	ParserBay parser = null;
 	
 	
 	/**
-	 * Return true if is number
-	 * @param char ch
-	 * @return boolean
+	 * Constructor
 	 */
-	pure memorize bool isNumber (char ch) =>
-		rs::indexOf('0123456789', ch) !== -1
-	;
-	
-	
-	
-	/**
-	 * Return true if char is number
-	 * @param char ch
-	 * @return boolean
-	 */
-	pure memorize bool isHexChar (char ch) =>
-		rs::indexOf('0123456789abcdef', rs::lower(ch)) !== -1;
-	
-	
-	
-	/**
-	 * Return true if is string of numbers
-	 * @param string s
-	 * @return boolean
-	 */
-	pure memorize bool isStringOfNumbers (string s)
+	void constructor(ParserBay parser)
 	{
-		int sz = rs::strlen(s);
-		for (int i=0; i<sz; i++)
-		{
-			if (not static::isNumber( rs::charAt(s, i) )) return false;
-		}
-		return true;
+		parent();
+		this.parser = parser;
 	}
-	
 	
 	
 	/**
 	 * Is system type
 	 */
-	pure memorize bool isSystemType (string name)
+	static bool isSystemType (string name)
 	{
 		if (name == "var") return true;
 		if (name == "void") return true;
@@ -134,741 +99,97 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Returns true if name is identifier
 	 */
-	pure memorize bool isIdentifier(string name)
+	static bool isIdentifier(string name)
 	{
 		if (name == "") return false;
-		if (name == "@") return true;
-		if (static::isNumber( rs::charAt(name, 0) )) return false;
+		if (Caret::isNumber(rs::charAt(name, 0))) return false;
 		int sz = rs::strlen(name);
 		for (int i=0; i<sz; i++)
 		{
 			string ch = rs::charAt(name, i);
-			if (static::isChar(ch) or static::isNumber(ch) or ch == "_") continue;
+			if (Caret::isChar(ch) or Caret::isNumber(ch) or ch == "_") continue;
 			return false;
 		}
 		return true;
 	}
 	
 	
-	
 	/**
 	 * Returns true if reserved words
 	 */
-	pure memorize bool isReserved(string name)
+	static bool isReserved(string name)
 	{
-		if (name == "__async_t") return true;
-		if (name == "__async_var") return true;
-		/*if (name == "__ctx") return true;*/
-		/*if (name == "ctx") return true;*/
 		if (rs::substr(name, 0, 3) == "__v") return true;
 		return false;
 	}
 	
 	
-	
-	/**
-	 * Returns kind of identifier or thrown Error
-	 */
-	pure string findIdentifier(ParserBay parser, string name, Caret caret)
-	{
-		string kind = "";
-		if (parser.vars.has(name))
-		{
-			kind = OpIdentifier::KIND_VARIABLE;
-		}
-		else if (parser.uses.has(name))
-		{
-			kind = OpIdentifier::KIND_CLASS;
-		}
-		else if (static::isSystemType(name))
-		{
-			kind = OpIdentifier::KIND_SYS_TYPE;
-		}
-		else if (name == "log")
-		{
-			kind = OpIdentifier::KIND_SYS_FUNCTION;
-		}
-		else if (name == "window" or name == "document")
-		{
-			kind = OpIdentifier::KIND_VARIABLE;
-		}
-		else if (name == "null" or name == "true" or name == "false")
-		{
-			kind = OpIdentifier::KIND_CONSTANT;
-		}
-		else if (name == "fn")
-		{
-			kind = OpIdentifier::KIND_FUNCTION;
-		}
-		else if (name == "@" or name == "_")
-		{
-			kind = OpIdentifier::KIND_CONTEXT;
-		}
-		else if (name == "static" or name == "self" or name == "this" or name == "parent")
-		{
-			kind = OpIdentifier::KIND_CLASSREF;
-		}
-		return kind;
-	}
-	
-	
-	
-	/**
-	 * Return true if char is token char
-	 * @param {char} ch
-	 * @return {boolean}
-	 */
-	pure memorize bool isTokenChar(char ch)
-	{
-		return rs::indexOf('qazwsxedcrfvtgbyhnujmikolp0123456789_', rs::lower(ch)) !== -1;
-	}
-	
-	
-	
-	/**
-	 * Return true if char is system or space. ASCII code <= 32.
-	 * @param char ch
-	 * @return boolean
-	 */
-	pure memorize bool isSkipChar (char ch)
-	{
-		if (rs::ord(ch) <= 32) return true;
-		return false;
-	}
-	
-	
-	
-	/**
-	 * Returns next X
-	 */
-	pure int nextX(ParserBay parser, char ch, int x, int direction = 1)
-	{
-		if (ch == "\t") return x + parser.tab_size * direction;
-		if (ch == "\n") return 0;
-		return x + direction;
-	}
-	
-	
-	
-	/**
-	 * Returns next Y
-	 */
-	pure int nextY(ParserBay parser, char ch, int y, int direction = 1)
-	{
-		if (ch == "\n") return y + direction;
-		return y;
-	}
-	
-	
-	/**
-	 * Returns next
-	 */
-	pure list<int, int, int> next(ParserBay parser, string s, int x, int y, int pos)
-	{
-		int sz = rs::strlen(s);
-		for (int i=0; i<sz; i++)
-		{
-			string ch = rs::substr(s, i, 1);
-			x = static::nextX(parser, ch, x);
-			y = static::nextY(parser, ch, y);
-			pos = pos + 1;
-		}
-		return [x, y, pos];
-	}
-	
-	
-	
-	/**
-	 * Open comment
-	 */
-	pure bool isCommentOpen(ParserBay parser, string str) =>
-		parser.skip_comments and
-			( parser.is_html ? str == "<!--" : str == "/*" )
-		;
-	
-	
-	
-	/**
-	 * Close comment
-	 */
-	pure bool isCommentClose(ParserBay parser, string str) =>
-		parser.is_html ? str == "-->" : str == "*/"
-	;
-	
-	
-	
-	/**
-	 * Skip char
-	 */
-	pure Caret skipChar(ParserBay parser, Reference<string> content, Caret start_pos)
-	{
-		int x = start_pos.x;
-		int y = start_pos.y;
-		int pos = start_pos.pos;
-		bool skip_comments = parser.skip_comments;
-		
-		/* Check boundaries */
-		if (pos >= parser.content_sz)
-		{
-			throw new ParserEOF();
-		}
-		
-		string ch = rs::charAt(content.ref, pos);
-		string ch2 = rs::substr(content.ref, pos, 2);
-		string ch4 = rs::substr(content.ref, pos, 4);
-		while
-		(
-			(
-				static::isSkipChar(ch) or
-				static::isCommentOpen(parser, ch2) or
-				static::isCommentOpen(parser, ch4)
-			) and pos < parser.content_sz
-		)
-		{
-			if (static::isCommentOpen(parser, ch2))
-			{
-				ch2 = rs::substr(content.ref, pos, 2);
-				while (not static::isCommentClose(parser, ch2) and pos < parser.content_sz)
-				{
-					x = static::nextX(parser, ch, x);
-					y = static::nextY(parser, ch, y);
-					pos = pos + 1;
-					if (pos >= parser.content_sz)
-					{
-						break;
-					}
-					ch = rs::charAt(content.ref, pos);
-					ch2 = rs::substr(content.ref, pos, 2);
-				}
-				if (static::isCommentClose(parser, ch2))
-				{
-					x = x + 2;
-					pos = pos + 2;
-				}
-			}
-			
-			else if (static::isCommentOpen(parser, ch4))
-			{
-				string ch3 = rs::substr(content.ref, pos, 3);
-				while (not static::isCommentClose(parser, ch3) and pos < parser.content_sz)
-				{
-					x = static::nextX(parser, ch, x);
-					y = static::nextY(parser, ch, y);
-					pos = pos + 1;
-					if (pos >= parser.content_sz)
-					{
-						break;
-					}
-					ch = rs::charAt(content.ref, pos);
-					ch3 = rs::substr(content.ref, pos, 3);
-				}
-				if (static::isCommentClose(parser, ch3))
-				{
-					x = x + 3;
-					pos = pos + 3;
-				}
-			}
-			
-			else
-			{
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
-			}
-			if (pos >= parser.content_sz)
-			{
-				break;
-			}
-			ch = rs::charAt(content.ref, pos);
-			ch2 = rs::substr(content.ref, pos, 2);
-			ch4 = rs::substr(content.ref, pos, 4);
-		}
-		return new Caret{ "pos": pos, "x": x, "y": y };
-	}
-	
-	
-	
-	/**
-	 * Read special token
-	 */
-	pure string readSpecialToken(ParserBay parser, Reference<string> content, Caret start_pos)
-	{
-		int pos = start_pos.pos;
-		string s = "";
-		
-		s = rs::substr(content.ref, pos, 10);
-		if (s == "#endswitch") return s;
-		
-		s = rs::substr(content.ref, pos, 7);
-		if (s == "#ifcode" or s == "#switch" or s == "#elseif" or s == "%render") return s;
-		
-		s = rs::substr(content.ref, pos, 6);
-		if (s == "#endif" or s == "#ifdef" or s == "%while") return s;
-		
-		s = rs::substr(content.ref, pos, 5);
-		if (s == "#case" or s == "%else") return s;
-		
-		s = rs::substr(content.ref, pos, 4);
-		if (s == "@css" or s == "%for" or s == "%var" or s == "%set") return s;
-		
-		s = rs::substr(content.ref, pos, 3);
-		if (
-			s == "!--" or
-			s == "!==" or
-			s == "===" or
-			s == "..." or
-			s == "#if" or
-			s == "%if"
-		)
-			return s;
-		
-		s = rs::substr(content.ref, pos, 2);
-		if (
-			s == "==" or
-			s == "!=" or
-			s == "<=" or
-			s == ">=" or
-			s == "=>" or
-			s == "->" or
-			s == "|>" or
-			s == "::" or
-			s == "+=" or
-			s == "-=" or
-			s == "~=" or
-			s == "**" or
-			s == "<<" or
-			s == ">>" or
-			s == "++" or
-			s == "--"
-		)
-			return s;
-			
-		return "";
-		
-	}
-	
-	
-	
-	/**
-	 * Read next token and return caret end
-	 */
-	pure Caret nextToken(ParserBay parser, Reference<string> content, Caret start_pos)
-	{
-		bool is_first = true;
-		int x = start_pos.x;
-		int y = start_pos.y;
-		int pos = start_pos.pos;
-		
-		/* Check boundaries */
-		if (pos >= parser.content_sz)
-		{
-			throw new ParserEOF();
-		}
-		
-		string s = static::readSpecialToken(parser, content, start_pos);
-		if (s != "")
-		{
-			int sz = rs::strlen(s);
-			for (int i=0; i<sz; i++)
-			{
-				char ch = rs::charAt(s, i);
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
-			}
-			return new Caret{ "pos": pos, "x": x, "y": y };
-		}
-		
-		char ch = rs::charAt(content.ref, pos);
-		if ( not static::isTokenChar(ch) )
-		{
-			x = static::nextX(parser, ch, x);
-			y = static::nextY(parser, ch, y);
-			pos = pos + 1;
-		}
-		else
-		{
-			while (static::isTokenChar(ch))
-			{
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
-				if (pos >= parser.content_sz)
-				{
-					break;
-				}
-				ch = rs::charAt(content.ref, pos);
-			}
-		}
-		return new Caret{ "pos": pos, "x": x, "y": y };
-	}
-	
-	
-	
-	/**
-	 * Read back
-	 */
-	pure ParserBay readBack(ParserBay parser, string search = "")
-	{
-		Reference<string> content = parser.content;
-		Caret caret = parser.caret;
-		int x = caret.x;
-		int y = caret.y;
-		int pos = caret.pos;
-		int search_sz = rs::strlen(search);
-		string s = "";
-		
-		while (pos >= 0)
-		{
-			char ch = rs::charAt(content.ref, pos);
-			x = static::nextX(parser, ch, x, -1);
-			y = static::nextY(parser, ch, y, -1);
-			pos--;
-			
-			s = rs::substr(content.ref, pos, search_sz);
-			if (s == search)
-			{
-				break;
-			}
-		}
-		
-		return parser.copy{ "caret": new Caret{ "pos": pos, "x": x, "y": y } };
-	}
-	
-	
-	
-	/**
-	 * Read next token
-	 */
-	pure list<ParserBay, CoreToken> readToken(ParserBay parser)
-	{
-		Caret caret_start = null;
-		Caret caret_end = null;
-		bool eof = false;
-		
-		try
-		{
-			caret_start = static::skipChar(parser, parser.content, parser.caret);
-			caret_end = static::nextToken(parser, parser.content, caret_start);
-		}
-		catch (ParserEOF e)
-		{
-			if (caret_start == null) caret_start = parser.caret;
-			if (caret_end == null) caret_end = caret_start;
-			eof = true;
-		}
-		catch (var e)
-		{
-			throw e;
-		}
-		
-		return 
-		[
-			parser.copy({ "caret": caret_end }),
-			new CoreToken
-			{
-				"content": rs::substr(parser.content.ref, caret_start.pos, caret_end.pos - caret_start.pos),
-				"caret_start": caret_start,
-				"caret_end": caret_end,
-				"eof": eof,
-			}
-		];
-	}
-	
-	
-	
-	/**
-	 * Look next token
-	 */
-	pure list<ParserBay, bool> lookToken(ParserBay parser, string token)
-	{
-		string token_content = "";
-		Reference<string> content = parser.content;
-		Caret caret_start = null;
-		Caret caret_end = null;
-		int sz = rs::strlen(token);
-		bool eof = false;
-		bool find = false;
-		
-		try
-		{
-			caret_start = static::skipChar(parser, content, parser.caret);
-			int pos = caret_start.pos;
-			int x = caret_start.x;
-			int y = caret_start.y;
-			token_content = rs::substr(content.ref, pos, sz);
-			if (token_content == token) find = true;
-			list res = static::next(parser, token_content, x, y, pos);
-			x = res[0]; y = res[1]; pos = res[2];
-			caret_end = new Caret{ "pos": pos, "x": x, "y": y }
-		}
-		catch (ParserEOF e)
-		{
-			if (caret_start == null) caret_start = parser.caret;
-			if (caret_end == null) caret_end = caret_start;
-			eof = true;
-		}
-		catch (var e)
-		{
-			throw e;
-		}
-		
-		return 
-		[
-			parser.copy({ "caret": caret_end }),
-			new CoreToken
-			{
-				"content": token_content,
-				"caret_start": caret_start,
-				"caret_end": caret_end,
-				"eof": eof,
-			},
-			find
-		];
-	}
-	
-	
-	
-	/**
-	 * Match next token
-	 */
-	pure list<ParserBay, CoreToken> matchToken(ParserBay parser, string next_token)
-	{
-		CoreToken token = null;
-		
-		/* Look token */
-		list res = static::lookToken(parser, next_token);
-		parser = res[0]; token = res[1]; bool find = res[2];
-		if (not find)
-		{
-			throw new ParserExpected(next_token, token.caret_start, parser.file_name);
-		}
-		
-		return [parser, token];
-	}
-	
-	
-	
-	/**
-	 * Match next string
-	 */
-	pure list<ParserBay, CoreToken> matchString(ParserBay parser, string str1)
-	{
-		Caret caret = parser.caret;
-		int sz = rs::strlen(str1);
-		string str2 = rs::substr(parser.content.ref, caret.pos, sz);
-		
-		if (str1 != str2)
-		{
-			throw new ParserExpected(str1, caret, parser.file_name);
-		}
-		
-		list res = static::next(parser, str1, caret.x, caret.y, caret.pos);
-		caret = new Caret{ "x": res[0], "y": res[1], "pos": res[2] };
-		
-		parser <= caret <= caret;
-		
-		return [parser, null];
-	}
-	
-	
-	
 	/**
 	 * Read number
 	 */
-	pure list<ParserBay, OpNumber> readNumber(ParserBay parser, bool flag_negative = false)
+	OpNumber readNumber(TokenReader reader, bool flag_negative = false)
 	{
-		CoreToken token = null;
-		ParserBay start = parser;
+		Caret caret_start = reader.caret();
 		
-		/* Read token */
-		list res = static::readToken(parser); parser = res[0]; token = res[1];
-		
-		Caret caret_start = token.caret_start;
-		if (token.content == "")
+		/* Read number */
+		string value = reader.readToken();
+		if (value == "")
 		{
-			throw new ParserExpected("Number", caret_start, parser.file_name);
+			throw caret_start.expected("Number");
 		}
-		if (not static::isStringOfNumbers(token.content))
+		if (not Caret::isStringOfNumbers(value))
 		{
-			throw new ParserExpected("Number", caret_start, parser.file_name);
+			throw caret_start.expected("Number");
 		}
-		
-		string value = token.content;
 		
 		/* Look dot */
-		list res = static::readToken(parser);
-		ParserBay look = res[0]; token = res[1];
-		
-		if (token.content == ".")
+		if (reader.nextToken() == ".")
 		{
-			value ~= ".";
-			list res = static::readToken(look);
-			parser = res[0];
-			token = res[1];
-			value ~= token.content;
+			value ~= reader.readToken();
+			value ~= reader.readToken();
 		}
 		
-		return
-		[
-			parser,
-			new OpNumber
-			{
-				"value": value,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-				"negative": flag_negative,
-			}
-		];
-	}
-	
-	
-	
-	/**
-	 * Read string
-	 */
-	pure list<ParserBay, OpString> readUntilStringArr
-	(
-		ParserBay parser, Collection arr, bool flag_include = true
-	)
-	{
-		CoreToken token = null;
-		ParserBay look = null;
-		Reference<string> content = parser.content;
-		int content_sz = parser.content_sz;
-		int pos = parser.caret.pos;
-		int x = parser.caret.x;
-		int y = parser.caret.y;
-		
-		/* Search next string in arr */
-		fn<int, int> search = int (int pos) use (content, arr)
+		/* Returns op_code */
+		return new OpNumber
 		{
-			for (int i=0; i<arr.count(); i++)
-			{
-				string item = arr.item(i);
-				int sz = rs::strlen(item);
-				string str = rs::substr(content.ref, pos, sz);
-				if (str == item)
-				{
-					return i;
-				}
-			}
-			return -1;
+			"value": flag_negative ? "-" ~ value : value,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
 		};
-		
-		/* Start and end positionss */
-		int start_pos = pos;
-		int end_pos = pos;
-		
-		/* Read string value */
-		string ch = "";
-		int arr_pos = search(pos);
-		while ( pos < content_sz and arr_pos == -1 )
-		{
-			ch = rs::charAt(content.ref, pos);
-			x = static::nextX(parser, ch, x);
-			y = static::nextY(parser, ch, y);
-			pos = pos + 1;
-			
-			if (pos >= content_sz)
-			{
-				throw new ParserExpected
-				(
-					rs::join(",", arr),
-					new Caret{ "x": x, "y": y, "pos": pos },
-					parser.file_name
-				);
-			}
-			
-			arr_pos = search(pos);
-		}
-		
-		if (arr_pos == -1)
-		{
-			throw new ParserExpected
-			(
-				"End of string",
-				new Caret{ "x": x, "y": y, "pos": pos },
-				parser.file_name
-			);
-		}
-		
-		if (not flag_include) end_pos = pos;
-		else
-		{
-			string item = arr.item(arr_pos);
-			int sz = rs::strlen(item);
-			for (int i=0; i<sz; i++)
-			{
-				ch = rs::charAt(content.ref, pos);
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
-			}
-			end_pos = pos;
-		}
-		
-		/* Return result */
-		Caret caret_end = new Caret{ "x": x, "y": y, "pos": end_pos };
-		return 
-		[
-			parser.copy({ "caret": caret_end }),
-			rs::substr(content.ref, start_pos, end_pos - start_pos),
-		];
 	}
-	
 	
 	
 	/**
 	 * Read string
 	 */
-	pure list<ParserBay, OpString> readString(ParserBay parser)
+	OpString readString(TokenReader reader)
 	{
-		CoreToken token = null;
-		ParserBay look = null;
-		
-		/* Read token */
-		list res = static::readToken(parser); look = res[0]; token = res[1];
-		
-		Caret caret_start = token.caret_start;
-		string str_char = token.content;
+		Caret caret_start = reader.caret();
+		string str_char = reader.readToken();
 		
 		/* Read begin string char */
 		if (str_char != "'" and str_char != '"') /* " */
 		{
-			throw new ParserExpected("String", caret_start, parser.file_name);
+			throw caret_start.expected("String");
 		}
-		string content = look.content;
-		int content_sz = look.content_sz;
-		int pos = look.caret.pos;
-		int x = look.caret.x;
-		int y = look.caret.y;
 		
 		/* Read string value */
+		Caret caret = reader.caret();
 		string value_str = "";
-		string ch = rs::charAt(content.ref, pos);
-		while ( pos < content_sz and ch != str_char )
+		string ch = caret.nextChar();
+		while (not caret.eof() and ch != str_char)
 		{
 			if (ch == "\\")
 			{
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
-				if (pos >= content_sz)
+				caret.readChar();
+				if (caret.eof())
 				{
-					throw new ParserExpected
-					(
-						"End of string",
-						new Caret{ "x": x, "y": y, "pos": pos },
-						parser.file_name
-					);
+					throw caret.expected("End of string");
 				}
-				
-				string ch2 = rs::charAt(content.ref, pos);
+				string ch2 = caret.readChar();
 				if (ch2 == "n") value_str ~= "\n";
 				else if (ch2 == "r") value_str ~= "\r";
 				else if (ch2 == "t") value_str ~= "\t";
@@ -877,234 +198,130 @@ class ParserBayBase
 				else if (ch2 == "'") value_str ~= "'";
 				else if (ch2 == '"') value_str ~= '"';
 				else value_str ~= ch ~ ch2;
-				x = static::nextX(parser, ch2, x);
-				y = static::nextY(parser, ch2, y);
-				pos = pos + 1;
 			}
 			else
 			{
-				value_str ~= ch;
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
+				value_str ~= caret.readChar();
 			}
-			
-			if (pos >= content_sz)
+			if (caret.eof())
 			{
-				throw new ParserExpected
-				(
-					"End of string",
-					new Caret{ "x": x, "y": y, "pos": pos },
-					parser.file_name
-				);
+				throw caret.expected("End of string");
 			}
-			ch = rs::charAt(content.ref, pos);
+			ch = caret.nextChar();
 		}
 		
 		/* Read end string char */
 		if (ch != "'" and ch != '"') /* " */
 		{
-			throw new ParserExpected
-			(
-				"End of string",
-				new Caret{ "x": x, "y": y, "pos": pos },
-				parser.file_name
-			);
+			throw caret.expected("End of string");
 		}
-		x = static::nextX(parser, ch, x);
-		y = static::nextY(parser, ch, y);
-		pos = pos + 1;
 		
-		/* Return result */
-		Caret caret_end = new Caret{ "x": x, "y": y, "pos": pos };
-		return 
-		[
-			parser.copy({ "caret": caret_end }),
-			new OpString
-			{
-				"value": value_str,
-				"caret_start": caret_start,
-				"caret_end": caret_end,
-			}
-		];
+		/* Restore reader */
+		reader.init(caret);
+		
+		/* Returns op_code */
+		return new OpString
+		{
+			"value": value_str,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
-	
 	
 	
 	/**
 	 * Read comment
 	 */
-	pure list<ParserBay, OpComment> readComment(ParserBay parser)
+	OpComment readComment(TokenReader reader)
 	{
-		ParserBay start = parser;
-		CoreToken token = null;
-		ParserBay look = null;
+		Caret caret_start = reader.caret();
+		string str_char = reader.readToken();
 		
-		parser <= skip_comments <= false;
-		list res = ParserBayBase::readToken(parser); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		parser <= skip_comments <= true;
+		/* Read begin coment */
+		reader.matchToken("/");
+		reader.matchToken("*");
 		
-		if (token.content == "/") /* */
+		/* Read comment value */
+		Caret caret = reader.caret();
+		string value_str = "";
+		string ch2 = caret.nextString(2);
+		while (not caret.eof() and ch2 != "*/")
 		{
-			parser = look;
-			string content = look.content;
-			int content_sz = look.content_sz;
-			int pos = look.caret.pos;
-			int x = look.caret.x;
-			int y = look.caret.y;
-			int pos_start = pos;
-			
-			string ch = rs::charAt(content.ref, pos);
-			string ch2 = rs::substr(content.ref, pos, 2);
-			while (not static::isCommentClose(parser, ch2) and pos < content_sz)
+			value_str ~= caret.readChar();
+			if (caret.eof())
 			{
-				x = static::nextX(parser, ch, x);
-				y = static::nextY(parser, ch, y);
-				pos = pos + 1;
-				if (pos >= parser.content_sz)
-				{
-					break;
-				}
-				ch = rs::charAt(content.ref, pos);
-				ch2 = rs::substr(content.ref, pos, 2);
+				throw caret.expected("End of comment");
 			}
-			
-			int pos_end = pos;
-			if (static::isCommentClose(parser, ch2))
-			{
-				x = x + 2;
-				pos = pos + 2;
-			}
-			else
-			{
-				throw new ParserExpected
-				(
-					"End of comment",
-					new Caret{ "x": x, "y": y, "pos": pos },
-					start.file_name
-				);
-			}
-			
-			/* Return result */
-			string value_str = rs::substr(content.ref, pos_start + 1, pos_end - pos_start - 1);
-			Caret caret_end = new Caret{ "x": x, "y": y, "pos": pos };
-			
-			return
-			[
-				start.copy({ "caret": caret_end }),
-				new OpComment
-				{
-					"value": value_str,
-					"caret_start": caret_start,
-					"caret_end": caret_end,
-				}
-			];
+			ch2 = caret.nextString(2);
 		}
 		
-		return [parser, null];
+		/* Restore reader */
+		reader.init(caret);
+		
+		/* Read end coment */
+		reader.matchToken("*");
+		reader.matchToken("/");
+		
+		/* Returns op_code */
+		return new OpComment
+		{
+			"value": value_str,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
-	
 	
 	
 	/**
 	 * Read identifier
 	 */
-	pure list<ParserBay, OpIdentifier> readIdentifier(ParserBay parser, bool find_ident = false)
+	OpIdentifier readIdentifier(TokenReader reader)
 	{
-		ParserBay start = parser;
-		CoreToken token = null;
-		ParserBay look = null;
-		string name = "";
+		Caret caret_start = reader.caret();
 		
-		list res = ParserBayBase::readToken(parser); parser = res[0]; token = res[1];
-		if (token.content == "")
+		/* Read identifier */
+		string name = reader.readToken();
+		if (not static::isIdentifier(name) or static::isReserved(name))
 		{
-			throw new ParserExpected("Identifier", token.caret_start, parser.file_name);
-		}
-		if (not static::isIdentifier(token.content))
-		{
-			throw new ParserExpected("Identifier", token.caret_start, parser.file_name);
-		}
-		if (static::isReserved(token.content))
-		{
-			throw new ParserExpected
-			(
-				"Identifier " ~ token.content ~ " is reserverd",
-				token.caret_start, parser.file_name
-			);
+			throw reader.expected("Identifier");
 		}
 		
-		name = token.content;
-		bool kind = static::findIdentifier(parser, name, token.caret_start);
-		
-		if (parser.find_ident and find_ident and kind == "")
+		/* Returns op_code */
+		return new OpIdentifier
 		{
-			throw new ParserError(
-				"Unknown identifier '" ~ name ~ "'",
-				token.caret_start, parser.file_name
-			);
-		}
-		
-		return 
-		[
-			parser,
-			new OpIdentifier
-			{
-				"kind": kind,
-				"value": name,
-				"caret_start": token.caret_start,
-				"caret_end": token.caret_end,
-			}
-		];
+			"value": name,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
-	
 	
 	
 	/**
 	 * Read entity name
 	 */
-	pure list<ParserBay, OpEntityName> readEntityName(ParserBay parser, bool find_ident = true)
+	OpEntityName readEntityName(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		OpIdentifier ident = null;
-		Vector<string> names = new Vector();
+		Caret caret_start = reader.caret();
+		Collection<string> items = [];
 		
-		list res = parser.parser_base::readIdentifier(parser, find_ident);
-		parser = res[0]; ident = res[1];
-		Caret caret_start = ident.caret_start;
+		/* Read name */
+		items.push(this.readIdentifier(reader));
 		
-		string name = ident.value;
-		names.push(name);
-		
-		list res = parser.parser_base::readToken(parser);
-		look = res[0]; token = res[1];
-		
-		while (not token.eof and token.content == ".")
+		/* Read names */
+		while (reader.nextToken() == ".")
 		{
-			list res = parser.parser_base::matchToken(parser, "."); parser = res[0];
-			list res = parser.parser_base::readIdentifier(parser); 
-			parser = res[0]; ident = res[1];
-			
-			name = ident.value;
-			names.push(name);
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+			reader.readToken();
+			items.push(this.readIdentifier(reader));
 		}
 		
-		return 
-		[
-			parser,
-			new OpEntityName
-			{
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-				"names": names,
-			}
-		];
+		/* Returns op_code */
+		return new OpEntityName
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
-	
 	
 	
 	/**
@@ -1166,7 +383,6 @@ class ParserBayBase
 			}
 		];
 	}
-	
 	
 	
 	/**
@@ -1246,7 +462,6 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Read collection
 	 */
@@ -1323,7 +538,6 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Read fixed
 	 */
@@ -1377,7 +591,6 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Read call args
 	 */
@@ -1419,7 +632,6 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Read new instance
 	 */
@@ -1456,7 +668,6 @@ class ParserBayBase
 			}
 		];
 	}
-	
 	
 	
 	/**
@@ -1534,7 +745,6 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Read curry
 	 */
@@ -1595,7 +805,6 @@ class ParserBayBase
 			}
 		];
 	}
-	
 	
 	
 	/**
@@ -1671,7 +880,6 @@ class ParserBayBase
 	}
 	
 	
-	
 	/**
 	 * Read classof
 	 */
@@ -1696,7 +904,6 @@ class ParserBayBase
 			}
 		];
 	}
-	
 	
 	
 	/**
@@ -1726,7 +933,6 @@ class ParserBayBase
 			}
 		];
 	}
-	
 	
 	
 	/**
@@ -2005,5 +1211,4 @@ class ParserBayBase
 		
 		return [parser, op_code];
 	}
-	
 }

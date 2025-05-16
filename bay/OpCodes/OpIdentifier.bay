@@ -24,19 +24,8 @@ use BayLang.OpCodes.BaseOpCode;
 
 class OpIdentifier extends BaseOpCode
 {
-	static const string KIND_PIPE = "pipe";
-	static const string KIND_VARIABLE = "var";
-	static const string KIND_SYS_TYPE = "sys";
-	static const string KIND_SYS_FUNCTION = "sys_fn";
-	static const string KIND_FUNCTION = "fn";
-	static const string KIND_CONTEXT = "ctx";
-	static const string KIND_CONSTANT = "const";
-	static const string KIND_CLASS = "class";
-	static const string KIND_CLASSREF = "classref";
-	
 	string op = "op_identifier";
 	string value = "";
-	string kind = "";
 	
 	
 	/**

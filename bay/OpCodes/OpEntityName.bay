@@ -20,12 +20,19 @@ namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpIdentifier;
 
 
 class OpEntityName extends BaseOpCode
 {
 	string op = "op_entity_name";
-	Collection<string> names = null;
+	Collection<OpIdentifier> items = null;
+	
+	
+	/**
+	 * Returns name
+	 */
+	string getName() => this.items.map(string (OpIdentifier item) => item.value).join(".");
 	
 	
 	/**
@@ -34,6 +41,6 @@ class OpEntityName extends BaseOpCode
 	void serialize(Serializer serializer, Map data)
 	{
 		parent(serializer, data);
-		serializer.process(this, "names", data);
+		serializer.process(this, "items", data);
 	}
 }

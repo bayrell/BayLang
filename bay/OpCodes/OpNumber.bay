@@ -26,7 +26,6 @@ class OpNumber extends BaseOpCode
 {
 	string op = "op_number";
 	int value = 0;
-	/*bool negative = false;*/
 	
 	
 	/**

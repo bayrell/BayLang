@@ -33,16 +33,9 @@ class OpAssign extends BaseOpCode
 	static const string KIND_DECLARE = "declare";
 	static const string KIND_STRUCT = "struct";
 	
-	string kind = "";
-	string var_name = "";
 	OpFlags flags = null;
 	OpTypeIdentifier pattern = null;
-	Collection<OpAnnotation> annotations = null;
-	Collection<OpComment> comments = null;
-	Collection<OpAssignValue> values = null;
-	Collection<string> names = null;
-	BaseOpCode expression = null;
-	BaseOpCode condition = null;
+	Collection<OpAssignValue> items = null;
 	
 	
 	/**

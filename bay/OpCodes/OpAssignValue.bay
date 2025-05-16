@@ -28,9 +28,7 @@ use BayLang.OpCodes.OpFlags;
 
 class OpAssignValue extends BaseOpCode
 {
-	string op = "";
-	string var_name = "";
-	BaseOpCode op_code = null;
+	BaseOpCode value = null;
 	BaseOpCode expression = null;
 	
 	
@@ -40,8 +38,7 @@ class OpAssignValue extends BaseOpCode
 	void serialize(Serializer serializer, Map data)
 	{
 		parent(serializer, data);
+		serializer.process(this, "value", data);
 		serializer.process(this, "expression", data);
-		serializer.process(this, "op_code", data);
-		serializer.process(this, "var_name", data);
 	}
 }

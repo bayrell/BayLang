@@ -20,7 +20,6 @@ namespace BayLang;
 
 use Runtime.BaseObject;
 use BayLang.Caret;
-use BayLang.Exceptions.ParserExpected;
 
 
 class TokenReader extends BaseObject
@@ -39,6 +38,12 @@ class TokenReader extends BaseObject
 		this.next_caret = caret.copy();
 		this.readToken();
 	}
+	
+	
+	/**
+	 * Returns caret
+	 */
+	Caret caret() => this.main_caret.copy();
 	
 	
 	/**
@@ -66,13 +71,31 @@ class TokenReader extends BaseObject
 	
 	
 	/**
+	 * Returns parser error
+	 */
+	void error(string message)
+	{
+		return this.main_caret.error(message);
+	}
+	
+	
+	/**
+	 * Returns expected error
+	 */
+	void expected(string message)
+	{
+		return this.main_caret.expected(message);
+	}
+	
+	
+	/**
 	 * Match next token
 	 */
 	void matchToken(string ch)
 	{
 		if (this.nextToken() != ch)
 		{
-			throw new ParserExpected(ch, this.main_caret, this.main_caret.file_name);
+			throw new this.next_token.expected(ch);
 		}
 		this.readToken();
 	}

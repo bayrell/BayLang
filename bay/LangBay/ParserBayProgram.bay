@@ -61,584 +61,59 @@ class ParserBayProgram extends BaseObject
 	 */
 	OpNamespace readNamespace(TokenReader reader)
 	{
-		Caret caret_start = reader.main_caret.copy();
+		Caret caret_start = reader.caret();
 		
 		/* Read module name */
 		reader.matchToken("namespace");
-		string module_name = reader.readToken();
+		OpEntityName entity_name = this.parser.parser_base.readEntityName(reader);
+		string module_name = entity_name.getName();
 		
-		/* Set current namespace */
-		this.parser.current_namespace = module_name;
-		this.parser.current_namespace_name = module_name;
-		
-		return new OpNamespace
+		/* Create op_code */
+		OpNamespace op_code = new OpNamespace
 		{
 			"caret_start": caret_start,
-			"caret_end": reader.next_caret.copy(),
+			"caret_end": reader.caret(),
 			"name": module_name,
-		};
+		}
+		
+		/* Set current namespace */
+		this.parser.current_namespace = op_code;
+		this.parser.current_namespace_name = module_name;
+		
+		/* Returns op_code */
+		return op_code;
 	}
 	
 	
 	/**
 	 * Read use
 	 */
-	pure ParserBay readUse(ParserBay parser)
+	OpUse readUse(TokenReader reader)
 	{
 		ParserBay look = null;
 		CoreToken token = null;
 		OpEntityName name = null;
+		Caret caret_start = reader.caret();
 		string alias = "";
 		
-		list res = parser.parser_base::matchToken(parser, "use");
-		parser = res[0]; token = res[1];
+		/* Read module name */
+		reader.matchToken("use");
+		OpEntityName module_name = this.parser.parser_base.readEntityName(reader);
 		
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_base::readEntityName(parser, false);
-		parser = res[0]; name = res[1];
-		
-		list res = parser.parser_base::readToken(parser);
-		look = res[0]; token = res[1];
-		
-		if (token.content == "as")
+		/* Read alias */
+		if (reader.nextToken() == "as")
 		{
-			BaseOpCode parser_value = null;
-			parser = look;
-			list res = parser.parser_base::readIdentifier(parser);
-			parser = res[0]; parser_value = res[1];
-			alias = parser_value.value;
+			reader.readToken();
+			alias = reader.readToken();
 		}
 		
-		return 
-		[
-			parser, 
-			new OpUse
-			{
-				"name": rs::join(".", name.names),
-				"alias": alias,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
-	}
-	
-	
-	
-	/**
-	 * Read class body
-	 */
-	pure ParserBay readClassBody(ParserBay parser, string end_tag = "}")
-	{
-		BaseOpCode look = null;
-		CoreToken token = null;
-		Vector<BaseOpCode> items = new Vector();
-		
-		parser <= skip_comments <= false;
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		parser <= skip_comments <= true;
-		
-		while (not token.eof and token.content != end_tag)
+		return new OpUse
 		{
-			BaseOpCode item = null;
-			
-			if (token.content == "/")
-			{
-				list res = parser.parser_base::readComment(parser);
-				parser = res[0]; item = res[1];
-				if (item != null) items.push(item);
-			}
-			else if (token.content == "@")
-			{
-				list res = parser.parser_operator::readAnnotation(parser);
-				parser = res[0]; item = res[1];
-				items.push(item);
-			}
-			else if (token.content == "#switch" or token.content == "#ifcode")
-			{
-				list res = parser.parser_preprocessor::readPreprocessor(parser);
-				parser = res[0]; item = res[1];
-				if (item != null) items.push(item);
-			}
-			else if (token.content == "#ifdef")
-			{
-				list res = parser.parser_preprocessor::readPreprocessorIfDef
-				(
-					parser, OpPreprocessorIfDef::KIND_CLASS_BODY
-				);
-				parser = res[0]; item = res[1];
-				if (item != null) items.push(item);
-			}
-			else if (token.content == "<")
-			{
-				break;
-			}
-			else
-			{
-				OpFlags flags = null;
-				list res = parser.parser_operator::readFlags(parser);
-				parser = res[0]; flags = res[1];
-				
-				if (parser.parser_operator::tryReadFunction(parser, true, flags))
-				{
-					list res = parser.parser_operator::readDeclareFunction(parser, true);
-					parser = res[0]; item = res[1];
-					if (item.expression != null)
-					{
-						if (not item.is_html)
-						{
-							list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
-						}
-						else
-						{
-							list res = parser.parser_base::readToken(parser);
-							look = res[0]; token = res[1];
-							if (token.content == ";")
-							{
-								parser = look;
-							}
-						}
-					}
-				}
-				else
-				{
-					list res = parser.parser_operator::readAssign(parser);
-					parser = res[0]; item = res[1];
-					list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
-				}
-				
-				item <= flags <= flags;
-				if (item != null)
-				{
-					items.push(item);
-				}
-			}
-			
-			parser <= skip_comments <= false;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			parser <= skip_comments <= true;
-		}
-		
-		return [parser, items];
-	}
-	
-	
-	
-	/**
-	 * Class body analyze
-	 */
-	pure Dict classBodyAnalyze(ParserBay parser, Collection<BaseOpCode> arr)
-	{
-		Map<bool> names = new Map();
-		Vector<BaseOpCode> vars = new Vector();
-		Vector<BaseOpCode> functions = new Vector();
-		Vector<BaseOpCode> items = new Vector();
-		Vector<BaseOpCode> annotations = new Vector(); 
-		Vector<BaseOpCode> comments = new Vector(); 
-		BaseOpCode fn_create = null;
-		BaseOpCode fn_destroy = null;
-		
-		for (int i=0; i<arr.count(); i++)
-		{
-			BaseOpCode item = arr.item(i);
-			if (item instanceof OpAnnotation)
-			{
-				annotations.push(item);
-			}
-			else if (item instanceof OpComment)
-			{
-				comments.push(item);
-			}
-			else if (item instanceof OpAssign)
-			{
-				for (int j=0; j<item.values.count(); j++)
-				{
-					OpAssignValue assign_value = item.values.item(j);
-					string value_name = assign_value.var_name;
-					if (names.has(value_name))
-					{
-						throw new ParserError
-						(
-							"Dublicate identifier " ~ value_name,
-							assign_value.caret_start,
-							parser.file_name
-						);
-					}
-					names.set(value_name, true);
-				}
-				
-				item = item.copy({
-					"annotations": annotations.slice(),
-					"comments": comments.slice(),
-				});
-				vars.push(item);
-				annotations.clear();
-				comments.clear();
-			}
-			else if (item instanceof OpDeclareFunction)
-			{
-				item = item.copy({
-					"annotations": annotations.slice(),
-					"comments": comments.slice(),
-				});
-				
-				if (names.has(item.name))
-				{
-					throw new ParserError
-					(
-						"Dublicate identifier " ~ item.name,
-						item.caret_start,
-						parser.file_name
-					);
-				}
-				names.set(item.name, true);
-				
-				if (item.name == "constructor") fn_create = item;
-				else if (item.name == "destructor") fn_destroy = item;
-				else functions.push(item);
-				
-				annotations.clear();
-				comments.clear();
-			}
-			else if (item instanceof OpPreprocessorIfDef)
-			{
-				list d = static::classBodyAnalyze(parser, item.items);
-				Collection<BaseOpCode> d_vars = d["vars"];
-				d_vars = d_vars.map(
-					BaseOpCode (BaseOpCode v) use (item)
-					{
-						v <= condition <= item.condition;
-						return v;
-					}
-				);
-				vars.appendItems(d_vars);
-			}
-			else
-			{
-				items.push(item);
-			}
-		}
-		
-		items.appendItems(comments);
-		return {
-			"annotations": annotations,
-			"comments": comments,
-			"functions": functions,
-			"items": items,
-			"vars": vars,
-			"fn_create": fn_create,
-			"fn_destroy": fn_destroy,
-		};
-	}
-	
-	
-	
-	/**
-	 * Read class
-	 */
-	pure ParserBay readClass(ParserBay parser)
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		Vector<OpTypeIdentifier> template = null;
-		bool is_abstract = false;
-		bool is_declare = false;
-		bool is_static = false;
-		bool is_struct = false;
-		string class_kind = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		if (token.content == "abstract")
-		{
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			is_abstract = true;
-		}
-		if (token.content == "declare")
-		{
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			is_declare = true;
-		}
-		if (token.content == "static")
-		{
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			is_static = true;
-		}
-		if (token.content == "class")
-		{
-			list res = parser.parser_base::matchToken(parser, "class"); parser = res[0];
-			class_kind = OpDeclareClass::KIND_CLASS;
-		}
-		else if (token.content == "struct")
-		{
-			list res = parser.parser_base::matchToken(parser, "struct"); parser = res[0];
-			class_kind = OpDeclareClass::KIND_STRUCT;
-		}
-		else if (token.content == "interface")
-		{
-			list res = parser.parser_base::matchToken(parser, "interface"); parser = res[0];
-			class_kind = OpDeclareClass::KIND_INTERFACE;
-		}
-		else
-		{
-			list res = parser.parser_base::matchToken(parser, "class");
-		}
-		
-		list res = parser.parser_base::readIdentifier(parser); parser = res[0]; op_code = res[1];
-		string class_name = op_code.value;
-		
-		/* Set class name */
-		parser <= current_class_abstract <= is_abstract;
-		parser <= current_class_declare <= is_declare;
-		parser <= current_class_name <= class_name;
-		parser <= current_class_kind <= class_kind;
-		
-		/* Register module in parser */
-		parser <= uses <= parser.uses.setIm(
-			class_name,
-			parser.current_namespace_name ~ "." ~ class_name
-		);
-		Dict save_uses = parser.uses;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "<")
-		{
-			template = new Vector<OpTypeIdentifier>();
-			list res = parser.parser_base::matchToken(parser, "<"); parser = res[0];
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			while (not token.eof and token.content != ">")
-			{
-				BaseOpCode parser_value = null;
-				list res = parser.parser_base::readIdentifier(parser);
-				parser = res[0]; parser_value = res[1];
-				
-				template.push(parser_value);
-				parser <= uses <= parser.uses.setIm(parser_value.value, parser_value.value);
-				
-				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-				if (token.content != ">")
-				{
-					list res = parser.parser_base::matchToken(parser, ","); parser = res[0];
-					list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-				}
-			}
-			list res = parser.parser_base::matchToken(parser, ">"); parser = res[0];
-		}
-		
-		BaseOpCode class_extends = null;
-		Vector<BaseOpCode> class_implements = null;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "extends")
-		{
-			list res = parser.parser_base::readTypeIdentifier(look);
-			parser = res[0]; class_extends = res[1];
-		}
-		
-		list res = parser.parser_base::readToken(parser);
-		look = res[0]; token = res[1];
-		if (token.content == "implements")
-		{
-			class_implements = new Vector<BaseOpCode>();
-			
-			list res = parser.parser_base::readTypeIdentifier(look);
-			parser = res[0]; op_code = res[1];
-			class_implements.push(op_code);
-			
-			list res = parser.parser_base::readToken(parser);
-			look = res[0]; token = res[1];
-			while (not token.eof and token.content == ",")
-			{
-				parser = look;
-				list res = parser.parser_base::readTypeIdentifier(look);
-				parser = res[0]; op_code = res[1];
-				class_implements.push(op_code);
-				
-				list res = parser.parser_base::readToken(parser);
-				look = res[0]; token = res[1];
-			}
-		}
-		
-		Collection<BaseOpCode> arr = null;
-		list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-		list res = static::readClassBody(parser); parser = res[0]; arr = res[1];
-		list d = static::classBodyAnalyze(parser, arr);
-		list res = parser.parser_base::matchToken(parser, "}"); parser = res[0];
-		BaseOpCode current_class = new OpDeclareClass
-		{
-			"kind": class_kind,
-			"name": class_name,
-			"is_abstract": is_abstract,
-			"is_static": is_static,
-			"is_declare": is_declare,
-			"class_extends": class_extends,
-			"class_implements": (class_implements != null) ? class_implements : null,
-			"template": (template != null) ? template : null,
-			"vars": d.item("vars"),
-			"functions": d.item("functions"),
-			"fn_create": d.item("fn_create"),
-			"fn_destroy": d.item("fn_destroy"),
-			"items": arr,
+			"name": module_name.getName(),
+			"alias": alias,
 			"caret_start": caret_start,
-			"caret_end": parser.caret,
+			"caret_end": reader.caret(),
 		};
-		
-		/* Restore uses */
-		parser <= uses <= save_uses;
-		
-		return
-		[
-			parser.copy({ "current_class": current_class }),
-			current_class,
-		];
-	}
-	
-	
-	
-	/**
-	 * Read program
-	 */
-	pure ParserBay readProgram(ParserBay parser, string end_tag = "")
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		
-		Vector<BaseOpCode> annotations = new Vector(); 
-		Vector<BaseOpCode> comments = new Vector(); 
-		Vector<BaseOpCode> items = new Vector();
-		
-		parser <= skip_comments <= false;
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		parser <= skip_comments <= true;
-		
-		if (token.eof)
-		{
-			return [parser, null];
-		}
-		
-		if (token.content == "<")
-		{
-			return parser.parser_html::readUI(parser);
-		}
-		
-		while (not token.eof and (end_tag == "" or (end_tag != "" and token.content == end_tag)))
-		{
-			if (token.content == "/")
-			{
-				list res = parser.parser_base::readComment(parser);
-				parser = res[0]; op_code = res[1];
-				if (op_code != null) comments.push(op_code);
-			}
-			else if (token.content == "@")
-			{
-				list res = parser.parser_operator::readAnnotation(parser);
-				parser = res[0]; op_code = res[1];
-				annotations.push(op_code);
-			}
-			else if (token.content == "#switch" or token.content == "#ifcode")
-			{
-				/* Append comments */
-				items.appendItems(comments);
-				comments.clear();
-				
-				list res = parser.parser_preprocessor::readPreprocessor(parser);
-				parser = res[0]; op_code = res[1];
-				if (op_code != null)
-				{
-					items.appendItems(comments);
-					items.push(op_code);
-				}
-			}
-			else if (token.content == "#ifdef")
-			{
-				/* Append comments */
-				items.appendItems(comments);
-				comments.clear();
-				
-				list res = parser.parser_preprocessor::readPreprocessorIfDef
-				(
-					parser, OpPreprocessorIfDef::KIND_PROGRAM
-				);
-				parser = res[0]; op_code = res[1];
-				if (op_code != null)
-				{
-					items.appendItems(comments);
-					items.push(op_code);
-				}
-			}
-			else if (token.content == "namespace")
-			{
-				/* Append comments */
-				items.appendItems(comments);
-				comments.clear();
-				
-				list res = static::readNamespace(parser); parser = res[0]; op_code = res[1];
-				items.push(op_code);
-				list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
-			}
-			else if (token.content == "use")
-			{
-				/* Append comments */
-				items.appendItems(comments);
-				comments.clear();
-				
-				list res = static::readUse(parser); parser = res[0]; op_code = res[1];
-				string full_name = op_code.name;
-				string short_name = "";
-				if (op_code.alias == "") short_name = rs::split(".", full_name).last();
-				else short_name = op_code.alias;
-				
-				/* Register module in parser */
-				parser <= uses <= parser.uses.setIm(short_name, full_name);
-				items.push(op_code);
-				list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
-			}
-			else if 
-			(
-				token.content == "class" or token.content == "struct" or
-				token.content == "static" or token.content == "declare" or
-				token.content == "interface" or token.content == "abstract"
-			)
-			{
-				BaseOpCode item = null;
-				list res = static::readClass(parser); parser = res[0]; item = res[1];
-				item = item.copy({
-					"annotations": annotations,
-					"comments": comments,
-				});
-				items.push(item);
-				annotations.clear();
-				comments.clear();
-			}
-			else
-			{
-				break;
-			}
-			
-			parser <= skip_comments <= false;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			parser <= skip_comments <= true;
-		}
-		
-		items.appendItems(comments);
-		
-		return
-		[
-			parser,
-			new OpModule
-			{
-				"uses": parser.uses.toDict(),
-				"items": items,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
 	}
 	
 	
@@ -655,6 +130,18 @@ class ParserBayProgram extends BaseObject
 			return this.readNamespace(reader);
 		}
 		
+		/* Namespace */
+		else if (next_token == "use")
+		{
+			return this.readUse(reader);
+		}
+		
+		/* Operator */
+		else if (next_token != "")
+		{
+			return this.parser.parser_operator.readOperator(reader);
+		}
+		
 		return null;
 	}
 	
@@ -665,7 +152,7 @@ class ParserBayProgram extends BaseObject
 	void parse(TokenReader reader)
 	{
 		Collection<BaseOpCode> items = [];
-		Caret caret_start = reader.main_caret.copy();
+		Caret caret_start = reader.caret();
 		
 		/* Read module */
 		while (not reader.eof())
@@ -694,7 +181,7 @@ class ParserBayProgram extends BaseObject
 		return new OpModule
 		{
 			"caret_start": caret_start,
-			"caret_end": reader.next_caret.copy(),
+			"caret_end": reader.caret(),
 			"items": items,
 		};
 	}

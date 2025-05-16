@@ -25,12 +25,14 @@ use BayLang.CoreParser;
 use BayLang.TokenReader;
 use BayLang.LangBay.ParserBayBase;
 use BayLang.LangBay.ParserBayExpression;
+use BayLang.LangBay.ParserBayFunction;
 use BayLang.LangBay.ParserBayHtml;
 use BayLang.LangBay.ParserBayOperator;
 use BayLang.LangBay.ParserBayPreprocessor;
 use BayLang.LangBay.ParserBayProgram;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpFlags;
 
@@ -38,8 +40,8 @@ use BayLang.OpCodes.OpFlags;
 class ParserBay extends CoreParser
 {
 	/* Work */
-	Dict<bool> vars = null;
-	Dict<string> uses = null;
+	Dict<bool> vars = {};
+	Dict<string> uses = {};
 	OpNamespace current_namespace = null;
 	OpDeclareClass current_class = null;
 	string current_namespace_name = "";
@@ -54,14 +56,78 @@ class ParserBay extends CoreParser
 	bool is_html = false;
 	bool is_local_css = false;
 	
-	
 	/* Parsers */
 	ParserBayBase parser_base = new ParserBayBase(this);
 	ParserBayExpression parser_expression = new ParserBayExpression(this);
+	ParserBayExpression parser_function = new ParserBayFunction(this);
 	ParserBayHtml parser_html = new ParserBayHtml(this);
 	ParserBayOperator parser_operator = new ParserBayOperator(this);
 	ParserBayPreprocessor parser_preprocessor = new ParserBayPreprocessor(this);
 	ParserBayProgram parser_program = new ParserBayProgram(this);
+	
+	
+	/**
+	 * Returns true if registered variable
+	 */
+	bool isRegisteredVariable(string name)
+	{
+		Collection variables = [
+			"print", "rs", "rtl"
+		];
+		if (variables.indexOf(name) == -1) return false;
+		return true;
+	}
+	
+	
+	/**
+	 * Returns true if system type
+	 */
+	bool isSystemType(string name)
+	{
+		Collection variables = [
+			"var", "void", "bool", "byte", "int", "char"
+			"string", "list", "scalar", "primitive", "html",
+			"Error", "Object", "DateTime", "Collection", "Dict",
+			"Vector", "Map", "ArrayInterface",
+		];
+		
+		if (variables.indexOf(name) == -1) return false;
+		return true;
+	}
+	
+	
+	/**
+	 * Add variable
+	 */
+	void addVariable(OpIdentifier op_code)
+	{
+		string name = op_code.value;
+		this.vars.set(name, true);
+	}
+	
+	
+	/**
+	 * Find variable
+	 */
+	void findVariable(OpIdentifier op_code)
+	{
+		string name = op_code.value;
+		if (this.vars.has(name)) return;
+		if (this.isRegisteredVariable(name)) return;
+		throw op_code.caret_end.error("Unknown identifier '" ~ name ~ "'");
+	}
+	
+	
+	/**
+	 * Find type
+	 */
+	void findType(OpIdentifier op_code)
+	{
+		string name = op_code.value;
+		if (this.uses.has(name)) return;
+		if (this.isSystemType(name)) return;
+		throw op_code.caret_end.error("Unknown type '" ~ name ~ "'");
+	}
 	
 	
 	/**

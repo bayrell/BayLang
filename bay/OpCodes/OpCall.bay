@@ -28,7 +28,6 @@ class OpCall extends BaseOpCode
 	BaseOpCode obj = null;
 	Collection<BaseOpCode> args = null;
 	bool is_await = false;
-	bool is_context = true;
 	bool is_html = false;
 	
 	

@@ -22,6 +22,7 @@ use Runtime.BaseObject;
 use Runtime.Reference;
 use Runtime.SerializeInterface;
 use Runtime.Serializer;
+use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
 
 
@@ -221,6 +222,24 @@ class Caret extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Returns parser error
+	 */
+	void error(string message)
+	{
+		return new ParserError(message, this, this.file_name);
+	}
+	
+	
+	/**
+	 * Returns expected error
+	 */
+	void expected(string message)
+	{
+		return new ParserExpected(message, this, this.file_name);
+	}
+	
+	
+	/**
 	 * Match char
 	 */
 	void matchChar(char ch)
@@ -228,7 +247,7 @@ class Caret extends BaseObject implements SerializeInterface
 		char next = this.nextChar();
 		if (next != ch)
 		{
-			throw new ParserExpected(ch, this, this.file_name);
+			throw this.expected(ch);
 		}
 		this.readChar();
 	}
@@ -243,7 +262,7 @@ class Caret extends BaseObject implements SerializeInterface
 		string next_string = this.nextString(count);
 		if (next_string != s)
 		{
-			throw new ParserExpected(s, this, this.file_name);
+			throw this.expected(s);
 		}
 		this.readString(count);
 	}
@@ -254,7 +273,7 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param char ch
 	 * @return boolean
 	 */
-	pure memorize bool isChar(char ch) =>
+	static bool isChar(char ch) =>
 		rs::indexOf('qazwsxedcrfvtgbyhnujmikolp', rs::lower(ch)) !== -1
 	;
 	
@@ -264,7 +283,7 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param char ch
 	 * @return boolean
 	 */
-	pure memorize bool isNumber(char ch) =>
+	static bool isNumber(char ch) =>
 		rs::indexOf('0123456789', ch) !== -1
 	;
 	
@@ -274,7 +293,7 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param char ch
 	 * @return boolean
 	 */
-	pure memorize bool isHexChar(char ch) =>
+	static bool isHexChar(char ch) =>
 		rs::indexOf('0123456789abcdef', rs::lower(ch)) !== -1
 	;
 	
@@ -284,7 +303,7 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param string s
 	 * @return boolean
 	 */
-	pure memorize bool isStringOfNumbers(string s)
+	static bool isStringOfNumbers(string s)
 	{
 		int sz = rs::strlen(s);
 		for (int i=0; i<sz; i++)
@@ -300,7 +319,7 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param char ch
 	 * @return boolean
 	 */
-	pure memorize bool isSkipChar(char ch)
+	static bool isSkipChar(char ch)
 	{
 		if (rs::ord(ch) <= 32) return true;
 		return false;
@@ -353,5 +372,67 @@ class Caret extends BaseObject implements SerializeInterface
 			items.push(this.readChar());
 		}
 		return rs::join("", items);
+	}
+	
+	
+	/**
+	 * Read special token
+	 */
+	string readSpecialToken()
+	{
+		string s = "";
+		
+		/* Skip space */
+		this.skipSpace();
+		if (this.eof()) return "";
+		
+		s = this.nextString(10);
+		if (s == "#endswitch") return s;
+		
+		s = this.nextString(7);
+		if (s == "#ifcode" or s == "#switch" or s == "#elseif" or s == "%render") return s;
+		
+		s = this.nextString(6);
+		if (s == "#endif" or s == "#ifdef" or s == "%while") return s;
+		
+		s = this.nextString(5);
+		if (s == "#case" or s == "%else") return s;
+		
+		s = this.nextString(4);
+		if (s == "@css" or s == "%for" or s == "%var" or s == "%set") return s;
+		
+		s = this.nextString(3);
+		if (
+			s == "!--" or
+			s == "!==" or
+			s == "===" or
+			s == "..." or
+			s == "#if" or
+			s == "%if"
+		)
+			return s;
+		
+		s = this.nextString(2);
+		if (
+			s == "==" or
+			s == "!=" or
+			s == "<=" or
+			s == ">=" or
+			s == "=>" or
+			s == "->" or
+			s == "|>" or
+			s == "::" or
+			s == "+=" or
+			s == "-=" or
+			s == "~=" or
+			s == "**" or
+			s == "<<" or
+			s == ">>" or
+			s == "++" or
+			s == "--"
+		)
+			return s;
+			
+		return "";
 	}
 }

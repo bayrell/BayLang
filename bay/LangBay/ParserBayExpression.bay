@@ -18,8 +18,10 @@
 
 namespace BayLang.LangBay;
 
+use Runtime.BaseObject;
 use BayLang.Caret;
 use BayLang.CoreToken;
+use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
 use BayLang.LangBay.ParserBay;
@@ -37,8 +39,21 @@ use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpTernary;
 
 
-static class ParserBayExpression
+class ParserBayExpression extends BaseObject
 {
+	ParserBay parser = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(ParserBay parser)
+	{
+		parent();
+		this.parser = parser;
+	}
+	
+	
 	/**
 	 * Read negative
 	 */
@@ -760,27 +775,11 @@ static class ParserBayExpression
 	}
 	
 	
-	
 	/**
 	 * Read expression
 	 */
-	pure list<ParserBay, BaseOpCode> readExpression(ParserBay parser)
+	BaseOpCode readExpression(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "<")
-		{
-			return parser.parser_html::readHTML(parser);
-		}
-		else if (token.content == "curry")
-		{
-			return parser.parser_base::readCurry(parser);
-		}
-		else if (token.content == "@css")
-		{
-			return parser.parser_html::readCss(parser);
-		}
-		return static::ExpressionPipe(parser);
+		return this.parser.parser_base.readNumber(reader);
 	}
 }
