@@ -87,10 +87,11 @@ class ParserBayFunction extends BaseObject
 		/* Read identifier */
 		if (pattern == null)
 		{
-			pattern = this.parser.parser_base.readIdentifier(reader);
+			pattern = this.parser.parser_base.readItem(reader);
 		}
 		
 		/* Find identifier */
+		if (pattern instanceof OpTypeIdentifier) pattern = pattern.entity_name.items.last();
 		this.parser.findVariable(pattern);
 		
 		/* Read arguments */
@@ -98,7 +99,8 @@ class ParserBayFunction extends BaseObject
 		Collection args = [];
 		while (not reader.eof() and reader.nextToken() != ")")
 		{
-			args.push(this.parser.parser_base.readIdentifier(reader));
+			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+			args.push(expression);
 			if (reader.nextToken() == ",")
 			{
 				reader.matchToken(",");

@@ -363,10 +363,19 @@ class Caret extends BaseObject implements SerializeInterface
 	 */
 	string readToken()
 	{
-		Vector items = [];
+		/* Skip space */
 		this.skipSpace();
 		if (this.eof()) return "";
+		
+		/* Read special token */
+		string token = this.readSpecialToken();
+		if (token) return token;
+		
+		/* Read char */
 		if (not this.isTokenChar(this.nextChar())) return this.readChar();
+		
+		/* Read token */
+		Vector items = [];
 		while (not this.eof() and this.isTokenChar(this.nextChar()))
 		{
 			items.push(this.readChar());
@@ -380,13 +389,9 @@ class Caret extends BaseObject implements SerializeInterface
 	 */
 	string readSpecialToken()
 	{
-		string s = "";
-		
-		/* Skip space */
-		this.skipSpace();
 		if (this.eof()) return "";
 		
-		s = this.nextString(10);
+		string s = this.nextString(10);
 		if (s == "#endswitch") return s;
 		
 		s = this.nextString(7);

@@ -19,7 +19,7 @@
 namespace BayLang;
 
 use Runtime.lib;
-use Runtime.BaseStruct;
+use Runtime.BaseObject;
 use BayLang.SaveOpCode;
 use BayLang.LangBay.TranslatorBay;
 use BayLang.OpCodes.BaseOpCode;
@@ -27,7 +27,7 @@ use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 
 
-struct CoreTranslator extends BaseStruct
+class CoreTranslator extends BaseObject
 {
 	/* State */
 	int opcode_level = 0;

@@ -64,10 +64,10 @@ class TranslatorBayOperator extends BaseObject
 			this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
 		}
 		
-		int values_count = op_code.values.count();
+		int values_count = op_code.items.count();
 		for (int i=0; i<values_count; i++)
 		{
-			OpAssignValue op_code_value = op_code.values.get(i);
+			OpAssignValue op_code_value = op_code.items.get(i);
 			if (op_code.pattern or i > 0)
 			{
 				result.push(" ");
@@ -78,7 +78,7 @@ class TranslatorBayOperator extends BaseObject
 			}
 			else
 			{
-				result.push(op_code_value.var_name);
+				this.translator.expression.OpIdentifier(op_code_value.value, result);
 			}
 			if (op_code_value.expression)
 			{

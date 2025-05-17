@@ -478,7 +478,7 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read assign
 	 */
-	OpAssign readAssign(TokenReader reader, OpIdentifier pattern = null)
+	OpAssign readAssign(TokenReader reader, BaseOpCode pattern = null)
 	{
 		Caret caret_start = reader.caret();
 		Collection<OpAssignValue> items = [];
@@ -486,7 +486,7 @@ class ParserBayOperator extends BaseObject
 		/* Read pattern */
 		if (pattern == null)
 		{
-			pattern = this.parser.parser_base.readIdentifier(reader);
+			pattern = this.parser.parser_base.readTypeIdentifier(reader);
 		}
 		
 		/* Read items */
@@ -527,8 +527,16 @@ class ParserBayOperator extends BaseObject
 		/* Assign single value */
 		else
 		{
+			/* Get value */
+			BaseOpCode value = pattern;
+			pattern = null;
+			
 			/* Find identifier */
-			this.parser.findVariable(pattern);
+			if (value instanceof OpTypeIdentifier)
+			{
+				throw value.caret_end.error("Wrong type identifier");
+			}
+			this.parser.findVariable(value);
 			
 			/* Read expression */
 			reader.matchToken("=");
@@ -536,7 +544,7 @@ class ParserBayOperator extends BaseObject
 			items.push(new OpAssignValue{
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
-				"value": pattern,
+				"value": value,
 				"expression": expression,
 			});
 		}
@@ -710,8 +718,21 @@ class ParserBayOperator extends BaseObject
 			return static::readSafe(reader);
 		}
 		
-		/* Read pattern */
-		OpIdentifier pattern = this.parser.parser_base.readIdentifier(reader);
+		/* Save caret */
+		Caret save_caret = reader.caret();
+		
+		/* Try to read declare variable */
+		OpTypeIdentifier pattern = this.parser.parser_base.readTypeIdentifier(reader);
+		if (reader.nextToken() != "=" and reader.nextToken() != "(")
+		{
+			return this.readAssign(reader, pattern);
+		}
+		
+		/* Restore reader */
+		reader.init(save_caret);
+		
+		/* Read op_code */
+		BaseOpCode pattern = this.parser.parser_base.readItem(reader);
 		
 		/* Try to read call function */
 		if (reader.nextToken() == "(")

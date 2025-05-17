@@ -57,721 +57,377 @@ class ParserBayExpression extends BaseObject
 	/**
 	 * Read negative
 	 */
-	pure list<ParserBay, BaseOpCode> readNegative(ParserBay parser)
+	BaseOpCode readNegative(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		if (token.content == "-")
+		Caret caret_start = reader.caret();
+		if (reader.nextToken() == "-")
 		{
-			BaseOpCode op_code = null;
-			list res = parser.parser_base::readDynamic(look); parser = res[0]; op_code = res[1];
-			return
-			[
-				parser,
-				new OpNegative
-				{
-					"value": op_code,
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-				}
-			];
+			reader.readToken();
+			BaseOpCode op_code = this.parser.parser_base.readItem(reader);
+			return new OpMath
+			{
+				"value1": op_code,
+				"math": "!",
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			}
 		}
-		return parser.parser_base::readDynamic(parser);
+		return this.parser.parser_base.readItem(reader);
 	}
 	
 	
 	/**
 	 * Read bit not
 	 */
-	pure list<ParserBay, BaseOpCode> readBitNot(ParserBay parser)
+	BaseOpCode readBitNot(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		if (token.content == "!")
+		Caret caret_start = reader.caret();
+		if (reader.nextToken() == "!")
 		{
-			BaseOpCode op_code = null;
-			list res = static::readNegative(look); parser = res[0]; op_code = res[1];
-			return
-			[
-				parser,
-				new OpMath
-				{
-					"value1": op_code,
-					"math": "!",
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-				}
-			];
+			reader.readToken();
+			BaseOpCode op_code = this.readNegative(reader);
+			return new OpMath
+			{
+				"value1": op_code,
+				"math": "!",
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			}
 		}
-		return static::readNegative(parser);
+		return this.readNegative(reader);
 	}
-	
 	
 	
 	/**
 	 * Read bit shift
 	 */
-	pure list<ParserBay, BaseOpCode> readBitShift(ParserBay parser)
+	BaseOpCode readBitShift(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["<<", ">>"];
 		
-		list res = static::readBitNot(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (
-			not token.eof and (
-				token.content == ">>" or
-				token.content == "<<" 
-			)
-		)
+		/* Read operators */
+		BaseOpCode op_code = this.readBitNot(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readBitNot(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readBitNot(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read bit and
 	 */
-	pure list<ParserBay, BaseOpCode> readBitAnd(ParserBay parser)
+	BaseOpCode readBitAnd(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["&"];
 		
-		list res = static::readBitShift(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content == "&")
+		/* Read operators */
+		BaseOpCode op_code = this.readBitShift(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readBitShift(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readBitShift(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read bit or
 	 */
-	pure list<ParserBay, BaseOpCode> readBitOr(ParserBay parser)
+	BaseOpCode readBitOr(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["|", "xor"];
 		
-		list res = static::readBitAnd(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and (token.content == "|" or token.content == "xor"))
+		/* Read operators */
+		BaseOpCode op_code = this.readBitAnd(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readBitAnd(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readBitAnd(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read factor
 	 */
-	pure list<ParserBay, BaseOpCode> readFactor(ParserBay parser)
+	BaseOpCode readFactor(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["*", "/", "%", "div", "mod"];
 		
-		list res = static::readBitOr(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (
-			not token.eof and (
-				token.content == "*" or
-				token.content == "/" or 
-				token.content == "%" or
-				token.content == "div" or
-				token.content == "mod"
-			)
-		)
+		/* Read operators */
+		BaseOpCode op_code = this.readBitOr(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readBitOr(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readBitOr(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read arithmetic
 	 */
-	pure list<ParserBay, BaseOpCode> readArithmetic(ParserBay parser)
+	BaseOpCode readArithmetic(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["+", "-"];
 		
-		list res = static::readFactor(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and (token.content == "+" or token.content == "-"))
+		/* Read operators */
+		BaseOpCode op_code = this.readFactor(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readFactor(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readFactor(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read concat
 	 */
-	pure list<ParserBay, BaseOpCode> readConcat(ParserBay parser)
+	BaseOpCode readConcat(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["~"];
 		
-		list res = static::readArithmetic(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content == "~")
+		/* Read operators */
+		BaseOpCode op_code = this.readArithmetic(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readArithmetic(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readArithmetic(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read compare
 	 */
-	pure list<ParserBay, BaseOpCode> readCompare(ParserBay parser)
+	BaseOpCode readCompare(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		BaseOpCode op_code = this.readConcat(reader);
+		Collection operations1 = ["===", "!==", "==", "!=", ">=", "<=", ">", "<"];
+		Collection operations2 = ["is", "implements", "instanceof"];
 		
-		list res = static::readConcat(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		string content = token.content;
-		if (
-			content == "===" or content == "!==" or content == "==" or
-			content == "!=" or content == ">=" or content == "<=" or
-			content == ">" or content == "<"
-		)
+		/* Read operators */
+		if (operations1.indexOf(reader.nextToken()) >= 0)
 		{
-			string math = token.content;
-			list res = static::readConcat(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readConcat(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": parser.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
 		}
-		else if (content == "is" or content == "implements" or content == "instanceof")
+		else if (operations2.indexOf(reader.nextToken()) >= 0)
 		{
-			string math = token.content;
-			list res = parser.parser_base::readTypeIdentifier(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.parser.parser_base.readTypeIdentifier(reader, false);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
+				"value2": value,
 				"math": math,
 				"caret_start": caret_start,
-				"caret_end": parser.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
 		}
-		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read not
 	 */
-	pure list<ParserBay, BaseOpCode> readNot(ParserBay parser)
+	BaseOpCode readNot(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		if (token.content == "not")
+		Caret caret_start = reader.caret();
+		if (reader.nextToken() == "not")
 		{
-			BaseOpCode op_code = null;
-			ParserBay start = parser;
-			list res = static::readCompare(look); parser = res[0]; op_code = res[1];
-			return 
-			[
-				parser,
-				new OpMath
-				{
-					"value1": op_code,
-					"math": "not",
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-				}
-			];
+			reader.readToken();
+			BaseOpCode op_code = this.readCompare(reader);
+			return new OpMath
+			{
+				"value1": op_code,
+				"math": "not",
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			}
 		}
-		return static::readCompare(parser);
+		return this.readCompare(reader);
 	}
-	
 	
 	
 	/**
 	 * Read and
 	 */
-	pure list<ParserBay, BaseOpCode> readAnd(ParserBay parser)
+	BaseOpCode readAnd(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["and", "&&"];
 		
-		list res = static::readNot(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and (token.content == "and" or token.content == "&&"))
+		/* Read operators */
+		BaseOpCode op_code = this.readNot(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readNot(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readNot(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
-				"math": "and",
+				"value2": value,
+				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read or
 	 */
-	pure list<ParserBay, BaseOpCode> readOr(ParserBay parser)
+	BaseOpCode readOr(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode look_value = null;
+		Caret caret_start = reader.caret();
+		Collection operations = ["or", "||"];
 		
-		list res = static::readAnd(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		string math = "";
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and (token.content == "or" or token.content == "||"))
+		/* Read operators */
+		BaseOpCode op_code = this.readAnd(reader);
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			math = token.content;
-			list res = static::readAnd(look); look = res[0]; look_value = res[1];
+			string math = reader.readToken();
+			BaseOpCode value = this.readAnd(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
-				"value2": look_value,
-				"math": "or",
+				"value2": value,
+				"math": math,
 				"caret_start": caret_start,
-				"caret_end": look.caret,
+				"caret_end": reader.caret(),
 			};
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return [parser, op_code];
+		return op_code;
 	}
-	
 	
 	
 	/**
 	 * Read element
 	 */
-	pure list<ParserBay, BaseOpCode> readElement(ParserBay parser)
+	BaseOpCode readElement(TokenReader reader)
 	{
 		/* Try to read function */
-		if (parser.parser_operator::tryReadFunction(parser, false))
+		/*
+		if (this.parser.parser_function.tryReadFunction(reader, false))
 		{
-			return parser.parser_operator::readDeclareFunction(parser, false);
+			return this.parser.parser_function.readDeclareFunction(reader, false);
 		}
-		return static::readOr(parser);
+		*/
+		return this.readOr(reader);
 	}
-	
 	
 	
 	/**
 	 * Read ternary operation
 	 */
-	pure list<ParserBay, BaseOpCode> readTernary(ParserBay parser)
+	BaseOpCode readTernary(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode condition = null;
-		BaseOpCode if_true = null;
+		Caret caret_start = reader.caret();
+		
+		/* Detect ternary operation */
+		BaseOpCode op_code = this.readElement(reader);
+		if (reader.nextToken() != "?") return op_code;
+		
+		/* Read expression */
+		BaseOpCode if_true = this.readElement(reader);
 		BaseOpCode if_false = null;
-		
-		list res = static::readElement(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == '?')
+		if (reader.nextToken() == ":")
 		{
-			condition = op_code;
-			list res = static::readExpression(look); parser = res[0]; if_true = res[1];
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == ':')
-			{
-				list res = static::readExpression(look); parser = res[0]; if_false = res[1];
-			}
-			
-			op_code = new OpTernary({
-				"condition": condition,
-				"if_true": if_true,
-				"if_false": if_false,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			});
+			if_false = this.readElement(reader);
 		}
 		
-		return [parser, op_code];
-	}
-	
-	
-	
-	/**
-	 * Read pipe
-	 */
-	pure list<ParserBay, BaseOpCode> ExpressionPipe(ParserBay parser)
-	{
-		ParserBay look = null;
-		CoreToken look_token = null;
-		BaseOpCode op_code = null;
-		bool is_next_attr = false;
-		
-		bool save_is_pipe = parser.is_pipe;
-		parser <= is_pipe <= false;
-		list res = static::readTernary(parser); parser = res[0]; op_code = res[1];
-		Caret caret_start = op_code.caret_start;
-		parser <= is_pipe <= save_is_pipe;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-		if (look_token.content == '|>')
+		return new OpTernary
 		{
-			while (look_token.content == '|>' or look_token.content == ',')
-			{
-				parser = look;
-				BaseOpCode value = null;
-				string kind = "";
-				bool is_async = false;
-				bool is_monad = false;
-				
-				if (look_token.content == ',')
-				{
-					is_next_attr = true;
-				}
-				
-				list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-				if (look_token.content == 'await')
-				{
-					is_async = true;
-					parser = look;
-					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-				}
-				if (look_token.content == 'monad')
-				{
-					is_monad = true;
-					parser = look;
-					list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-				}
-				
-				if (look_token.content == 'attr')
-				{
-					parser = look;
-					list res = static::readTernary(parser); parser = res[0]; value = res[1];
-					kind = OpPipe::KIND_ATTR;
-				}
-				else if (look_token.content == '"' or look_token.content == "'") /*"*/
-				{
-					list res = static::readTernary(parser); parser = res[0]; value = res[1];
-					kind = OpPipe::KIND_ATTR;
-				}
-				else if (look_token.content == '{')
-				{
-					parser = look;
-					list res = static::readTernary(parser); parser = res[0]; value = res[1];
-					kind = OpPipe::KIND_ATTR;
-					list res = parser.parser_base::matchToken(parser, '}'); parser = res[0];
-				}
-				else if (is_next_attr)
-				{
-					throw new ParserExpected("|>", parser.caret, parser.file_name);
-				}
-				else if (look_token.content == 'default')
-				{
-					BaseOpCode arg1, arg2;
-					kind = OpPipe::KIND_CALL;
-					is_monad = true;
-					
-					try
-					{
-						list res = parser.parser_base::readIdentifier(look); parser = res[0]; arg1 = res[1];
-						list res = static::readTernary(parser); parser = res[0]; arg2 = res[1];
-						
-						arg1 = new OpString
-						{
-							"value": parser::findModuleName(parser, arg1.value),
-							"caret_start": arg1.caret_start,
-							"caret_end": arg1.caret_end,
-						};
-						
-						value = new OpCall
-						{
-							"args":
-							[
-								arg1,
-								arg2
-							],
-							"obj": new OpAttr
-							{
-								"kind": OpAttr::KIND_STATIC,
-								"obj": new OpIdentifier
-								{
-									"kind": OpIdentifier::KIND_SYS_TYPE,
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "rtl",
-								},
-								"value": new OpIdentifier
-								{
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "m_to",
-								},
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							"caret_start": caret_start,
-							"caret_end": parser.caret,
-						}
-					}
-					catch (ParserError err)
-					{
-						value = null;
-					}
-					
-					if (value == null)
-					{
-						list res = static::readTernary(look); parser = res[0]; arg2 = res[1];
-						
-						value = new OpCall
-						{
-							"args":
-							[
-								arg2
-							],
-							"obj": new OpAttr
-							{
-								"kind": OpAttr::KIND_STATIC,
-								"obj": new OpIdentifier
-								{
-									"kind": OpIdentifier::KIND_SYS_TYPE,
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "rtl",
-								},
-								"value": new OpIdentifier
-								{
-									"caret_start": caret_start,
-									"caret_end": parser.caret,
-									"value": "m_def",
-								},
-								"caret_start": caret_start,
-								"caret_end": parser.caret,
-							},
-							"caret_start": caret_start,
-							"caret_end": parser.caret,
-						}
-					}
-					
-				}
-				else if
-				(
-					look_token.content == 'method' or look_token.content == '.' or
-					look_token.content == ':' or look_token.content == '::'
-				)
-				{
-					parser = look;
-					kind = OpPipe::KIND_CALL;
-					
-					/* Set pipe */
-					bool save_find_ident = parser.find_ident;
-					parser <= find_ident <= false;
-					parser <= is_pipe <= true;
-					
-					if (look_token.content == '.')
-					{
-						kind = OpPipe::KIND_METHOD;
-						parser <= pipe_kind <= OpAttr::KIND_ATTR;
-					}
-					else
-					{
-						parser <= pipe_kind <= OpAttr::KIND_STATIC;
-					}
-					
-					list res = parser.parser_base::readDynamic(parser);
-					parser = res[0]; value = res[1];
-					
-					/* Restore parser */
-					parser <= is_pipe <= false;
-					parser <= find_ident <= save_find_ident;
-				}
-				else if (look_token.content == 'curry')
-				{
-					kind = OpPipe::KIND_CALL;
-					list res = parser.parser_base::readCurry(parser); parser = res[0]; value = res[1];
-				}
-				else
-				{
-					kind = OpPipe::KIND_CALL;
-					list res = parser.parser_base::readDynamic(parser);
-					parser = res[0]; value = res[1];
-				}
-				
-				op_code = new OpPipe
-				{
-					"obj": op_code,
-					"kind": kind,
-					"value": value,
-					"is_async": is_async,
-					"is_monad": is_monad,
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
-				};
-				
-				list res = parser.parser_base::readToken(parser); look = res[0]; look_token = res[1];
-				is_next_attr = false;
-			}
-		}
-		
-		return [parser, op_code];
+			"condition": op_code,
+			"if_true": if_true,
+			"if_false": if_false,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -780,6 +436,6 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readExpression(TokenReader reader)
 	{
-		return this.parser.parser_base.readNumber(reader);
+		return this.readTernary(reader);
 	}
 }

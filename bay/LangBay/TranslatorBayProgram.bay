@@ -311,6 +311,11 @@ class TranslatorBayProgram extends BaseObject
 		{
 			this.OpUse(op_code, result);
 		}
+		else
+		{
+			bool exists = this.translator.operator.translateItem(op_code, result);
+			if (exists) result.push(";");
+		}
 	}
 	
 	

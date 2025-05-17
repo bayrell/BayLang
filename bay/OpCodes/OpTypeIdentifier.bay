@@ -27,7 +27,7 @@ class OpTypeIdentifier extends BaseOpCode
 {
 	string op = "op_type_identifier";
 	OpEntityName entity_name = null;
-	Collection<OpTypeIdentifier> template = null;
+	Collection<OpTypeIdentifier> generics = null;
 	
 	
 	/**
@@ -37,6 +37,6 @@ class OpTypeIdentifier extends BaseOpCode
 	{
 		parent(serializer, data);
 		serializer.process(this, "entity_name", data);
-		serializer.process(this, "template", data);
+		serializer.process(this, "generics", data);
 	}
 }

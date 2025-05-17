@@ -327,61 +327,32 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read type identifier
 	 */
-	pure list<ParserBay, BaseOpCode> readTypeIdentifier(ParserBay parser, bool find_ident = true)
+	OpTypeIdentifier readTypeIdentifier(TokenReader reader, bool read_generic = true)
 	{
-		ParserBay start = parser;
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode entity_name = null;
-		Vector<OpTypeIdentifier> template = null;
+		Caret caret_start = reader.caret();
+		OpEntityName entity_name = this.readEntityName(reader);
 		
-		list res = static::readEntityName(parser, find_ident);
-		parser = res[0]; entity_name = res[1];
-		Caret caret_start = entity_name.caret_start;
-		
-		bool flag_open_caret = false;
-		bool flag_end_caret = false;
-		list res = static::lookToken(parser, "<");
-		look = res[0]; token = res[1]; flag_open_caret = res[2];
-		if (flag_open_caret)
+		/* Read generics */
+		Collection<OpTypeIdentifier> generics = [];
+		if (reader.nextToken() == "<" and read_generic)
 		{
-			template = new Vector<OpTypeIdentifier>();
-			list res = static::matchToken(parser, "<"); parser = res[0];
-			list res = static::lookToken(parser, ">");
-			look = res[0]; token = res[1]; flag_end_caret = res[2];
-			
-			while (not token.eof and not flag_end_caret)
+			while (not reader.eof() and reader.nextToken() != ">")
 			{
-				BaseOpCode parser_value = null;
-				list res = static::readTypeIdentifier(parser);
-				parser = res[0]; parser_value = res[1];
-				
-				template.push(parser_value);
-				
-				list res = static::lookToken(parser, ">");
-				look = res[0]; token = res[1]; flag_end_caret = res[2];
-				if (not flag_end_caret)
+				generics.push(this.readTypeIdentifier);
+				if (reader.nextToken() != ">")
 				{
-					list res = static::matchToken(parser, ","); parser = res[0];
-					list res = static::lookToken(parser, ">");
-					look = res[0]; token = res[1]; flag_end_caret = res[2];
+					reader.matchToken(",");
 				}
 			}
-			list res = static::matchToken(parser, ">"); parser = res[0];
 		}
 		
-		return
-		[
-			parser,
-			new OpTypeIdentifier
-			{
-				"entity_name": entity_name,
-				"template": template,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		return new OpTypeIdentifier
+		{
+			"entity_name": entity_name,
+			"generics": generics,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -932,6 +903,19 @@ class ParserBayBase extends BaseObject
 				"caret_end": parser.caret,
 			}
 		];
+	}
+	
+	
+	/**
+	 * Read dynamic identifier
+	 */
+	BaseOpCode readItem(TokenReader reader)
+	{
+		if (Caret::isNumber(reader.nextToken()))
+		{
+			return this.readNumber(reader);
+		}
+		return this.readIdentifier(reader);
 	}
 	
 	
