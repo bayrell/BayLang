@@ -19,1554 +19,330 @@
 namespace BayLang.LangES6;
 
 use Runtime.lib;
-use Runtime.BaseStruct;
+use Runtime.BaseObject;
 use BayLang.SaveOpCode;
 use BayLang.Exceptions.DeclaredClass;
 use BayLang.LangES6.TranslatorES6;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
-use BayLang.OpCodes.OpAssignValue;
-use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
-use BayLang.OpCodes.OpEntityName;
-use BayLang.OpCodes.OpFlags;
-use BayLang.OpCodes.OpHtmlMeta;
-use BayLang.OpCodes.OpHtmlStyle;
-use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpNamespace;
-use BayLang.OpCodes.OpPreprocessorIfCode;
-use BayLang.OpCodes.OpPreprocessorIfDef;
-use BayLang.OpCodes.OpPreprocessorSwitch;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpUse;
-use BayLang.OpCodes.OpWidget;
 
 
-struct TranslatorES6Program extends BaseStruct
+class TranslatorES6Program extends BaseObject
 {
+	TranslatorES6 translator = null;
+	
+	
 	/**
-	 * To pattern
+	 * Constructor
 	 */
-	pure string toPattern(TranslatorES6 t, OpTypeIdentifier pattern)
+	void constructor(TranslatorES6 translator)
 	{
-		Collection names = t.expression::findModuleNames(t, pattern.entity_name.names);
-		string e = rs::join(".", names);
-		Collection a = (pattern.template != null) ? 
-			pattern.template.map
-			(
-				string (OpTypeIdentifier pattern) use (t) => static::toPattern(t, pattern)
-			) : null
-		;
-		string b = (a != null) ? ",\"t\":[" ~ rs::join(",",a) ~ "]" : "";
-		return "{\"e\":" ~ t.expression::toString(e) ~ b ~"}";
+		parent();
+		this.translator = translator;
 	}
 	
 	
 	/**
 	 * OpNamespace
 	 */
-	pure list<TranslatorES6, string> OpNamespace(TranslatorES6 t, OpNamespace op_code)
+	void OpNamespace(OpNamespace op_code, Collection<string> result)
 	{
-		string content = "";
-		string name = "";
-		string s = "";
-		
-		Collection<string> arr = rs::split(".", op_code.name);
-		for (int i=0; i<arr.count(); i++)
+		this.current_namespace_name = op_code.name;
+	}
+	
+	
+	/**
+	 * OpUse
+	 */
+	void OpUse(OpUse op_code, Collection<string> result)
+	{
+		this.translator.uses.set(op_code.alias, rs::split(".", op_code.name));
+	}
+	
+	
+	/**
+	 * OpAnnotation
+	 */
+	void OpAnnotation(OpAnnotation op_code, Collection<string> result)
+	{
+		result.push("@");
+		this.translator.expression.OpTypeIdentifier(op_code.name, result);
+		this.translator.expression.OpDict(op_code.params, result);
+	}
+	
+	
+	/**
+	 * OpAssign
+	 */
+	void OpAssign(OpAssign op_code, Collection<string> result)
+	{
+		this.translator.operator.OpAssign(op_code, result);
+		result.push(";");
+	}
+	
+	
+	/**
+	 * OpDeclareFunctionArg
+	 */
+	void OpDeclareFunctionArg(OpDeclareFunctionArg op_code, Collection<string> result)
+	{
+		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
+		result.push(" ");
+		result.push(op_code.name);
+		if (op_code.expression)
 		{
-			name = name ~ ((i == 0) ? "" : ".") ~ arr.item(i);
-			s = "if (typeof " ~ name ~ " == 'undefined') " ~ name ~ " = {};";
-			content ~= t.s(s);
+			result.push(" = ");
+			this.translator.expression.translate(op_code.expression, result);
 		}
-		
-		t <= current_namespace_name <= op_code.name;
-		return [t, content];
+	}
+	
+	
+	/**
+	 * OpDeclareFunctionArgs
+	 */
+	void OpDeclareFunctionArgs(OpDeclareFunction op_code, Collection<string> result)
+	{
+		if (op_code.args and op_code.args.count() > 0)
+		{
+			int args_count = op_code.args.count();
+			for (int i=0; i<args_count; i++)
+			{
+				OpDeclareFunctionArg op_code_item = op_code.args.get(i);
+				this.OpDeclareFunctionArg(op_code_item, result);
+				if (i < args_count - 1) result.push(", ");
+			}
+		}
 	}
 	
 	
 	/**
 	 * OpDeclareFunction
 	 */
-	pure list<TranslatorES6, string> OpDeclareFunction(TranslatorES6 t, OpDeclareFunction op_code)
+	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
-		bool is_static_function = t.is_static_function;
-		bool is_static = op_code.isStatic();
-		string content = "";
+		if (not (op_code.result_type instanceof OpTypeIdentifier)) return;
 		
-		if (op_code.isFlag("declare")) return [t, ""];
-		if (not is_static and is_static_function or is_static and not is_static_function)
-			return [t, ""];
-		
-		/* Set current function */
-		t <= current_function <= op_code;
-		
-		string is_async = "";
-		if (op_code.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
-		
-		string s = "";
-		list res = t.operator::OpDeclareFunctionArgs(t, op_code); string args = res[1];
-		s ~= op_code.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
-		list res = t.operator::OpDeclareFunctionBody(t, op_code); s ~= res[1];
-		s ~= ",";
-		
-		/* Function comments */
-		list res = t.operator::AddComments(t, op_code.comments, t.s(s)); content ~= res[1];
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareClass
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassConstructor(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string open = "";
-		string content = "";
-		TranslatorES6 save_t = t;
-		
-		/* Set function name */
-		t <= current_function <= op_code.fn_create;
-		
-		/* Clear save op codes */
-		t = t::clearSaveOpCode(t);
-		
-		if (op_code.fn_create == null)
-		{
-			open ~= t.current_class_full_name ~ " = ";
-			open ~= "function(ctx)";
-			open = t.s(open) ~ t.s("{");
-			t = t.levelInc();
-			
-			/* Call parent */
-			if (t.current_class_extends_name != "")
-			{
-				content ~= t.s
-				(
-					t.expression::useModuleName(t, t.current_class_extends_name) ~
-						".apply(this, arguments);"
-				);
-			}
-		}
-		else
-		{
-			open ~= t.current_class_full_name ~ " = function(";
-			list res = t.operator::OpDeclareFunctionArgs(t, op_code.fn_create); 
-			t = res[0];
-			open ~= res[1];
-			open ~= ")";
-			open = t.s(open) ~ t.s("{");
-			t = t.levelInc();
-		}
-		
-		/* Function body */
-		if (op_code.fn_create != null)
-		{
-			if (op_code.fn_create.args)
-			{
-				for (int i=0; i<op_code.fn_create.args.count(); i++)
-				{
-					OpDeclareFunctionArg arg = op_code.fn_create.args.item(i);
-					if (arg.expression == null) continue;
-					list res = t.expression::Expression(t, arg.expression); t = res[0]; string s = res[1];
-					s = "if (" ~ arg.name ~ " == undefined) " ~ arg.name ~ " = " ~ s ~ ";";
-					content ~= t.s(s);
-				}
-			}
-			
-			list res = t.operator::Operators
-			(
-				t, 
-				op_code.fn_create.expression ? op_code.fn_create.expression : op_code.fn_create.items
-			);
-			t = res[0];
-			content ~= res[1];
-		}
-		
-		/* Constructor end */
-		content = open ~ content;
-		t = t.levelDec();
-		content ~= t.s("};");
-		
-		return [save_t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareClassBodyItem
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassBodyItem(TranslatorES6 t, BaseOpCode item)
-	{
-		string content = "";
-		if (item instanceof OpPreprocessorIfDef)
-		{
-			list res = t.operator::OpPreprocessorIfDef(t, item, OpPreprocessorIfDef::KIND_CLASS_BODY);
-			content ~= res[1];
-		}
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpFunctionAnnotations
-	 */
-	pure list<TranslatorES6, string> OpFunctionAnnotations(TranslatorES6 t, OpDeclareFunction f)
-	{
-		string content = "";
-		if (f.flags.isFlag("declare")) return [t, content];
-		if (not f.annotations) return [t, content];
-		if (f.annotations.count() == 0) return [t, content];
-		content ~= t.s("if (field_name == " ~ t.expression::toString(f.name) ~ ")");
-		content ~= t.s("{");
-		string s1 = "";
-		t = t.levelInc();
-		s1 ~= t.s("var Vector = " ~ t.expression::useModuleName(t, "Runtime.Vector") ~ ";");
-		s1 ~= t.s("var Map = " ~ t.expression::useModuleName(t, "Runtime.Map") ~ ";");
-		
-		s1 ~= t.s("return Map.from({");
-		t = t.levelInc();
-		
-		if (f.flags.isFlag("async"))
-		{
-			s1 ~= t.s("\"async\": true,");
-		}
-		s1 ~= t.s("\"annotations\": Vector.from([");
-		t = t.levelInc();
-		
-		for (int j=0; j<f.annotations.count(); j++)
-		{
-			OpAnnotation annotation = f.annotations.item(j);
-			list res = t.expression::OpTypeIdentifier(t, annotation.name);
-			t = res[0]; string name = res[1];
-			string params = "";
-			if (annotation.params != null)
-			{
-				list res = t.expression::OpDict(t, annotation.params, true);
-				t = res[0]; params = res[1];
-			}
-			s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
-		}
-		
-		t = t.levelDec();
-		s1 ~= t.s("]),");
-		t = t.levelDec();
-		s1 ~= t.s("});");
-		
-		string save = t::outputSaveOpCode(t);
-		if (save != "") content ~= t.s(save);
-		content ~= s1;
-		t = t.levelDec();
-		content ~= t.s("}");
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpClassBodyItemMethodsList
-	 */
-	pure list<TranslatorES6, string> OpClassBodyItemMethodsList(TranslatorES6 t, BaseOpCode item)
-	{
-		string content = "";
-		if (item instanceof OpPreprocessorIfDef)
-		{
-			if (t.preprocessor_flags[item.condition.value] == true)
-			{
-				for (int i=0; i<item.items.count(); i++)
-				{
-					BaseOpCode op_code = item.items.item(i);
-					list res = static::OpClassBodyItemMethodsList(t, op_code);
-					t = res[0]; content ~= res[1];
-				}
-			}
-		}
-		else if (item instanceof OpDeclareFunction)
-		{
-			if (
-				not item.flags.isFlag("declare") and
-				not item.flags.isFlag("protected") and
-				not item.flags.isFlag("private") and
-				not item.annotations == null and
-				not item.annotations.count() == 0
-			){
-				content ~= t.s( t.expression::toString(item.name) ~ "," );
-			}
-		}
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpClassBodyItemAnnotations
-	 */
-	pure list<TranslatorES6, string> OpClassBodyItemAnnotations(TranslatorES6 t, BaseOpCode item)
-	{
-		string content = "";
-		if (item instanceof OpPreprocessorIfDef)
-		{
-			if (t.preprocessor_flags[item.condition.value] == true)
-			{
-				for (int i=0; i<item.items.count(); i++)
-				{
-					BaseOpCode op_code = item.items.item(i);
-					list res = static::OpClassBodyItemAnnotations(t, op_code);
-					t = res[0]; content ~= res[1];
-				}
-			}
-		}
-		else if (item instanceof OpDeclareFunction)
-		{
-			list res = static::OpFunctionAnnotations(t, item);
-			t = res[0]; content ~= res[1];
-		}
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Static variables
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassStaticVariables
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		if (op_code.vars != null)
-		{
-			for (int i=0; i<op_code.vars.count(); i++)
-			{
-				OpAssign variable = op_code.vars.item(i);
-				if (variable.kind != OpAssign::KIND_DECLARE) continue;
-				if (variable.condition and
-					t.preprocessor_flags[variable.condition.value] != true
-				) continue;
-				
-				bool is_static = variable.flags.isFlag("static");
-				if (not is_static) continue;
-				for (int j=0; j<variable.values.count(); j++)
-				{
-					OpAssignValue value = variable.values.item(j);
-					list res = t.expression::Expression(t, value.expression);
-					string s = (value.expression != null) ? res[1] : "null";
-					content ~= t.s(value.var_name ~ ": " ~ s ~ ",");
-				}
-			}
-		}
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Static functions
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassStaticFunctions
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		
-		/* Static Functions */
-		if (op_code.functions != null)
-		{
-			t <= is_static_function <= true;
-			for (int i=0; i<op_code.functions.count(); i++)
-			{
-				OpDeclareFunction f = op_code.functions.item(i);
-				if (f.flags.isFlag("declare")) continue;
-				if (not f.isStatic()) continue;
-				
-				/* Set function name */
-				t <= current_function <= f;
-				
-				string is_async = "";
-				if (f.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
-				
-				string s = "";
-				list res = t.operator::OpDeclareFunctionArgs(t, f); string args = res[1];
-				s ~= f.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
-				list res = t.operator::OpDeclareFunctionBody(t, f); s ~= res[1];
-				s ~= ",";
-				
-				/* Function comments */
-				list res = t.operator::AddComments(t, f.comments, t.s(s)); content ~= res[1];
-			}
-		}
-		
-		/* Items */
-		if (op_code.items != null)
-		{
-			t <= is_static_function <= true;
-			for (int i=0; i<op_code.items.count(); i++)
-			{
-				BaseOpCode item = op_code.items.item(i);
-				list res = static::OpDeclareClassBodyItem(t, item); t = res[0]; content ~= res[1];
-			}
-		}
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareClass
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassBodyStatic
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string class_kind = op_code.kind;
-		string current_class_extends_name = t.expression::findModuleName(
-			t, t.current_class_extends_name
+		/* Function flags */
+		Collection<string> flags = ["async", "static", "pure"];
+		flags = flags.filter(
+			bool (string flag_name) use (op_code) =>
+				op_code.flags ? op_code.flags.isFlag(flag_name) : false
 		);
+		result.push(rs::join(" ", flags));
+		if (flags.count() > 0) result.push(" ");
 		
-		Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-		int save_op_code_inc = t.save_op_code_inc;
-		t = t::clearSaveOpCode(t);
+		/* Function result type */
+		this.translator.expression.OpTypeIdentifier(op_code.result_type, result);
 		
-		/* Returns parent class name */
-		string parent_class_name = "";
-		if (op_code.class_extends != null)
+		/* Function name */
+		result.push(" ");
+		result.push(op_code.name);
+		
+		/* Arguments */
+		result.push("(");
+		this.OpDeclareFunctionArgs(op_code, result);
+		result.push(")");
+		
+		/* Expression */
+		if (op_code.expression)
 		{
-			list res = t.expression::OpTypeIdentifier(t, op_code.class_extends);
-			parent_class_name = res[1];
-		}	
-		
-		/* Extends */
-		if (current_class_extends_name != "" and not op_code.is_component)
-		{
-			content ~= t.s("Object.assign(" ~ t.current_class_full_name ~ ", " ~
-				t.expression::useModuleName(t, current_class_extends_name) ~ ");");
-		}
-		content ~= t.s("Object.assign(" ~ t.current_class_full_name ~ ",");
-		content ~= t.s("{");
-		t = t.levelInc();
-		
-		/* Static variables */
-		list res = static::OpDeclareClassStaticVariables(t, op_code);
-		t = res[0];
-		content ~= res[1];
-		
-		/* Static Functions */
-		if (class_kind != OpDeclareClass::KIND_INTERFACE)
-		{
-			list res = static::OpDeclareClassStaticFunctions(t, op_code);
-			t = res[0];
-			content ~= res[1];
-		}
-		
-		/* Declare component functions */
-		if (op_code.is_model or op_code.is_component)
-		{
-			list res = static::OpDeclareComponentFunctions(t, op_code);
-			t = res[0];
-			content ~= res[1];
-		}
-		
-		/* Static init Functions */
-		list res = static::OpDeclareClassStaticInitFunctions(t, op_code);
-		t = res[0];
-		content ~= res[1];
-		
-		t = t.levelDec();
-		content ~= t.s("});");
-		
-		/* Restore save op codes */
-		t <= save_op_codes <= save_op_codes;
-		t <= save_op_code_inc <= save_op_code_inc;
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Static init functions
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassStaticInitFunctions
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string class_kind = op_code.kind;
-		string current_class_extends_name = t.expression::findModuleName(
-			t, t.current_class_extends_name
-		);
-		
-		if (class_kind == OpDeclareClass::KIND_INTERFACE)
-		{
-			/* Get current namespace function */
-			content ~= t.s("getNamespace: function()");
-			content ~= t.s("{");
-			t = t.levelInc();
-			content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
-			t = t.levelDec();
-			content ~= t.s("},");
-			
-			/* Get current class name function */
-			content ~= t.s("getClassName: function()");
-			content ~= t.s("{");
-			t = t.levelInc();
-			content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
-			t = t.levelDec();
-			content ~= t.s("},");
-			
-			return [t, content];
-		}
-		
-		if (op_code.is_component == false)
-		{
-			content ~= t.s("/* ======================= Class Init Functions ======================= */");
-		}
-			
-		/* Get current namespace function */
-		content ~= t.s("getNamespace: function()");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return " ~ t.expression::toString(t.current_namespace_name) ~ ";");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Get current class name function */
-		content ~= t.s("getClassName: function()");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return " ~ t.expression::toString(t.current_class_full_name) ~ ";");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Get parent class name function */
-		content ~= t.s("getParentClassName: function()");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return " ~ t.expression::toString(current_class_extends_name) ~ ";");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Class info */
-		content ~= t.s("getClassInfo: function(ctx)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		t = t::clearSaveOpCode(t);
-		string s1 = "";
-		s1 ~= t.s("var Vector = " ~ t.expression::useModuleName(t, "Runtime.Vector") ~ ";");
-		s1 ~= t.s("var Map = " ~ t.expression::useModuleName(t, "Runtime.Map") ~ ";");
-		
-		s1 ~= t.s("return Map.from({");
-		t = t.levelInc();
-		
-		s1 ~= t.s("\"annotations\": Vector.from([");
-		t = t.levelInc();
-		
-		for (int j=0; j<op_code.annotations.count(); j++)
-		{
-			OpAnnotation annotation = op_code.annotations.item(j);
-			list res = t.expression::OpTypeIdentifier(t, annotation.name);
-			t = res[0]; string name = res[1];
-			if (annotation.params != null)
+			bool is_multiline = op_code.expression.isMultiLine();
+			if (is_multiline)
 			{
-				list res = t.expression::OpDict(t, annotation.params, true);
-				t = res[0]; string params = res[1];
-				s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
+				result.push(" =>");
+				result.push(this.translator.newLine());
 			}
 			else
 			{
-				s1 ~= t.s("new " ~ name ~ "(ctx),");
+				result.push(" => ");
 			}
-		}
-		
-		t = t.levelDec();
-		s1 ~= t.s("]),");
-		t = t.levelDec();
-		s1 ~= t.s("});");
-		
-		string save = t::outputSaveOpCode(t);
-		if (save != "") content ~= save;
-		content ~= s1;
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Get fields list of the function */
-		t = t::clearSaveOpCode(t);
-		content ~= t.s("getFieldsList: function(ctx)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("var a = [];");
-		if (op_code.vars != null)
-		{
-			Map<Vector> vars = new Map();
-			
-			for (int i=0; i<op_code.vars.count(); i++)
-			{
-				OpAssign variable = op_code.vars.item(i);
-				
-				bool is_const = variable.flags.isFlag("const");
-				bool is_static = variable.flags.isFlag("static");
-				bool is_protected = variable.flags.isFlag("protected");
-				bool is_private = variable.flags.isFlag("private");
-				bool is_serializable = variable.flags.isFlag("serializable");
-				bool is_assignable = true;
-				bool has_annotation = variable.annotations != null and
-					variable.annotations.count() > 0;
-				
-				if (is_const or is_static) continue;
-				if (is_protected or is_private) continue;
-				if (variable.kind != OpAssign::KIND_DECLARE) continue;
-				if (class_kind != OpDeclareClass::KIND_STRUCT)
-				{
-					if (variable.annotations == null) continue;
-					if (variable.annotations.count() == 0) continue;
-				}
-				if (variable.condition and
-					t.preprocessor_flags[variable.condition.value] != true
-				) continue;
-				
-				for (int j=0; j<variable.values.count(); j++)
-				{
-					OpAssignValue value = variable.values.item(j);
-					content ~= t.s("a.push(" ~ t.expression::toString(value.var_name) ~ ");");
-				}
-			}
-		}
-		
-		content ~= t.s("return " ~
-			t.expression::useModuleName(t, "Runtime.Vector") ~
-			".from(a);"
-		);
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Get field info by name */
-		content ~= t.s("getFieldInfoByName: function(ctx,field_name)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		if (op_code.vars != null)
-		{
-			content ~= t.s("var Vector = " ~
-				t.expression::useModuleName(t, "Runtime.Vector") ~ ";");
-			content ~= t.s("var Map = " ~
-				t.expression::useModuleName(t, "Runtime.Map") ~ ";");
-			
-			for (int i=0; i<op_code.vars.count(); i++)
-			{
-				OpAssign variable = op_code.vars.item(i);
-				
-				if (variable.kind != OpAssign::KIND_DECLARE) continue;
-				if (variable.condition and
-					t.preprocessor_flags[variable.condition.value] != true
-				) continue;
-				
-				bool is_const = variable.flags.isFlag("const");
-				bool is_static = variable.flags.isFlag("static");
-				bool is_protected = variable.flags.isFlag("protected");
-				bool is_private = variable.flags.isFlag("private");
-				
-				if (is_const or is_static) continue;
-				if (is_protected or is_private) continue;
-				if (variable.annotations == null) continue;
-				if (variable.annotations.count() == 0) continue;
-				
-				Collection<string> v = variable.values.map(
-					string (OpAssignValue value) => value.var_name
-				);
-				v = v.map
-				(
-					string (string var_name) use (t) =>
-						"field_name == " ~ t.expression::toString(var_name)
-				);
-				
-				string var_type =
-					rs::join(".", t.expression::findModuleNames(t, variable.pattern.entity_name.names))
-				;
-				Collection<string> var_sub_types = (variable.pattern.template != null) ?
-					variable.pattern.template.map
-					(
-						string (OpTypeIdentifier op_code) use (t) =>
-							rs::join(".", t.expression::findModuleNames(t, op_code.entity_name.names))
-					)
-					: []
-				;
-				var_sub_types = var_sub_types.map( t.expression::toString );
-				
-				t = t::clearSaveOpCode(t);
-				string s1 = "";
-				
-				s1 ~= t.s("if (" ~ rs::join(" or ", v) ~ ") return Map.from({");
-				t = t.levelInc();
-				
-				s1 ~= t.s("\"t\": " ~ t.expression::toString(var_type) ~ ",");
-				if (var_sub_types.count() > 0) s1 ~= t.s("\"s\": [" ~ rs::join(", ", var_sub_types) ~ "],");
-				s1 ~= t.s("\"annotations\": Vector.from([");
-				t = t.levelInc();
-				
-				for (int j=0; j<variable.annotations.count(); j++)
-				{
-					OpAnnotation annotation = variable.annotations.item(j);
-					list res = t.expression::OpTypeIdentifier(t, annotation.name);
-					t = res[0]; string name = res[1];
-					list res = t.expression::OpDict(t, annotation.params, true);
-					t = res[0]; string params = res[1];
-					s1 ~= t.s("new " ~ name ~ "(ctx, " ~ params ~ "),");
-				}
-				
-				t = t.levelDec();
-				s1 ~= t.s("]),");
-				t = t.levelDec();
-				s1 ~= t.s("});");
-				
-				string save = t::outputSaveOpCode(t);
-				if (save != "") content ~= save;
-				content ~= s1;
-			}
-		}
-		content ~= t.s("return null;");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Get methods list of the function */
-		t = t::clearSaveOpCode(t);
-		content ~= t.s("getMethodsList: function(ctx)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("var a=[");
-		t = t.levelInc();
-		if (op_code.functions != null)
-		{
-			for (int i=0; i<op_code.functions.count(); i++)
-			{
-				OpDeclareFunction f = op_code.functions.item(i);
-				if (f.flags.isFlag("declare")) continue;
-				if (f.flags.isFlag("protected")) continue;
-				if (f.flags.isFlag("private")) continue;
-				if (f.annotations.count() == 0) continue;
-				content ~= t.s( t.expression::toString(f.name) ~ "," );
-			}
-		}
-		if (op_code.items != null)
-		{
-			for (int i=0; i<op_code.items.count(); i++)
-			{
-				BaseOpCode item = op_code.items.item(i);
-				list res = static::OpClassBodyItemMethodsList(t, item);
-				t = res[0]; content ~= res[1];
-			}
-		}
-		t = t.levelDec();
-		content ~= t.s("];");
-		content ~= t.s("return " ~ t.expression::useModuleName(t, "Runtime.Vector") ~ ".from(a);");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Get method info by name */
-		t = t::clearSaveOpCode(t);
-		content ~= t.s("getMethodInfoByName: function(ctx,field_name)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		if (op_code.functions != null)
-		{
-			for (int i=0; i<op_code.functions.count(); i++)
-			{
-				OpDeclareFunction f = op_code.functions.item(i);
-				list res = static::OpFunctionAnnotations(t, f);
-				t = res[0]; content ~= res[1];
-			}
-		}
-		if (op_code.items != null)
-		{
-			for (int i=0; i<op_code.items.count(); i++)
-			{
-				BaseOpCode item = op_code.items.item(i);
-				list res = static::OpClassBodyItemAnnotations(t, item);
-				t = res[0]; content ~= res[1];
-			}
-		}
-		content ~= t.s("return null;");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Add implements */
-		if (op_code.class_implements != null and op_code.class_implements.count() > 0)
-		{
-			content ~= t.s("__implements__:");
-			content ~= t.s("[");
-			t = t.levelInc();
-			for (int i=0; i<op_code.class_implements.count(); i++)
-			{
-				OpTypeIdentifier item = op_code.class_implements.item(i);
-				string module_name = item.entity_name.names.first();
-				string s = t.expression::useModuleName(t, module_name);
-				if (s == "") continue;
-				content ~= t.s(s ~ ",");
-			}
-			t = t.levelDec();
-			content ~= t.s("],");
-		}
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Class variables
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassInitVariables
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string class_kind = op_code.kind;
-		
-		Collection<OpAssign> vars = op_code.vars.filter
-		(
-			bool (OpAssign variable) => not variable.flags.isFlag("static") 
-		);
-		
-		if (t.current_class_full_name != "Runtime.BaseObject" and vars.count() > 0)
-		{
-			content ~= t.s("_init: function(ctx)");
-			content ~= t.s("{");
-			t = t.levelInc();
-			
-			/* Clear save op codes */
-			Collection<SaveOpCode> save_op_codes = t.save_op_codes;
-			int save_op_code_inc = t.save_op_code_inc;
-			if (t.current_class_extends_name != "")
-			{
-				content ~= t.s
-				(
-					t.expression::useModuleName(t, t.current_class_extends_name) ~
-						".prototype._init.call(this,ctx);"
-				);
-			}
-			
-			string s1 = "";
-			for (int i=0; i<op_code.vars.count(); i++)
-			{
-				OpAssign variable = op_code.vars.item(i);
-				bool is_static = variable.flags.isFlag("static");
-				
-				if (is_static) continue;
-				if (variable.kind != OpAssign::KIND_DECLARE) continue;
-				if (variable.condition and
-					t.preprocessor_flags[variable.condition.value] != true
-				) continue;
-				
-				string prefix = "";
-				if (class_kind == OpDeclareClass::KIND_STRUCT)
-				{
-					/* prefix = "__"; */
-					prefix = "";
-				}
-				else if (class_kind == OpDeclareClass::KIND_CLASS)
-				{
-					prefix = "";
-				}
-				
-				for (int j=0; j<variable.values.count(); j++)
-				{
-					OpAssignValue value = variable.values.item(j);
-					list res = t.expression::Expression(t, value.expression); t = res[0];
-					string s = (value.expression != null) ? res[1] : "null";
-					s1 ~= t.s("this." ~ prefix ~ value.var_name ~ " = " ~ s ~ ";");
-				}
-			}
-			
-			/* Output save op code */
-			string save = t::outputSaveOpCode(t, save_op_codes.count());
-			if (save != "") content ~= save;
-			
-			/* Restore save op codes */
-			t <= save_op_codes <= save_op_codes;
-			t <= save_op_code_inc <= save_op_code_inc;
-			
-			/* Add content */
-			content ~= s1;
-			
-			t = t.levelDec();
-			content ~= t.s("},");
-		}
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Component props
-	 */
-	pure list<TranslatorES6, string> OpDeclareComponentProps
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		Collection<OpAssign> vars = op_code.vars.filter
-		(
-			bool (OpAssign variable) => variable.flags.isFlag("props")
-		);
-		
-		if (vars.count() == 0) return [t, ""];
-		
-		string content = "";
-		
-		content ~= t.s("props: {");
-		t = t.levelInc();
-		
-		for (int i=0; i<vars.count(); i++)
-		{
-			OpAssign variable = vars.item(i);
-			
-			if (variable.kind != OpAssign::KIND_DECLARE) continue;
-			if (variable.condition and
-				t.preprocessor_flags[variable.condition.value] != true
-			) continue;
-			
-			for (int j=0; j<variable.values.count(); j++)
-			{
-				OpAssignValue value = variable.values.item(j);
-				list res = t.expression::Expression(t, value.expression); t = res[0];
-				string s = (value.expression != null) ? res[1] : "null";
-				content ~= t.s(t.expression::toString(value.var_name) ~ ": {");
-				t = t.levelInc();
-				content ~= t.s("default: " ~ s ~ ",");
-				t = t.levelDec();
-				content ~= t.s("},");
-			}
-		}
-		
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Component variables
-	 */
-	pure list<TranslatorES6, string> OpDeclareComponentVariables
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		Collection<OpAssign> vars = op_code.vars.filter
-		(
-			bool (OpAssign variable) =>
-				not variable.flags.isFlag("static") and
-				not variable.flags.isFlag("props")
-		);
-		
-		if (vars.count() == 0) return [t, ""];
-		
-		string content = "";
-		
-		content ~= t.s("data: function ()");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("return {");
-		t = t.levelInc();
-		
-		for (int i=0; i<vars.count(); i++)
-		{
-			OpAssign variable = vars.item(i);
-			
-			if (variable.kind != OpAssign::KIND_DECLARE) continue;
-			if (variable.condition and
-				t.preprocessor_flags[variable.condition.value] != true
-			) continue;
-			
-			for (int j=0; j<variable.values.count(); j++)
-			{
-				OpAssignValue value = variable.values.item(j);
-				list res = t.expression::Expression(t, value.expression); t = res[0];
-				string s = (value.expression != null) ? res[1] : "null";
-				content ~= t.s(value.var_name ~ ": " ~ s ~ ",");
-			}
-		}
-		
-		t = t.levelDec();
-		content ~= t.s("};");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Declare component functions
-	 */
-	pure list<TranslatorES6, string> OpDeclareComponentFunctions
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		
-		/* CSS */
-		content ~= t.s("css: function(vars)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		
-		content ~= t.s("var res = \"\";");
-		for (int i=0; i<op_code.items.count(); i++)
-		{
-			OpHtmlStyle item = op_code.items.get(i);
-			if (not(item instanceof OpHtmlStyle)) continue;
-			list res = t.expression::Expression(t, item.value); t = res[0];
-			string s = res[1];
-			content ~= t.s( "res += Runtime.rtl.toStr(" ~ s ~ ");" );
-		}
-		
-		content ~= t.s("return res;");
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		/* Widget data */
-		/*
-		OpWidget op_code_widget = op_code.items.findItem(lib::isInstance(classof OpWidget));
-		OpHtmlMeta op_code_meta = op_code.items.findItem(lib::isInstance(classof OpHtmlMeta));
-		if (op_code_widget)
-		{
-			content ~= t.s("getWidgetData: function()");
-			content ~= t.s("{");
-			t = t.levelInc();
-			content ~= t.s("return {");
-			t = t.levelInc();
-			content ~= t.s("\"data\": null,");
-			content ~= t.s("\"info\": null,");
-			t = t.levelDec();
-			content ~= t.s("};");
-			t = t.levelDec();
-			content ~= t.s("}");
-		}
-		*/
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Class functions
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassFunctions
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		
-		/* Functions */
-		if (op_code.functions != null)
-		{
-			t <= is_static_function <= false;
-			for (int i=0; i<op_code.functions.count(); i++)
-			{
-				OpDeclareFunction f = op_code.functions.item(i);
-				if (f.flags.isFlag("declare")) continue;
-				if (f.isStatic()) continue;
-				
-				/* Set function name */
-				t <= current_function <= f;
-				
-				string is_async = "";
-				if (f.isFlag("async") and t.isAsyncAwait()) is_async = "async ";
-				
-				string s = "";
-				list res = t.operator::OpDeclareFunctionArgs(t, f); string args = res[1];
-				s ~= f.name ~ ": " ~ is_async ~ "function(" ~ args ~ ")";
-				list res = t.operator::OpDeclareFunctionBody(t, f); s ~= res[1];
-				s ~= ",";
-				
-				/* Function comments */
-				list res = t.operator::AddComments(t, f.comments, t.s(s)); content ~= res[1];
-			}
+			this.translator.expression.translate(op_code.expression, result);
+			result.push(";");
 		}
 		
 		/* Items */
-		if (op_code.items != null)
+		else if (op_code.items)
 		{
-			t <= is_static_function <= false;
-			for (int i=0; i<op_code.items.count(); i++)
+			if (op_code.items.items.count() > 0)
 			{
-				BaseOpCode item = op_code.items.item(i);
-				list res = static::OpDeclareClassBodyItem(t, item); t = res[0]; content ~= res[1];
+				result.push(this.translator.newLine());
 			}
+			this.translator.operator.translateItems(op_code.items, result);
 		}
-		
-		return [t, content];
 	}
 	
 	
 	/**
-	 * Class assignObject function
+	 * Translate class item
 	 */
-	pure list<TranslatorES6, string> OpDeclareClassAssignObject
-		(TranslatorES6 t, OpDeclareClass op_code)
+	bool translateClassItem(BaseOpCode op_code, Collection<string> result)
 	{
-		string content = "";
-		string var_prefix = "";
-		
-		/* Assign Object */
-		content ~= t.s("assignObject: function(ctx,o)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("if (o instanceof " ~
-			t.expression::useModuleName(t, t.current_class_full_name) ~
-		")");
-		content ~= t.s("{");
-		t = t.levelInc();
-		for (int i=0; i<op_code.vars.count(); i++)
+		if (op_code instanceof OpAnnotation)
 		{
-			OpAssign variable = op_code.vars.item(i);
-			if (variable.kind != OpAssign::KIND_DECLARE) continue;
-			if (variable.condition and
-				t.preprocessor_flags[variable.condition.value] != true
-			) continue;
-			
-			bool is_const = variable.flags.isFlag("const");
-			bool is_static = variable.flags.isFlag("static");
-			bool is_protected = variable.flags.isFlag("protected");
-			bool is_private = variable.flags.isFlag("private");
-			
-			if (is_const or is_static) continue;
-			if (is_protected or is_private) continue;
-			
-			for (int j=0; j<variable.values.count(); j++)
+			this.OpAnnotation(op_code, result);
+		}
+		else if (op_code instanceof OpAssign)
+		{
+			this.OpAssign(op_code, result);
+		}
+		else if (op_code instanceof OpDeclareFunction)
+		{
+			this.OpDeclareFunction(op_code, result);
+		}
+		else
+		{
+			return false;
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Translate class body
+	 */
+	void translateClassBody(OpDeclareClass op_code, Collection<string> result)
+	{
+		/* Begin bracket */
+		result.push("{");
+		this.translator.levelInc();
+		
+		/* Class body items */
+		bool next_new_line = true;
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			if (next_new_line)
 			{
-				OpAssignValue value = variable.values.item(j);
-				content ~= t.s("this." ~ var_prefix ~ value.var_name ~
-					" = o." ~ var_prefix ~ value.var_name ~ ";");
+				result.push(this.translator.newLine());
 			}
+			BaseOpCode op_code_item = op_code.items.get(i);
+			next_new_line = this.translateClassItem(op_code_item, result);
 		}
-		t = t.levelDec();
-		content ~= t.s("}");
-		if (t.current_class_extends_name != "")
-		{
-			content ~= t.s
-			(
-				t.expression::useModuleName(t, t.current_class_extends_name) ~
-					".prototype.assignObject.call(this,ctx,o);"
-			);
-		}
-		t = t.levelDec();
-		content ~= t.s("},");
 		
-		return [t, content];
+		/* End bracket */
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
 	}
 	
 	
 	/**
-	 * Class assignValue function
+	 * Translate class
 	 */
-	pure list<TranslatorES6, string> OpDeclareClassAssignValue
-		(TranslatorES6 t, OpDeclareClass op_code)
+	void translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
-		string content = "";
-		string var_prefix = "";
-		
-		/* Assign Value */
-		content ~= t.s("assignValue: function(ctx,k,v)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		bool flag = false;
-		for (int i=0; i<op_code.vars.count(); i++)
+		if (op_code.kind == OpDeclareClass::KIND_CLASS)
 		{
-			OpAssign variable = op_code.vars.item(i);
-			if (variable.kind != OpAssign::KIND_DECLARE) continue;
-			if (variable.condition and
-				t.preprocessor_flags[variable.condition.value] != true
-			) continue;
-			
-			bool is_const = variable.flags.isFlag("const");
-			bool is_static = variable.flags.isFlag("static");
-			bool is_protected = variable.flags.isFlag("protected");
-			bool is_private = variable.flags.isFlag("private");
-			
-			if (is_const or is_static) continue;
-			if (is_protected or is_private) continue;
-			
-			for (int j=0; j<variable.values.count(); j++)
-			{
-				OpAssignValue value = variable.values.item(j);
-				if (t.flag_struct_check_types)
-				{
-					content ~= t.s
-					(
-						(flag ? "else " : "") ~
-						"if (k == " ~ t.expression::toString(value.var_name) ~
-						")" ~ "this." ~ var_prefix ~ value.var_name ~
-						" = Runtime.rtl.to(v, null, " ~ 
-						static::toPattern(t, variable.pattern) ~ ");"
-					);
-				}
-				else
-				{
-					content ~= t.s
-					(
-						(flag ? "else " : "") ~
-						"if (k == " ~ t.expression::toString(value.var_name) ~
-						")" ~ "this." ~ var_prefix ~ value.var_name ~ " = v;"
-					);
-				}
-				flag = true;
-			}
+			result.push("class ");
 		}
-		if (t.current_class_extends_name != "")
+		else if (op_code.kind == OpDeclareClass::KIND_INTERFACE)
 		{
-			content ~= t.s(
-				(flag ? "else " : "") ~ 
-				t.expression::useModuleName(t, t.current_class_extends_name) ~
-					".prototype.assignValue.call(this,ctx,k,v);"
-			);
-		}
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Class takeValue function
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassTakeValue
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string var_prefix = "";
-		
-		/* Take Value */
-		content ~= t.s("takeValue: function(ctx,k,d)");
-		content ~= t.s("{");
-		t = t.levelInc();
-		content ~= t.s("if (d == undefined) d = null;");
-		bool flag = false;
-		for (int i=0; i<op_code.vars.count(); i++)
-		{
-			OpAssign variable = op_code.vars.item(i);
-			if (variable.kind != OpAssign::KIND_DECLARE) continue;
-			if (variable.condition and
-				t.preprocessor_flags[variable.condition.value] != true
-			) continue;
-			
-			bool is_const = variable.flags.isFlag("const");
-			bool is_static = variable.flags.isFlag("static");
-			bool is_protected = variable.flags.isFlag("protected");
-			bool is_private = variable.flags.isFlag("private");
-			
-			if (is_const or is_static) continue;
-			if (is_protected or is_private) continue;
-			
-			for (int j=0; j<variable.values.count(); j++)
-			{
-				OpAssignValue value = variable.values.item(j);
-				content ~= t.s
-				(
-					(flag ? "else " : "") ~
-					"if (k == " ~ t.expression::toString(value.var_name) ~ ")return this." ~
-						var_prefix ~ value.var_name ~ ";"
-				);
-				flag = true;
-			}
-		}
-		if (t.current_class_extends_name != "")
-		{
-			content ~= t.s
-			(
-				"return " ~ t.expression::useModuleName(t, t.current_class_extends_name) ~
-					".prototype.takeValue.call(this,ctx,k,d);"
-			);
-		}
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareClass
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassBody
-		(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string class_kind = op_code.kind;
-		content ~= t.s("Object.assign(" ~ t.current_class_full_name ~ ".prototype,");
-		content ~= t.s("{");
-		t = t.levelInc();
-		
-		/* Functions */
-		list res = static::OpDeclareClassFunctions(t, op_code);
-		t = res[0];
-		content ~= res[1];
-		
-		/* Init variables */
-		if (class_kind != OpDeclareClass::KIND_INTERFACE and op_code.vars != null)
-		{
-			list res = static::OpDeclareClassInitVariables(t, op_code);
-			t = res[0];
-			content ~= res[1];
-		}
-		
-		/* Init struct */
-		if (class_kind == OpDeclareClass::KIND_STRUCT and op_code.vars != null)
-		{
-			/* Assign object */
-			/*
-			list res = static::OpDeclareClassAssignObject(t, op_code);
-			t = res[0];
-			content ~= res[1];
-			*/
-			
-			/* Assign value */
-			/*
-			list res = static::OpDeclareClassAssignValue(t, op_code);
-			t = res[0];
-			content ~= res[1];
-			*/
-			
-			/* Take Value */
-			list res = static::OpDeclareClassTakeValue(t, op_code);
-			t = res[0];
-			content ~= res[1];
-		}
-		
-		t = t.levelDec();
-		content ~= t.s("});");
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareClassFooter
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string rtl_module_name = t.expression::useModuleName(t, "Runtime.rtl");
-		if (not t.use_module_name)
-		{
-			content ~= t.s(rtl_module_name ~ ".defClass(" ~ t.current_class_full_name ~ ");");
-			content ~= t.s("window[\"" ~ t.current_class_full_name ~ "\"] = " ~ t.current_class_full_name ~ ";");
-		}
-		content ~= t.s("if (typeof module != \"undefined\" && typeof module.exports != \"undefined\") " ~
-			"module.exports = " ~ t.current_class_full_name ~ ";");
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareComponent
-	 */
-	pure list<TranslatorES6, string> OpDeclareComponent(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		
-		content ~= t.s(t.current_class_full_name ~ " = {");
-		t = t.levelInc();
-		
-		content ~= t.s("name: " ~ t.expression::toString(t.current_class_full_name) ~ ",");
-		
-		if (t.current_class_extends_name and t.current_class_extends_name != "Runtime.BaseObject")
-		{
-			content ~= t.s("extends: " ~
-				t.expression::useModuleName(t, t.current_class_extends_name) ~ ",");
-		}
-		
-		/* Props */
-		list res = static::OpDeclareComponentProps(t, op_code);
-		t = res[0];
-		content ~= res[1];
-		
-		/* Variables */
-		list res = static::OpDeclareComponentVariables(t, op_code);
-		t = res[0];
-		content ~= res[1];
-		
-		/* Methods */
-		content ~= t.s("methods:");
-		content ~= t.s("{");
-		t = t.levelInc();
-		list res = static::OpDeclareClassFunctions(t, op_code);
-		t = res[0];
-		content ~= res[1];
-		t = t.levelDec();
-		content ~= t.s("},");
-		
-		t = t.levelDec();
-		content ~= t.s("};");
-		
-		/* Class static functions */
-		list res = static::OpDeclareClassBodyStatic(t, op_code); content ~= res[1];
-		
-		/* Class footer */
-		list res = static::OpDeclareClassFooter(t, op_code); content ~= res[1];
-				
-		return [t, content];
-	}
-	
-	
-	/**
-	 * OpDeclareClass
-	 */
-	pure list<TranslatorES6, string> OpDeclareClass(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		if (op_code.is_abstract)
-		{
-			return [t, ""];
-		}
-		
-		if (op_code.is_declare)
-		{
-			throw new DeclaredClass();
-			return [t, ""];
-		}
-		
-		string content = "";
-		t <= current_class <= op_code;
-		t <= current_class_name <= op_code.name;
-		t <= current_class_full_name <= t.current_namespace_name ~ "." ~ t.current_class_name;
-		
-		if (op_code.class_extends != null)
-		{
-			string extends_name = rs::join(".", op_code.class_extends.entity_name.names);
-			t <= current_class_extends_name <= extends_name;
+			result.push("interface ");
 		}
 		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
 		{
-			t <= current_class_extends_name <= "Runtime.BaseStruct";
+			result.push("struct ");
 		}
 		
-		if (op_code.is_component)
+		/* Class name */
+		result.push(op_code.name);
+		
+		/* Template */
+		if (op_code.template)
 		{
-			return static::OpDeclareComponent(t, op_code);
+			this.translator.expression.OpTypeTemplate(op_code.template, result);
 		}
-		
-		/* Constructor */
-		list res = static::OpDeclareClassConstructor(t, op_code); content ~= res[1];
 		
 		/* Extends */
-		if (op_code.class_extends != null)
+		if (op_code.class_extends)
 		{
-			content ~= t.s
-			(
-				t.current_class_full_name ~ ".prototype = Object.create(" ~
-					t.expression::useModuleName(t, t.current_class_extends_name) ~ ".prototype);"
-			);
-			content ~= t.s
-			(
-				t.current_class_full_name ~ ".prototype.constructor = " ~ t.current_class_full_name ~ ";"
-			);
+			result.push(" extends ");
+			this.translator.expression.OpTypeIdentifier(op_code.class_extends, result);
 		}
 		
-		/* Class body */
-		list res = static::OpDeclareClassBody(t, op_code); content ~= res[1];
+		/* Implements */
+		if (op_code.class_implements)
+		{
+			result.push(" implements ");
+			int items_count = op_code.class_implements.count();
+			for (int i=0; i<items_count; i++)
+			{
+				OpTypeIdentifier op_code_item = op_code.class_implements.get(i);
+				this.translator.expression.OpTypeIdentifier(op_code_item, result);
+				if (i < items_count - 1) result.push(", ");
+			}
+		}
 		
-		/* Class static functions */
-		list res = static::OpDeclareClassBodyStatic(t, op_code); content ~= res[1];
-		
-		/* Class comments */
-		list res = t.operator::AddComments(t, op_code.comments, content); content = res[1];
-		
-		/* Class footer */
-		list res = static::OpDeclareClassFooter(t, op_code); content ~= res[1];
-		
-		return [t, content];
+		result.push(this.translator.newLine());
+		this.translateClassBody(op_code, result);
 	}
 	
 	
 	/**
 	 * Translate item
 	 */
-	pure list<TranslatorES6, string> translateItem(TranslatorES6 t, OpItems op_code)
+	void translateItem(BaseOpCode op_code, Collection<string> result)
 	{
-		if (op_code instanceof OpNamespace)
+		if (op_code instanceof OpDeclareClass)
 		{
-			return static::OpNamespace(t, op_code);
+			this.translateClass(op_code, result);
 		}
-		else if (op_code instanceof OpDeclareClass)
+		else if (op_code instanceof OpNamespace)
 		{
-			return static::OpDeclareClass(t, op_code);
+			this.OpNamespace(op_code, result);
+			return false;
 		}
-		else if (op_code instanceof OpComment)
+		else if (op_code instanceof OpUse)
 		{
-			return t.operator::OpComment(t, op_code);
+			this.OpUse(op_code, result);
+			return false;
 		}
-		else if (op_code instanceof OpPreprocessorIfCode)
+		else
 		{
-			return t.operator::OpPreprocessorIfCode(t, op_code);
+			bool res = this.translator.operator.translateItem(op_code, result);
+			if (res) result.push(";");
+			return res;
 		}
-		else if (op_code instanceof OpPreprocessorSwitch)
+		return true;
+	}
+	
+	
+	/**
+	 * Translate items
+	 */
+	void translateItems(Collection<BaseOpCode> items, Collection<string> result)
+	{
+		int op_code_use_count = 0;
+		bool prev_op_code_use = false;
+		bool last_result = false;
+		for (int i=0; i<items.count(); i++)
 		{
-			string content = "";
-			for (int i=0; i<op_code.items.count(); i++)
+			BaseOpCode op_code_item = items.get(i);
+			if (last_result) result.push(this.translator.newLine());
+			if (op_code_item instanceof OpDeclareClass and op_code_use_count > 0)
 			{
-				list res = t.operator::OpPreprocessorIfCode(t, op_code.items.item(i));
-				string s = res[1];
-				if (s == "") continue;
-				content ~= s;
+				result.push(this.translator.newLine());
+				if (op_code_use_count > 1) result.push(this.translator.newLine());
 			}
-			return [t, content];
+			if (op_code_item instanceof OpUse) op_code_use_count++;
+			else op_code_use_count = 0;
+			last_result = this.translateItem(items.get(i), result);
 		}
-		
-		return [t, ""];
 	}
 	
 	
 	/**
-	 * Translate program
+	 * Translate
 	 */
-	pure list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
+	void translate(BaseOpCode op_code, Collection<string> result)
 	{
-		string content = "";
-		
-		if (t.use_strict)
-		{
-			content = t.s("\"use strict;\"");
-		}
-		
-		return [t, content];
-	}
-	
-	
-	/**
-	 * Remove ctx
-	 */
-	pure string removeContext(string content)
-	{
-		content = rs::replace("("~"ctx)", "()", content);
-		content = rs::replace("("~"ctx, ", "(", content);
-		content = rs::replace("("~"ctx,", "(", content);
-		content = rs::replace(","~"ctx,", ",", content);
-		content = rs::replace("this,"~"ctx", "this", content);
-		content = rs::replace("this,"~" ctx", "this", content);
-		return content;
-	}
-	
-	
-	/**
-	 * Translate program
-	 */
-	pure list<TranslatorES6, string> translateProgram(TranslatorES6 t, OpItems op_code)
-	{
-		string content = "";
-		
-		if (op_code == null) return [t, content];
-		if (op_code.uses != null)
-		{
-			t <= modules <= op_code.uses;
-		}
-		if (op_code.items != null)
-		{
-			list res = static::translateProgramHeader(t, op_code);
-			content ~= res[1];
-			for (int i=0; i<op_code.items.count(); i++)
-			{
-				BaseOpCode item = op_code.items.item(i);
-				list res = static::translateItem(t, item); t = res[0]; string s = res[1];
-				if (s == "") continue;
-				content ~= s;
-			}
-		}
-		
-		content = rs::trim(content);
-		
-		/* Disable context */
-		if (t.enable_context == false)
-		{
-			content = static::removeContext(content);
-		}
-		
-		return [t, content];
+		this.translateItems(op_code.items, result);
 	}
 }

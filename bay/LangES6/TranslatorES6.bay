@@ -18,6 +18,7 @@
 
 namespace BayLang.LangES6;
 
+use Runtime.re;
 use Runtime.BaseStruct;
 use BayLang.CoreTranslator;
 use BayLang.SaveOpCode;
@@ -30,125 +31,40 @@ use BayLang.LangES6.TranslatorES6Program;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct TranslatorES6 extends CoreTranslator
+class TranslatorES6 extends CoreTranslator
 {
-	/* Work */
-	bool is_pipe = false;
-	bool is_call = false;
-	string pipe_var_name = "";
-	string html_var_name = "";
-	bool is_html = false;
+	Dict<bool> vars = {};
+	Dict<string> uses = {};
+	string current_namespace_name = "";
 	
 	/* Translators */
-	TranslatorES6AsyncAwait async_await = null;
-	TranslatorES6Expression expression = null;
-	TranslatorES6Html html = null;
-	TranslatorES6Operator operator = null;
-	TranslatorES6Program program = null;
-	Collection<int> debug_component = null;
-	
-	/* Flags */
-	bool frontend = true;
-	bool backend = false;
-	bool use_module_name = false;
-	bool use_strict = true;
-	bool enable_async_await = true;
-	bool emulate_async_await = false;
-	bool enable_context = false;
-	bool enable_check_types = false;
-	bool enable_introspection = true;
+	TranslatorES6Expression expression = new TranslatorES6Expression(this);
+	TranslatorES6Operator operator = new TranslatorES6Operator(this);
+	TranslatorES6Program program = new TranslatorES6Program(this);
+	TranslatorES6Html html = new TranslatorES6Html(this);
 	
 	
 	/**
-	 * Returns true if emulate async await
+	 * Returns string
 	 */
-	bool isEmulateAsyncAwait() => this.enable_async_await and this.emulate_async_await;
-	
-	
-	
-	/**
-	 * Returns true if async await
-	 */
-	bool isAsyncAwait() => this.enable_async_await and not this.emulate_async_await;
-	
-	
-	
-	/**
-	 * Reset translator
-	 */
-	pure TranslatorES6 reset(TranslatorES6 t) =>
-		t.copy
-		{
-			"value": "",
-			"current_namespace_name": "",
-			"debug_component": [],
-			"modules": new Dict<string>(),
-			"async_await": new TranslatorES6AsyncAwait(),
-			"expression": new TranslatorES6Expression(),
-			"html": new TranslatorES6Html(),
-			"operator": new TranslatorES6Operator(),
-			"program": new TranslatorES6Program(),
-			"save_vars": new Collection<string>(),
-			"save_op_codes": new Collection<SaveOpCode>(),
-			"save_op_code_inc": 0,
-			"preprocessor_flags": 
-			{
-				"ES6": true,
-				"JAVASCRIPT": true,
-				"FRONTEND": t.frontend,
-				"BACKEND": t.backend,
-				"USE_MODULE_NAME": t.use_module_name,
-				"USE_STRICT": t.use_strict,
-				"ENABLE_ASYNC_AWAIT": t.enable_async_await,
-				"EMULATE_ASYNC_AWAIT": t.emulate_async_await,
-				"ENABLE_CONTEXT": t.enable_context,
-				"ENABLE_CHECK_TYPES": t.enable_check_types,
-			},
-		}
-	;
-	
+	string toString(string s)
+	{
+		s = re::replace('\\\\', '\\\\', s);
+		s = re::replace('"', '\\\"', s);
+		s = re::replace('\n', '\\n', s);
+		s = re::replace('\r', '\\r', s);
+		s = re::replace('\t', '\\t', s);
+		return "\"" ~ s ~ "\"";
+	}
 	
 	
 	/**
 	 * Translate BaseOpCode
 	 */
-	pure list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
+	string translate(BaseOpCode op_code)
 	{
-		return t.program::translateProgram(t, op_code);
+		Collection<string> content = [];
+		this.program.translate(op_code, content);
+		return rs::join("", content);
 	}
-	
-	
-	
-	/**
-	 * Output save op code content
-	 */
-	pure string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
-	{
-		string content = "";
-		for (int i=0; i<t.save_op_codes.count(); i++)
-		{
-			if (i < save_op_code_value) continue;
-			SaveOpCode save = t.save_op_codes.item(i);
-			
-			string s = "";
-			if (t.is_html)
-			{
-				s = (save.content == "") ? 
-					t.s("let " ~ save.var_name ~ " = " ~ save.var_content ~ ";") :
-					save.content
-				;
-			}
-			else
-			{
-				s = (save.content == "") ? 
-					t.s("var " ~ save.var_name ~ " = " ~ save.var_content ~ ";") :
-					save.content
-				;
-			}
-			
-			content ~= s;
-		}
-		return content;
-	}
-	
 }

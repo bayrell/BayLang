@@ -455,15 +455,17 @@ class TranslatorBayExpression extends BaseObject
 		if (op_code.math == "is") { opcode_level = 10; op = "instanceof"; }
 		if (op_code.math == "instanceof") { opcode_level = 10; op = "instanceof"; }
 		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
+		if (op_code.math == "bitnot") { opcode_level = 16; op = "bitnot"; }
 		if (op_code.math == "not") { opcode_level = 16; op = "not"; }
 		if (op_code.math == "and") { opcode_level = 6; op = "and"; }
 		if (op_code.math == "&&") { opcode_level = 6; op = "and"; }
 		if (op_code.math == "or") { opcode_level = 5; op = "or"; }
 		if (op_code.math == "||") { opcode_level = 5; op = "or"; }
 		
-		if (op_code.math == "not" or op_code.math == "!")
+		if (op_code.math == "not" or op_code.math == "bitnot" or op_code.math == "!")
 		{
 			if (op_code.math == "not") result.push("not ");
+			else if (op_code.math == "bitnot") result.push("bitnot ");
 			else result.push(op_code.math);
 			
 			if (opcode_level1 < opcode_level)

@@ -18,7 +18,7 @@
 
 namespace BayLang.LangPHP;
 
-use Runtime.BaseStruct;
+use Runtime.re;
 use BayLang.CoreTranslator;
 use BayLang.SaveOpCode;
 use BayLang.LangPHP.TranslatorPHPExpression;
@@ -28,94 +28,52 @@ use BayLang.LangPHP.TranslatorPHPProgram;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct TranslatorPHP extends CoreTranslator
+class TranslatorPHP extends CoreTranslator
 {
-	/* Work */
-	bool is_pipe = false;
-	string pipe_var_name = "";
-	string html_var_name = "";
-	bool is_html = false;
-	
 	/* Translators */
-	TranslatorPHPExpression expression = null;
-	TranslatorPHPHtml html = null;
-	TranslatorPHPOperator operator = null;
-	TranslatorPHPProgram program = null;
-	
-	/* Flags */
-	bool frontend = false;
-	bool backend = true;
-	bool enable_context = false;
-	bool enable_check_types = false;
-	bool enable_introspection = true;
+	TranslatorPHPExpression expression = new TranslatorPHPExpression(this);
+	TranslatorPHPOperator operator = new TranslatorPHPOperator(this);
+	TranslatorPHPProgram program = new TranslatorPHPProgram(this);
+	TranslatorPHPHtml html = new TranslatorPHPHtml(this);
 	
 	
 	/**
-	 * Reset translator
+	 * Returns string
 	 */
-	pure TranslatorPHP reset(TranslatorPHP t) =>
-		t.copy
-		{
-			"value": "",
-			"current_namespace_name": "",
-			"modules": new Dict<string>(),
-			"expression": new TranslatorPHPExpression(),
-			"html": new TranslatorPHPHtml(),
-			"operator": new TranslatorPHPOperator(),
-			"program": new TranslatorPHPProgram(),
-			"save_vars": new Collection<string>(),
-			"save_op_codes": new Collection<SaveOpCode>(),
-			"save_op_code_inc": 0,
-			"preprocessor_flags": 
-			{
-				"PHP": true,
-				"FRONTEND": t.frontend,
-				"BACKEND": t.backend,
-				"ENABLE_CONTEXT": t.enable_context,
-				"ENABLE_CHECK_TYPES": t.enable_check_types,
-			},
-		}
-	;
+	string toString(string s)
+	{
+		s = re::replace('\\\\', '\\\\', s);
+		s = re::replace('"', '\\\"', s);
+		s = re::replace('\n', '\\n', s);
+		s = re::replace('\r', '\\r', s);
+		s = re::replace('\t', '\\t', s);
+		return "\"" ~ s ~ "\"";
+	}
 	
+	
+	/**
+	 * Returns module name
+	 */
+	string getModuleName(string module_name)
+	{
+		return rs::replace(".", "\\", module_name);
+	}
 	
 	
 	/**
 	 * Translate BaseOpCode
 	 */
-	pure list<TranslatorPHP, string> translate(TranslatorPHP t, BaseOpCode op_code)
+	string translate(BaseOpCode op_code)
 	{
-		t = static::reset(t);
-		return t.program::translateProgram(t, op_code);
-	}
-	
-	
-	
-	/**
-	 * Inc save op code
-	 */
-	pure CoreTranslator nextSaveOpCode(CoreTranslator t)
-	{
-		return "$__v" ~ t.save_op_code_inc;
-	}
-	
-	
-	
-	/**
-	 * Output save op code content
-	 */
-	pure string outputSaveOpCode(CoreTranslator t, int save_op_code_value = 0)
-	{
-		string content = "";
-		for (int i=0; i<t.save_op_codes.count(); i++)
+		Collection<string> content = [];
+		if (op_code.is_component)
 		{
-			if (i < save_op_code_value) continue;
-			SaveOpCode save = t.save_op_codes.item(i);
-			string s = (save.content == "") ? 
-				t.s(save.var_name ~ " = " ~ save.var_content ~ ";") :
-				save.content
-			;
-			content ~= s;
+			this.html.translate(op_code, content);
 		}
-		return content;
+		else
+		{
+			this.program.translate(op_code, content);
+		}
+		return rs::join("", content);
 	}
 }

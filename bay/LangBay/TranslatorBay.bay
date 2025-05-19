@@ -38,43 +38,6 @@ class TranslatorBay extends CoreTranslator
 	
 	
 	/**
-	 * Set flag
-	 */
-	TranslatorBay setFlag(string flag_name, bool value)
-	{
-		this.preprocessor_flags.set(flag_name, value);
-		return this;
-	}
-	
-	
-	/**
-	 * Increment indent level
-	 */
-	void levelInc()
-	{
-		this.indent_level = this.indent_level + 1;
-	}
-	
-	
-	/**
-	 * Decrease indent level
-	 */
-	void levelDec()
-	{
-		this.indent_level = this.indent_level - 1;
-	}
-	
-	
-	/**
-	 * Returns new line with indent
-	 */
-	string newLine()
-	{
-		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
-	}
-	
-	
-	/**
 	 * Returns string
 	 */
 	string toString(string s)

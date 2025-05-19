@@ -82,14 +82,16 @@ class ParserBayExpression extends BaseObject
 	BaseOpCode readBitNot(TokenReader reader)
 	{
 		Caret caret_start = reader.caret();
-		if (reader.nextToken() == "!")
+		
+		Collection operations = ["not", "bitnot", "!"];
+		if (operations.indexOf(reader.nextToken()) >= 0)
 		{
-			reader.readToken();
+			string op = reader.readToken();
 			BaseOpCode op_code = this.readNegative(reader);
 			return new OpMath
 			{
 				"value1": op_code,
-				"math": "!",
+				"math": op,
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
 			}
@@ -308,28 +310,6 @@ class ParserBayExpression extends BaseObject
 	
 	
 	/**
-	 * Read not
-	 */
-	BaseOpCode readNot(TokenReader reader)
-	{
-		Caret caret_start = reader.caret();
-		if (reader.nextToken() == "not")
-		{
-			reader.readToken();
-			BaseOpCode op_code = this.readCompare(reader);
-			return new OpMath
-			{
-				"value1": op_code,
-				"math": "not",
-				"caret_start": caret_start,
-				"caret_end": reader.caret(),
-			}
-		}
-		return this.readCompare(reader);
-	}
-	
-	
-	/**
 	 * Read and
 	 */
 	BaseOpCode readAnd(TokenReader reader)
@@ -338,11 +318,11 @@ class ParserBayExpression extends BaseObject
 		Collection operations = ["and", "&&"];
 		
 		/* Read operators */
-		BaseOpCode op_code = this.readNot(reader);
+		BaseOpCode op_code = this.readCompare(reader);
 		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
 			string math = reader.readToken();
-			BaseOpCode value = this.readNot(reader);
+			BaseOpCode value = this.readCompare(reader);
 			op_code = new OpMath
 			{
 				"value1": op_code,
