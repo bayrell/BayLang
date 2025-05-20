@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace BayLang.LangBay;
+namespace BayLang.LangES6;
 
 use Runtime.BaseObject;
 use BayLang.Caret;
@@ -24,7 +24,7 @@ use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
-use BayLang.LangBay.ParserBay;
+use BayLang.LangES6.ParserES6;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpCall;
@@ -39,15 +39,15 @@ use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpTernary;
 
 
-class ParserBayExpression extends BaseObject
+class ParserES6Expression extends BaseObject
 {
-	ParserBay parser = null;
+	ParserES6 parser = null;
 	
 	
 	/**
 	 * Constructor
 	 */
-	void constructor(ParserBay parser)
+	void constructor(ParserES6 parser)
 	{
 		parent();
 		this.parser = parser;
@@ -83,11 +83,12 @@ class ParserBayExpression extends BaseObject
 	{
 		Caret caret_start = reader.caret();
 		
-		Collection operations = ["not", "bitnot", "!"];
+		Collection operations = ["~", "!"];
 		if (operations.indexOf(reader.nextToken()) >= 0)
 		{
 			string op = reader.readToken();
 			if (op == "!") op = "not";
+			else if (op == "~") op = "bitnot";
 			BaseOpCode op_code = this.readNegative(reader);
 			return new OpMath
 			{

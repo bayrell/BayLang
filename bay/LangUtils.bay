@@ -22,8 +22,10 @@ use Runtime.CoreParser;
 use Runtime.Interfaces.ContextInterface;
 use BayLang.LangBay.ParserBay;
 use BayLang.LangBay.TranslatorBay;
+use BayLang.LangES6.ParserES6;
 use BayLang.LangES6.TranslatorES6;
 use BayLang.LangNode.TranslatorNode;
+use BayLang.LangPHP.ParserPHP;
 use BayLang.LangPHP.TranslatorPHP;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.CoreTranslator;
@@ -42,6 +44,8 @@ static class LangUtils
 	static CoreParser createParser(string lang = "")
 	{
 		if (lang == "bay") return new ParserBay();
+		else if (lang == "es6") return new ParserES6();
+		else if (lang == "php") return new ParserPHP();
 		return null;
 	}
 	

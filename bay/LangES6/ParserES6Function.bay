@@ -1,0 +1,129 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.LangES6;
+
+use Runtime.BaseObject;
+use Runtime.Reference;
+use BayLang.Caret;
+use BayLang.CoreToken;
+use BayLang.TokenReader;
+use BayLang.Exceptions.ParserError;
+use BayLang.Exceptions.ParserExpected;
+use BayLang.LangES6.ParserES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpPipe;
+use BayLang.OpCodes.OpTypeIdentifier;
+
+
+class ParserES6Function extends BaseObject
+{
+    ParserES6 parser = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(ParserES6 parser)
+	{
+		parent();
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Returns variable
+	 */
+	BaseOpCode getVariable(Reference<BaseOpCode> pattern_ref)
+	{
+		BaseOpCode pattern = pattern_ref.value();
+		if (pattern instanceof OpEntityName)
+		{
+			if (pattern.items.count() == 2 and
+				pattern.items.get(0).value == "console" and
+				pattern.items.get(1).value == "log"
+			)
+			{
+				pattern_ref.setValue(new OpIdentifier
+				{
+					"value": "print",
+					"caret_start": pattern.caret_start,
+					"caret_end": pattern.caret_end,
+				});
+				return null;
+			}
+			else
+			{
+				return pattern.items.first();
+			}
+		}
+		return pattern;
+	}
+	
+	
+	/**
+	 * Read call function
+	 */
+	BaseOpCode readCallFunction(TokenReader reader, BaseOpCode pattern = null)
+	{
+		Caret caret_start = reader.caret();
+		
+		/* Read identifier */
+		if (pattern == null)
+		{
+			pattern = this.parser.parser_base.readItem(reader);
+		}
+		
+		/* Find variable */
+		Reference<BaseOpCode> pattern_ref = new Reference(pattern);
+		BaseOpCode variable = this.getVariable(pattern_ref);
+		pattern = pattern_ref.value();
+		if (variable)
+		{
+			this.parser.findVariable(variable);
+		}
+		
+		/* Read arguments */
+		reader.matchToken("(");
+		Collection args = [];
+		while (not reader.eof() and reader.nextToken() != ")")
+		{
+			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+			args.push(expression);
+			if (reader.nextToken() == ",")
+			{
+				reader.matchToken(",");
+			}
+		}
+		reader.matchToken(")");
+		
+		return new OpCall
+		{
+			"args": args,
+			"obj": pattern,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+}

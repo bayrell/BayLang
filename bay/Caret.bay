@@ -369,7 +369,11 @@ class Caret extends BaseObject implements SerializeInterface
 		
 		/* Read special token */
 		string token = this.readSpecialToken();
-		if (token) return token;
+		if (token)
+		{
+			this.readString(rs::strlen(token));
+			return token;
+		}
 		
 		/* Read char */
 		if (not this.isTokenChar(this.nextChar())) return this.readChar();
@@ -401,7 +405,7 @@ class Caret extends BaseObject implements SerializeInterface
 		if (s == "#endif" or s == "#ifdef" or s == "%while") return s;
 		
 		s = this.nextString(5);
-		if (s == "#case" or s == "%else") return s;
+		if (s == "#case" or s == "%else" or s == "<?php") return s;
 		
 		s = this.nextString(4);
 		if (s == "@css" or s == "%for" or s == "%var" or s == "%set") return s;

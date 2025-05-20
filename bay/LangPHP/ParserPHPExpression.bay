@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace BayLang.LangBay;
+namespace BayLang.LangPHP;
 
 use Runtime.BaseObject;
 use BayLang.Caret;
@@ -24,7 +24,7 @@ use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
-use BayLang.LangBay.ParserBay;
+use BayLang.LangPHP.ParserPHP;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpCall;
@@ -39,15 +39,15 @@ use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpTernary;
 
 
-class ParserBayExpression extends BaseObject
+class ParserPHPExpression extends BaseObject
 {
-	ParserBay parser = null;
+	ParserPHP parser = null;
 	
 	
 	/**
 	 * Constructor
 	 */
-	void constructor(ParserBay parser)
+	void constructor(ParserPHP parser)
 	{
 		parent();
 		this.parser = parser;

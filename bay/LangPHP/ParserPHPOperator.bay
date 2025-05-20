@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace BayLang.LangBay;
+namespace BayLang.LangPHP;
 
 use Runtime.BaseObject;
 use Runtime.Reference;
@@ -25,7 +25,7 @@ use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
-use BayLang.LangBay.ParserBay;
+use BayLang.LangPHP.ParserPHP;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
@@ -57,15 +57,15 @@ use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpWhile;
 
 
-class ParserBayOperator extends BaseObject
+class ParserPHPOperator extends BaseObject
 {
-	ParserBay parser = null;
+	ParserPHP parser = null;
 	
 	
 	/**
 	 * Constructor
 	 */
-	void constructor(ParserBay parser)
+	void constructor(ParserPHP parser)
 	{
 		parent();
 		this.parser = parser;
@@ -75,9 +75,9 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read annotation
 	 */
-	pure list<ParserBay, BaseOpCode> readAnnotation(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readAnnotation(ParserPHP parser)
 	{
-		ParserBay look = null;
+		ParserPHP look = null;
 		CoreToken token = null;
 		BaseOpCode name = null;
 		BaseOpCode params = null;
@@ -107,11 +107,11 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read return
 	 */
-	pure list<ParserBay, BaseOpCode> readReturn(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readReturn(ParserPHP parser)
 	{
 		CoreToken token = null;
 		BaseOpCode op_code = null;
-		ParserBay look = null;
+		ParserPHP look = null;
 		
 		list res = parser.parser_base::matchToken(parser, "return"); parser = res[0]; token = res[1];
 		Caret caret_start = token.caret_start;
@@ -120,7 +120,7 @@ class ParserBayOperator extends BaseObject
 		if (token.content != ";")
 		{
 			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-		}		
+		}
 		
 		return
 		[
@@ -138,7 +138,7 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read delete
 	 */
-	pure list<ParserBay, BaseOpCode> readDelete(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readDelete(ParserPHP parser)
 	{
 		CoreToken token = null;
 		BaseOpCode op_code = null;
@@ -164,7 +164,7 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read throw
 	 */
-	pure list<ParserBay, BaseOpCode> readThrow(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readThrow(ParserPHP parser)
 	{
 		CoreToken token = null;
 		BaseOpCode op_code = null;
@@ -190,9 +190,9 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read try
 	 */
-	pure list<ParserBay, BaseOpCode> readTry(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readTry(ParserPHP parser)
 	{
-		ParserBay look = null;
+		ParserPHP look = null;
 		CoreToken token = null;
 		BaseOpCode op_try = null;
 		Vector<OpTryCatchItem> items = new Vector();
@@ -261,9 +261,9 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read then
 	 */
-	pure list<ParserBay, CoreToken> readThen(ParserBay parser)
+	pure list<ParserPHP, CoreToken> readThen(ParserPHP parser)
 	{
-		ParserBay look = null;
+		ParserPHP look = null;
 		CoreToken token = null;
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "then")
@@ -277,9 +277,9 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read do
 	 */
-	pure list<ParserBay, CoreToken> readDo(ParserBay parser)
+	pure list<ParserPHP, CoreToken> readDo(ParserPHP parser)
 	{
-		ParserBay look = null;
+		ParserPHP look = null;
 		CoreToken token = null;
 		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		if (token.content == "do")
@@ -293,10 +293,10 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read if
 	 */
-	pure list<ParserBay, BaseOpCode> readIf(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readIf(ParserPHP parser)
 	{
-		ParserBay look = null;
-		ParserBay look2 = null;
+		ParserPHP look = null;
+		ParserPHP look2 = null;
 		CoreToken token = null;
 		CoreToken token2 = null;
 		
@@ -347,7 +347,7 @@ class ParserBayOperator extends BaseObject
 				
 				/* Read expression */
 				list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-				list res = parser.parser_expression::readExpression(parser); 
+				list res = parser.parser_expression::readExpression(parser);
 				parser = res[0]; ifelse_condition = res[1];
 				list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
 				
@@ -374,7 +374,7 @@ class ParserBayOperator extends BaseObject
 			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return 
+		return
 		[
 			parser,
 			new OpIf
@@ -393,9 +393,9 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read For
 	 */
-	pure list<ParserBay, BaseOpCode> readFor(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readFor(ParserPHP parser)
 	{
-		ParserBay look = null;
+		ParserPHP look = null;
 		CoreToken token = null;
 		BaseOpCode op_code = null;
 		BaseOpCode expr1 = null;
@@ -443,9 +443,9 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read While
 	 */
-	pure list<ParserBay, BaseOpCode> readWhile(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readWhile(ParserPHP parser)
 	{
-		ParserBay look = null;
+		ParserPHP look = null;
 		CoreToken token = null;
 		BaseOpCode condition = null;
 		BaseOpCode op_code = null;
@@ -540,7 +540,21 @@ class ParserBayOperator extends BaseObject
 			{
 				throw value.caret_end.error("Wrong type identifier");
 			}
-			this.parser.findVariable(value);
+			bool find = this.parser.findVariable(value);
+			if (not find)
+			{
+				pattern = new OpTypeIdentifier
+				{
+					"items":
+					[
+						new OpIdentifier
+						{
+							"value": "var",
+						}
+					],
+				};
+				this.parser.addVariable(value);
+			}
 			
 			/* Read expression */
 			reader.matchToken("=");
@@ -568,11 +582,11 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read operator
 	 */
-	pure list<ParserBay, BaseOpCode> readInc(ParserBay parser)
+	pure list<ParserPHP, BaseOpCode> readInc(ParserPHP parser)
 	{
-		ParserBay look = null;
-		ParserBay look1 = null;
-		ParserBay look2 = null;
+		ParserPHP look = null;
+		ParserPHP look1 = null;
+		ParserPHP look2 = null;
 		CoreToken token = null;
 		CoreToken token1 = null;
 		CoreToken token2 = null;

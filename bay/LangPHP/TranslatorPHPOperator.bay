@@ -58,28 +58,19 @@ class TranslatorPHPOperator extends BaseObject
 	/**
 	 * OpAssign
 	 */
-	bool OpAssign(OpAssign op_code, Collection<string> result)
+	void OpAssign(OpAssign op_code, Collection<string> result)
 	{
-		if (op_code.pattern) return false;
-		
 		int values_count = op_code.items.count();
 		for (int i=0; i<values_count; i++)
 		{
 			OpAssignValue op_code_value = op_code.items.get(i);
-			if (op_code.pattern or i > 0)
-			{
-				result.push(" ");
-			}
+			if (not op_code_value.expression) continue;
+			if (i > 0) result.push(this.translator.newLine());
 			this.translator.expression.OpIdentifier(op_code_value.value, result);
-			if (op_code_value.expression)
-			{
-				result.push(" = ");
-				this.translator.expression.translate(op_code_value.expression, result);
-			}
-			if (i < values_count - 1) result.push(",");
+			result.push(" = ");
+			this.translator.expression.translate(op_code_value.expression, result);
+			if (i != values_count - 1) result.push(";");
 		}
-		
-		return true;
 	}
 	
 	
@@ -261,7 +252,7 @@ class TranslatorPHPOperator extends BaseObject
 	{
 		if (op_code instanceof OpAssign)
 		{
-			return this.OpAssign(op_code, result);
+			this.OpAssign(op_code, result);
 		}
 		else if (op_code instanceof OpBreak)
 		{

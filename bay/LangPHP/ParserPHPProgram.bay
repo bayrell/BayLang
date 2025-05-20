@@ -1,0 +1,191 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.LangPHP;
+
+use Runtime.BaseObject;
+use BayLang.Caret;
+use BayLang.CoreToken;
+use BayLang.TokenReader;
+use BayLang.Exceptions.ParserError;
+use BayLang.LangPHP.ParserPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpUse;
+
+
+class ParserPHPProgram extends BaseObject
+{
+	ParserPHP parser = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(ParserPHP parser)
+	{
+		parent();
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Read namespace
+	 */
+	OpNamespace readNamespace(TokenReader reader)
+	{
+		Caret caret_start = reader.caret();
+		
+		/* Read module name */
+		reader.matchToken("namespace");
+		OpEntityName entity_name = this.parser.parser_base.readEntityName(reader);
+		string module_name = entity_name.getName();
+		
+		/* Create op_code */
+		OpNamespace op_code = new OpNamespace
+		{
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+			"name": module_name,
+		}
+		
+		/* Set current namespace */
+		this.parser.current_namespace = op_code;
+		this.parser.current_namespace_name = module_name;
+		
+		/* Returns op_code */
+		return op_code;
+	}
+	
+	
+	/**
+	 * Read use
+	 */
+	OpUse readUse(TokenReader reader)
+	{
+		ParserPHP look = null;
+		CoreToken token = null;
+		OpEntityName name = null;
+		Caret caret_start = reader.caret();
+		string alias = "";
+		
+		/* Read module name */
+		reader.matchToken("use");
+		OpEntityName module_name = this.parser.parser_base.readEntityName(reader);
+		
+		/* Read alias */
+		if (reader.nextToken() == "as")
+		{
+			reader.readToken();
+			alias = reader.readToken();
+		}
+		
+		return new OpUse
+		{
+			"name": module_name.getName(),
+			"alias": alias,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
+	 * Read module
+	 */
+	Collection<BaseOpCode> readModuleItem(TokenReader reader)
+	{
+		string next_token = reader.nextToken();
+		
+		/* Namespace */
+		if (next_token == "namespace")
+		{
+			return this.readNamespace(reader);
+		}
+		
+		/* Namespace */
+		else if (next_token == "use")
+		{
+			return this.readUse(reader);
+		}
+		
+		/* Operator */
+		else if (next_token != "")
+		{
+			return this.parser.parser_operator.readOperator(reader);
+		}
+		
+		return null;
+	}
+	
+	
+	/**
+	 * Parse program
+	 */
+	void parse(TokenReader reader)
+	{
+		Collection<BaseOpCode> items = [];
+		Caret caret_start = reader.caret();
+		
+		/* Read PHP token */
+		reader.matchToken("<?php");
+		
+		/* Read module */
+		while (not reader.eof())
+		{
+			string next_token = reader.nextToken();
+			
+			/* Read module item */
+			BaseOpCode op_code = this.readModuleItem(reader);
+			if (op_code)
+			{
+				items.push(op_code);
+			}
+			else
+			{
+				break;
+			}
+			
+			/* Match semicolon */
+			if (reader.nextToken() == ";")
+			{
+				reader.matchToken(";");
+			}
+		}
+		
+		/* Returns op_code */
+		return new OpModule
+		{
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+			"items": items,
+		};
+	}
+}
