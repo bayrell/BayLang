@@ -155,7 +155,7 @@ class ParserBayProgram extends BaseObject
 		Caret caret_start = reader.caret();
 		
 		/* Read module */
-		while (not reader.eof())
+		while (not reader.eof() and reader.nextToken() != "")
 		{
 			string next_token = reader.nextToken();
 			

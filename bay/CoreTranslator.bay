@@ -32,6 +32,7 @@ class CoreTranslator extends BaseObject
 	/* State */
 	int opcode_level = 0;
 	int indent_level = 0;
+	bool last_semicolon = false;
 	string indent = "\t";
 	string crlf = "\n";
 	Dict<bool> preprocessor_flags = {};

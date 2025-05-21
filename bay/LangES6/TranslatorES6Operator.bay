@@ -121,24 +121,14 @@ class TranslatorES6Operator extends BaseObject
 	 */
 	void OpInc(OpInc op_code, Collection<string> result)
 	{
-		if (op_code.kind == OpInc::KIND_PRE_INC)
+		if (op_code.kind == OpInc::KIND_INC)
 		{
-			result.push("++");
-			this.translator.expression.translate(op_code.value, result);
-		}
-		if (op_code.kind == OpInc::KIND_PRE_DEC)
-		{
-			result.push("--");
-			this.translator.expression.translate(op_code.value, result);
-		}
-		if (op_code.kind == OpInc::KIND_POST_INC)
-		{
-			this.translator.expression.translate(op_code.value, result);
+			this.translator.expression.translate(op_code.item, result);
 			result.push("++");
 		}
-		if (op_code.kind == OpInc::KIND_POST_DEC)
+		if (op_code.kind == OpInc::KIND_DEC)
 		{
-			this.translator.expression.translate(op_code.value, result);
+			this.translator.expression.translate(op_code.item, result);
 			result.push("--");
 		}
 	}
@@ -156,8 +146,7 @@ class TranslatorES6Operator extends BaseObject
 		result.push("; ");
 		this.translateItem(op_code.expr3, result);
 		result.push(")");
-		result.push(this.translator.newLine());
-		this.translateItems(op_code.value, result);
+		this.translateItems(op_code.content, result);
 	}
 	
 	
@@ -169,7 +158,6 @@ class TranslatorES6Operator extends BaseObject
 		result.push("if (");
 		this.translator.expression.translate(op_code.condition, result);
 		result.push(")");
-		result.push(this.translator.newLine());
 		this.translateItems(op_code.if_true, result);
 		if (op_code.if_else and op_code.if_else.count() > 0)
 		{
@@ -180,7 +168,6 @@ class TranslatorES6Operator extends BaseObject
 				result.push("else if (");
 				this.translator.expression.translate(op_code_item.condition, result);
 				result.push(")");
-				result.push(this.translator.newLine());
 				this.translateItems(op_code_item.if_true, result);
 			}
 		}
@@ -188,7 +175,6 @@ class TranslatorES6Operator extends BaseObject
 		{
 			result.push(this.translator.newLine());
 			result.push("else");
-			result.push(this.translator.newLine());
 			this.translateItems(op_code.if_false, result);
 		}
 	}
@@ -210,7 +196,6 @@ class TranslatorES6Operator extends BaseObject
 	void OpTryCatch(OpTryCatch op_code, Collection<string> result)
 	{
 		result.push("try");
-		result.push(this.translator.newLine());
 		this.translateItems(op_code.op_try, result);
 		if (op_code.items and op_code.items.count() > 0)
 		{
@@ -224,7 +209,6 @@ class TranslatorES6Operator extends BaseObject
 				result.push(" ");
 				result.push(op_code_item.name);
 				result.push(")");
-				result.push(this.translator.newLine());
 				this.translateItems(op_code_item.value, result);
 			}
 		}
@@ -239,8 +223,7 @@ class TranslatorES6Operator extends BaseObject
 		result.push("while (");
 		this.translator.expression.translate(op_code.condition, result);
 		result.push(")");
-		result.push(this.translator.newLine());
-		this.translateItems(op_code.value, result);
+		this.translateItems(op_code.content, result);
 	}
 	
 	
@@ -321,6 +304,16 @@ class TranslatorES6Operator extends BaseObject
 	 */
 	void translateItems(OpItems op_code, Collection<string> result)
 	{
+		if (not(op_code instanceof OpItems))
+		{
+			result.push(" ");
+			this.translateItem(op_code, result);
+			result.push(";");
+			this.translator.last_semicolon = true;
+			return;
+		}
+		
+		result.push(this.translator.newLine());
 		if (op_code.items.count() == 0)
 		{
 			result.push("{");
@@ -338,6 +331,7 @@ class TranslatorES6Operator extends BaseObject
 		{
 			BaseOpCode op_code_item = op_code.items.get(i);
 			Collection<string> result_items = [];
+			this.translator.last_semicolon = false;
 			bool flag = this.translateItem(op_code_item, result_items);
 			if (flag)
 			{
@@ -353,7 +347,7 @@ class TranslatorES6Operator extends BaseObject
 					op_code_item instanceof OpThrow
 				)
 				{
-					result.push(";");
+					if (not this.translator.last_semicolon) result.push(";");
 				}
 			}
 		}

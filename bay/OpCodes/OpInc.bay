@@ -24,13 +24,11 @@ use BayLang.OpCodes.BaseOpCode;
 
 class OpInc extends BaseOpCode
 {
-	static const string KIND_PRE_INC = "pre_inc";
-	static const string KIND_PRE_DEC = "pre_dec";
-	static const string KIND_POST_INC = "post_inc";
-	static const string KIND_POST_DEC = "post_dec";
+	static const string KIND_INC = "inc";
+	static const string KIND_DEC = "dec";
 	string op = "op_inc";
 	string kind = "";
-	BaseOpCode value = null;
+	BaseOpCode item = null;
 	
 	
 	/**
@@ -40,6 +38,6 @@ class OpInc extends BaseOpCode
 	{
 		parent(serializer, data);
 		serializer.process(this, "kind", data);
-		serializer.process(this, "value", data);
+		serializer.process(this, "item", data);
 	}
 }

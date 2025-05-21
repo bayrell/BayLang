@@ -140,7 +140,7 @@ class ParserBayBase extends BaseObject
 		{
 			throw caret_start.expected("Number");
 		}
-		if (not Caret::isStringOfNumbers(value))
+		if (not Caret::isNumber(value))
 		{
 			throw caret_start.expected("Number");
 		}
@@ -553,7 +553,7 @@ class ParserBayBase extends BaseObject
 		}
 		
 		/* Read Number */
-		if (static::isStringOfNumbers(token.content))
+		if (static::isNumber(token.content))
 		{
 			return static::readNumber(parser, flag_negative);
 		}
@@ -738,7 +738,7 @@ class ParserBayBase extends BaseObject
 				int pos = 0;
 				parser = look;
 				list res = static::readToken(look); look = res[0]; token = res[1];
-				if (static::isStringOfNumbers(token.content))
+				if (static::isNumber(token.content))
 				{
 					pos = (int)token.content;
 					parser = look;

@@ -140,7 +140,7 @@ class ParserPHPBase extends BaseObject
 		{
 			throw caret_start.expected("Number");
 		}
-		if (not Caret::isStringOfNumbers(value))
+		if (not Caret::isNumber(value))
 		{
 			throw caret_start.expected("Number");
 		}
@@ -556,7 +556,7 @@ class ParserPHPBase extends BaseObject
 		}
 		
 		/* Read Number */
-		if (static::isStringOfNumbers(token.content))
+		if (static::isNumber(token.content))
 		{
 			return static::readNumber(parser, flag_negative);
 		}

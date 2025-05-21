@@ -313,8 +313,9 @@ class TranslatorBayProgram extends BaseObject
 		}
 		else
 		{
+			this.translator.last_semicolon = false;
 			bool exists = this.translator.operator.translateItem(op_code, result);
-			if (exists) result.push(";");
+			if (exists and not this.translator.last_semicolon) result.push(";");
 		}
 	}
 	

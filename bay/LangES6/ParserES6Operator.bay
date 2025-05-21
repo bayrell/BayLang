@@ -261,185 +261,135 @@ class ParserES6Operator extends BaseObject
 	/**
 	 * Read if
 	 */
-	pure list<ParserES6, BaseOpCode> readIf(ParserES6 parser)
+	BaseOpCode readIf(TokenReader reader)
 	{
-		ParserES6 look = null;
-		ParserES6 look2 = null;
-		CoreToken token = null;
-		CoreToken token2 = null;
-		
-		BaseOpCode if_condition = null;
+		Caret caret_start = reader.caret();
 		BaseOpCode if_true = null;
 		BaseOpCode if_false = null;
-		Vector<OpIfElse> if_else = new Vector();
+		Collection if_else = [];
 		
-		list res = parser.parser_base::matchToken(parser, parser.is_html ? "%if" : "if");
-		parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		/* Read condition */
+		reader.matchToken("if");
+		reader.matchToken("(");
+		BaseOpCode condition = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken(")");
 		
-		/* Read expression */
-		list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-		list res = parser.parser_expression::readExpression(parser); parser = res[0];
-		if_condition = res[1];
-		list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
-		list res = static::readThen(parser); parser = res[0];
+		/* Read content */
+		if_true = this.readContent(reader);
 		
-		/* If true */
-		list res = static::readOperators(parser); parser = res[0]; if_true = res[1];
-		
-		/* Else */
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while
-			(
-			not token.eof and
-			(
-				parser.is_html and (token.content == "%else" or token.content == "%elseif") or
-				not parser.is_html and (token.content == "else" or token.content == "elseif")
-			)
-		)
+		/* Read content */
+		Collection operations = ["else", "elseif"];
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			list res = parser.parser_base::readToken(look); look2 = res[0]; token2 = res[1];
-			if (
-				token.content == "%elseif" or token.content == "elseif" or
-				(token.content == "else" and token2.content == "if") or
-				(token.content == "%else" and token2.content == "if")
-			)
+			string token = reader.readToken();
+			if (token == "elseif" or token == "else" and reader.nextToken() == "if")
 			{
-				BaseOpCode ifelse_condition = null;
-				BaseOpCode ifelse_block = null;
+				/* Read condition */
+				reader.matchToken("(");
+				BaseOpCode if_else_condition = this.parser.parser_expression.readExpression(reader);
+				reader.matchToken(")");
 				
-				if (token.content == "elseif") parser = look;
-				else if (token2.content == "%elseif") parser = look2;
-				else if (token2.content == "if") parser = look2;
-				else if (token2.content == "%if") parser = look2;
+				/* Read content */
+				BaseOpCode if_else_content = this.readContent(reader);
 				
-				/* Read expression */
-				list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-				list res = parser.parser_expression::readExpression(parser);
-				parser = res[0]; ifelse_condition = res[1];
-				list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
-				
-				list res = static::readThen(parser); parser = res[0];
-				list res = static::readOperators(parser); parser = res[0]; ifelse_block = res[1];
-				
-				if_else.push
-				(
-					new OpIfElse
-					{
-						"condition": ifelse_condition,
-						"if_true": ifelse_block,
-						"caret_start": token2.caret_start,
-						"caret_end": parser.caret,
-					}
-				);
+				/* Add op_code */
+				if_else.push(new OpIfElse
+				{
+					"condition": if_else_condition,
+					"content": if_else_content,
+					"caret_start": caret_start,
+					"caret_end": reader.caret(),
+				});
 			}
-			else
+			else if (token == "else")
 			{
-				list res = static::readOperators(look); parser = res[0]; if_false = res[1];
-				break;
+				if_false = this.readContent(reader);
 			}
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
 		}
 		
-		return
-		[
-			parser,
-			new OpIf
-			{
-				"condition": if_condition,
-				"if_true": if_true,
-				"if_false": if_false,
-				"if_else": if_else,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		return new OpIf
+		{
+			"condition": condition,
+			"if_true": if_true,
+			"if_false": if_false,
+			"if_else": if_else,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
 	/**
 	 * Read For
 	 */
-	pure list<ParserES6, BaseOpCode> readFor(ParserES6 parser)
+	BaseOpCode readFor(TokenReader reader)
 	{
-		ParserES6 look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		BaseOpCode expr1 = null;
-		BaseOpCode expr2 = null;
-		BaseOpCode expr3 = null;
+		Caret caret_start = reader.caret();
 		
-		/* Save vars */
-		Dict<bool> save_vars = parser.vars;
+		/* Read for */
+		reader.matchToken("for");
+		reader.matchToken("(");
 		
-		list res = parser.parser_base::matchToken(parser, parser.is_html ? "%for" : "for");
-		parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		/* Read assing */
+		BaseOpCode expr1 = this.readAssign(reader);
+		reader.matchToken(";");
 		
-		list res = parser.parser_base::matchToken(parser, "("); parser = res[0]; token = res[1];
-		list res = static::readAssign(parser); parser = res[0]; expr1 = res[1];
+		/* Read expression */
+		BaseOpCode expr2 = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken(";");
 		
-		list res = parser.parser_base::matchToken(parser, ";"); parser = res[0]; token = res[1];
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; expr2 = res[1];
+		/* Read operator */
+		BaseOpCode expr3 = this.readInc(reader);
+		reader.matchToken(")");
 		
-		list res = parser.parser_base::matchToken(parser, ";"); parser = res[0]; token = res[1];
-		list res = static::readOperator(parser); parser = res[0]; expr3 = res[1];
+		/* Read content */
+		OpItems content = this.readContent(reader);
 		
-		list res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; token = res[1];
-		list res = static::readOperators(parser); parser = res[0]; op_code = res[1];
-		
-		/* Restore vars */
-		parser <= vars <= save_vars;
-		
-		return
-		[
-			parser,
-			new OpFor
-			{
-				"expr1": expr1,
-				"expr2": expr2,
-				"expr3": expr3,
-				"value": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		/* Returns op_code */
+		return new OpFor
+		{
+			"expr1": expr1,
+			"expr2": expr2,
+			"expr3": expr3,
+			"content": content,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		}
 	}
 	
 	
 	/**
 	 * Read While
 	 */
-	pure list<ParserES6, BaseOpCode> readWhile(ParserES6 parser)
+	BaseOpCode readWhile(TokenReader reader)
 	{
-		ParserES6 look = null;
-		CoreToken token = null;
-		BaseOpCode condition = null;
-		BaseOpCode op_code = null;
+		Caret caret_start = reader.caret();
 		
-		list res = parser.parser_base::matchToken(parser, parser.is_html ? "%while" : "while");
-		parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		/* Read condition */
+		reader.matchToken("while");
+		reader.matchToken("(");
+		BaseOpCode condition = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken(")");
 		
-		list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
-		list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
+		/* Read items */
+		OpItems content = null;
+		if (reader.nextToken() == "{")
+		{
+			content = this.parse(reader);
+		}
+		else
+		{
+			content = this.readOperator(reader);
+		}
 		
-		list res = static::readDo(parser); parser = res[0]; token = res[1];
-		list res = static::readOperators(parser); parser = res[0]; op_code = res[1];
-		
-		return
-		[
-			parser,
-			new OpWhile
-			{
-				"condition": condition,
-				"value": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		/* Returns op_code */
+		return new OpWhile
+		{
+			"content": content,
+			"condition": condition,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		}
 	}
 	
 	
@@ -552,62 +502,27 @@ class ParserES6Operator extends BaseObject
 	/**
 	 * Read operator
 	 */
-	pure list<ParserES6, BaseOpCode> readInc(ParserES6 parser)
+	BaseOpCode readInc(TokenReader reader)
 	{
-		ParserES6 look = null;
-		ParserES6 look1 = null;
-		ParserES6 look2 = null;
-		CoreToken token = null;
-		CoreToken token1 = null;
-		CoreToken token2 = null;
+		Caret caret_start = reader.caret();
 		
-		list res = parser.parser_base::readToken(parser); look1 = res[0]; token1 = res[1];
-		Caret caret_start = token1.caret_start;
+		/* Read identifier */
+		BaseOpCode item = this.parser.parser_base.readIdentifier(reader);
 		
-		list res = parser.parser_base::readToken(look1); look2 = res[0]; token2 = res[1];
+		/* Read kind */
+		string kind = reader.readToken();
+		if (kind == "++") kind = OpInc::KIND_INC;
+		else if (kind == "--") kind = OpInc::KIND_DEC;
+		else throw reader.expected("++ or --");
 		
-		string look1_content = token1.content;
-		string look2_content = token2.content;
-		
-		if ((look1_content == "++" or look1_content == "--") and parser.parser_base::isIdentifier(look2_content))
+		/* Returns op_code */
+		return new OpInc
 		{
-			parser = look2;
-			BaseOpCode op_code = new OpIdentifier
-			{
-				"value": look2_content,
-				"caret_start": token2.caret_start,
-				"caret_end": token2.caret_end,
-			};
-			op_code = new OpInc
-			{
-				"kind": (look1_content == "++") ? OpInc::KIND_PRE_INC : OpInc::KIND_PRE_DEC,
-				"value": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			};
-			return [parser, op_code];
-		}
-		
-		if ((look2_content == "++" or look2_content == "--") and parser.parser_base::isIdentifier(look1_content))
-		{
-			parser = look2;
-			BaseOpCode op_code = new OpIdentifier
-			{
-				"value": look1_content,
-				"caret_start": token1.caret_start,
-				"caret_end": token1.caret_end,
-			};
-			op_code = new OpInc
-			{
-				"kind": (look2_content == "++") ? OpInc::KIND_POST_INC : OpInc::KIND_POST_DEC,
-				"value": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			};
-			return [parser, op_code];
-		}
-		
-		return [parser, null];
+			"kind": kind,
+			"item": item,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -707,16 +622,35 @@ class ParserES6Operator extends BaseObject
 	
 	
 	/**
+	 * Read content
+	 */
+	BaseOpCode readContent(TokenReader reader)
+	{
+		if (reader.nextToken() == "{")
+		{
+			return this.parse(reader);
+		}
+		BaseOpCode content = this.readOperator(reader);
+		reader.matchToken(";");
+		return content;
+	}
+	
+	
+	/**
 	 * Read operators
 	 */
-	Collection<BaseOpCode> parse(TokenReader reader, string end_tag = "}")
+	BaseOpCode parse(TokenReader reader)
 	{
+		Caret caret_start = reader.caret();
 		Collection<BaseOpCode> items = [];
 		
+		/* Read begin tag */
+		reader.matchToken("{");
+		
 		/* Read operators */
-		while (not reader.eof() and reader.nextToken() != end_tag)
+		while (not reader.eof() and reader.nextToken() != "}")
 		{
-			BaseOpCode op_code = this.readOperator();
+			BaseOpCode op_code = this.readOperator(reader);
 			if (op_code)
 			{
 				items.push(op_code);
@@ -732,6 +666,16 @@ class ParserES6Operator extends BaseObject
 				reader.matchToken(";");
 			}
 		}
-		return items;
+		
+		/* Read end tag */
+		reader.matchToken("}");
+		
+		/* Returns value */
+		return new OpItems
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 }

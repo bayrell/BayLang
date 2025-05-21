@@ -283,7 +283,7 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param char ch
 	 * @return boolean
 	 */
-	static bool isNumber(char ch) =>
+	static bool isNumberChar(char ch) =>
 		rs::indexOf('0123456789', ch) !== -1
 	;
 	
@@ -303,12 +303,12 @@ class Caret extends BaseObject implements SerializeInterface
 	 * @param string s
 	 * @return boolean
 	 */
-	static bool isStringOfNumbers(string s)
+	static bool isNumber(string s)
 	{
 		int sz = rs::strlen(s);
 		for (int i=0; i<sz; i++)
 		{
-			if (not static::isNumber( rs::charAt(s, i) )) return false;
+			if (not static::isNumberChar(rs::charAt(s, i))) return false;
 		}
 		return true;
 	}

@@ -158,7 +158,7 @@ class ParserPHPProgram extends BaseObject
 		reader.matchToken("<?php");
 		
 		/* Read module */
-		while (not reader.eof())
+		while (not reader.eof() and reader.nextToken() != "")
 		{
 			string next_token = reader.nextToken();
 			
