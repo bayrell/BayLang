@@ -55,7 +55,6 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void OpNamespace(OpNamespace op_code, Collection<string> result)
 	{
-		log(op_code.name);
 		result.push("namespace ");
 		result.push(this.translator.getModuleName(op_code.name));
 		result.push(";");

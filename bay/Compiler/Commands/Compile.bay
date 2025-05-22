@@ -1,0 +1,124 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Compiler.Commands;
+
+use Runtime.fs;
+use Runtime.io;
+use Runtime.Callback;
+use Runtime.Console.BaseCommand;
+use Runtime.Console.CommandsList;
+use BayLang.CoreParser;
+use BayLang.CoreTranslator;
+use BayLang.LangUtils;
+use BayLang.Exceptions.ParserError;
+use BayLang.OpCodes.BaseOpCode;
+
+
+class Compile extends BaseCommand
+{
+	/**
+	 * Returns name
+	 */
+	static string getName() => "compile";
+	
+	
+	/**
+	 * Returns description
+	 */
+	static string getDescription() => "Compile file";
+	
+	
+	/**
+	 * Run task
+	 */
+	static async int run()
+	{
+		string command = @.cli_args[2];
+		string src_file_name = @.cli_args[3];
+		string dest_file_name = @.cli_args[4];
+		
+		/* Check command */
+		if (not command)
+		{
+			io::print("Print <command> <src> <dest>");
+			io::print("Command: bay_to_php, bay_to_es6, php_to_bay, php_to_es6, es6_to_bay, es6_to_php")
+			return static::FAIL;
+		}
+		
+		/* Check src */
+		if (not src_file_name)
+		{
+			io::print_error("Print src file name");
+			return static::FAIL;
+		}
+		
+		/* Check dest */
+		if (not dest_file_name)
+		{
+			io::print_error("Print dest file name");
+			return static::FAIL;
+		}
+		
+		io::print("Convert " ~ src_file_name ~ " to " ~ dest_file_name);
+		
+		string from_lang = "";
+		string to_lang = "";
+		if (command == "bay_to_php"){ from_lang = "bay"; to_lang = "php"; }
+		if (command == "bay_to_es6"){ from_lang = "bay"; to_lang = "es6"; }
+		if (command == "php_to_bay"){ from_lang = "php"; to_lang = "bay"; }
+		if (command == "php_to_es6"){ from_lang = "php"; to_lang = "es6"; }
+		if (command == "es6_to_bay"){ from_lang = "es6"; to_lang = "bay"; }
+		if (command == "es6_to_php"){ from_lang = "es6"; to_lang = "php"; }
+		
+		CoreParser parser = LangUtils::createParser(from_lang);
+		CoreTranslator translator = LangUtils::createTranslator(to_lang);
+		
+		/* Check file exists */
+		if (not await fs::isFile(src_file_name))
+		{
+			io::print_error("File not found");
+			return static::FAIL;
+		}
+		
+		/* Read file name */
+		BaseOpCode op_code = null;
+		string content = await fs::readFile(src_file_name);
+		string output = "";
+		
+		/* Translate file */
+		try
+		{
+			parser.setContent(content);
+			op_code = parser.parse();
+			output = translator.translate(op_code);
+		}
+		catch (ParserError error)
+		{
+			io::print_error(error.toString());
+			return static::FAIL;
+		}
+		
+		/* Save file */
+		await fs::saveFile(dest_file_name, output);
+		
+		/* Return result */
+		io::print("Ok");
+		return static::SUCCESS;
+	}
+}

@@ -56,11 +56,8 @@ static class ModuleDescription
 	 */
 	pure Collection<Dict> entities() => 
 	[
-		new ConsoleCommand("BayLang.Compiler.Commands.Make"),
-		new ConsoleCommand("BayLang.Compiler.Commands.MakeAll"),
-		new ConsoleCommand("BayLang.Compiler.Commands.Modules"),
+		new ConsoleCommand("BayLang.Compiler.Commands.Compile"),
 		new ConsoleCommand("BayLang.Compiler.Commands.Version"),
-		new ConsoleCommand("BayLang.Compiler.Commands.Watch"),
 		new Provider("BayLang.Compiler.SettingsProvider"),
 	];
 }

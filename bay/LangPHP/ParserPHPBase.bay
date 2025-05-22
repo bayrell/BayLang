@@ -311,7 +311,7 @@ class ParserPHPBase extends BaseObject
 		items.push(this.readIdentifier(reader));
 		
 		/* Read names */
-		while (reader.nextToken() == ".")
+		while (reader.nextToken() == "\\")
 		{
 			reader.readToken();
 			items.push(this.readIdentifier(reader));
