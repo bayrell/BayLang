@@ -493,6 +493,7 @@ class TranslatorPHPExpression extends BaseObject
 				result.appendItems(result1);
 			}
 			
+			if (op == "~") op = ".";
 			result.push(" " ~ op ~ " ");
 			
 			Collection<string> result2 = [];

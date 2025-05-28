@@ -55,6 +55,26 @@ class ParserBayExpression extends BaseObject
 	
 	
 	/**
+	 * Read function
+	 */
+	BaseOpCode readFunction(TokenReader reader)
+	{
+		/* Save caret */
+		Caret save_caret = reader.caret();
+		
+		/* Try to read function */
+		OpCall op_code = this.parser.parser_function.readCallFunction(reader);
+		if (op_code) return op_code;
+		
+		/* Restore reader */
+		reader.init(save_caret);
+		
+		/* Read op_code */
+		return this.parser.parser_base.readItem(reader);
+	}
+	
+	
+	/**
 	 * Read negative
 	 */
 	BaseOpCode readNegative(TokenReader reader)
@@ -63,7 +83,7 @@ class ParserBayExpression extends BaseObject
 		if (reader.nextToken() == "-")
 		{
 			reader.readToken();
-			BaseOpCode op_code = this.parser.parser_base.readItem(reader);
+			BaseOpCode op_code = this.readFunction(reader);
 			return new OpMath
 			{
 				"value1": op_code,
@@ -72,7 +92,7 @@ class ParserBayExpression extends BaseObject
 				"caret_end": reader.caret(),
 			}
 		}
-		return this.parser.parser_base.readItem(reader);
+		return this.readFunction(reader);
 	}
 	
 	

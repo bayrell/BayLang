@@ -211,10 +211,7 @@ class ParserPHPBase extends BaseObject
 		}
 		
 		/* Read end string char */
-		if (ch != "'" and ch != '"') /* " */
-		{
-			throw caret.expected("End of string");
-		}
+		caret.matchString(str_char);
 		
 		/* Restore reader */
 		reader.init(caret);
@@ -652,6 +649,10 @@ class ParserPHPBase extends BaseObject
 		if (Caret::isNumber(reader.nextToken()))
 		{
 			return this.readNumber(reader);
+		}
+		else if (reader.nextToken() == "'" or reader.nextToken() == '"') /* " */
+		{
+			return this.readString(reader);
 		}
 		return this.readIdentifier(reader);
 	}

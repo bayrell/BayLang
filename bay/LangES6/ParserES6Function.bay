@@ -75,7 +75,9 @@ class ParserES6Function extends BaseObject
 			}
 			else
 			{
-				return pattern.items.first();
+				BaseOpCode value = pattern.items.first();
+				pattern_ref.setValue(value);
+				return value;
 			}
 		}
 		return pattern;
@@ -92,8 +94,12 @@ class ParserES6Function extends BaseObject
 		/* Read identifier */
 		if (pattern == null)
 		{
-			pattern = this.parser.parser_base.readItem(reader);
+			if (!this.parser.parser_base::isIdentifier(reader.nextToken())) return null;
+			pattern = this.parser.parser_base.readEntityName(reader);
 		}
+		
+		/* Next token should be bracket */
+		if (reader.nextToken() != "(") return null;
 		
 		/* Find variable */
 		Reference<BaseOpCode> pattern_ref = new Reference(pattern);

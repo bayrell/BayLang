@@ -90,6 +90,9 @@ class ParserBayFunction extends BaseObject
 			pattern = this.parser.parser_base.readItem(reader);
 		}
 		
+		/* Next token should be bracket */
+		if (reader.nextToken() != "(") return null;
+		
 		/* Find identifier */
 		if (pattern instanceof OpTypeIdentifier) pattern = pattern.entity_name.items.last();
 		this.parser.findVariable(pattern);

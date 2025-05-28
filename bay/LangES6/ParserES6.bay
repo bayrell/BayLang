@@ -70,7 +70,7 @@ class ParserES6 extends CoreParser
 	bool isRegisteredVariable(string name)
 	{
 		Collection variables = [
-			"console", "document", "window"
+			"console", "document", "window", "String"
 		];
 		if (variables.indexOf(name) == -1) return false;
 		return true;

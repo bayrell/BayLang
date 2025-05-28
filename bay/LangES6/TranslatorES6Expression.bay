@@ -493,7 +493,8 @@ class TranslatorES6Expression extends BaseObject
 				result.appendItems(result1);
 			}
 			
-			result.push(" " ~ op ~ " ");
+			if (op == "~") result.push(" + ");
+			else result.push(" " ~ op ~ " ");
 			
 			Collection<string> result2 = [];
 			this.Expression(op_code.value2, result2);
@@ -501,13 +502,23 @@ class TranslatorES6Expression extends BaseObject
 			
 			if (opcode_level2 < opcode_level)
 			{
+				if (op == "~") result.push("String");
 				result.push("(");
 				result.appendItems(result2);
 				result.push(")");
 			}
 			else
 			{
-				result.appendItems(result2);
+				if (op == "~")
+				{
+					result.push("String(")
+					result.appendItems(result2);
+					result.push(")");
+				}
+				else
+				{
+					result.appendItems(result2);
+				}
 			}
 		}
 		

@@ -83,6 +83,9 @@ class ParserPHPFunction extends BaseObject
 			pattern = this.parser.parser_base.readItem(reader);
 		}
 		
+		/* Next token should be bracket */
+		if (reader.nextToken() != "(") return null;
+		
 		/* Find variable */
 		Reference<BaseOpCode> pattern_ref = new Reference(pattern);
 		BaseOpCode variable = this.getVariable(pattern_ref);
