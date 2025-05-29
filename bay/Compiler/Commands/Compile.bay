@@ -77,17 +77,9 @@ class Compile extends BaseCommand
 		
 		io::print("Convert " ~ src_file_name ~ " to " ~ dest_file_name);
 		
-		string from_lang = "";
-		string to_lang = "";
-		if (command == "bay_to_php"){ from_lang = "bay"; to_lang = "php"; }
-		if (command == "bay_to_es6"){ from_lang = "bay"; to_lang = "es6"; }
-		if (command == "php_to_bay"){ from_lang = "php"; to_lang = "bay"; }
-		if (command == "php_to_es6"){ from_lang = "php"; to_lang = "es6"; }
-		if (command == "es6_to_bay"){ from_lang = "es6"; to_lang = "bay"; }
-		if (command == "es6_to_php"){ from_lang = "es6"; to_lang = "php"; }
-		
-		CoreParser parser = LangUtils::createParser(from_lang);
-		CoreTranslator translator = LangUtils::createTranslator(to_lang);
+		Dict res = LangUtils::parseCommand(command);
+		CoreParser parser = LangUtils::createParser(res.get("from"));
+		CoreTranslator translator = LangUtils::createTranslator(res.get("to"));
 		
 		/* Check file exists */
 		if (not await fs::isFile(src_file_name))

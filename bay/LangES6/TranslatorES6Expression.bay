@@ -78,7 +78,7 @@ class TranslatorES6Expression extends BaseObject
 	/**
 	 * OpString
 	 */
-	void OpString(OpNumber op_code, Collection<string> result)
+	void OpString(OpString op_code, Collection<string> result)
 	{
 		result.push(this.translator.toString(op_code.value));
 		this.translator.opcode_level = 20;
@@ -209,7 +209,7 @@ class TranslatorES6Expression extends BaseObject
 	/**
 	 * OpDict
 	 */
-	void OpDict(OpCollection op_code, Collection<string> result)
+	void OpDict(OpDict op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
 		if (op_code.values.count() == 0 and not is_multiline)
@@ -358,7 +358,7 @@ class TranslatorES6Expression extends BaseObject
 	/**
 	 * OpClassOf
 	 */
-	void OpClassOf(OpCall op_code, Collection<string> result)
+	void OpClassOf(OpClassOf op_code, Collection<string> result)
 	{
 		result.push("classof ");
 		result.push(op_code.entity_name.names.last());
@@ -370,7 +370,7 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpCall(OpCall op_code, Collection<string> result)
 	{
-		this.translateItem(op_code.obj, result);
+		this.translateItem(op_code.item, result);
 		
 		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
 		{
@@ -425,7 +425,7 @@ class TranslatorES6Expression extends BaseObject
 	/**
 	 * OpMath
 	 */
-	void OpMath(OpCall op_code, Collection<string> result)
+	void OpMath(BaseOpCode op_code, Collection<string> result)
 	{
 		Collection<string> result1 = [];
 		this.Expression(op_code.value1, result1);
@@ -460,10 +460,8 @@ class TranslatorES6Expression extends BaseObject
 		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
 		if (op_code.math == "bitnot") { opcode_level = 16; op = "bitnot"; }
 		if (op_code.math == "not") { opcode_level = 16; op = "!"; }
-		if (op_code.math == "and") { opcode_level = 6; op = "and"; }
-		if (op_code.math == "&&") { opcode_level = 6; op = "and"; }
-		if (op_code.math == "or") { opcode_level = 5; op = "or"; }
-		if (op_code.math == "||") { opcode_level = 5; op = "or"; }
+		if (op_code.math == "and" or op_code.math == "&&") { opcode_level = 6; op = "&&"; }
+		if (op_code.math == "or" or op_code.math == "||") { opcode_level = 5; op = "||"; }
 		
 		if (op_code.math == "not" or op_code.math == "bitnot")
 		{
@@ -529,7 +527,7 @@ class TranslatorES6Expression extends BaseObject
 	/**
 	 * Translate item
 	 */
-	void translateItem(OpCall op_code, Collection<string> result)
+	void translateItem(BaseOpCode op_code, Collection<string> result)
 	{
 		if (op_code instanceof OpNumber)
 		{

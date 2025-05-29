@@ -1,0 +1,270 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Test.Translator;
+
+use Runtime.Exceptions.AssertException;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use BayLang.Exceptions.ParserError;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.LangES6.ParserES6;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangPHP.ParserPHP;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreParser;
+use BayLang.CoreTranslator;
+use BayLang.LangUtils;
+
+
+class Expression
+{
+	/**
+	 * Assert value
+	 */
+	void assert(string command, string value1, string value2)
+	{
+		Collection<string> message = [
+			command,
+			"Missing:", value1,
+			"Exists:", value2
+		]
+		AssertHelper::equalValue(value1, value2, rs::join("\n", message));
+	}
+	
+	
+	/**
+	 * Test expression
+	 */
+	void testExpression(string command, string src, string dest, fn callback = null)
+	{
+		Dict res = LangUtils::parseCommand(command);
+		CoreParser parser = LangUtils::createParser(res.get("from"));
+		CoreTranslator translator = LangUtils::createTranslator(res.get("to"));
+		
+		/* Init function */
+		if (callback) callback(parser, translator);
+		
+		/* Translate file */
+		Collection<string> output = [];
+		try
+		{
+			parser.setContent(src);
+			BaseOpCode op_code = parser.parser_expression.readExpression(parser.createReader());
+			translator.expression.translate(op_code, output);
+		}
+		catch (ParserError error)
+		{
+			throw new AssertException(command ~ " " ~ error.toString());
+		}
+		
+		/* Check output */
+		this.assert(command, dest, rs::join("", output));
+	}
+	
+	
+	/**
+	 * Test lang
+	 */
+	void test(Dict content, fn init = null)
+	{
+		string content_bay = content.get("bay");
+		string content_es6 = content.has("es6") ? content.get("es6") : content_bay;
+		string content_php = content.has("php") ? content.get("php") : content_bay;
+		this.testExpression("bay_to_bay", content_bay, content_bay, init);
+		this.testExpression("bay_to_php", content_bay, content_php, init);
+		this.testExpression("bay_to_es6", content_bay, content_es6, init);
+		this.testExpression("php_to_php", content_php, content_php, init);
+		this.testExpression("php_to_bay", content_php, content_bay, init);
+		this.testExpression("php_to_es6", content_php, content_es6, init);
+		this.testExpression("es6_to_es6", content_es6, content_es6, init);
+		this.testExpression("es6_to_bay", content_es6, content_bay, init);
+		this.testExpression("es6_to_php", content_es6, content_php, init);
+	}
+	
+	
+	@Test{}
+	void testMath1()
+	{
+		Dict content = {
+			"bay": "a + b",
+			"es6": "a + b",
+			"php": "$a + $b",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath2()
+	{
+		Dict content = {
+			"bay": "a * b",
+			"php": "$a * $b",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath3()
+	{
+		Dict content = {
+			"bay": "a + b * c",
+			"php": "$a + $b * $c",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+			parser.vars.set("c", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath4()
+	{
+		Dict content = {
+			"bay": "(a + b) * c",
+			"php": "($a + $b) * $c",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+			parser.vars.set("c", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath5()
+	{
+		Dict content = {
+			"bay": "a * (b + c)",
+			"php": "$a * ($b + $c)",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+			parser.vars.set("c", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath6()
+	{
+		Dict content = {
+			"bay": "not a",
+			"es6": "!a",
+			"php": "!$a",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath7()
+	{
+		Dict content = {
+			"bay": "not (a or b)",
+			"es6": "!(a || b)",
+			"php": "!($a || $b)",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testMath8()
+	{
+		Dict content = {
+			"bay": "not a or not b",
+			"es6": "!a || !b",
+			"php": "!$a || !$b",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testFn2()
+	{
+		Dict content = {
+			"bay": "a() + b()",
+			"es6": "a() + b()",
+			"php": "$a() + $b()",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testFn3()
+	{
+		Dict content = {
+			"bay": "(a() + b()) * c()",
+			"es6": "(a() + b()) * c()",
+			"php": "($a() + $b()) * $c()",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+			parser.vars.set("c", true);
+		};
+		this.test(content, init);
+	}
+}

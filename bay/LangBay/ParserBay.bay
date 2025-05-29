@@ -107,13 +107,30 @@ class ParserBay extends CoreParser
 	
 	
 	/**
+	 * Find identifier
+	 */
+	void findIdentifier(OpIdentifier op_code)
+	{
+		string name = op_code.value;
+		if (this.vars.has(name) or this.isRegisteredVariable(name))
+		{
+			op_code.kind = OpIdentifier::KIND_VARIABLE;
+		}
+		if (this.uses.has(name) or this.isSystemType(name))
+		{
+			op_code.kind = OpIdentifier::KIND_TYPE;
+		}
+	}
+	
+	
+	/**
 	 * Find variable
 	 */
 	void findVariable(OpIdentifier op_code)
 	{
 		string name = op_code.value;
-		if (this.vars.has(name)) return;
-		if (this.isRegisteredVariable(name)) return;
+		this.findIdentifier(op_code);
+		if (op_code.kind == OpIdentifier::KIND_VARIABLE) return;
 		throw op_code.caret_end.error("Unknown identifier '" ~ name ~ "'");
 	}
 	
@@ -124,8 +141,7 @@ class ParserBay extends CoreParser
 	void findType(OpIdentifier op_code)
 	{
 		string name = op_code.value;
-		if (this.uses.has(name)) return;
-		if (this.isSystemType(name)) return;
+		if (op_code.kind == OpIdentifier::KIND_TYPE) return;
 		throw op_code.caret_end.error("Unknown type '" ~ name ~ "'");
 	}
 	
@@ -135,13 +151,7 @@ class ParserBay extends CoreParser
 	 */
 	BaseOpCode parse()
 	{
-		TokenReader reader = new TokenReader();
-		reader.init(
-			new Caret{
-				"content": new Reference(this.content),
-				"tab_size": this.tab_size,
-			}
-		);
+		TokenReader reader = this.createReader();
 		return this.parser_program.parse(reader);
 	}
 }

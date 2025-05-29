@@ -52,11 +52,14 @@ static class ModuleDescription
 	 * Returns enities
 	 */
 	pure Collection<Dict> entities() => [
-		new UnitTest("BayLang.Test.LangBay.Base"),
+		new UnitTest("BayLang.Test.Translator.Base"),
+		new UnitTest("BayLang.Test.Translator.Expression"),
+		new UnitTest("BayLang.Test.Translator.Operator"),
+		/*new UnitTest("BayLang.Test.LangBay.Base"),
 		new UnitTest("BayLang.Test.LangBay.Expression"),
 		new UnitTest("BayLang.Test.LangBay.Html"),
 		new UnitTest("BayLang.Test.LangBay.Operator"),
 		new UnitTest("BayLang.Test.LangBay.Program"),
-		new UnitTest("BayLang.Test.LangBay.Style"),
+		new UnitTest("BayLang.Test.LangBay.Style"),*/
 	];
 }

@@ -276,14 +276,25 @@ class ParserPHPBase extends BaseObject
 	{
 		Caret caret_start = reader.caret();
 		
-		/* Skip $ */
-		if (reader.nextToken() == "$") reader.readToken();
+		/* Detect variable */
+		bool is_variable = false;
+		if (reader.nextToken() == "$")
+		{
+			is_variable = true;
+			reader.readToken();
+		}
 		
 		/* Read identifier */
 		string name = reader.readToken();
 		if (not static::isIdentifier(name) or static::isReserved(name))
 		{
 			throw reader.expected("Identifier");
+		}
+		
+		/* Check if function */
+		if (not this.parser.isRegisteredVariable(name) and not is_variable)
+		{
+			throw reader.expected("Variable");
 		}
 		
 		/* Returns op_code */
@@ -642,7 +653,7 @@ class ParserPHPBase extends BaseObject
 	
 	
 	/**
-	 * Read dynamic identifier
+	 * Read item
 	 */
 	BaseOpCode readItem(TokenReader reader)
 	{

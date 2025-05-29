@@ -95,7 +95,6 @@ class ParserBayFunction extends BaseObject
 		
 		/* Find identifier */
 		if (pattern instanceof OpTypeIdentifier) pattern = pattern.entity_name.items.last();
-		this.parser.findVariable(pattern);
 		
 		/* Read arguments */
 		reader.matchToken("(");
@@ -114,7 +113,7 @@ class ParserBayFunction extends BaseObject
 		return new OpCall
 		{
 			"args": args,
-			"obj": pattern,
+			"item": pattern,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

@@ -104,13 +104,7 @@ class ParserES6 extends CoreParser
 	 */
 	BaseOpCode parse()
 	{
-		TokenReader reader = new TokenReader();
-		reader.init(
-			new Caret{
-				"content": new Reference(this.content),
-				"tab_size": this.tab_size,
-			}
-		);
+		TokenReader reader = this.createReader();
 		return this.parser_program.parse(reader);
 	}
 }

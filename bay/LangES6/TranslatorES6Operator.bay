@@ -168,7 +168,7 @@ class TranslatorES6Operator extends BaseObject
 				result.push("else if (");
 				this.translator.expression.translate(op_code_item.condition, result);
 				result.push(")");
-				this.translateItems(op_code_item.if_true, result);
+				this.translateItems(op_code_item.content, result);
 			}
 		}
 		if (op_code.if_false)
@@ -235,6 +235,26 @@ class TranslatorES6Operator extends BaseObject
 		result.push("/*");
 		result.push(op_code.value);
 		result.push("*/");
+	}
+	
+	
+	/**
+	 * Add semicolon
+	 */
+	void addSemicolon(BaseOpCode op_code, Collection<string> result)
+	{
+		if (
+			op_code instanceof OpAssign or
+			op_code instanceof OpBreak or
+			op_code instanceof OpCall or
+			op_code instanceof OpContinue or
+			op_code instanceof OpInc or
+			op_code instanceof OpReturn or
+			op_code instanceof OpThrow
+		)
+		{
+			if (not this.translator.last_semicolon) result.push(";");
+		}
 	}
 	
 	
@@ -313,7 +333,6 @@ class TranslatorES6Operator extends BaseObject
 			return;
 		}
 		
-		result.push(this.translator.newLine());
 		if (op_code.items.count() == 0)
 		{
 			result.push("{");
@@ -322,6 +341,7 @@ class TranslatorES6Operator extends BaseObject
 		}
 		
 		/* Begin bracket */
+		result.push(this.translator.newLine());
 		result.push("{");
 		this.translator.levelInc();
 		
@@ -337,18 +357,7 @@ class TranslatorES6Operator extends BaseObject
 			{
 				result.push(this.translator.newLine());
 				result.appendItems(result_items);
-				if (
-					op_code_item instanceof OpAssign or
-					op_code_item instanceof OpBreak or
-					op_code_item instanceof OpCall or
-					op_code_item instanceof OpContinue or
-					op_code_item instanceof OpInc or
-					op_code_item instanceof OpReturn or
-					op_code_item instanceof OpThrow
-				)
-				{
-					if (not this.translator.last_semicolon) result.push(";");
-				}
+				this.addSemicolon(op_code_item, result);
 			}
 		}
 		

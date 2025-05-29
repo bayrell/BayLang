@@ -285,6 +285,7 @@ class ParserES6Operator extends BaseObject
 			if (token == "elseif" or token == "else" and reader.nextToken() == "if")
 			{
 				/* Read condition */
+				if (reader.nextToken() == "if") reader.readToken();
 				reader.matchToken("(");
 				BaseOpCode if_else_condition = this.parser.parser_expression.readExpression(reader);
 				reader.matchToken(")");
@@ -402,28 +403,37 @@ class ParserES6Operator extends BaseObject
 		Collection<OpAssignValue> items = [];
 		
 		/* Read pattern */
-		if (pattern == null and reader.nextToken() == "var")
+		if (pattern == null)
 		{
-			reader.readToken();
-			Caret caret_end = reader.caret();
-			pattern = new OpTypeIdentifier
+			pattern = this.parser.parser_base.readTypeIdentifier(reader);
+		}
+		
+		/* Read increment */
+		if (reader.nextToken() == "++" or reader.nextToken() == "--")
+		{
+			string kind = "";
+			string operation = reader.readToken();
+			if (operation == "++") kind = OpInc::KIND_INC;
+			else if (operation == "--") kind = OpInc::KIND_DEC;
+			
+			/* Find identifier */
+			if (pattern instanceof OpTypeIdentifier)
 			{
-				"entity_name": new OpEntityName
-				{
-					"items":
-					[
-						new OpIdentifier
-						{
-							"value": "var",
-							"caret_start": caret_start,
-							"caret_end": caret_end,
-						},
-					],
-					"caret_start": caret_start,
-					"caret_end": caret_end,
-				},
+				pattern = pattern.entity_name.items.last();
+			}
+			if (not(pattern instanceof OpIdentifier))
+			{
+				throw pattern.caret_end.error("Wrong type identifier");
+			}
+			this.parser.findVariable(pattern);
+			
+			/* Returns op_code */
+			return new OpInc
+			{
+				"kind": kind,
+				"item": pattern,
 				"caret_start": caret_start,
-				"caret_end": caret_end,
+				"caret_end": reader.caret(),
 			};
 		}
 		
@@ -471,6 +481,10 @@ class ParserES6Operator extends BaseObject
 			
 			/* Find identifier */
 			if (value instanceof OpTypeIdentifier)
+			{
+				value = value.entity_name.items.last();
+			}
+			if (not(value instanceof OpIdentifier))
 			{
 				throw value.caret_end.error("Wrong type identifier");
 			}

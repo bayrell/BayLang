@@ -95,7 +95,7 @@ class TokenReader extends BaseObject
 	{
 		if (this.nextToken() != ch)
 		{
-			throw new this.next_token.expected(ch);
+			throw this.expected(ch);
 		}
 		this.readToken();
 	}

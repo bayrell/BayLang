@@ -317,6 +317,7 @@ class ParserPHPOperator extends BaseObject
 			if (token == "elseif" or token == "else" and reader.nextToken() == "if")
 			{
 				/* Read condition */
+				if (reader.nextToken() == "if") reader.readToken();
 				reader.matchToken("(");
 				BaseOpCode if_else_condition = this.parser.parser_expression.readExpression(reader);
 				reader.matchToken(")");
@@ -437,6 +438,35 @@ class ParserPHPOperator extends BaseObject
 		if (pattern == null)
 		{
 			pattern = this.parser.parser_base.readTypeIdentifier(reader);
+		}
+		
+		/* Read increment */
+		if (reader.nextToken() == "++" or reader.nextToken() == "--")
+		{
+			string kind = "";
+			string operation = reader.readToken();
+			if (operation == "++") kind = OpInc::KIND_INC;
+			else if (operation == "--") kind = OpInc::KIND_DEC;
+			
+			/* Find identifier */
+			if (pattern instanceof OpTypeIdentifier)
+			{
+				pattern = pattern.entity_name.items.last();
+			}
+			if (not(pattern instanceof OpIdentifier))
+			{
+				throw pattern.caret_end.error("Wrong type identifier");
+			}
+			this.parser.findVariable(pattern);
+			
+			/* Returns op_code */
+			return new OpInc
+			{
+				"kind": kind,
+				"item": pattern,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			};
 		}
 		
 		/* Read items */

@@ -314,8 +314,8 @@ class TranslatorBayProgram extends BaseObject
 		else
 		{
 			this.translator.last_semicolon = false;
-			bool exists = this.translator.operator.translateItem(op_code, result);
-			if (exists and not this.translator.last_semicolon) result.push(";");
+			this.translator.operator.translateItem(op_code, result);
+			this.translator.operator.addSemicolon(op_code, result);
 		}
 	}
 	

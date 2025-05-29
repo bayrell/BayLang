@@ -26,6 +26,7 @@ use Runtime.Interfaces.ContextInterface;
 use BayLang.Caret;
 use BayLang.CoreToken;
 use BayLang.SaveOpCode;
+use BayLang.TokenReader;
 use BayLang.Exceptions.ParserExpected;
 use BayLang.OpCodes.BaseOpCode;
 
@@ -46,6 +47,22 @@ class CoreParser extends BaseObject
 		this.content = content;
 		this.content_size = rs::strlen(content);
 		return this;
+	}
+	
+	
+	/**
+	 * Create reader
+	 */
+	TokenReader createReader()
+	{
+		TokenReader reader = new TokenReader();
+		reader.init(
+			new Caret{
+				"content": new Reference(this.content),
+				"tab_size": this.tab_size,
+			}
+		);
+		return reader;
 	}
 	
 	

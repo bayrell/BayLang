@@ -290,6 +290,50 @@ class ParserES6Base extends BaseObject
 	
 	
 	/**
+	 * Read type identifier
+	 */
+	OpTypeIdentifier readTypeIdentifier(TokenReader reader, bool read_generic = true)
+	{
+		Caret caret_start = reader.caret();
+		
+		/* Read var */
+		if (reader.nextToken() == "var")
+		{
+			reader.readToken();
+			Caret caret_end = reader.caret();
+			return new OpTypeIdentifier
+			{
+				"entity_name": new OpEntityName
+				{
+					"items":
+					[
+						new OpIdentifier
+						{
+							"value": "var",
+							"caret_start": caret_start,
+							"caret_end": caret_end,
+						},
+					],
+					"caret_start": caret_start,
+					"caret_end": caret_end,
+				},
+				"caret_start": caret_start,
+				"caret_end": caret_end,
+			};
+		}
+		
+		/* Read entity name */
+		OpEntityName entity_name = this.readEntityName(reader);
+		return new OpTypeIdentifier
+		{
+			"entity_name": entity_name,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read collection
 	 */
 	pure list<ParserES6, BaseOpCode> readCollection(ParserES6 parser)
@@ -575,7 +619,7 @@ class ParserES6Base extends BaseObject
 	
 	
 	/**
-	 * Read dynamic identifier
+	 * Read item
 	 */
 	BaseOpCode readItem(TokenReader reader)
 	{

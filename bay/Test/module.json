@@ -8,6 +8,9 @@
 		"LangBay/Operator.bay",
 		"LangBay/Program.bay",
 		"LangBay/Style.bay",
+		"Translator/Base.bay",
+		"Translator/Expression.bay",
+		"Translator/Operator.bay",
 		"ModuleDescription.bay"
 	],
 	"require": [

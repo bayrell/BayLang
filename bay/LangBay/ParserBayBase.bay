@@ -904,7 +904,7 @@ class ParserBayBase extends BaseObject
 	
 	
 	/**
-	 * Read dynamic identifier
+	 * Read item
 	 */
 	BaseOpCode readItem(TokenReader reader)
 	{

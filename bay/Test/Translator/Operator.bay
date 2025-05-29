@@ -1,0 +1,396 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.Test.Translator;
+
+use Runtime.Exceptions.AssertException;
+use Runtime.Unit.AssertHelper;
+use Runtime.Unit.Test;
+use BayLang.Exceptions.ParserError;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangBay.TranslatorBay;
+use BayLang.LangES6.ParserES6;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangPHP.ParserPHP;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreParser;
+use BayLang.CoreTranslator;
+use BayLang.LangUtils;
+
+
+class Operator
+{
+	bool debug = false;
+	
+	
+	/**
+	 * Assert value
+	 */
+	void assert(string command, string value1, string value2)
+	{
+		Collection<string> message = [
+			command,
+			"Missing:", value1,
+			"Exists:", value2
+		]
+		AssertHelper::equalValue(value1, value2, rs::join("\n", message));
+	}
+	
+	
+	/**
+	 * Test expression
+	 */
+	void testExpression(string command, string src, string dest, fn callback = null)
+	{
+		Dict res = LangUtils::parseCommand(command);
+		CoreParser parser = LangUtils::createParser(res.get("from"));
+		CoreTranslator translator = LangUtils::createTranslator(res.get("to"));
+		
+		/* Init function */
+		if (callback) callback(parser, translator);
+		
+		/* Translate file */
+		Collection<string> output = [];
+		try
+		{
+			parser.setContent(src);
+			BaseOpCode op_code = parser.parser_program.parse(parser.createReader());
+			if (this.debug) log(op_code);
+			translator.program.translate(op_code, output);
+		}
+		catch (ParserError error)
+		{
+			throw new AssertException(command ~ " " ~ error.toString());
+		}
+		
+		/* Check output */
+		this.assert(command, dest, rs::join("", output));
+	}
+	
+	
+	/**
+	 * Test lang
+	 */
+	void test(Dict content, fn init = null, Collection arr = null)
+	{
+		string content_bay = content.get("bay");
+		string content_es6 = content.has("es6") ? content.get("es6") : content_bay;
+		string content_php = content.has("php") ? content.get("php") : content_bay;
+		if (content_bay instanceof Collection) content_bay = rs::join("\n", content_bay);
+		if (content_es6 instanceof Collection) content_es6 = rs::join("\n", content_es6);
+		if (content_php instanceof Collection) content_php = rs::join("\n", content_php);
+		if (arr == null)
+		{
+			arr = [
+				"bay_to_bay", "bay_to_php", "bay_to_es6",
+				"php_to_php", "php_to_bay", "php_to_es6",
+				"es6_to_es6", "es6_to_bay", "es6_to_php",
+			];
+		}
+		if (arr.indexOf("bay_to_bay") >= 0)
+		{
+			this.testExpression("bay_to_bay", content_bay, content_bay, init);
+		}
+		if (arr.indexOf("bay_to_php") >= 0)
+		{
+			this.testExpression("bay_to_php", content_bay, content_php, init);
+		}
+		if (arr.indexOf("bay_to_es6") >= 0)
+		{
+			this.testExpression("bay_to_es6", content_bay, content_es6, init);
+		}
+		if (arr.indexOf("php_to_php") >= 0)
+		{
+			this.testExpression("php_to_php", content_php, content_php, init);
+		}
+		if (arr.indexOf("php_to_bay") >= 0)
+		{
+			this.testExpression("php_to_bay", content_php, content_bay, init);
+		}
+		if (arr.indexOf("php_to_es6") >= 0)
+		{
+			this.testExpression("php_to_es6", content_php, content_es6, init);
+		}
+		if (arr.indexOf("es6_to_es6") >= 0)
+		{
+			this.testExpression("es6_to_es6", content_es6, content_es6, init);
+		}
+		if (arr.indexOf("es6_to_bay") >= 0)
+		{
+			this.testExpression("es6_to_bay", content_es6, content_bay, init);
+		}
+		if (arr.indexOf("es6_to_php") >= 0)
+		{
+			this.testExpression("es6_to_php", content_es6, content_php, init);
+		}
+	}
+	
+	
+	@Test{}
+	void testAssign2()
+	{
+		Dict content = {
+			"bay": "var a = 1;",
+			"php": [
+				"<?php",
+				"$a = 1;",
+			]
+		};
+		this.test(content);
+	}
+	
+	
+	@Test{}
+	void testAssign3()
+	{
+		Dict content = {
+			"bay": [
+				"var a = 1;",
+				"a = 2;"
+			],
+			"php": [
+				"<?php",
+				"$a = 1;",
+				"$a = 2;",
+			]
+		};
+		this.test(content);
+	}
+	
+	
+	@Test{}
+	void testAssign4()
+	{
+		Dict content = {
+			"bay": [
+				"var a = 1, b = 2;",
+				"a = a + b;"
+			],
+			"php": [
+				"<?php",
+				"$a = 1;",
+				"$b = 2;",
+				"$a = $a + $b;",
+			]
+		};
+		this.test(content, null, [
+			"bay_to_bay", "bay_to_php", "bay_to_es6",
+			"php_to_php", "es6_to_es6", "es6_to_bay", "es6_to_php",
+		]);
+	}
+	
+	
+	@Test{}
+	void testFor1()
+	{
+		Dict content = {
+			"bay": [
+				"for (var i = 0; i < 10; i++)",
+				"{",
+				"\tprint(i);",
+				"}",
+			],
+			"es6": [
+				"for (var i = 0; i < 10; i++)",
+				"{",
+				"\tconsole.log(i);",
+				"}",
+			],
+			"php": [
+				"<?php",
+				"for ($i = 0; $i < 10; $i++)",
+				"{",
+				"\techo($i);",
+				"}",
+			]
+		};
+		this.test(content);
+	}
+	
+	
+	@Test{}
+	void testIf1()
+	{
+		Dict content = {
+			"bay": [
+				"if (a > b)",
+				"{",
+				"\tprint(\"Yes\");",
+				"}",
+			],
+			"es6": [
+				"if (a > b)",
+				"{",
+				"\tconsole.log(\"Yes\");",
+				"}",
+			],
+			"php": [
+				"<?php",
+				"if ($a > $b)",
+				"{",
+				"\techo(\"Yes\");",
+				"}",
+			]
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testIf2()
+	{
+		Dict content = {
+			"bay": [
+				"if (a > b)",
+				"{",
+				"\tprint(\"Yes\");",
+				"}",
+				"else",
+				"{",
+				"\tprint(\"No\");",
+				"}",
+			],
+			"es6": [
+				"if (a > b)",
+				"{",
+				"\tconsole.log(\"Yes\");",
+				"}",
+				"else",
+				"{",
+				"\tconsole.log(\"No\");",
+				"}",
+			],
+			"php": [
+				"<?php",
+				"if ($a > $b)",
+				"{",
+				"\techo(\"Yes\");",
+				"}",
+				"else",
+				"{",
+				"\techo(\"No\");",
+				"}",
+			]
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testIf3()
+	{
+		Dict content = {
+			"bay": [
+				"if (a == 1)",
+				"{",
+				"\tprint(1);",
+				"}",
+				"else if (a == 2)",
+				"{",
+				"\tprint(2);",
+				"}",
+				"else if (a == 3)",
+				"{",
+				"\tprint(3);",
+				"}",
+				"else",
+				"{",
+				"\tprint(\"No\");",
+				"}",
+			],
+			"es6": [
+				"if (a == 1)",
+				"{",
+				"\tconsole.log(1);",
+				"}",
+				"else if (a == 2)",
+				"{",
+				"\tconsole.log(2);",
+				"}",
+				"else if (a == 3)",
+				"{",
+				"\tconsole.log(3);",
+				"}",
+				"else",
+				"{",
+				"\tconsole.log(\"No\");",
+				"}",
+			],
+			"php": [
+				"<?php",
+				"if ($a == 1)",
+				"{",
+				"\techo(1);",
+				"}",
+				"else if ($a == 2)",
+				"{",
+				"\techo(2);",
+				"}",
+				"else if ($a == 3)",
+				"{",
+				"\techo(3);",
+				"}",
+				"else",
+				"{",
+				"\techo(\"No\");",
+				"}",
+			]
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("a", true);
+			parser.vars.set("b", true);
+		};
+		this.test(content, init);
+	}
+	
+	
+	@Test{}
+	void testWhile1()
+	{
+		Dict content = {
+			"bay": [
+				"var i = 0;",
+				"while (i < 10)",
+				"{",
+				"\ti++;",
+				"}",
+			],
+			"php": [
+				"<?php",
+				"$i = 0;",
+				"while ($i < 10)",
+				"{",
+				"\t$i++;",
+				"}",
+			]
+		};
+		this.test(content);
+	}
+}

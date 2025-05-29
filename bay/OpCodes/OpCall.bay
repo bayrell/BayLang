@@ -25,7 +25,7 @@ use BayLang.OpCodes.BaseOpCode;
 class OpCall extends BaseOpCode
 {	
 	string op = "op_call";
-	BaseOpCode obj = null;
+	BaseOpCode item = null;
 	Collection<BaseOpCode> args = null;
 	bool is_await = false;
 	bool is_html = false;
@@ -41,6 +41,6 @@ class OpCall extends BaseOpCode
 		serializer.process(this, "is_await", data);
 		serializer.process(this, "is_context", data);
 		serializer.process(this, "is_html", data);
-		serializer.process(this, "obj", data);
+		serializer.process(this, "item", data);
 	}
 }

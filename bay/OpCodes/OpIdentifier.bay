@@ -24,7 +24,11 @@ use BayLang.OpCodes.BaseOpCode;
 
 class OpIdentifier extends BaseOpCode
 {
+	static const string KIND_VARIABLE = "var";
+	static const string KIND_TYPE = "type";
+	
 	string op = "op_identifier";
+	string kind = "";
 	string value = "";
 	
 	

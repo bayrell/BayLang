@@ -53,11 +53,10 @@ class ParserPHPFunction extends BaseObject
 	
 	
 	/**
-	 * Returns variable
+	 * Returns pattern
 	 */
-	BaseOpCode getVariable(Reference<BaseOpCode> pattern_ref)
+	BaseOpCode getPattern(BaseOpCode pattern)
 	{
-		BaseOpCode pattern = pattern_ref.value();
 		if (pattern instanceof OpEntityName)
 		{
 			return pattern.items.first();
@@ -86,14 +85,8 @@ class ParserPHPFunction extends BaseObject
 		/* Next token should be bracket */
 		if (reader.nextToken() != "(") return null;
 		
-		/* Find variable */
-		Reference<BaseOpCode> pattern_ref = new Reference(pattern);
-		BaseOpCode variable = this.getVariable(pattern_ref);
-		pattern = pattern_ref.value();
-		if (variable)
-		{
-			this.parser.findVariable(variable);
-		}
+		/* Update pattern */
+		pattern = this.getPattern(pattern);
 		
 		/* Read arguments */
 		reader.matchToken("(");
@@ -112,7 +105,7 @@ class ParserPHPFunction extends BaseObject
 		return new OpCall
 		{
 			"args": args,
-			"obj": pattern,
+			"item": pattern,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

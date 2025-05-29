@@ -319,7 +319,7 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			this.translator.last_semicolon = false;
 			bool res = this.translator.operator.translateItem(op_code, result);
-			if (res and not this.translator.last_semicolon) result.push(";");
+			this.translator.operator.addSemicolon(op_code, result);
 			return res;
 		}
 		return true;

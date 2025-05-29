@@ -75,7 +75,7 @@ class TranslatorBayExpression extends BaseObject
 	/**
 	 * OpString
 	 */
-	void OpString(OpNumber op_code, Collection<string> result)
+	void OpString(OpString op_code, Collection<string> result)
 	{
 		result.push(this.translator.toString(op_code.value));
 		this.translator.opcode_level = 20;
@@ -206,7 +206,7 @@ class TranslatorBayExpression extends BaseObject
 	/**
 	 * OpDict
 	 */
-	void OpDict(OpCollection op_code, Collection<string> result)
+	void OpDict(OpDict op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
 		if (op_code.values.count() == 0 and not is_multiline)
@@ -355,7 +355,7 @@ class TranslatorBayExpression extends BaseObject
 	/**
 	 * OpClassOf
 	 */
-	void OpClassOf(OpCall op_code, Collection<string> result)
+	void OpClassOf(OpClassOf op_code, Collection<string> result)
 	{
 		result.push("classof ");
 		result.push(op_code.entity_name.names.last());
@@ -367,7 +367,7 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpCall(OpCall op_code, Collection<string> result)
 	{
-		this.translateItem(op_code.obj, result);
+		this.translateItem(op_code.item, result);
 		
 		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
 		{
@@ -422,7 +422,7 @@ class TranslatorBayExpression extends BaseObject
 	/**
 	 * OpMath
 	 */
-	void OpMath(OpCall op_code, Collection<string> result)
+	void OpMath(OpMath op_code, Collection<string> result)
 	{
 		Collection<string> result1 = [];
 		this.Expression(op_code.value1, result1);
@@ -517,7 +517,7 @@ class TranslatorBayExpression extends BaseObject
 	/**
 	 * Translate item
 	 */
-	void translateItem(OpCall op_code, Collection<string> result)
+	void translateItem(BaseOpCode op_code, Collection<string> result)
 	{
 		if (op_code instanceof OpNumber)
 		{

@@ -62,6 +62,15 @@ class ParserBayExpression extends BaseObject
 		/* Save caret */
 		Caret save_caret = reader.caret();
 		
+		/* Read expression */
+		if (reader.nextToken() == "(")
+		{
+			reader.matchToken("(");
+			BaseOpCode op_code = this.readExpression(reader);
+			reader.matchToken(")");
+			return op_code;
+		}
+		
 		/* Try to read function */
 		OpCall op_code = this.parser.parser_function.readCallFunction(reader);
 		if (op_code) return op_code;

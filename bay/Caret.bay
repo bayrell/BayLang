@@ -430,6 +430,8 @@ class Caret extends BaseObject implements SerializeInterface
 			s == "=>" or
 			s == "->" or
 			s == "|>" or
+			s == "||" or
+			s == "&&" or
 			s == "::" or
 			s == "+=" or
 			s == "-=" or
