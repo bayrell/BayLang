@@ -256,7 +256,7 @@ struct TranslatorES6Program extends BaseStruct
 		s1 ~= t.s("});");
 		
 		string save = t::outputSaveOpCode(t);
-		if (save != "") content ~= t.s(save);
+		if (save != "") content ~= save;
 		content ~= s1;
 		t = t.levelDec();
 		content ~= t.s("}");
