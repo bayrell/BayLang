@@ -260,8 +260,8 @@ class ParserES6Expression extends BaseObject
 			if (
 				value instanceof OpCall and math == "+" and
 				value.args.count() == 1 and
-				value.obj instanceof OpIdentifier and
-				value.obj.value == "String"
+				value.item instanceof OpIdentifier and
+				value.item.value == "String"
 			)
 			{
 				math = "~";

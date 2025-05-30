@@ -235,6 +235,22 @@ class Expression
 	
 	
 	@Test{}
+	void testString()
+	{
+		Dict content = {
+			"bay": "\"Hello \" ~ username ~ \"!\"",
+			"es6": "\"Hello \" + String(username) + String(\"!\")",
+			"php": "\"Hello \" . $username . \"!\"",
+		};
+		fn init = void (CoreParser parser, CoreTranslator translator)
+		{
+			parser.vars.set("username", true);
+		};
+		this.test(content);
+	}
+	
+	
+	@Test{}
 	void testFn2()
 	{
 		Dict content = {
