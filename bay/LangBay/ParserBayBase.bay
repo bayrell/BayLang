@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ class ParserBayBase extends BaseObject
 	 */
 	OpNumber readNumber(TokenReader reader, bool flag_negative = false)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read number */
 		string value = reader.readToken();
@@ -231,12 +231,11 @@ class ParserBayBase extends BaseObject
 	 */
 	OpComment readComment(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
-		string str_char = reader.readToken();
+		Caret caret_start = reader.start();
 		
 		/* Read begin coment */
-		reader.matchToken("/");
-		reader.matchToken("*");
+		caret_start.matchString("/*");
+		reader.init(caret_start);
 		
 		/* Read comment value */
 		Caret caret = reader.caret();
@@ -274,7 +273,7 @@ class ParserBayBase extends BaseObject
 	 */
 	OpIdentifier readIdentifier(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read identifier */
 		string name = reader.readToken();
@@ -298,7 +297,7 @@ class ParserBayBase extends BaseObject
 	 */
 	OpEntityName readEntityName(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection<string> items = [];
 		
 		/* Read name */
@@ -326,7 +325,7 @@ class ParserBayBase extends BaseObject
 	 */
 	OpTypeIdentifier readTypeIdentifier(TokenReader reader, bool read_generic = true)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		OpEntityName entity_name = this.readEntityName(reader);
 		
 		/* Read generics */

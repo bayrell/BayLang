@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpFlags;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpPipe;
 use BayLang.OpCodes.OpTypeIdentifier;
 
@@ -82,7 +84,7 @@ class ParserBayFunction extends BaseObject
 	 */
 	BaseOpCode readCallFunction(TokenReader reader, BaseOpCode pattern = null)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read identifier */
 		if (pattern == null)
@@ -123,71 +125,50 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read function args
 	 */
-	pure list<ParserBay, Collection> readDeclareFunctionArgs
-	(
-		ParserBay parser, bool find_ident = true, bool flag_match = true
-	)
+	OpItems<OpDeclareFunctionArg> readDeclareFunctionArgs(TokenReader reader)
 	{
-		list res = null
-		ParserBay look = null;
-		CoreToken token = null;
-		Vector<BaseOpCode> items = new Vector();
+		Caret caret_start = reader.start();
+		Collection<OpDeclareFunctionArg> items = [];
 		
-		if (flag_match) { res = parser.parser_base::matchToken(parser, "("); parser = res[0]; }
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content != ")")
+		reader.matchToken("(");
+		while (not reader.eof() and reader.nextToken() != ")")
 		{
-			BaseOpCode arg_value = null;
-			BaseOpCode arg_pattern = null;
-			BaseOpCode arg_expression = null;
-			ParserBay arg_start = parser;
+			Caret caret_start_item = reader.start();
 			
-			/* Arg type */
-			list res = parser.parser_base::readTypeIdentifier(parser, find_ident);
-			parser = res[0]; arg_pattern = res[1];
+			/* Read argument */
+			OpTypeIdentifier pattern = this.parser.parser_base.readTypeIdentifier(reader);
+			OpIdentifier name = this.parser.parser_base.readIdentifier(reader);
+			BaseOpCode expression = null;
 			
-			/* Arg name */
-			list res = parser.parser_base::readIdentifier(parser);
-			parser = res[0]; arg_value = res[1];
-			string arg_name = arg_value.value;
-			
-			/* Arg expression */
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "=")
+			/* Read expression */
+			if (reader.nextToken() == "=")
 			{
-				parser = look;
-				Dict<bool> save_vars = parser.vars;
-				parser <= vars <= new Dict<bool>();
-				list res = parser.parser_expression::readExpression(parser);
-				parser = res[0]; arg_expression = res[1];
-				parser <= vars <= save_vars;
+				reader.matchToken("=");
+				expression = this.parser.parser_expression.readExpression(reader);
 			}
 			
-			/* Register variable in parser */
-			parser <= vars <= parser.vars.setIm(arg_name, true);
+			/* Add item */
+			items.push(new OpDeclareFunctionArg{
+				"pattern": pattern,
+				"name": name.value,
+				"expression": expression,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			});
 			
-			items.push
-			(
-				new OpDeclareFunctionArg
-				{
-					"pattern": arg_pattern,
-					"name": arg_name,
-					"expression": arg_expression,
-					"caret_start": arg_pattern.caret_start,
-					"caret_end": parser.caret,
-				}
-			);
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == ",")
+			if (reader.nextToken() == ",")
 			{
-				parser = look;
-				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+				reader.matchToken(",");
 			}
 		}
+		reader.matchToken(")");
 		
-		if (flag_match) { res = parser.parser_base::matchToken(parser, ")"); parser = res[0]; }
-		return [parser, items];
+		return new OpItems
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -246,127 +227,24 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read function
 	 */
-	pure list<ParserBay, BaseOpCode> readDeclareFunction(ParserBay parser, string has_name = true)
+	BaseOpCode readDeclareFunction(TokenReader reader)
 	{
-		ParserBay look = null;
-		BaseOpCode parser_value = null;
-		BaseOpCode op_code = null;
-		CoreToken token = null;
-		OpFlags flags = null
+		Caret caret_start = reader.start();
 		
-		/* Clear vars */
-		bool save_is_html = parser.is_html;
-		Dict<bool> save_vars = parser.vars;
-		parser <= vars <= new Dict<bool>();
-		parser <= is_html <= false;
-		bool is_html = false;
+		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
+		string name = this.parser.parser_base.readIdentifier(reader).value;
+		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
+		BaseOpCode content = this.parser.parser_operator.parse(reader);
 		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "async")
+		return new OpDeclareFunction
 		{
-			parser = look;
-			flags = new OpFlags
-			{
-				"p_async": true,
-			};
-		}
-		
-		list res = parser.parser_base::readTypeIdentifier(parser);
-		parser = res[0]; parser_value = res[1];
-		Caret caret_start = parser_value.caret_start;
-		
-		BaseOpCode result_type = parser_value;
-		BaseOpCode expression = null;
-		bool is_context = true;
-		string name = "";
-		
-		if (
-			result_type and
-			result_type instanceof OpTypeIdentifier and
-			result_type.entity_name instanceof OpEntityName
-		)
-		{
-			if (result_type.entity_name.names.get(0) == "html")
-			{
-				parser <= is_html <= true;
-				is_html = true;
-			}
-		}
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "@") { is_context = false; parser = look; }
-		
-		if (has_name)
-		{
-			list res = parser.parser_base::readIdentifier(parser);
-			parser = res[0]; parser_value = res[1];
-			string name = parser_value.value;
-		}
-		
-		/* Read function arguments */
-		Collection<OpDeclareFunctionArg> args = null;
-		list res = static::readDeclareFunctionArgs(parser); parser = res[0]; args = res[1];
-		
-		/* Read function variables */
-		Collection<OpDeclareFunctionArg> vars = null;
-		list res = static::readDeclareFunctionUse(parser, save_vars);
-		parser = res[0]; vars = res[1];
-		
-		/* Add variables */
-		vars.each
-		(
-			void (string name) use (parser)
-			{
-				parser <= vars <= parser.vars.setIm(name, true);
-			}
-		);
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "=>")
-		{
-			list res = parser.parser_base::matchToken(parser, "=>"); parser = res[0];
-			list res = parser.parser_expression::readExpression(parser);
-			parser = res[0]; expression = res[1]; op_code = null;
-		}
-		else if (token.content == "{")
-		{
-			ParserBay save = parser;
-			list res = parser.parser_base::matchToken(parser, "{"); parser = res[0];
-			list res = static::readOperators(save); parser = res[0]; op_code = res[1];
-			if (is_html)
-			{
-				expression = op_code;
-				op_code = null;
-			}
-		}
-		else if (token.content == ";")
-		{
-			list res = parser.parser_base::matchToken(parser, ";"); parser = res[0];
-			expression = null; op_code = null;
-		}
-		
-		/* Restore vars */
-		parser <= vars <= save_vars;
-		parser <= is_html <= save_is_html;
-		
-		return 
-		[
-			parser,
-			new OpDeclareFunction
-			{
-				"args": args,
-				"vars": vars,
-				"flags": flags,
-				"name": name,
-				"is_html": is_html,
-				"is_context": is_context,
-				"result_type": result_type,
-				"expression": expression,
-				"items": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+			"args": args,
+			"name": name,
+			"pattern": pattern,
+			"content": content,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	

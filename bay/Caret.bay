@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -124,6 +124,15 @@ class Caret extends BaseObject implements SerializeInterface
 		this.x = caret.x;
 		this.y = caret.y;
 	}
+	
+	
+	/**
+	 * Returns caret position
+	 */
+	Dict getPosition() => {
+		"offset": this.x + 1,
+		"line": this.y + 1,
+	};
 	
 	
 	/**
@@ -343,9 +352,10 @@ class Caret extends BaseObject implements SerializeInterface
 	/**
 	 * Skip space
 	 */
-	void skipSpace()
+	Caret skipSpace()
 	{
 		while (not this.eof() and static::isSkipChar(this.nextChar())) this.readChar();
+		return this;
 	}
 	
 	

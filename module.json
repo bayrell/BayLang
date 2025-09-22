@@ -17,6 +17,7 @@
 		"Exceptions/DeclaredClass.bay",
 		"LangBay/ParserBay.bay",
 		"LangBay/ParserBayBase.bay",
+		"LangBay/ParserBayClass.bay",
 		"LangBay/ParserBayExpression.bay",
 		"LangBay/ParserBayFunction.bay",
 		"LangBay/ParserBayHtml.bay",

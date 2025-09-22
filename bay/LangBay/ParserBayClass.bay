@@ -1,0 +1,140 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.LangBay;
+
+use Runtime.BaseObject;
+use BayLang.Caret;
+use BayLang.TokenReader;
+use BayLang.LangBay.ParserBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpTypeIdentifier;
+
+
+class ParserBayClass extends BaseObject
+{
+	ParserBay parser = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(ParserBay parser)
+	{
+		parent();
+		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Read class item
+	 */
+	BaseOpCode readItem(TokenReader reader)
+	{
+		string next_token = reader.nextToken();
+		
+		/* Comment */
+		if (next_token == "/")
+		{
+			return this.parser.parser_base.readComment(reader);
+		}
+		
+		/* Save caret */
+		Caret save_caret = reader.caret();
+		
+		/* Try to read call function */
+		OpCall op_code = this.parser.parser_function.readDeclareFunction(reader);
+		if (op_code) return op_code;
+		
+		/* Restore reader */
+		reader.init(save_caret);
+		
+		/* Assign operator */
+		return this.parser.parser_operator.readAssign(reader);
+	}
+	
+	
+	/**
+	 * Read class body
+	 */
+	BaseOpCode readBody(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		Collection<BaseOpCode> items = [];
+		
+		reader.matchToken("{");
+		
+		/* Read class */
+		while (not reader.eof() and reader.nextToken() != "}")
+		{
+			BaseOpCode op_code = this.readItem(reader);
+			if (op_code)
+			{
+				items.push(op_code);
+			}
+			else
+			{
+				break;
+			}
+			
+			/* Match semicolon */
+			if (reader.nextToken() == ";")
+			{
+				reader.matchToken(";");
+			}
+		}
+		
+		reader.matchToken("}");
+		return new OpItems
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
+	 * Read class
+	 */
+	BaseOpCode readClass(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		reader.matchToken("class");
+		OpTypeIdentifier class_extends = null;
+		OpTypeIdentifier class_name = this.parser.parser_base.readTypeIdentifier(reader);
+		if (reader.nextToken() == "extends")
+		{
+			reader.readToken();
+			class_extends = this.parser.parser_base.readTypeIdentifier(reader);
+		}
+		BaseOpCode content = this.readBody(reader);
+		return new OpDeclareClass
+		{
+			"kind": OpDeclareClass::KIND_CLASS,
+			"content": content,
+			"class_name": class_name,
+			"class_extends": class_extends,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+}

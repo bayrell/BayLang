@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -107,31 +107,19 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read return
 	 */
-	pure list<ParserBay, BaseOpCode> readReturn(ParserBay parser)
+	BaseOpCode readReturn(TokenReader reader)
 	{
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		ParserBay look = null;
+		Caret caret_start = reader.start();
 		
-		list res = parser.parser_base::matchToken(parser, "return"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		reader.matchToken("return");
+		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
 		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content != ";")
+		return new OpReturn
 		{
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-		}		
-		
-		return
-		[
-			parser,
-			new OpReturn
-			{
-				"expression": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+			"expression": expression,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -263,7 +251,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	BaseOpCode readIf(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		BaseOpCode if_true = null;
 		BaseOpCode if_false = null;
 		Collection if_else = [];
@@ -325,7 +313,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	BaseOpCode readFor(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read for */
 		reader.matchToken("for");
@@ -364,7 +352,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	BaseOpCode readWhile(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read condition */
 		reader.matchToken("while");
@@ -399,7 +387,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	OpAssign readAssign(TokenReader reader, BaseOpCode pattern = null)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection<OpAssignValue> items = [];
 		
 		/* Read pattern */
@@ -442,7 +430,7 @@ class ParserBayOperator extends BaseObject
 		{
 			while (not reader.eof())
 			{
-				Caret caret_value_start = reader.caret();
+				Caret caret_value_start = reader.start();
 				
 				/* Read assign value */
 				OpIdentifier value = this.parser.parser_base.readIdentifier(reader);
@@ -518,7 +506,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	BaseOpCode readInc(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read identifier */
 		BaseOpCode item = this.parser.parser_base.readIdentifier(reader);
@@ -546,7 +534,7 @@ class ParserBayOperator extends BaseObject
 	BaseOpCode readOperator(TokenReader reader)
 	{
 		string next_token = reader.nextToken();
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Comment */
 		if (next_token == "/")
@@ -664,7 +652,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	OpItems parse(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection<BaseOpCode> items = [];
 		
 		/* Read begin tag */

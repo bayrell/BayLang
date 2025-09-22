@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ use BayLang.Caret;
 use BayLang.CoreParser;
 use BayLang.TokenReader;
 use BayLang.LangBay.ParserBayBase;
+use BayLang.LangBay.ParserBayClass;
 use BayLang.LangBay.ParserBayExpression;
 use BayLang.LangBay.ParserBayFunction;
 use BayLang.LangBay.ParserBayHtml;
@@ -58,6 +59,7 @@ class ParserBay extends CoreParser
 	
 	/* Parsers */
 	ParserBayBase parser_base = new ParserBayBase(this);
+	ParserBayClass parser_class = new ParserBayClass(this);
 	ParserBayExpression parser_expression = new ParserBayExpression(this);
 	ParserBayExpression parser_function = new ParserBayFunction(this);
 	ParserBayHtml parser_html = new ParserBayHtml(this);

@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,19 +36,16 @@ class OpDeclareClass extends BaseOpCode
 	
 	string op = "op_class";
 	string kind = "";
-	string name = "";
-	string extend_name = "";
 	Collection<OpAnnotation> annotations = null;
 	Collection<OpComment> comments = null;
 	Collection<OpTypeIdentifier> template = null;
 	OpFlags flags = null;
 	OpDeclareFunction fn_create = null;
 	OpDeclareFunction fn_destroy = null;
+	OpTypeIdentifier class_name = null;
 	OpTypeIdentifier class_extends = null;
 	Collection<OpTypeIdentifier> class_implements = null;
-	Collection<OpAssign> vars = null;
-	Collection<OpDeclareFunction> functions = null;
-	Collection<BaseOpCode> items = null;
+	BaseOpCode content = null;
 	bool is_abstract = false;
 	bool is_static = false;
 	bool is_declare = false;

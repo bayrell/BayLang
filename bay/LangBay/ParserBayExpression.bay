@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readNegative(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		if (reader.nextToken() == "-")
 		{
 			reader.readToken();
@@ -110,7 +110,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readBitNot(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		Collection operations = ["not", "bitnot", "!"];
 		if (operations.indexOf(reader.nextToken()) >= 0)
@@ -135,7 +135,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readBitShift(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["<<", ">>"];
 		
 		/* Read operators */
@@ -163,7 +163,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readBitAnd(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["&"];
 		
 		/* Read operators */
@@ -191,7 +191,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readBitOr(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["|", "xor"];
 		
 		/* Read operators */
@@ -219,7 +219,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readFactor(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["*", "/", "%", "div", "mod"];
 		
 		/* Read operators */
@@ -247,7 +247,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readArithmetic(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["+", "-"];
 		
 		/* Read operators */
@@ -275,7 +275,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readConcat(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["~"];
 		
 		/* Read operators */
@@ -303,7 +303,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readCompare(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		BaseOpCode op_code = this.readConcat(reader);
 		Collection operations1 = ["===", "!==", "==", "!=", ">=", "<=", ">", "<"];
 		Collection operations2 = ["is", "implements", "instanceof"];
@@ -344,7 +344,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readAnd(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["and", "&&"];
 		
 		/* Read operators */
@@ -372,7 +372,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readOr(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection operations = ["or", "||"];
 		
 		/* Read operators */
@@ -416,7 +416,7 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readTernary(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Detect ternary operation */
 		BaseOpCode op_code = this.readElement(reader);

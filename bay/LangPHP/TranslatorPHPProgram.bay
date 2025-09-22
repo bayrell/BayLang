@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpUse;
@@ -140,7 +141,7 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
-		if (not (op_code.result_type instanceof OpTypeIdentifier)) return;
+		if (not (op_code.pattern instanceof OpTypeIdentifier)) return;
 		
 		/* Function flags */
 		Collection<string> flags = ["async", "static", "pure"];
@@ -152,7 +153,7 @@ class TranslatorPHPProgram extends BaseObject
 		if (flags.count() > 0) result.push(" ");
 		
 		/* Function result type */
-		this.translator.expression.OpTypeIdentifier(op_code.result_type, result);
+		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
 		
 		/* Function name */
 		result.push(" ");
@@ -163,10 +164,19 @@ class TranslatorPHPProgram extends BaseObject
 		this.OpDeclareFunctionArgs(op_code, result);
 		result.push(")");
 		
-		/* Expression */
-		if (op_code.expression)
+		/* If content is empty */
+		if (op_code.content == null)
 		{
-			bool is_multiline = op_code.expression.isMultiLine();
+			result.push("{");
+			result.push("}");
+			return;
+		}
+		
+		/* Expression */
+		bool is_expression = not (op_code.content instanceof OpItems);
+		if (is_expression)
+		{
+			bool is_multiline = op_code.content.isMultiLine();
 			if (is_multiline)
 			{
 				result.push(" =>");
@@ -181,13 +191,9 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Items */
-		else if (op_code.items)
+		else
 		{
-			if (op_code.items.items.count() > 0)
-			{
-				result.push(this.translator.newLine());
-			}
-			this.translator.operator.translateItems(op_code.items, result);
+			this.translator.operator.translateItems(op_code.content, result);
 		}
 	}
 	
@@ -229,13 +235,13 @@ class TranslatorPHPProgram extends BaseObject
 		
 		/* Class body items */
 		bool next_new_line = true;
-		for (int i=0; i<op_code.items.count(); i++)
+		for (int i=0; i<op_code.content.count(); i++)
 		{
 			if (next_new_line)
 			{
 				result.push(this.translator.newLine());
 			}
-			BaseOpCode op_code_item = op_code.items.get(i);
+			BaseOpCode op_code_item = op_code.content.get(i);
 			next_new_line = this.translateClassItem(op_code_item, result);
 		}
 		

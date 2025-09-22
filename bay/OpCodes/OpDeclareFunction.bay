@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,19 +26,19 @@ use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpReturn;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 class OpDeclareFunction extends BaseOpCode
 {
 	string op = "op_function";
 	string name = "";
+	OpItems<OpDeclareFunctionArg> args = null;
 	Collection<OpAnnotation> annotations = null;
 	Collection<OpComment> comments = null;
-	Collection<OpDeclareFunctionArg> args = null;
 	Collection<string> vars = null;
-	BaseOpCode result_type = null;
-	BaseOpCode expression = null;
-	BaseOpCode items = null;
+	OpTypeIdentifier pattern = null;
+	BaseOpCode content = null;
 	OpFlags flags = null;
 	bool is_context = true;
 	bool is_html = false;

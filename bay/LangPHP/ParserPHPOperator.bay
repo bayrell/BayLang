@@ -1,7 +1,7 @@
 /*!
  *  BayLang Technology
  *
- *  (c) Copyright 2016-2024 "Ildar Bikmamatov" <support@bayrell.org>
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -295,7 +295,7 @@ class ParserPHPOperator extends BaseObject
 	 */
 	BaseOpCode readIf(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		BaseOpCode if_true = null;
 		BaseOpCode if_false = null;
 		Collection if_else = [];
@@ -357,7 +357,7 @@ class ParserPHPOperator extends BaseObject
 	 */
 	BaseOpCode readFor(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read for */
 		reader.matchToken("for");
@@ -396,7 +396,7 @@ class ParserPHPOperator extends BaseObject
 	 */
 	BaseOpCode readWhile(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read condition */
 		reader.matchToken("while");
@@ -431,7 +431,7 @@ class ParserPHPOperator extends BaseObject
 	 */
 	OpAssign readAssign(TokenReader reader, BaseOpCode pattern = null)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection<OpAssignValue> items = [];
 		
 		/* Read pattern */
@@ -474,7 +474,7 @@ class ParserPHPOperator extends BaseObject
 		{
 			while (not reader.eof())
 			{
-				Caret caret_value_start = reader.caret();
+				Caret caret_value_start = reader.start();
 				
 				/* Read assign value */
 				OpIdentifier value = this.parser.parser_base.readIdentifier(reader);
@@ -567,7 +567,7 @@ class ParserPHPOperator extends BaseObject
 	 */
 	BaseOpCode readInc(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Read identifier */
 		BaseOpCode item = this.parser.parser_base.readIdentifier(reader);
@@ -595,7 +595,7 @@ class ParserPHPOperator extends BaseObject
 	BaseOpCode readOperator(TokenReader reader)
 	{
 		string next_token = reader.nextToken();
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		
 		/* Comment */
 		if (next_token == "/")
@@ -713,7 +713,7 @@ class ParserPHPOperator extends BaseObject
 	 */
 	OpItems parse(TokenReader reader)
 	{
-		Caret caret_start = reader.caret();
+		Caret caret_start = reader.start();
 		Collection<BaseOpCode> items = [];
 		
 		/* Read begin tag */
