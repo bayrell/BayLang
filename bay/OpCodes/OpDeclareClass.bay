@@ -81,6 +81,23 @@ class OpDeclareClass extends BaseOpCode
 	
 	
 	/**
+	 * Returns offset
+	 */
+	int getOffset()
+	{
+		Dict res = parent();
+		
+		BaseOpCode op_comment = this.comments.first();
+		if (op_comment)
+		{
+			res.set("start", op_comment.caret_start.y);
+		}
+		
+		return res;
+	}
+	
+	
+	/**
 	 * Find function
 	 */
 	OpDeclareFunction findFunction(string name) =>

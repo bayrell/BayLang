@@ -28,6 +28,7 @@ use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpInc;
 use BayLang.OpCodes.OpMath;
@@ -401,12 +402,10 @@ class ParserBayExpression extends BaseObject
 	BaseOpCode readElement(TokenReader reader)
 	{
 		/* Try to read function */
-		/*
-		if (this.parser.parser_function.tryReadFunction(reader, false))
-		{
-			return this.parser.parser_function.readDeclareFunction(reader, false);
-		}
-		*/
+		OpDeclareFunction op_code = this.parser.parser_function.tryReadFunction(reader);
+		if (op_code) return op_code;
+		
+		/* Read expression */
 		return this.readOr(reader);
 	}
 	

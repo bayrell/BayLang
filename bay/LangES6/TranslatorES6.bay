@@ -36,6 +36,7 @@ class TranslatorES6 extends CoreTranslator
 	Dict<bool> vars = {};
 	Dict<string> uses = {};
 	string current_namespace_name = "";
+	bool is_operator_block = false;
 	
 	/* Translators */
 	TranslatorES6Expression expression = new TranslatorES6Expression(this);

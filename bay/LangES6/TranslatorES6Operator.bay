@@ -327,7 +327,10 @@ class TranslatorES6Operator extends BaseObject
 		if (not(op_code instanceof OpItems))
 		{
 			result.push(" ");
+			bool save_operator_block = this.translator.is_operator_block;
+			this.translator.is_operator_block = true;
 			this.translateItem(op_code, result);
+			this.translator.is_operator_block = save_operator_block;
 			result.push(";");
 			this.translator.last_semicolon = true;
 			return;
@@ -346,6 +349,8 @@ class TranslatorES6Operator extends BaseObject
 		this.translator.levelInc();
 		
 		/* Items */
+		bool save_operator_block = this.translator.is_operator_block;
+		this.translator.is_operator_block = true;
 		int items_count = op_code.items.count();
 		for (int i=0; i<items_count; i++)
 		{
@@ -360,6 +365,7 @@ class TranslatorES6Operator extends BaseObject
 				this.addSemicolon(op_code_item, result);
 			}
 		}
+		this.translator.is_operator_block = save_operator_block;
 		
 		/* End bracket */
 		this.translator.levelDec();

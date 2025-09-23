@@ -22,9 +22,11 @@ use Runtime.BaseObject;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpUse;
@@ -98,6 +100,17 @@ class TranslatorBayProgram extends BaseObject
 	
 	
 	/**
+	 * OpComment
+	 */
+	void OpComment(OpComment op_code, Collection<string> result)
+	{
+		result.push("/*");
+		result.push(op_code.value);
+		result.push("*/");
+	}
+	
+	
+	/**
 	 * OpDeclareFunctionArg
 	 */
 	void OpDeclareFunctionArg(OpDeclareFunctionArg op_code, Collection<string> result)
@@ -136,7 +149,18 @@ class TranslatorBayProgram extends BaseObject
 	 */
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
-		if (not (op_code.result_type instanceof OpTypeIdentifier)) return;
+		if (not (op_code.pattern instanceof OpTypeIdentifier)) return;
+		
+		/* Comments */
+		if (op_code.comments)
+		{
+			for (int i=0; i<op_code.comments.count(); i++)
+			{
+				OpComment op_code_item = op_code.comments.get(i);
+				this.OpComment(op_code_item, result);
+				result.push(this.translator.newLine());
+			}
+		}
 		
 		/* Function flags */
 		Collection<string> flags = ["async", "static", "pure"];
@@ -148,7 +172,7 @@ class TranslatorBayProgram extends BaseObject
 		if (flags.count() > 0) result.push(" ");
 		
 		/* Function result type */
-		this.translator.expression.OpTypeIdentifier(op_code.result_type, result);
+		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
 		
 		/* Function name */
 		result.push(" ");
@@ -160,9 +184,10 @@ class TranslatorBayProgram extends BaseObject
 		result.push(")");
 		
 		/* Expression */
-		if (op_code.expression)
+		bool is_expression = not (op_code.content instanceof OpItems);
+		if (is_expression)
 		{
-			bool is_multiline = op_code.expression.isMultiLine();
+			bool is_multiline = op_code.content.isMultiLine();
 			if (is_multiline)
 			{
 				result.push(" =>");
@@ -172,18 +197,13 @@ class TranslatorBayProgram extends BaseObject
 			{
 				result.push(" => ");
 			}
-			this.translator.expression.translate(op_code.expression, result);
-			result.push(";");
+			this.translator.expression.translate(op_code.content, result);
 		}
 		
 		/* Items */
-		else if (op_code.items)
+		else
 		{
-			if (op_code.items.items.count() > 0)
-			{
-				result.push(this.translator.newLine());
-			}
-			this.translator.operator.translateItems(op_code.items, result);
+			this.translator.operator.translateItems(op_code.content, result);
 		}
 	}
 	
@@ -201,9 +221,14 @@ class TranslatorBayProgram extends BaseObject
 		{
 			this.OpAssign(op_code, result);
 		}
+		else if (op_code instanceof OpComment)
+		{
+			this.OpComment(op_code, result);
+		}
 		else if (op_code instanceof OpDeclareFunction)
 		{
 			this.OpDeclareFunction(op_code, result);
+			if (not (op_code.content instanceof OpItems)) result.push(";");
 		}
 		else
 		{
@@ -224,15 +249,23 @@ class TranslatorBayProgram extends BaseObject
 		this.translator.levelInc();
 		
 		/* Class body items */
+		BaseOpCode prev_op_code = null;
 		bool next_new_line = true;
-		for (int i=0; i<op_code.items.count(); i++)
+		for (int i=0; i<op_code.content.count(); i++)
 		{
+			BaseOpCode op_code_item = op_code.content.get(i);
 			if (next_new_line)
 			{
-				result.push(this.translator.newLine());
+				int lines = 1;
+				if (prev_op_code)
+				{
+					lines = op_code_item.getOffset().get("start") -
+						prev_op_code.getOffset().get("end");
+				}
+				for (int j=0; j<lines; j++) result.push(this.translator.newLine());
 			}
-			BaseOpCode op_code_item = op_code.items.get(i);
 			next_new_line = this.translateClassItem(op_code_item, result);
+			prev_op_code = op_code_item;
 		}
 		
 		/* End bracket */

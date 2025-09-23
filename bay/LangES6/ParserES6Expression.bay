@@ -416,12 +416,8 @@ class ParserES6Expression extends BaseObject
 	BaseOpCode readElement(TokenReader reader)
 	{
 		/* Try to read function */
-		/*
-		if (this.parser.parser_function.tryReadFunction(reader, false))
-		{
-			return this.parser.parser_function.readDeclareFunction(reader, false);
-		}
-		*/
+		/*OpDeclareFunction op_code = this.parser.parser_function.tryReadFunction(reader);
+		if (op_code) return op_code;*/
 		return this.readOr(reader);
 	}
 	

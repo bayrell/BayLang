@@ -27,6 +27,7 @@ use BayLang.LangPHP.TranslatorPHP;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
@@ -103,13 +104,22 @@ class TranslatorPHPProgram extends BaseObject
 	
 	
 	/**
+	 * OpComment
+	 */
+	void OpComment(OpComment op_code, Collection<string> result)
+	{
+		result.push("/*");
+		result.push(op_code.value);
+		result.push("*/");
+	}
+	
+	
+	/**
 	 * OpDeclareFunctionArg
 	 */
 	void OpDeclareFunctionArg(OpDeclareFunctionArg op_code, Collection<string> result)
 	{
-		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
-		result.push(" ");
-		result.push(op_code.name);
+		result.push("$" ~ op_code.name);
 		if (op_code.expression)
 		{
 			result.push(" = ");
@@ -143,6 +153,17 @@ class TranslatorPHPProgram extends BaseObject
 	{
 		if (not (op_code.pattern instanceof OpTypeIdentifier)) return;
 		
+		/* Comments */
+		if (op_code.comments)
+		{
+			for (int i=0; i<op_code.comments.count(); i++)
+			{
+				OpComment op_code_item = op_code.comments.get(i);
+				this.OpComment(op_code_item, result);
+				result.push(this.translator.newLine());
+			}
+		}
+		
 		/* Function flags */
 		Collection<string> flags = ["async", "static", "pure"];
 		flags = flags.filter(
@@ -152,12 +173,8 @@ class TranslatorPHPProgram extends BaseObject
 		result.push(rs::join(" ", flags));
 		if (flags.count() > 0) result.push(" ");
 		
-		/* Function result type */
-		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
-		
 		/* Function name */
-		result.push(" ");
-		result.push(op_code.name);
+		result.push("function " ~ op_code.name);
 		
 		/* Arguments */
 		result.push("(");
@@ -179,15 +196,31 @@ class TranslatorPHPProgram extends BaseObject
 			bool is_multiline = op_code.content.isMultiLine();
 			if (is_multiline)
 			{
-				result.push(" =>");
+				result.push(this.translator.newLine());
+			}
+			result.push("{");
+			if (is_multiline)
+			{
+				this.translator.levelInc();
 				result.push(this.translator.newLine());
 			}
 			else
 			{
-				result.push(" => ");
+				result.push(" ");
 			}
-			this.translator.expression.translate(op_code.expression, result);
+			result.push("return ");
+			this.translator.expression.translate(op_code.content, result);
 			result.push(";");
+			if (is_multiline)
+			{
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+			}
+			else
+			{
+				result.push(" ");
+			}
+			result.push("}");
 		}
 		
 		/* Items */
@@ -210,6 +243,10 @@ class TranslatorPHPProgram extends BaseObject
 		else if (op_code instanceof OpAssign)
 		{
 			this.OpAssign(op_code, result);
+		}
+		else if (op_code instanceof OpComment)
+		{
+			this.OpComment(op_code, result);
 		}
 		else if (op_code instanceof OpDeclareFunction)
 		{

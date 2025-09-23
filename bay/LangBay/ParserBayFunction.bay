@@ -105,7 +105,7 @@ class ParserBayFunction extends BaseObject
 		{
 			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
 			args.push(expression);
-			if (reader.nextToken() == ",")
+			if (reader.nextToken() != ")")
 			{
 				reader.matchToken(",");
 			}
@@ -227,14 +227,23 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read function
 	 */
-	BaseOpCode readDeclareFunction(TokenReader reader)
+	BaseOpCode readDeclareFunction(TokenReader reader, bool read_name = true)
 	{
 		Caret caret_start = reader.start();
 		
+		string name = "";
+		BaseOpCode content = null;
 		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
-		string name = this.parser.parser_base.readIdentifier(reader).value;
+		if (read_name) name = this.parser.parser_base.readIdentifier(reader).value;
 		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
-		BaseOpCode content = this.parser.parser_operator.parse(reader);
+		
+		/* Read content */
+		if (reader.nextToken() == "{") content = this.parser.parser_operator.parse(reader);
+		else
+		{
+			reader.matchToken("=>");
+			content = this.parser.parser_expression.readExpression(reader);
+		}
 		
 		return new OpDeclareFunction
 		{
@@ -249,64 +258,27 @@ class ParserBayFunction extends BaseObject
 	
 	
 	/**
-	 * Returns true if next is function
+	 * Try to read function
 	 */
-	pure bool tryReadFunction(ParserBay parser, string has_name = true, OpFlags flags = null)
+	BaseOpCode tryReadFunction(TokenReader reader)
 	{
-		ParserBay look = null;
-		BaseOpCode parser_value = null;
-		BaseOpCode token = null;
-		
-		/* Clear vars */
-		Dict<bool> save_vars = parser.vars;
-		parser <= vars <= new Dict<bool>();
-		parser <= find_ident <= false;
-		
-		bool res = false;
+		Caret save_caret = reader.caret();
+		bool error = false;
 		try
 		{
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "async") parser = look;
-			
-			list res = parser.parser_base::readTypeIdentifier(parser, false);
-			parser = res[0]; parser_value = res[1];
-			Caret caret_start = parser_value.caret_start;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "@") parser = look;
-			if (has_name)
+			BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
+			Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
+			if (reader.nextToken() != "=>" and reader.nextToken() != "use")
 			{
-				list res = parser.parser_base::readIdentifier(parser); parser = res[0];
+				reader.matchToken("{");
 			}
-			list res = static::readDeclareFunctionArgs(parser, false); parser = res[0];
-			list res = static::readDeclareFunctionUse(parser, null, false); parser = res[0];
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (
-				flags != null and flags.p_declare or
-				parser.current_class_abstract or
-				parser.current_class_declare or
-				parser.current_class_kind == "interface"
-			)
-			{
-				if (token.content != ";")
-				{
-					throw new ParserExpected("Function", caret_start, parser.file_name);
-				}
-			}
-			else if (token.content != "=>" and token.content != "{")
-			{
-				throw new ParserExpected("Function", caret_start, parser.file_name);
-			}
-			res = true;
 		}
-		catch (ParserExpected e)
+		catch (ParserError e)
 		{
-			res = false;
+			error = true;
 		}
-		
-		/* Restore vars */
-		parser <= vars <= save_vars;
-		parser <= find_ident <= true;
-		
-		return res;
+		reader.init(save_caret);
+		if (error) return null;
+		return this.readDeclareFunction(reader, false);
 	}
 }

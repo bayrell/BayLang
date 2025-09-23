@@ -64,6 +64,15 @@ class BaseOpCode extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Returns offset
+	 */
+	Dict getOffset() => {
+		"start": this.caret_start ? this.caret_start.y : 0,
+		"end": this.caret_end ? this.caret_end.y : 0,
+	};
+	
+	
+	/**
 	 * Clone this struct with new values
 	 * @param Map obj = null
 	 * @return BaseStruct
