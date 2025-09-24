@@ -247,7 +247,9 @@ class TranslatorES6Program extends BaseObject
 		}
 		else if (op_code instanceof OpDeclareFunction)
 		{
+			this.translator.class_function = op_code;
 			this.OpDeclareFunction(op_code, result);
+			this.translator.class_function = null;
 		}
 		else
 		{

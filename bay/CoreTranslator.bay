@@ -38,6 +38,7 @@ class CoreTranslator extends BaseObject
 	Dict<bool> preprocessor_flags = {};
 	Dict<bool> vars = {};
 	Dict<string> uses = {};
+	OpDeclareFunction class_function = null;
 	string current_class_name = "";
 	string current_namespace_name = "";
 	string parent_class_name = "";

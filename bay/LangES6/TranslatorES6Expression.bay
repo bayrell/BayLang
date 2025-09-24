@@ -60,6 +60,17 @@ class TranslatorES6Expression extends BaseObject
 	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
 	{
 		if (op_code.value == "print") result.push("console.log");
+		else if (op_code.value == "static")
+		{
+			if (this.translator.class_function and this.translator.class_function.isStatic())
+			{
+				result.push("this");
+			}
+			else
+			{
+				result.push("this.constructor");
+			}
+		}
 		else result.push(op_code.value);
 		this.translator.opcode_level = 20;
 	}
@@ -316,45 +327,26 @@ class TranslatorES6Expression extends BaseObject
 		while (op_code_first instanceof OpAttr)
 		{
 			attrs.push(op_code_first);
-			op_code_first = op_code_first.obj;
+			op_code_first = op_code_first.prev;
 		}
 		
 		attrs = attrs.reverse();
 		
-		/* first op_code */
+		/* First op_code */
 		this.translateItem(op_code_first, result);
 		
 		/* Attrs */
 		for (int i=0; i<attrs.count(); i++)
 		{
 			OpAttr item_attr = attrs.get(i);
-			if (item_attr.kind == OpAttr::KIND_ATTR)
+			if (item_attr.kind == OpAttr::KIND_ATTR or item_attr.kind == OpAttr::KIND_STATIC)
 			{
 				result.push(".");
-				result.push(item_attr.value.value);
-			}
-			else if (item_attr.kind == OpAttr::KIND_STATIC)
-			{
-				result.push("::");
-				result.push(item_attr.value.value);
+				result.push(item_attr.next.value);
 			}
 			else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
 			{
-				result.push("[");
-				this.translate(item_attr.value, result);
-				result.push("]");
-			}
-			else if (item_attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
-			{
-				result.push("[");
-				int item_attr_count = item_attr.attrs.count();
-				for (int j=0; j<item_attr_count; j++)
-				{
-					BaseOpCode op_code_item = item_attr.attrs.get(j);
-					this.translate(op_code_item, result);
-					if (j < item_attr_count - 1) result.push(", ");
-				}
-				result.push("]");
+				this.OpCollection(item_attr.next, result);
 			}
 		}
 		

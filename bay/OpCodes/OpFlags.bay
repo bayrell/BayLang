@@ -23,7 +23,7 @@ use Runtime.Serializer;
 use Runtime.SerializeInterface;
 
 
-class OpFlags extends BaseObject implements SerializeInterface
+class OpFlags extends BaseOpCode implements SerializeInterface
 {
 	public bool p_async = false;
 	public bool p_export = false;

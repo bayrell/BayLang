@@ -55,27 +55,22 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read flags
 	 */
-	pure list<ParserBay, OpFlags> readFlags(ParserBay parser)
+	OpFlags readFlags(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		Map values = new Map();
-		Collection<string> current_flags = OpFlags::getFlags();
+		Caret caret_start = reader.start();
 		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and current_flags.indexOf(token.content) >= 0)
+		Dict params = {};
+		Collection<string> current_flags = OpFlags::getFlags();
+		while (not reader.eof() and current_flags.indexOf(reader.nextToken()) >= 0)
 		{
-			string flag = token.content;
-			values.set("p_"~flag, true);
-			parser = look;
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+			string flag = reader.readToken();
+			params.set("p_" ~ flag, true);
 		}
 		
-		return 
-		[
-			parser,
-			new OpFlags(values)
-		];
+		params.set("caret_start", caret_start);
+		params.set("caret_end", reader.caret());
+		
+		return new OpFlags(params);
 	}
 	
 	
@@ -89,7 +84,7 @@ class ParserBayFunction extends BaseObject
 		/* Read identifier */
 		if (pattern == null)
 		{
-			pattern = this.parser.parser_base.readItem(reader);
+			pattern = this.parser.parser_base.readDynamic(reader);
 		}
 		
 		/* Next token should be bracket */
@@ -233,6 +228,7 @@ class ParserBayFunction extends BaseObject
 		
 		string name = "";
 		BaseOpCode content = null;
+		OpFlags flags = this.readFlags(reader);
 		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
 		if (read_name) name = this.parser.parser_base.readIdentifier(reader).value;
 		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
@@ -249,6 +245,7 @@ class ParserBayFunction extends BaseObject
 		{
 			"args": args,
 			"name": name,
+			"flags": flags,
 			"pattern": pattern,
 			"content": content,
 			"caret_start": caret_start,

@@ -27,14 +27,12 @@ class OpAttr extends BaseOpCode
 	static const string KIND_ATTR = "attr";
 	static const string KIND_STATIC = "static";
 	static const string KIND_DYNAMIC = "dynamic";
-	static const string KIND_DYNAMIC_ATTRS = "dynamic_attrs";
 	static const string KIND_PIPE = "pipe";
 	
 	string op = "op_attr";
 	string kind = "";
-	BaseOpCode obj = null;
-	BaseOpCode value = null;
-	Collection<BaseOpCode> attrs = null;
+	BaseOpCode prev = null;
+	BaseOpCode next = null;
 	
 	
 	/**
@@ -45,7 +43,7 @@ class OpAttr extends BaseOpCode
 		parent(serializer, data);
 		serializer.process(this, "attrs", data);
 		serializer.process(this, "kind", data);
-		serializer.process(this, "obj", data);
-		serializer.process(this, "value", data);
+		serializer.process(this, "prev", data);
+		serializer.process(this, "next", data);
 	}
 }

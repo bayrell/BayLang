@@ -306,7 +306,7 @@ class TranslatorBayExpression extends BaseObject
 		while (op_code_first instanceof OpAttr)
 		{
 			attrs.push(op_code_first);
-			op_code_first = op_code_first.obj;
+			op_code_first = op_code_first.prev;
 		}
 		
 		attrs = attrs.reverse();
@@ -321,30 +321,16 @@ class TranslatorBayExpression extends BaseObject
 			if (item_attr.kind == OpAttr::KIND_ATTR)
 			{
 				result.push(".");
-				result.push(item_attr.value.value);
+				result.push(item_attr.next.value);
 			}
 			else if (item_attr.kind == OpAttr::KIND_STATIC)
 			{
 				result.push("::");
-				result.push(item_attr.value.value);
+				result.push(item_attr.next.value);
 			}
 			else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
 			{
-				result.push("[");
-				this.translate(item_attr.value, result);
-				result.push("]");
-			}
-			else if (item_attr.kind == OpAttr::KIND_DYNAMIC_ATTRS)
-			{
-				result.push("[");
-				int item_attr_count = item_attr.attrs.count();
-				for (int j=0; j<item_attr_count; j++)
-				{
-					BaseOpCode op_code_item = item_attr.attrs.get(j);
-					this.translate(op_code_item, result);
-					if (j < item_attr_count - 1) result.push(", ");
-				}
-				result.push("]");
+				this.OpCollection(item_attr.next, result);
 			}
 		}
 		

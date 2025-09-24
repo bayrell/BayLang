@@ -72,15 +72,8 @@ class ParserBayExpression extends BaseObject
 			return op_code;
 		}
 		
-		/* Try to read function */
-		OpCall op_code = this.parser.parser_function.readCallFunction(reader);
-		if (op_code) return op_code;
-		
-		/* Restore reader */
-		reader.init(save_caret);
-		
 		/* Read op_code */
-		return this.parser.parser_base.readItem(reader);
+		return this.parser.parser_base.readDynamic(reader);
 	}
 	
 	

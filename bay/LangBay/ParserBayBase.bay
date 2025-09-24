@@ -832,277 +832,35 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read dynamic
 	 */
-	pure list<ParserBay, BaseOpCode> readDynamic(ParserBay parser, int dynamic_flags = -1)
+	BaseOpCode readDynamic(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		Collection<BaseOpCode> parser_items = null;
-		BaseOpCode op_code = null
-		BaseOpCode op_code_first = null;
-		bool is_await = false;
-		bool is_context_call = true;
-		Caret caret_start = null;
+		Caret caret_start = reader.start();
+		BaseOpCode item = this.readItem(reader);
 		
-		/* Dynamic flags */
-		int flag_call = 1;
-		int flag_attr = 2;
-		int flag_static = 4;
-		int flag_dynamic = 8;
-		
-		fn f_next = bool (string s) use (dynamic_flags)
+		Collection operations = [".", "::", "[", "("];
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
-			if (dynamic_flags & 1 == 1)
+			string next_token = reader.nextToken();
+			if (next_token == "." or next_token == "::")
 			{
-				if (s == "{" or s == "(" or s == "@") return true;
-			}
-			if (dynamic_flags & 2 == 2)
-			{
-				if (s == ".") return true;
-			}
-			if (dynamic_flags & 4 == 4)
-			{
-				if (s == "::") return true;
-			}
-			if (dynamic_flags & 8 == 8)
-			{
-				if (s == "[") return true;
-			}
-			return false;
-		}
-		
-		list res = static::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "await")
-		{
-			caret_start = token.caret_start;
-			is_await = true;
-			parser = look;
-		}
-		list res = static::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "@")
-		{
-			list res = static::readToken(look);
-			ParserBay look2 = res[0]; CoreToken token2 = res[1];
-			if (not f_next(token2.content))
-			{
-				if (static::isIdentifier(token2.content))
+				reader.matchToken(next_token);
+				BaseOpCode op_code_item = this.readIdentifier(reader);
+				item = new OpAttr
 				{
-					parser = look;
-					is_context_call = false;
-				}
-			}
-		}
-		list res = static::readBaseItem(parser); parser = res[0]; op_code = res[1];
-		
-		op_code_first = op_code;
-		if (caret_start == null) caret_start = op_code.caret_start;		
-		if (
-			op_code instanceof OpIdentifier and
-			(
-				op_code.kind == OpIdentifier::KIND_CONTEXT or
-				op_code.kind == OpIdentifier::KIND_SYS_FUNCTION
-			)
-		)
-		{
-			is_context_call = false;
-		}
-		
-		list res = static::readToken(parser); look = res[0]; token = res[1];
-		if (f_next(token.content))
-		{
-			if (op_code instanceof OpIdentifier)
-			{
-				if (
-					parser.find_ident and
-					op_code.kind != OpIdentifier::KIND_SYS_TYPE and
-					op_code.kind != OpIdentifier::KIND_SYS_FUNCTION and
-					op_code.kind != OpIdentifier::KIND_VARIABLE and
-					op_code.kind != OpIdentifier::KIND_CLASS and
-					op_code.kind != OpIdentifier::KIND_CLASSREF and
-					op_code.kind != OpIdentifier::KIND_CONTEXT
-				)
-				{
-					throw new ParserExpected
-					(
-						"Module or variable '" ~ op_code.value ~ "'",
-						op_code.caret_start, parser.file_name
-					);
-				}
-			}
-			else if (op_code instanceof OpNew or op_code instanceof OpCollection or op_code instanceof OpDict){}
-			else
-			{
-				throw new ParserExpected
-				(
-					"Module or variable",
-					op_code.caret_start
-					parser.file_name
-				);
-			}
-		}
-		
-		/* If is pipe */
-		if (parser.is_pipe and op_code instanceof OpIdentifier)
-		{
-			op_code = new OpAttr
-			{
-				"kind": parser.pipe_kind,
-				"obj": new OpIdentifier
-				{
-					"kind": OpIdentifier::KIND_PIPE,
-					"caret_start": op_code.caret_start,
-					"caret_end": op_code.caret_end,
-				},
-				"value": op_code,
-				"caret_start": op_code.caret_start,
-				"caret_end": op_code.caret_end,
-			};
-		}
-		
-		while (not token.eof and f_next(token.content))
-		{
-			string token_content = token.content;
-			
-			/* Static call */
-			if (token_content == "(" or token_content == "{" or token_content == "@")
-			{
-				if (dynamic_flags & flag_call != flag_call)
-				{
-					throw new ParserError
-					(
-						"Call are not allowed",
-						token.caret_start, parser.file_name
-					);
-				}
-				
-				if (token_content == "@")
-				{
-					parser = look;
-					is_context_call = false;
-				}
-				
-				list res = static::readCallArgs(parser); parser = res[0]; parser_items = res[1];
-				op_code = new OpCall
-				{
-					"obj": op_code,
-					"args": parser_items,
+					"kind": next_token == "." ? OpAttr::KIND_ATTR : OpAttr::KIND_STATIC,
+					"prev": item,
+					"next": op_code_item,
 					"caret_start": caret_start,
-					"caret_end": parser.caret,
-					"is_await": is_await,
-					"is_context": is_context_call,
-				};
-				is_context_call = true;
-			}
-			
-			/* Object access */
-			else if (token_content == "." or token_content == "::" or token_content == "[")
-			{
-				string kind = "";
-				Vector<BaseOpCode> look_values = null;
-				BaseOpCode look_value = null;
-				parser = look;
-				is_context_call = true;
-				
-				if (token_content == ".")
-				{
-					kind = OpAttr::KIND_ATTR;
-					if (dynamic_flags & flag_attr != flag_attr)
-					{
-						throw new ParserError
-						(
-							"Attr are not allowed",
-							token.caret_start, parser.file_name
-						);
-					}
-				}
-				else if (token_content == "::")
-				{
-					kind = OpAttr::KIND_STATIC;
-					if (dynamic_flags & flag_static != flag_static)
-					{
-						throw new ParserError
-						(
-							"Static attr are not allowed",
-							token.caret_start, parser.file_name
-						);
-					}
-				}
-				else if (token_content == "[")
-				{
-					kind = OpAttr::KIND_DYNAMIC;
-					if (dynamic_flags & flag_dynamic != flag_dynamic)
-					{
-						throw new ParserError
-						(
-							"Dynamic attr are not allowed",
-							token.caret_start, parser.file_name
-						);
-					}
-				}
-				
-				if (token_content == "[")
-				{
-					list res = parser.parser_expression::readExpression(parser);
-					parser = res[0]; look_value = res[1];
-					
-					list res = static::readToken(parser); look = res[0]; token = res[1];
-					if (token.content == ",")
-					{
-						look_values = new Vector();
-						look_values.push(look_value);
-					}
-					while (token.content == ",")
-					{
-						parser = look;
-						list res = parser.parser_expression::readExpression(parser);
-						parser = res[0]; look_value = res[1];
-						look_values.push(look_value);
-						list res = static::readToken(parser); look = res[0]; token = res[1];
-					}
-					
-					list res = static::matchToken(parser, "]"); parser = res[0];
-					if (look_values != null)
-					{
-						kind = OpAttr::KIND_DYNAMIC_ATTRS;
-					}
-				}
-				else
-				{
-					list res = static::readToken(parser); look = res[0]; token = res[1];
-					if (token.content == "@")
-					{
-						parser = look;
-						is_context_call = false;
-					}
-					list res = static::readIdentifier(parser); parser = res[0]; look_value = res[1];
-				}
-				
-				op_code = new OpAttr
-				{
-					"kind": kind,
-					"obj": op_code,
-					"attrs": look_values != null ? look_values : null,
-					"value": look_values == null ? look_value : null,
-					"caret_start": caret_start,
-					"caret_end": parser.caret,
+					"caret_end": reader.caret(),
 				};
 			}
-			else
+			else if (next_token == "(")
 			{
-				throw new ParserExpected("Next attr", token.caret_start, parser.file_name);
+				item = this.parser.parser_function.readCallFunction(reader, item);
+				item.caret_start = caret_start;
 			}
-			
-			list res = static::readToken(parser); look = res[0]; token = res[1];
-			if 
-			(
-				op_code instanceof OpAttr and op_code.kind == OpAttr::KIND_PIPE and
-				token.content != "(" and token.content != "{"
-			)
-			{
-				throw new ParserExpected("Call", token.caret_start, parser.file_name);
-			}
-			
 		}
 		
-		return [parser, op_code];
+		return item;
 	}
 }

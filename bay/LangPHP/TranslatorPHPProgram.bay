@@ -251,7 +251,9 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		else if (op_code instanceof OpDeclareFunction)
 		{
+			this.translator.class_function = op_code;
 			this.OpDeclareFunction(op_code, result);
+			this.translator.class_function = null;
 		}
 		else
 		{
@@ -339,6 +341,7 @@ class TranslatorPHPProgram extends BaseObject
 		/* Class name */
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
 			op_code.name;
+		this.translator.uses.set(op_code.name, this.translator.current_class_name);
 		result.push(op_code.name);
 		
 		/* Template */
