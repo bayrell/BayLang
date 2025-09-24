@@ -268,16 +268,27 @@ class TranslatorES6Program extends BaseObject
 		this.translator.levelInc();
 		
 		/* Class body items */
+		BaseOpCode prev_op_code = null;
 		bool next_new_line = true;
 		for (int i=0; i<op_code.content.count(); i++)
 		{
+			BaseOpCode op_code_item = op_code.content.get(i);
 			if (next_new_line)
 			{
-				result.push(this.translator.newLine());
+				int lines = 1;
+				if (prev_op_code)
+				{
+					lines = op_code_item.getOffset().get("start") -
+						prev_op_code.getOffset().get("end");
+				}
+				for (int j=0; j<lines; j++) result.push(this.translator.newLine());
 			}
-			BaseOpCode op_code_item = op_code.content.get(i);
 			next_new_line = this.translateClassItem(op_code_item, result);
+			prev_op_code = op_code_item;
 		}
+		
+		/* Class init */
+		this.translateClassInit(op_code, result);
 		
 		/* End bracket */
 		this.translator.levelDec();
@@ -287,20 +298,49 @@ class TranslatorES6Program extends BaseObject
 	
 	
 	/**
+	 * Translate class init
+	 */
+	void translateClassInit(OpDeclareClass op_code, Collection<string> result)
+	{
+		result.push(this.translator.newLine(op_code.content.count() > 0 ? 3 : 1));
+		result.push("/* ========= Class init functions ========= */");
+		result.push(this.translator.newLine());
+		result.push("static getClassName(){ " ~
+			"return \"" ~ this.translator.current_class_name ~ "\"; }");
+		result.push(this.translator.newLine());
+		result.push("static getMethodsList(){ return []; }");
+		result.push(this.translator.newLine());
+		result.push("static getMethodInfoByName(field_name){ return null; }");
+	}
+	
+	
+	/**
 	 * Translate class
 	 */
 	void translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
-		string class_name = this.translator.current_namespace_name ~ "." ~ op_code.name;
+		this.translator.parent_class_name = "";
+		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
+			op_code.name;
 		
 		/* Class name */
-		result.push(class_name ~ " = class");
+		result.push(this.translator.current_class_name ~ " = class");
+		this.translator.uses.set(op_code.name, this.translator.current_class_name);
 		
 		/* Extends */
 		if (op_code.class_extends)
 		{
 			result.push(" extends ");
 			this.translator.expression.OpTypeIdentifier(op_code.class_extends, result);
+			string parent_class_name = op_code.class_extends.entity_name.getName();
+			if (this.translator.uses.has(parent_class_name))
+			{
+				this.translator.parent_class_name = this.translator.uses.get(parent_class_name);
+			}
+			else
+			{
+				this.translator.parent_class_name = parent_class_name;
+			}
 		}
 		
 		/* Implements */
@@ -321,7 +361,8 @@ class TranslatorES6Program extends BaseObject
 		result.push(";");
 		
 		result.push(this.translator.newLine());
-		result.push("window[\"" ~ class_name ~ "\"] = " ~ class_name ~ ";");
+		result.push("window[\"" ~ this.translator.current_class_name ~ "\"] = " ~
+			this.translator.current_class_name ~ ";");
 	}
 	
 	
@@ -362,11 +403,20 @@ class TranslatorES6Program extends BaseObject
 		int op_code_use_count = 0;
 		bool prev_op_code_use = false;
 		bool last_result = false;
+		BaseOpCode prev_op_code = null;
 		for (int i=0; i<items.count(); i++)
 		{
 			BaseOpCode op_code_item = items.get(i);
-			if (last_result) result.push(this.translator.newLine());
+			if (op_code_item instanceof OpDeclareClass)
+			{
+				result.push(this.translator.newLine(last_result ? 3 : 2));
+			}
+			else if (last_result)
+			{
+				result.push(this.translator.newLine());
+			}
 			last_result = this.translateItem(items.get(i), result);
+			prev_op_code = op_code_item;
 		}
 	}
 	

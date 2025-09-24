@@ -57,6 +57,7 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void OpNamespace(OpNamespace op_code, Collection<string> result)
 	{
+		this.translator.current_namespace_name = op_code.name;
 		result.push("namespace ");
 		result.push(this.translator.getModuleName(op_code.name));
 		result.push(";");
@@ -271,21 +272,49 @@ class TranslatorPHPProgram extends BaseObject
 		this.translator.levelInc();
 		
 		/* Class body items */
+		BaseOpCode prev_op_code = null;
 		bool next_new_line = true;
 		for (int i=0; i<op_code.content.count(); i++)
 		{
+			BaseOpCode op_code_item = op_code.content.get(i);
 			if (next_new_line)
 			{
-				result.push(this.translator.newLine());
+				int lines = 1;
+				if (prev_op_code)
+				{
+					lines = op_code_item.getOffset().get("start") -
+						prev_op_code.getOffset().get("end");
+				}
+				for (int j=0; j<lines; j++) result.push(this.translator.newLine());
 			}
-			BaseOpCode op_code_item = op_code.content.get(i);
 			next_new_line = this.translateClassItem(op_code_item, result);
+			prev_op_code = op_code_item;
 		}
+		
+		/* Class init */
+		this.translateClassInit(op_code, result);
 		
 		/* End bracket */
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
 		result.push("}");
+	}
+	
+	
+	/**
+	 * Translate class init
+	 */
+	void translateClassInit(OpDeclareClass op_code, Collection<string> result)
+	{
+		result.push(this.translator.newLine(op_code.content.count() > 0 ? 3 : 1));
+		result.push("/* ========= Class init functions ========= */");
+		result.push(this.translator.newLine());
+		result.push("static function getClassName(){ " ~
+			"return \"" ~ this.translator.current_class_name ~ "\"; }");
+		result.push(this.translator.newLine());
+		result.push("static function getMethodsList(){ return []; }");
+		result.push(this.translator.newLine());
+		result.push("static function getMethodInfoByName($field_name){ return null; }");
 	}
 	
 	
@@ -308,6 +337,8 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Class name */
+		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
+			op_code.name;
 		result.push(op_code.name);
 		
 		/* Template */
@@ -380,12 +411,18 @@ class TranslatorPHPProgram extends BaseObject
 		for (int i=0; i<items.count(); i++)
 		{
 			BaseOpCode op_code_item = items.get(i);
-			if (last_result) result.push(this.translator.newLine());
-			if (op_code_item instanceof OpDeclareClass and op_code_use_count > 0)
+			if (op_code_item instanceof OpDeclareClass)
 			{
-				result.push(this.translator.newLine());
-				if (op_code_use_count > 1) result.push(this.translator.newLine());
+				if (op_code_use_count > 0)
+				{
+					result.push(this.translator.newLine(op_code_use_count > 1 ? 3 : 2));
+				}
+				else
+				{
+					result.push(this.translator.newLine(last_result ? 3 : 2));
+				}
 			}
+			else if (last_result) result.push(this.translator.newLine());
 			if (op_code_item instanceof OpUse) op_code_use_count++;
 			else op_code_use_count = 0;
 			last_result = this.translateItem(items.get(i), result);

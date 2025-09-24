@@ -120,9 +120,17 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
 	{
-		OpIdentifier pattern = op_code.entity_name.items.last();
-		result.push(pattern.value);
-		this.OpCodeGenerics(op_code.generics, result);
+		string name = op_code.entity_name.getName();
+		if (this.translator.uses.has(name))
+		{
+			result.push(this.translator.uses.get(name));
+		}
+		else
+		{
+			OpIdentifier pattern = op_code.entity_name.items.last();
+			result.push(pattern.value);
+			this.OpCodeGenerics(op_code.generics, result);
+		}
 	}
 	
 	

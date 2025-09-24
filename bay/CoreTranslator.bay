@@ -36,7 +36,12 @@ class CoreTranslator extends BaseObject
 	string indent = "\t";
 	string crlf = "\n";
 	Dict<bool> preprocessor_flags = {};
-	
+	Dict<bool> vars = {};
+	Dict<string> uses = {};
+	string current_class_name = "";
+	string current_namespace_name = "";
+	string parent_class_name = "";
+	bool is_operator_block = false;
 	
 	/**
 	 * Set flag
@@ -69,9 +74,15 @@ class CoreTranslator extends BaseObject
 	/**
 	 * Returns new line with indent
 	 */
-	string newLine()
+	string newLine(int count = 1)
 	{
-		return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
+		if (count == 1) return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
+		Collection arr = [];
+		for (int i=0; i<count; i++)
+		{
+			arr.push(this.crlf ~ rs::str_repeat(this.indent, this.indent_level));
+		}
+		return rs::join("", arr);
 	}
 	
 	
