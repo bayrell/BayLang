@@ -20,11 +20,12 @@ namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpString;
 
 
 class OpDictPair extends BaseOpCode
 {
-	string key = "";
+	OpString key = null;
 	BaseOpCode value = null;
 	BaseOpCode condition = null;
 	

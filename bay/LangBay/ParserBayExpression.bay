@@ -401,6 +401,18 @@ class ParserBayExpression extends BaseObject
 	 */
 	BaseOpCode readElement(TokenReader reader)
 	{
+		/* Read collection */
+		if (reader.nextToken() == "[")
+		{
+			return this.parser.parser_base.readCollection(reader);
+		}
+		
+		/* Read collection */
+		if (reader.nextToken() == "{")
+		{
+			return this.parser.parser_base.readDict(reader);
+		}
+		
 		/* Try to read function */
 		OpDeclareFunction op_code = this.parser.parser_function.tryReadFunction(reader);
 		if (op_code) return op_code;

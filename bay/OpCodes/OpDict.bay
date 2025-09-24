@@ -25,7 +25,7 @@ use BayLang.OpCodes.BaseOpCode;
 class OpDict extends BaseOpCode
 {
 	string op = "op_dict";
-	Dict<BaseOpCode> values = null;
+	Dict<BaseOpCode> items = null;
 	
 	
 	/**

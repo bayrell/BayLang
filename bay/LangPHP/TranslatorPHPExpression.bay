@@ -132,16 +132,16 @@ class TranslatorPHPExpression extends BaseObject
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
-		result.push("[");
+		result.push("new \\Runtime\\Collection(");
 		if (is_multiline)
 		{
 			this.translator.levelInc();
 		}
 		int i = 0;
-		int values_count = op_code.values.count();
-		while (i < values_count)
+		int items_count = op_code.items.count();
+		while (i < items_count)
 		{
-			BaseOpCode op_code_item = op_code.values.get(i);
+			BaseOpCode op_code_item = op_code.items.get(i);
 			if (is_multiline)
 			{
 				result.push(this.translator.newLine());
@@ -162,7 +162,7 @@ class TranslatorPHPExpression extends BaseObject
 					
 					/* Get next item */
 					i++;
-					op_code_item = op_code.values.get(i);
+					op_code_item = op_code.items.get(i);
 				}
 				this.OpPreprocessorCollection(items, result);
 				continue;
@@ -173,7 +173,7 @@ class TranslatorPHPExpression extends BaseObject
 			if (not(op_code_item instanceof OpPreprocessorIfDef))
 			{
 				if (is_multiline) result.push(",");
-				else if (i < values_count - 1) result.push(", ");
+				else if (i < items_count - 1) result.push(", ");
 			}
 			
 			i++;
@@ -183,7 +183,7 @@ class TranslatorPHPExpression extends BaseObject
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
 		}
-		result.push("]");
+		result.push(")");
 	}
 	
 	
@@ -212,15 +212,14 @@ class TranslatorPHPExpression extends BaseObject
 	void OpDict(OpDict op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
-		if (op_code.values.count() == 0 and not is_multiline)
+		if (op_code.items.count() == 0 and not is_multiline)
 		{
-			result.push("{");
-			result.push("}");
+			result.push("new \\Runtime\\Map()");
 			return;
 		}
 		
 		/* Begin bracket */
-		result.push("{");
+		result.push("new \\Runtime\\Map([");
 		if (is_multiline)
 		{
 			this.translator.levelInc();
@@ -228,10 +227,10 @@ class TranslatorPHPExpression extends BaseObject
 		
 		/* Items */
 		int i = 0;
-		int values_count = op_code.values.count();
-		while (i < values_count)
+		int items_count = op_code.items.count();
+		while (i < items_count)
 		{
-			OpDictPair op_code_item = op_code.values.get(i);
+			OpDictPair op_code_item = op_code.items.get(i);
 			if (is_multiline)
 			{
 				result.push(this.translator.newLine());
@@ -251,18 +250,18 @@ class TranslatorPHPExpression extends BaseObject
 					
 					/* Get next item */
 					i++;
-					op_code_item = op_code.values.get(i);
+					op_code_item = op_code.items.get(i);
 				}
 				this.OpPreprocessorDict(items, result);
 				continue;
 			}
 			
 			/* Translate item */
-			result.push(this.translator.toString(op_code_item.key));
-			result.push(": ");
+			result.push(this.translator.toString(op_code_item.key.value));
+			result.push(" => ");
 			this.translate(op_code_item.value, result);
 			if (is_multiline) result.push(",");
-			else if (i < values_count - 1) result.push(", ");
+			else if (i < items_count - 1) result.push(", ");
 			
 			i++;
 		}
@@ -273,7 +272,7 @@ class TranslatorPHPExpression extends BaseObject
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
 		}
-		result.push("}");
+		result.push("])");
 	}
 	
 	

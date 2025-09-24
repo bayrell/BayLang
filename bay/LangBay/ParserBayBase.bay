@@ -355,153 +355,63 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read collection
 	 */
-	pure list<ParserBay, BaseOpCode> readCollection(ParserBay parser)
+	OpCollection readCollection(TokenReader reader)
 	{
-		ParserBay start = parser;
-		ParserBay look = null;
-		CoreToken token = null;
-		Vector<BaseOpCode> values = new Vector();
-		BaseOpCode ifdef_condition = null;
-		bool flag_ifdef = false;
+		Caret caret_start = reader.start();
 		
-		list res = static::matchToken(parser, "["); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = static::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content != "]")
+		reader.matchToken("[");
+		Collection items = [];
+		while (not reader.eof() and reader.nextToken() != "]")
 		{
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "#ifdef")
+			BaseOpCode op_code_item = this.parser.parser_expression.readExpression(reader);
+			items.push(op_code_item);
+			if (reader.nextToken() == "," or reader.nextToken() != "]")
 			{
-				parser = look;
-				parser <= find_ident <= false;
-				list res = parser.parser_expression::readExpression(parser);
-				parser = res[0]; ifdef_condition = res[1];
-				parser <= find_ident <= true;
-				list res = parser.parser_base::matchToken(parser, "then");
-				parser = res[0]; token = res[1];
-				flag_ifdef = true;
+				reader.matchToken(",");
 			}
-			
-			BaseOpCode parser_value = null;
-			list res = parser.parser_expression::readExpression(parser);
-			parser = res[0]; parser_value = res[1];
-			
-			list res = static::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == ",")
-			{
-				parser = look;
-				list res = static::readToken(parser); look = res[0]; token = res[1];
-			}
-			
-			if (flag_ifdef)
-			{
-				parser_value = new OpPreprocessorIfDef
-				{
-					"items": parser_value,
-					"condition": ifdef_condition,
-				}
-			}
-			values.push(parser_value);
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "#endif")
-			{
-				parser = look;
-				flag_ifdef = false;
-				ifdef_condition = null;
-			}
-			
-			list res = static::readToken(parser); look = res[0]; token = res[1];
 		}
+		reader.matchToken("]");
 		
-		list res = static::matchToken(parser, "]"); parser = res[0]; token = res[1];
-		return 
-		[
-			parser,
-			new OpCollection
-			{
-				"values": values,
-				"caret_start": caret_start,
-				"caret_end": token.caret_end,
-			}
-		];
+		return new OpCollection
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
 	/**
 	 * Read collection
 	 */
-	pure list<ParserBay, BaseOpCode> readDict(ParserBay parser)
+	OpDict readDict(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		Vector<BaseOpCode> values = new Vector();
-		BaseOpCode ifdef_condition = null;
-		bool flag_ifdef = false;
+		Caret caret_start = reader.start();
 		
-		list res = static::matchToken(parser, "{"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = static::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content != "}")
+		reader.matchToken("{");
+		Collection items = [];
+		while (not reader.eof() and reader.nextToken() != "}")
 		{
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "#ifdef")
+			OpString op_code_name = this.readString(reader);
+			reader.matchToken(":");
+			BaseOpCode op_code_item = this.parser.parser_expression.readExpression(reader);
+			items.push(new OpDictPair{
+				"key": op_code_name,
+				"value": op_code_item,
+			});
+			if (reader.nextToken() == "," or reader.nextToken() != "}")
 			{
-				parser = look;
-				parser <= find_ident <= false;
-				list res = parser.parser_expression::readExpression(parser);
-				parser = res[0]; ifdef_condition = res[1];
-				parser <= find_ident <= true;
-				list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
-				flag_ifdef = true;
+				reader.matchToken(",");
 			}
-			
-			BaseOpCode parser_value = null;
-			list res = static::readString(parser); parser = res[0]; parser_value = res[1];
-			string key = parser_value.value;
-			
-			list res = static::matchToken(parser, ":"); parser = res[0];
-			list res = parser.parser_expression::readExpression(parser);
-			parser = res[0]; parser_value = res[1];
-			
-			list res = static::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == ",")
-			{
-				parser = look;
-			}
-			
-			values.push(
-				new OpDictPair{
-					"key": key,
-					"value": parser_value,
-					"condition": ifdef_condition
-				}
-			);
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "#endif")
-			{
-				parser = look;
-				flag_ifdef = false;
-				ifdef_condition = null;
-			}
-			
-			list res = static::readToken(parser); look = res[0]; token = res[1];
 		}
+		reader.matchToken("}");
 		
-		list res = static::matchToken(parser, "}"); parser = res[0]; token = res[1];
-		return 
-		[
-			parser,
-			new OpDict
-			{
-				"values": values,
-				"caret_start": caret_start,
-				"caret_end": token.caret_end,
-			}
-		];
+		return new OpDict
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
