@@ -18,10 +18,10 @@
 
 namespace BayLang.Exceptions;
 
-use Runtime.Exceptions.AbstractException;
+use Runtime.Exceptions.RuntimeException;
 
 
-class DeclaredClass extends AbstractException
+class DeclaredClass extends RuntimeException
 {
 	void constructor(Object prev = null)
 	{

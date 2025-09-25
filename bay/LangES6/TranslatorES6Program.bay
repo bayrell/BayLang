@@ -409,7 +409,7 @@ class TranslatorES6Program extends BaseObject
 		for (int i=0; i<items.count(); i++)
 		{
 			BaseOpCode op_code_item = items.get(i);
-			if (op_code_item instanceof OpDeclareClass)
+			if (op_code_item instanceof OpDeclareClass and prev_op_code instanceof OpDeclareClass)
 			{
 				result.push(this.translator.newLine(last_result ? 3 : 2));
 			}

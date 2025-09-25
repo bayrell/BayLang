@@ -20,11 +20,11 @@ namespace BayLang.Exceptions;
 
 use Runtime.Context;
 use Runtime.RuntimeUtils;
-use Runtime.Exceptions.AbstractException;
+use Runtime.Exceptions.RuntimeException;
 use BayLang.LangUtils;
 
 
-class ParserUnknownError extends AbstractException
+class ParserUnknownError extends RuntimeException
 {
 	void constructor(string s, int code, Object prev = null)
 	{

@@ -330,7 +330,7 @@ class TranslatorES6Expression extends BaseObject
 			op_code_first = op_code_first.prev;
 		}
 		
-		attrs = attrs.reverse();
+		attrs.reverse();
 		
 		/* First op_code */
 		this.translateItem(op_code_first, result);

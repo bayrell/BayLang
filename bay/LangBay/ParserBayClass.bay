@@ -103,7 +103,7 @@ class ParserBayClass extends BaseObject
 						line = op_code.caret_start.y - 1;
 					}
 				}
-				item.comments = item.comments.reverse();
+				item.comments.reverse();
 				result.appendItems(comments);
 				result.push(item);
 			}

@@ -21,35 +21,36 @@ namespace BayLang.OpCodes;
 use Runtime.BaseObject;
 use Runtime.Serializer;
 use Runtime.SerializeInterface;
+use BayLang.OpCodes.BaseOpCode;
 
 
 class OpFlags extends BaseOpCode implements SerializeInterface
 {
-	public bool p_async = false;
-	public bool p_export = false;
-	public bool p_static = false;
-	public bool p_const = false;
-	public bool p_public = false;
-	public bool p_private = false;
-	public bool p_protected = false;
-	public bool p_declare = false;
-	public bool p_serializable = false;
-	public bool p_cloneable = false;
-	public bool p_assignable = false;
-	public bool p_memorize = false;
-	public bool p_multiblock = false;
-	public bool p_lambda = false;
-	public bool p_pure = false;
-	public bool p_props = false;
+	bool p_async = false;
+	bool p_export = false;
+	bool p_static = false;
+	bool p_const = false;
+	bool p_public = false;
+	bool p_private = false;
+	bool p_protected = false;
+	bool p_declare = false;
+	bool p_serializable = false;
+	bool p_cloneable = false;
+	bool p_assignable = false;
+	bool p_memorize = false;
+	bool p_multiblock = false;
+	bool p_lambda = false;
+	bool p_pure = false;
+	bool p_props = false;
 	
 	
 	/**
 	 * Constructor
 	 */
-	public void constructor(Dict params = null)
+	void constructor(Dict params = null)
 	{
 		parent();
-		this._assign_values(params);
+		this.assign(params);
 	}
 	
 	

@@ -309,7 +309,7 @@ class TranslatorBayExpression extends BaseObject
 			op_code_first = op_code_first.prev;
 		}
 		
-		attrs = attrs.reverse();
+		attrs.reverse();
 		
 		/* first op_code */
 		this.translateItem(op_code_first, result);
