@@ -167,11 +167,25 @@ class ParserBayClass extends BaseObject
 		Caret caret_start = reader.start();
 		reader.matchToken("class");
 		OpTypeIdentifier class_extends = null;
+		Collection<OpTypeIdentifier> class_implements = [];
 		OpIdentifier class_name = this.parser.parser_base.readIdentifier(reader);
 		if (reader.nextToken() == "extends")
 		{
 			reader.readToken();
 			class_extends = this.parser.parser_base.readTypeIdentifier(reader);
+		}
+		if (reader.nextToken() == "implements")
+		{
+			reader.readToken();
+			while (not reader.eof() and reader.nextToken() != "{" and reader.nextToken() != ";")
+			{
+				BaseOpCode op_code_item = this.parser.parser_base.readTypeIdentifier(reader);
+				class_implements.push(op_code_item);
+				if (reader.nextToken() != "{" and reader.nextToken() != ";")
+				{
+					reader.matchToken(",");
+				}
+			}
 		}
 		BaseOpCode content = this.readBody(reader);
 		return new OpDeclareClass
@@ -180,6 +194,7 @@ class ParserBayClass extends BaseObject
 			"content": content,
 			"name": class_name.value,
 			"class_extends": class_extends,
+			"class_implements": class_implements,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

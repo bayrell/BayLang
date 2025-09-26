@@ -448,7 +448,7 @@ class ParserES6Operator extends BaseObject
 				OpIdentifier value = this.parser.parser_base.readIdentifier(reader);
 				
 				/* Register variable */
-				this.parser.addVariable(value);
+				this.parser.addVariable(value, pattern);
 				
 				/* Read expression */
 				BaseOpCode expression = null;

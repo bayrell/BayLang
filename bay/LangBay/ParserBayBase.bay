@@ -323,10 +323,15 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read type identifier
 	 */
-	OpTypeIdentifier readTypeIdentifier(TokenReader reader, bool read_generic = true)
+	OpTypeIdentifier readTypeIdentifier(TokenReader reader,
+		bool find_entity = true, bool read_generic = true
+	)
 	{
 		Caret caret_start = reader.start();
 		OpEntityName entity_name = this.readEntityName(reader);
+		
+		/* Find entity */
+		if (find_entity) this.parser.findEntity(entity_name);
 		
 		/* Read generics */
 		Collection<OpTypeIdentifier> generics = [];

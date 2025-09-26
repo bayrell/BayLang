@@ -319,7 +319,7 @@ class ParserBayExpression extends BaseObject
 		else if (operations2.indexOf(reader.nextToken()) >= 0)
 		{
 			string math = reader.readToken();
-			BaseOpCode value = this.parser.parser_base.readTypeIdentifier(reader, false);
+			BaseOpCode value = this.parser.parser_base.readTypeIdentifier(reader, true, false);
 			op_code = new OpMath
 			{
 				"value1": op_code,

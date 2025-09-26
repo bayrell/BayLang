@@ -29,31 +29,11 @@ use BayLang.LangPHP.ParserPHPFunction;
 use BayLang.LangPHP.ParserPHPOperator;
 use BayLang.LangPHP.ParserPHPProgram;
 use BayLang.OpCodes.BaseOpCode;
-use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpIdentifier;
-use BayLang.OpCodes.OpNamespace;
-use BayLang.OpCodes.OpFlags;
 
 
 class ParserPHP extends CoreParser
 {
-	/* Work */
-	Dict<bool> vars = {};
-	Dict<string> uses = {};
-	OpNamespace current_namespace = null;
-	OpDeclareClass current_class = null;
-	string current_namespace_name = "";
-	string current_class_name = "";
-	string current_class_kind = "";
-	bool current_class_abstract = false;
-	bool current_class_declare = false;
-	bool find_identifier = true;
-	bool skip_comments = true;
-	string pipe_kind = "";
-	bool is_pipe = false;
-	bool is_html = false;
-	bool is_local_css = false;
-	
 	/* Parsers */
 	ParserPHPBase parser_base = new ParserPHPBase(this);
 	ParserPHPExpression parser_expression = new ParserPHPExpression(this);

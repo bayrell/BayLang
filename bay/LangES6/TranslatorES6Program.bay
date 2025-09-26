@@ -313,6 +313,21 @@ class TranslatorES6Program extends BaseObject
 		result.push("static getMethodsList(){ return []; }");
 		result.push(this.translator.newLine());
 		result.push("static getMethodInfoByName(field_name){ return null; }");
+		
+		/* Implements */
+		if (op_code.class_implements)
+		{
+			Collection<string> class_implements = op_code.class_implements.map(
+				string (OpTypeIdentifier class_name) => this.translator.toString(
+					this.translator.getFullName(
+						class_name.entity_name.getName()
+					)
+				)
+			);
+			result.push(this.translator.newLine());
+			result.push("static getInterfaces(field_name){ return [" ~
+				rs::join(",", class_implements) ~ "]; }");
+		}
 	}
 	
 	
@@ -334,28 +349,9 @@ class TranslatorES6Program extends BaseObject
 		{
 			result.push(" extends ");
 			this.translator.expression.OpTypeIdentifier(op_code.class_extends, result);
-			string parent_class_name = op_code.class_extends.entity_name.getName();
-			if (this.translator.uses.has(parent_class_name))
-			{
-				this.translator.parent_class_name = this.translator.uses.get(parent_class_name);
-			}
-			else
-			{
-				this.translator.parent_class_name = parent_class_name;
-			}
-		}
-		
-		/* Implements */
-		if (op_code.class_implements)
-		{
-			result.push(" implements ");
-			int items_count = op_code.class_implements.count();
-			for (int i=0; i<items_count; i++)
-			{
-				OpTypeIdentifier op_code_item = op_code.class_implements.get(i);
-				this.translator.expression.OpTypeIdentifier(op_code_item, result);
-				if (i < items_count - 1) result.push(", ");
-			}
+			this.translator.parent_class_name = this.translator.getFullName(
+				op_code.class_extends.entity_name.getName()
+			);
 		}
 		
 		result.push(this.translator.newLine());

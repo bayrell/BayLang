@@ -143,6 +143,7 @@ class ParserBayFunction extends BaseObject
 			}
 			
 			/* Add item */
+			this.parser.addVariable(name, pattern);
 			items.push(new OpDeclareFunctionArg{
 				"pattern": pattern,
 				"name": name.value,

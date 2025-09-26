@@ -106,6 +106,13 @@ class ParserBayProgram extends BaseObject
 			reader.readToken();
 			alias = reader.readToken();
 		}
+		else
+		{
+			alias = module_name.items.last().value;
+		}
+		
+		/* Add use */
+		this.parser.uses.set(alias, module_name.getName());
 		
 		return new OpUse
 		{

@@ -44,6 +44,23 @@ class CoreTranslator extends BaseObject
 	string parent_class_name = "";
 	bool is_operator_block = false;
 	
+	
+	/**
+	 * Get full entity name
+	 */
+	string getFullName(string class_name)
+	{
+		if (this.uses.has(class_name))
+		{
+			return this.uses.get(class_name);
+		}
+		else
+		{
+			return this.current_namespace_name ~ "." ~ class_name;
+		}
+	}
+	
+	
 	/**
 	 * Set flag
 	 */

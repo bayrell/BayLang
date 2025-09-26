@@ -29,6 +29,10 @@ use BayLang.SaveOpCode;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserExpected;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 class CoreParser extends BaseObject
@@ -37,6 +41,36 @@ class CoreParser extends BaseObject
 	string content = "";
 	int content_size = 0;
 	int tab_size = 4;
+	Dict<BaseOpCode> vars = {};
+	Dict<string> uses = {};
+	OpNamespace current_namespace = null;
+	OpDeclareClass current_class = null;
+	string current_namespace_name = "";
+	
+	
+	/**
+	 * Save vars
+	 */
+	Map saveVars() => this.vars.copy();
+	
+	
+	/**
+	 * Restore vars
+	 */
+	void restoreVars(Dict vars)
+	{
+		this.vars = vars;
+	}
+	
+	
+	/**
+	 * Add variable
+	 */
+	void addVariable(OpIdentifier op_code, OpTypeIdentifier pattern)
+	{
+		string name = op_code.value;
+		this.vars.set(name, pattern);
+	}
 	
 	
 	/**
