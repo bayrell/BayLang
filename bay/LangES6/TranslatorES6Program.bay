@@ -72,7 +72,7 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void OpUse(OpUse op_code, Collection<string> result)
 	{
-		this.translator.uses.set(op_code.alias, rs::split(".", op_code.name));
+		this.translator.uses.set(op_code.alias, op_code.name);
 	}
 	
 	

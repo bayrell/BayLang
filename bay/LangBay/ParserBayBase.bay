@@ -68,38 +68,6 @@ class ParserBayBase extends BaseObject
 	
 	
 	/**
-	 * Is system type
-	 */
-	static bool isSystemType (string name)
-	{
-		if (name == "var") return true;
-		if (name == "void") return true;
-		if (name == "bool") return true;
-		if (name == "byte") return true;
-		if (name == "int") return true;
-		if (name == "double") return true;
-		if (name == "float") return true;
-		if (name == "char") return true;
-		if (name == "string") return true;
-		if (name == "list") return true;
-		if (name == "scalar") return true;
-		if (name == "primitive") return true;
-		if (name == "html") return true;
-		if (name == "Error") return true;
-		if (name == "Object") return true;
-		if (name == "DateTime") return true;
-		if (name == "Collection") return true;
-		if (name == "Dict") return true;
-		if (name == "Vector") return true;
-		if (name == "Map") return true;
-		if (name == "rs") return true;
-		if (name == "rtl") return true;
-		if (name == "ArrayInterface") return true;
-		return false;
-	}
-	
-	
-	/**
 	 * Returns true if name is identifier
 	 */
 	static bool isIdentifier(string name)
@@ -837,10 +805,15 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read dynamic
 	 */
-	BaseOpCode readDynamic(TokenReader reader)
+	BaseOpCode readDynamic(TokenReader reader, bool read_function = true)
 	{
 		Caret caret_start = reader.start();
 		BaseOpCode item = this.readItem(reader);
+		
+		if (reader.nextToken() == ".")
+		{
+			this.parser.findVariable(item);
+		}
 		
 		Collection operations = [".", "::", "[", "("];
 		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
@@ -861,8 +834,15 @@ class ParserBayBase extends BaseObject
 			}
 			else if (next_token == "(")
 			{
-				item = this.parser.parser_function.readCallFunction(reader, item);
-				item.caret_start = caret_start;
+				if (read_function)
+				{
+					item = this.parser.parser_function.readCallFunction(reader, item);
+					item.caret_start = caret_start;
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 		

@@ -53,28 +53,6 @@ class ParserBayFunction extends BaseObject
 	
 	
 	/**
-	 * Read flags
-	 */
-	OpFlags readFlags(TokenReader reader)
-	{
-		Caret caret_start = reader.start();
-		
-		Dict params = {};
-		Collection<string> current_flags = OpFlags::getFlags();
-		while (not reader.eof() and current_flags.indexOf(reader.nextToken()) >= 0)
-		{
-			string flag = reader.readToken();
-			params.set("p_" ~ flag, true);
-		}
-		
-		params.set("caret_start", caret_start);
-		params.set("caret_end", reader.caret());
-		
-		return new OpFlags(params);
-	}
-	
-	
-	/**
 	 * Read call function
 	 */
 	BaseOpCode readCallFunction(TokenReader reader, BaseOpCode pattern = null)
@@ -84,7 +62,11 @@ class ParserBayFunction extends BaseObject
 		/* Read identifier */
 		if (pattern == null)
 		{
-			pattern = this.parser.parser_base.readDynamic(reader);
+			pattern = this.parser.parser_base.readDynamic(reader, false);
+			if (pattern instanceof OpIdentifier)
+			{
+				this.parser.findVariable(pattern);
+			}
 		}
 		
 		/* Next token should be bracket */
@@ -229,7 +211,6 @@ class ParserBayFunction extends BaseObject
 		
 		string name = "";
 		BaseOpCode content = null;
-		OpFlags flags = this.readFlags(reader);
 		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
 		if (read_name) name = this.parser.parser_base.readIdentifier(reader).value;
 		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
@@ -246,7 +227,6 @@ class ParserBayFunction extends BaseObject
 		{
 			"args": args,
 			"name": name,
-			"flags": flags,
 			"pattern": pattern,
 			"content": content,
 			"caret_start": caret_start,
@@ -258,14 +238,23 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Try to read function
 	 */
-	BaseOpCode tryReadFunction(TokenReader reader)
+	BaseOpCode tryReadFunction(TokenReader reader, bool read_name = true)
 	{
 		Caret save_caret = reader.caret();
 		bool error = false;
 		try
 		{
 			BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
-			Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
+			if (read_name) this.parser.parser_base.readIdentifier(reader);
+			
+			/* Read function args */
+			reader.matchToken("(");
+			while (not reader.eof() and reader.nextToken() != ")")
+			{
+				reader.readToken();
+			}
+			reader.matchToken(")");
+			
 			if (reader.nextToken() != "=>" and reader.nextToken() != "use")
 			{
 				reader.matchToken("{");
@@ -277,6 +266,6 @@ class ParserBayFunction extends BaseObject
 		}
 		reader.init(save_caret);
 		if (error) return null;
-		return this.readDeclareFunction(reader, false);
+		return this.readDeclareFunction(reader, read_name);
 	}
 }

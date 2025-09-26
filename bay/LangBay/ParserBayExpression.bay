@@ -407,7 +407,7 @@ class ParserBayExpression extends BaseObject
 		}
 		
 		/* Try to read function */
-		OpDeclareFunction op_code = this.parser.parser_function.tryReadFunction(reader);
+		OpDeclareFunction op_code = this.parser.parser_function.tryReadFunction(reader, false);
 		if (op_code) return op_code;
 		
 		/* Read expression */

@@ -71,6 +71,10 @@ class TranslatorES6Expression extends BaseObject
 				result.push("this.constructor");
 			}
 		}
+		else if (op_code.value == "parent")
+		{
+			result.push("super");
+		}
 		else result.push(op_code.value);
 		this.translator.opcode_level = 20;
 	}
@@ -369,7 +373,23 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpCall(OpCall op_code, Collection<string> result)
 	{
-		this.translateItem(op_code.item, result);
+		if (op_code.item instanceof OpIdentifier and op_code.item.value == "parent")
+		{
+			if (this.translator.class_function and
+				this.translator.class_function.name != "constructor"
+			)
+			{
+				result.push("super." ~ this.translator.class_function.name);
+			}
+			else
+			{
+				result.push("super");
+			}
+		}
+		else
+		{
+			this.translateItem(op_code.item, result);
+		}
 		
 		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
 		{

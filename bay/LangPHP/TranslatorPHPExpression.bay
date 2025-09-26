@@ -72,6 +72,10 @@ class TranslatorPHPExpression extends BaseObject
 				result.push("$this");
 			}
 		}
+		else if (op_code.value == "parent")
+		{
+			result.push("parent");
+		}
 		else
 		{
 			if (this.translator.uses.has(op_code.value))
@@ -383,7 +387,23 @@ class TranslatorPHPExpression extends BaseObject
 	 */
 	void OpCall(OpCall op_code, Collection<string> result)
 	{
-		this.translateItem(op_code.item, result);
+		if (op_code.item instanceof OpIdentifier and op_code.item.value == "parent")
+		{
+			if (this.translator.class_function and
+				this.translator.class_function.name != "constructor"
+			)
+			{
+				result.push("parent::" ~ this.translator.class_function.name);
+			}
+			else
+			{
+				result.push("parent");
+			}
+		}
+		else
+		{
+			this.translateItem(op_code.item, result);
+		}
 		
 		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
 		{

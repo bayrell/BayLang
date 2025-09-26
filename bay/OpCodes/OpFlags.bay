@@ -26,32 +26,7 @@ use BayLang.OpCodes.BaseOpCode;
 
 class OpFlags extends BaseOpCode implements SerializeInterface
 {
-	bool p_async = false;
-	bool p_export = false;
-	bool p_static = false;
-	bool p_const = false;
-	bool p_public = false;
-	bool p_private = false;
-	bool p_protected = false;
-	bool p_declare = false;
-	bool p_serializable = false;
-	bool p_cloneable = false;
-	bool p_assignable = false;
-	bool p_memorize = false;
-	bool p_multiblock = false;
-	bool p_lambda = false;
-	bool p_pure = false;
-	bool p_props = false;
-	
-	
-	/**
-	 * Constructor
-	 */
-	void constructor(Dict params = null)
-	{
-		parent();
-		this.assign(params);
-	}
+	Map items = [];
 	
 	
 	/**
@@ -59,22 +34,7 @@ class OpFlags extends BaseOpCode implements SerializeInterface
 	 */
 	void serialize(Serializer serializer, Map data)
 	{
-		serializer.process(this, "p_assignable", data);
-		serializer.process(this, "p_async", data);
-		serializer.process(this, "p_cloneable", data);
-		serializer.process(this, "p_const", data);
-		serializer.process(this, "p_declare", data);
-		serializer.process(this, "p_export", data);
-		serializer.process(this, "p_lambda", data);
-		serializer.process(this, "p_memorize", data);
-		serializer.process(this, "p_multiblock", data);
-		serializer.process(this, "p_private", data);
-		serializer.process(this, "p_props", data);
-		serializer.process(this, "p_protected", data);
-		serializer.process(this, "p_public", data);
-		serializer.process(this, "p_pure", data);
-		serializer.process(this, "p_serializable", data);
-		serializer.process(this, "p_static", data);
+		serializer.process(this, "items", data);
 	}
 	
 	
@@ -84,7 +44,7 @@ class OpFlags extends BaseOpCode implements SerializeInterface
 	public bool isFlag(string name)
 	{
 		if (not OpFlags::hasFlag(name))	return false;
-		return rtl::attr(this, "p_"~name);
+		return this.items.has(name);
 	}
 	
 	

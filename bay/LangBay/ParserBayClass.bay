@@ -27,6 +27,7 @@ use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpTypeIdentifier;
@@ -48,6 +49,30 @@ class ParserBayClass extends BaseObject
 	
 	
 	/**
+	 * Read flags
+	 */
+	OpFlags readFlags(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		Dict items = {};
+		Collection<string> current_flags = OpFlags::getFlags();
+		while (not reader.eof() and current_flags.indexOf(reader.nextToken()) >= 0)
+		{
+			string flag = reader.readToken();
+			items.set(flag, true);
+		}
+		
+		return new OpFlags
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read class item
 	 */
 	BaseOpCode readItem(TokenReader reader)
@@ -60,18 +85,21 @@ class ParserBayClass extends BaseObject
 			return this.parser.parser_base.readComment(reader);
 		}
 		
-		/* Save caret */
-		Caret save_caret = reader.caret();
+		/* Read flags */
+		OpFlags flags = this.readFlags(reader);
 		
 		/* Try to read call function */
-		OpCall op_code = this.parser.parser_function.readDeclareFunction(reader);
-		if (op_code) return op_code;
-		
-		/* Restore reader */
-		reader.init(save_caret);
+		BaseOpCode op_code = this.parser.parser_function.tryReadFunction(reader);
 		
 		/* Assign operator */
-		return this.parser.parser_operator.readAssign(reader);
+		if (not op_code)
+		{
+			op_code = this.parser.parser_operator.readAssign(reader);
+		}
+		
+		op_code.flags = flags;
+		op_code.caret_start = flags.caret_start;
+		return op_code;
 	}
 	
 	

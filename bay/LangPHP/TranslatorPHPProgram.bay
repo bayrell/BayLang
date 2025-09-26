@@ -243,6 +243,7 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		else if (op_code instanceof OpAssign)
 		{
+			result.push("var ");
 			this.OpAssign(op_code, result);
 		}
 		else if (op_code instanceof OpComment)

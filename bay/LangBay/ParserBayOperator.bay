@@ -385,16 +385,13 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read assign
 	 */
-	OpAssign readAssign(TokenReader reader, BaseOpCode pattern = null)
+	OpAssign readAssign(TokenReader reader)
 	{
 		Caret caret_start = reader.start();
 		Collection<OpAssignValue> items = [];
 		
 		/* Read pattern */
-		if (pattern == null)
-		{
-			pattern = this.parser.parser_base.readTypeIdentifier(reader, false);
-		}
+		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader, false);
 		
 		/* Read increment */
 		if (reader.nextToken() == "++" or reader.nextToken() == "--")
