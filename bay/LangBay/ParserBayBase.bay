@@ -844,6 +844,18 @@ class ParserBayBase extends BaseObject
 					break;
 				}
 			}
+			else if (next_token == "[")
+			{
+				BaseOpCode op_code_item = this.readCollection(reader);
+				item = new OpAttr
+				{
+					"kind": OpAttr::KIND_DYNAMIC,
+					"prev": item,
+					"next": op_code_item,
+					"caret_start": caret_start,
+					"caret_end": reader.caret(),
+				};
+			}
 		}
 		
 		return item;

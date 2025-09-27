@@ -390,8 +390,9 @@ class ParserBayOperator extends BaseObject
 		Caret caret_start = reader.start();
 		Collection<OpAssignValue> items = [];
 		
-		/* Read pattern */
-		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader, false);
+		/* Read value */
+		BaseOpCode pattern = null;
+		BaseOpCode value = this.parser.parser_base.readDynamic(reader, false);
 		
 		/* Read increment */
 		if (reader.nextToken() == "++" or reader.nextToken() == "--")
@@ -401,22 +402,11 @@ class ParserBayOperator extends BaseObject
 			if (operation == "++") kind = OpInc::KIND_INC;
 			else if (operation == "--") kind = OpInc::KIND_DEC;
 			
-			/* Find identifier */
-			if (pattern instanceof OpTypeIdentifier)
-			{
-				pattern = pattern.entity_name.items.last();
-			}
-			if (not(pattern instanceof OpIdentifier))
-			{
-				throw pattern.caret_end.error("Wrong type identifier");
-			}
-			this.parser.findVariable(pattern);
-			
 			/* Returns op_code */
 			return new OpInc
 			{
 				"kind": kind,
-				"item": pattern,
+				"item": value,
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
 			};
@@ -425,15 +415,18 @@ class ParserBayOperator extends BaseObject
 		/* Read items */
 		if (reader.nextToken() != "=")
 		{
+			reader.init(caret_start);
+			
+			/* Read type */
+			pattern = this.parser.parser_base.readTypeIdentifier(reader);
+			this.parser.findEntity(pattern.entity_name);
+			
 			while (not reader.eof())
 			{
 				Caret caret_value_start = reader.start();
 				
 				/* Read assign value */
-				OpIdentifier value = this.parser.parser_base.readIdentifier(reader);
-				
-				/* Register variable */
-				this.parser.addVariable(value);
+				value = this.parser.parser_base.readIdentifier(reader);
 				
 				/* Read expression */
 				BaseOpCode expression = null;
@@ -451,6 +444,9 @@ class ParserBayOperator extends BaseObject
 					"caret_end": reader.caret(),
 				});
 				
+				/* Add variable */
+				this.parser.addVariable(value, pattern);
+				
 				/* Read next token */
 				if (reader.nextToken() != ",") break;
 				reader.readToken();
@@ -460,22 +456,6 @@ class ParserBayOperator extends BaseObject
 		/* Assign single value */
 		else
 		{
-			/* Get value */
-			BaseOpCode value = pattern;
-			pattern = null;
-			
-			/* Find identifier */
-			if (value instanceof OpTypeIdentifier)
-			{
-				value = value.entity_name.items.last();
-			}
-			if (not(value instanceof OpIdentifier))
-			{
-				throw value.caret_end.error("Wrong type identifier");
-			}
-			this.parser.findVariable(value);
-			
-			/* Read expression */
 			reader.matchToken("=");
 			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
 			items.push(new OpAssignValue{
@@ -484,19 +464,6 @@ class ParserBayOperator extends BaseObject
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
 			});
-		}
-		
-		/* Find entity */
-		if (pattern)
-		{
-			this.parser.findEntity(pattern.entity_name);
-			
-			/* Add variables */
-			for (int i=0; i<items.count(); i++)
-			{
-				OpAssignValue op_code_item = items.get(i);
-				this.parser.addVariable(op_code_item.value, pattern);
-			}
 		}
 		
 		/* Returns op_code */

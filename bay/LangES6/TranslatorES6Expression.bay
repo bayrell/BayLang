@@ -36,6 +36,7 @@ use BayLang.OpCodes.OpNew;
 use BayLang.OpCodes.OpNumber;
 use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTernary;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
@@ -544,6 +545,54 @@ class TranslatorES6Expression extends BaseObject
 	
 	
 	/**
+	 * Translate ternary
+	 */
+	void OpTernary(BaseOpCode op_code, Collection<string> result)
+	{
+		Collection result1 = [];
+		result.push(this.translate(op_code.condition, result1));
+		if (this.translator.opcode_level < 19)
+		{
+			result.push("(");
+			result.appendItems(result1);
+			result.push(")");
+		}
+		else
+		{
+			result.appendItems(result1);
+		}
+		
+		result1 = [];
+		result.push(" ? ");
+		result.push(this.translate(op_code.if_true, result1));
+		if (this.translator.opcode_level < 19)
+		{
+			result.push("(");
+			result.appendItems(result1);
+			result.push(")");
+		}
+		else
+		{
+			result.appendItems(result1);
+		}
+		
+		result1 = [];
+		result.push(" : ");
+		result.push(this.translate(op_code.if_false, result1));
+		if (this.translator.opcode_level < 19)
+		{
+			result.push("(");
+			result.appendItems(result1);
+			result.push(")");
+		}
+		else
+		{
+			result.appendItems(result1);
+		}
+	}
+	
+	
+	/**
 	 * Translate item
 	 */
 	void translateItem(BaseOpCode op_code, Collection<string> result)
@@ -587,6 +636,10 @@ class TranslatorES6Expression extends BaseObject
 		else if (op_code instanceof OpNew)
 		{
 			this.OpNew(op_code, result);
+		}
+		else if (op_code instanceof OpTernary)
+		{
+			this.OpTernary(op_code, result);
 		}
 	}
 	

@@ -24,11 +24,13 @@ use BayLang.LangES6.TranslatorES6;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpAssignValue;
+use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpBreak;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpContinue;
 use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpIfElse;
 use BayLang.OpCodes.OpInc;
@@ -70,16 +72,23 @@ class TranslatorES6Operator extends BaseObject
 		int values_count = op_code.items.count();
 		for (int i=0; i<values_count; i++)
 		{
-			OpAssignValue op_code_value = op_code.items.get(i);
+			OpAssignValue op_code_item = op_code.items.get(i);
 			if (op_code.pattern or i > 0)
 			{
 				result.push(" ");
 			}
-			this.translator.expression.OpIdentifier(op_code_value.value, result);
-			if (op_code_value.expression)
+			if (op_code_item.value instanceof OpAttr)
+			{
+				this.translator.expression.OpAttr(op_code_item.value, result);
+			}
+			else if (op_code_item.value instanceof OpIdentifier)
+			{
+				this.translator.expression.OpIdentifier(op_code_item.value, result);
+			}
+			if (op_code_item.expression)
 			{
 				result.push(" = ");
-				this.translator.expression.translate(op_code_value.expression, result);
+				this.translator.expression.translate(op_code_item.expression, result);
 			}
 			if (i < values_count - 1) result.push(",");
 		}

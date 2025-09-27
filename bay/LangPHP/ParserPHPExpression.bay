@@ -424,10 +424,12 @@ class ParserPHPExpression extends BaseObject
 		if (reader.nextToken() != "?") return op_code;
 		
 		/* Read expression */
+		reader.matchToken("?");
 		BaseOpCode if_true = this.readElement(reader);
 		BaseOpCode if_false = null;
 		if (reader.nextToken() == ":")
 		{
+			reader.matchToken("?");
 			if_false = this.readElement(reader);
 		}
 		
