@@ -31,8 +31,11 @@ use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
+use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpUse;
 
@@ -112,6 +115,55 @@ class TranslatorPHPProgram extends BaseObject
 		result.push("/*");
 		result.push(op_code.value);
 		result.push("*/");
+	}
+	
+	
+	/**
+	 * OpPreprocessorIfCode
+	 */
+	bool OpPreprocessorIfCode(OpPreprocessorIfCode op_code, Collection<string> result)
+	{
+		if (op_code.condition instanceof OpIdentifier)
+		{
+			string name = op_code.condition.value;
+			if (this.translator.preprocessor_flags.has(name))
+			{
+				result.push(op_code.content);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * OpPreprocessorIfDef
+	 */
+	bool OpPreprocessorIfDef(
+		OpPreprocessorIfDef op_code, Collection<string> result, string current_block = ""
+	)
+	{
+		if (op_code.condition instanceof OpIdentifier)
+		{
+			string name = op_code.condition.value;
+			if (this.translator.preprocessor_flags.has(name))
+			{
+				if (current_block == OpPreprocessorIfDef::KIND_PROGRAM)
+				{
+					this.translate(op_code.content, result, false);
+				}
+				else if (current_block == OpPreprocessorIfDef::KIND_CLASS_BODY)
+				{
+					this.translateClassBody(op_code, result, false);
+				}
+				else if (current_block == OpPreprocessorIfDef::KIND_OPERATOR)
+				{
+					this.translator.operator.translateItems(op_code.content, result, false);
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	
@@ -256,6 +308,16 @@ class TranslatorPHPProgram extends BaseObject
 			this.OpDeclareFunction(op_code, result);
 			this.translator.class_function = null;
 		}
+		else if (op_code instanceof OpPreprocessorIfCode)
+		{
+			return this.OpPreprocessorIfCode(op_code, result);
+		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			return this.OpPreprocessorIfDef(
+				op_code, result, OpPreprocessorIfDef::KIND_CLASS_BODY
+			);
+		}
 		else
 		{
 			return false;
@@ -268,17 +330,24 @@ class TranslatorPHPProgram extends BaseObject
 	/**
 	 * Translate class body
 	 */
-	void translateClassBody(OpDeclareClass op_code, Collection<string> result)
+	void translateClassBody(
+		OpDeclareClass op_code,
+		Collection<string> result, bool match_brackets = true
+		)
 	{
 		/* Begin bracket */
-		result.push("{");
-		this.translator.levelInc();
+		if (match_brackets)
+		{
+			result.push("{");
+			this.translator.levelInc();
+		}
 		
 		/* Class body items */
 		BaseOpCode prev_op_code = null;
 		bool next_new_line = true;
 		for (int i=0; i<op_code.content.count(); i++)
 		{
+			Collection item_result = [];
 			BaseOpCode op_code_item = op_code.content.get(i);
 			if (next_new_line)
 			{
@@ -288,19 +357,26 @@ class TranslatorPHPProgram extends BaseObject
 					lines = op_code_item.getOffset().get("start") -
 						prev_op_code.getOffset().get("end");
 				}
-				for (int j=0; j<lines; j++) result.push(this.translator.newLine());
+				for (int j=0; j<lines; j++) item_result.push(this.translator.newLine());
 			}
-			next_new_line = this.translateClassItem(op_code_item, result);
+			next_new_line = this.translateClassItem(op_code_item, item_result);
+			if (rs::trim(rs::join("", item_result)) != "") result.appendItems(item_result);
 			prev_op_code = op_code_item;
 		}
 		
 		/* Class init */
-		this.translateClassInit(op_code, result);
+		if (op_code instanceof OpDeclareClass)
+		{
+			this.translateClassInit(op_code, result);
+		}
 		
 		/* End bracket */
-		this.translator.levelDec();
-		result.push(this.translator.newLine());
-		result.push("}");
+		if (match_brackets)
+		{
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+			result.push("}");
+		}
 	}
 	
 	
@@ -393,6 +469,16 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			this.OpUse(op_code, result);
 		}
+		else if (op_code instanceof OpPreprocessorIfCode)
+		{
+			return this.OpPreprocessorIfCode(op_code, result);
+		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			return this.OpPreprocessorIfDef(
+				op_code, result, OpPreprocessorIfDef::KIND_PROGRAM
+			);
+		}
 		else
 		{
 			this.translator.last_semicolon = false;
@@ -437,10 +523,13 @@ class TranslatorPHPProgram extends BaseObject
 	/**
 	 * Translate
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result)
+	void translate(BaseOpCode op_code, Collection<string> result, bool use_php = true)
 	{
-		result.push("<?php");
-		result.push(this.translator.newLine());
+		if (use_php)
+		{
+			result.push("<?php");
+			result.push(this.translator.newLine());
+		}
 		this.translateItems(op_code.items, result);
 	}
 }

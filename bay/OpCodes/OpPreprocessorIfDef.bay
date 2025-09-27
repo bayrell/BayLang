@@ -31,7 +31,7 @@ class OpPreprocessorIfDef extends BaseOpCode
 	
 	string op = "op_preprocessor_ifdef";
 	BaseOpCode condition = null;
-	Collection<BaseOpCode> items = null;
+	BaseOpCode content = null;
 	
 	
 	/**

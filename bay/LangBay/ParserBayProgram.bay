@@ -20,6 +20,7 @@ namespace BayLang.LangBay;
 
 use Runtime.BaseObject;
 use BayLang.Caret;
+use BayLang.CoreParser;
 use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
@@ -149,6 +150,18 @@ class ParserBayProgram extends BaseObject
 			return this.parser.parser_class.readClass(reader);
 		}
 		
+		/* Prepocessor */
+		else if (next_token == "#switch" or next_token == "#ifcode")
+		{
+			return this.parser.parser_preprocessor.readPreprocessor(reader);
+		}
+		else if (next_token == "#ifdef")
+		{
+			return this.parser.parser_preprocessor.readIfDef(
+				reader, OpPreprocessorIfDef::KIND_PROGRAM
+			);
+		}
+		
 		/* Operator */
 		else if (next_token != "")
 		{
@@ -164,11 +177,13 @@ class ParserBayProgram extends BaseObject
 	 */
 	void parse(TokenReader reader)
 	{
+		this.parser.current_block = CoreParser::BLOCK_PROGRAM;
+		
 		Collection<BaseOpCode> items = [];
 		Caret caret_start = reader.start();
 		
 		/* Read module */
-		while (not reader.eof() and reader.nextToken() != "")
+		while (not reader.eof() and reader.nextToken() != "" and reader.nextToken() != "#endif")
 		{
 			string next_token = reader.nextToken();
 			

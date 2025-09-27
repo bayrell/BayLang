@@ -63,10 +63,6 @@ class ParserBayFunction extends BaseObject
 		if (pattern == null)
 		{
 			pattern = this.parser.parser_base.readDynamic(reader, false);
-			if (pattern instanceof OpIdentifier)
-			{
-				this.parser.findVariable(pattern);
-			}
 		}
 		
 		/* Next token should be bracket */
@@ -74,6 +70,10 @@ class ParserBayFunction extends BaseObject
 		
 		/* Find identifier */
 		if (pattern instanceof OpTypeIdentifier) pattern = pattern.entity_name.items.last();
+		else if (pattern instanceof OpIdentifier)
+		{
+			this.parser.findVariable(pattern);
+		}
 		
 		/* Read arguments */
 		reader.matchToken("(");

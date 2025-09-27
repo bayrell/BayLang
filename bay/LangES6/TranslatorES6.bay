@@ -41,6 +41,17 @@ class TranslatorES6 extends CoreTranslator
 	
 	
 	/**
+	 * Constructor
+	 */
+	void constructor()
+	{
+		parent();
+		this.preprocessor_flags.set("ES6", true);
+		this.preprocessor_flags.set("JAVASCRIPT", true);
+	}
+	
+	
+	/**
 	 * Returns string
 	 */
 	string toString(string s)

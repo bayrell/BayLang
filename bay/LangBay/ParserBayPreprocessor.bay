@@ -18,8 +18,11 @@
 
 namespace BayLang.LangBay;
 
+use Runtime.BaseObject;
 use BayLang.Caret;
+use BayLang.CoreParser;
 use BayLang.CoreToken;
+use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpPreprocessorIfCode;
@@ -27,232 +30,157 @@ use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpPreprocessorSwitch;
 
 
-static class ParserBayPreprocessor
+class ParserBayPreprocessor extends BaseObject
 {
+	ParserBay parser = null;
+	
 	
 	/**
-	 * Read namespace
+	 * Constructor
 	 */
-	pure list<ParserBay, BaseOpCode> readPreprocessor(ParserBay parser)
+	void constructor(ParserBay parser)
 	{
-		ParserBay start = parser;
-		ParserBay look = null;
-		CoreToken token = null;
-
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "#switch")
-		{
-			return static::readPreprocessorSwitch(start);
-		}
-		
-		if (token.content == "#ifcode")
-		{
-			return static::readPreprocessorIfCode(start);
-		}
-		
-		return null;
+		parent();
+		this.parser = parser;
 	}
-	
 	
 	
 	/**
 	 * Read preprocessor switch
 	 */
-	pure list<ParserBay, BaseOpCode> readPreprocessorSwitch(ParserBay parser)
+	OpPreprocessorSwitch readSwitch(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		Vector<BaseOpCode> items = new Vector();
+		Caret caret_start = reader.start();
+		Collection items = [];
 		
-		/* Save vars */
-		Dict<bool> save_vars = parser.vars;
-		parser <= vars <= parser.vars.concat(
-			{
-				"ES6": true,
-				"NODEJS": true,
-				"JAVASCRIPT": true,
-				"PHP": true,
-				"PYTHON3": true,
-			}
-		);
-		
-		list res = parser.parser_base::matchToken(parser, "#switch"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		
-		while (token.content == "#case")
+		reader.matchToken("#switch");
+		while (not reader.eof() and reader.nextToken() != "#endswitch")
 		{
-			parser = look;
-			
-			/* Skip ifcode */
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			if (token.content == "ifcode")
-			{
-				parser = look;
-			}
-			
-			/* Read condition */
-			BaseOpCode condition = null;
-			parser <= find_ident <= false;
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
-			parser <= find_ident <= true;
-			
-			/* Read then */
-			list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
-			
-			/* Read content */
-			string content = "";
-			Caret caret_content = parser.caret;
-			list res = parser.parser_base::readUntilStringArr(parser, ["#case", "#endswitch"], false);
-			parser = res[0]; content = res[1];
-			
-			/* Look content */
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			
-			OpPreprocessorIfCode ifcode = new OpPreprocessorIfCode
-			{
-				"condition": condition,
-				"content": content,
-				"caret_start": caret_content,
-				"caret_end": parser.caret,
-			};
-			items.push(ifcode);
+			reader.matchToken("#case");
+			OpPreprocessorIfCode op_code_item = this.readIfCode(reader);
+			items.push(op_code_item);
 		}
+		reader.matchToken("#endswitch");
 		
-		/* Restore vars */
-		parser <= vars <= save_vars;
-		
-		/* read endswitch */
-		list res = parser.parser_base::matchToken(parser, "#endswitch"); parser = res[0];
-		
-		return 
-		[
-			parser,
-			new OpPreprocessorSwitch
-			{
-				"items": items,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		return new OpPreprocessorSwitch
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
-	
 	
 	
 	/**
 	 * Read preprocessor ifcode
 	 */
-	pure list<ParserBay, BaseOpCode> readPreprocessorIfCode(ParserBay parser)
+	OpPreprocessorIfCode readIfCode(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		Caret caret_start = parser.caret;
-		list res = parser.parser_base::matchToken(parser, "#ifcode"); parser = res[0]; token = res[1];
+		Caret caret_start = reader.start();
 		
-		/* Read condition */
-		BaseOpCode condition = null;
-		parser <= find_ident <= false;
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; condition = res[1];
-		parser <= find_ident <= true;
+		bool is_switch = false;
+		if (reader.nextToken() == "#ifcode") reader.matchToken("#ifcode");
+		else
+		{
+			is_switch = true;
+			reader.matchToken("ifcode");
+		}
 		
-		/* Read then */
-		list res = parser.parser_base::matchToken(parser, "then"); parser = res[0]; token = res[1];
+		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken("then");
 		
 		/* Read content */
-		string content = "";
-		Caret caret_content = parser.caret;
-		list res = parser.parser_base::readUntilStringArr(parser, ["#endif"], false);
-		parser = res[0]; content = res[1];
-		
-		/* Match endif */
-		list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0]; token = res[1];
-		
-		OpPreprocessorIfCode ifcode = new OpPreprocessorIfCode
+		Collection<char> content = [];
+		Caret caret = reader.caret();
+		while (not caret.eof() and not (
+			caret.isNextString("#endif") or caret.isNextString("#case") or
+			caret.isNextString("#endswitch")
+		))
 		{
-			"condition": condition,
-			"content": content,
-			"caret_start": caret_content,
-			"caret_end": parser.caret,
-		};
+			content.push(caret.readChar());
+		}
 		
-		return
-		[
-			parser,
-			ifcode
-		];
+		reader.init(caret);
+		if (reader.nextToken() == "#endif" and not is_switch) reader.matchToken("#endif");
+		
+		return new OpPreprocessorIfCode
+		{
+			"condition": expression,
+			"content": rs::trim(rs::join("", content)),
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
-	
 	
 	
 	/**
 	 * Read preprocessor ifdef
 	 */
-	pure list<ParserBay, BaseOpCode> readPreprocessorIfDef(ParserBay parser, string kind = "")
+	OpPreprocessorIfDef readIfDef(TokenReader reader, string current_block)
 	{
-		Collection<BaseOpCode> items = null;
-		CoreToken token = null;
+		Caret caret_start = reader.start();
 		
-		Caret caret_start = parser.caret;
-		list res = parser.parser_base::matchToken(parser, "#ifdef");
-		parser = res[0]; token = res[1];
+		reader.matchToken("#ifdef");
 		
-		/* Read condition */
-		BaseOpCode condition = null;
-		parser <= find_ident <= false;
-		list res = parser.parser_expression::readExpression(parser);
-		parser = res[0]; condition = res[1];
-		parser <= find_ident <= true;
+		/* Read expression */
+		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken("then");
 		
-		/* Read then */
-		list res = parser.parser_base::matchToken(parser, "then");
-		parser = res[0]; token = res[1];
-		
-		if (kind == OpPreprocessorIfDef::KIND_PROGRAM)
+		/* Read content */
+		BaseOpCode content = null;
+		if (current_block == OpPreprocessorIfDef::KIND_PROGRAM)
 		{
-			list res = parser.parser_program::readProgram(parser, "#endif");
-			parser = res[0]; items = res[1];
-			
-			list res = parser.parser_base::matchToken(parser, "#endif");
-			parser = res[0];
+			content = this.parser.parser_program.parse(reader);
 		}
-		else if (kind == OpPreprocessorIfDef::KIND_CLASS_BODY)
+		else if (current_block == OpPreprocessorIfDef::KIND_CLASS_BODY)
 		{
-			list res = parser.parser_program::readClassBody(parser, "#endif")
-			parser = res[0]; items = res[1];
-			
-			list res = parser.parser_base::matchToken(parser, "#endif"); parser = res[0];
-			/*list d = parser.parser_program::classBodyAnalyze(parser, items);
-			items = d.item("functions");*/
+			content = this.parser.parser_class.readBody(reader, false);
 		}
-		else if (kind == OpPreprocessorIfDef::KIND_OPERATOR)
+		else if (current_block == OpPreprocessorIfDef::KIND_OPERATOR)
 		{
-			list res = parser.parser_operator::readOpItems(parser, "#endif");
-			parser = res[0]; items = res[1];
-			
-			list res = parser.parser_base::matchToken(parser, "#endif");
-			parser = res[0];
+			content = this.parser.parser_operator.parse(reader, false);
 		}
-		else if (kind == OpPreprocessorIfDef::KIND_EXPRESSION)
+		else if (current_block == OpPreprocessorIfDef::KIND_EXPRESSION)
 		{
-			list res = parser.parser_expression::readExpression(parser);
-			parser = res[0]; items = res[1];
-			
-			list res = parser.parser_base::matchToken(parser, "#endif");
-			parser = res[0];
+			content = this.parser.parser_expression.readExpression(reader);
+		}
+		else
+		{
+			throw reader.error("Unknown block '" ~ current_block ~ "'");
 		}
 		
-		return
-		[
-			parser,
-			new OpPreprocessorIfDef
-			{
-				"items": items,
-				"condition": condition,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		reader.matchToken("#endif");
+		
+		return new OpPreprocessorIfDef
+		{
+			"condition": expression,
+			"content": content,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
+	
+	/**
+	 * Read namespace
+	 */
+	BaseOpCode readPreprocessor(TokenReader reader)
+	{
+		if (reader.nextToken() == "#switch")
+		{
+			return this.readSwitch(reader);
+		}
+		
+		else if (reader.nextToken() == "#ifcode")
+		{
+			return this.readIfCode(reader);
+		}
+		
+		else if (reader.nextToken() == "#ifdef")
+		{
+			return this.readIfDef(reader);
+		}
+		
+		return null;
+	}
 }

@@ -33,6 +33,8 @@ use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpIfElse;
 use BayLang.OpCodes.OpInc;
 use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpReturn;
 use BayLang.OpCodes.OpThrow;
 use BayLang.OpCodes.OpTryCatch;
@@ -311,6 +313,16 @@ class TranslatorES6Operator extends BaseObject
 		{
 			this.OpComment(op_code, result);
 		}
+		else if (op_code instanceof OpPreprocessorIfCode)
+		{
+			return this.translator.program.OpPreprocessorIfCode(op_code, result);
+		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			return this.translator.program.OpPreprocessorIfDef(
+				op_code, result, OpPreprocessorIfDef::KIND_OPERATOR
+			);
+		}
 		else
 		{
 			return false;
@@ -322,7 +334,7 @@ class TranslatorES6Operator extends BaseObject
 	/**
 	 * Translate OpItems
 	 */
-	void translateItems(OpItems op_code, Collection<string> result)
+	void translateItems(OpItems op_code, Collection<string> result, bool match_brackets = true)
 	{
 		if (not(op_code instanceof OpItems))
 		{
@@ -336,7 +348,7 @@ class TranslatorES6Operator extends BaseObject
 			return;
 		}
 		
-		if (op_code.items.count() == 0)
+		if (op_code.items.count() == 0 and match_brackets)
 		{
 			result.push("{");
 			result.push("}");
@@ -344,9 +356,12 @@ class TranslatorES6Operator extends BaseObject
 		}
 		
 		/* Begin bracket */
-		result.push(this.translator.newLine());
-		result.push("{");
-		this.translator.levelInc();
+		if (match_brackets)
+		{
+			result.push(this.translator.newLine());
+			result.push("{");
+			this.translator.levelInc();
+		}
 		
 		/* Items */
 		bool save_operator_block = this.translator.is_operator_block;
@@ -360,7 +375,10 @@ class TranslatorES6Operator extends BaseObject
 			bool flag = this.translateItem(op_code_item, result_items);
 			if (flag)
 			{
-				result.push(this.translator.newLine());
+				if (not(op_code_item instanceof OpPreprocessorIfDef))
+				{
+					result.push(this.translator.newLine());
+				}
 				result.appendItems(result_items);
 				this.addSemicolon(op_code_item, result);
 			}
@@ -368,8 +386,11 @@ class TranslatorES6Operator extends BaseObject
 		this.translator.is_operator_block = save_operator_block;
 		
 		/* End bracket */
-		this.translator.levelDec();
-		result.push(this.translator.newLine());
-		result.push("}");
+		if (match_brackets)
+		{
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+			result.push("}");
+		}
 	}
 }

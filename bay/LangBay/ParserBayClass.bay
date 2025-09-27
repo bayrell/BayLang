@@ -30,6 +30,7 @@ use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
@@ -83,6 +84,18 @@ class ParserBayClass extends BaseObject
 		if (next_token == "/")
 		{
 			return this.parser.parser_base.readComment(reader);
+		}
+		
+		/* Prepocessor */
+		else if (next_token == "#switch" or next_token == "#ifcode")
+		{
+			return this.parser.parser_preprocessor.readPreprocessor(reader);
+		}
+		else if (next_token == "#ifdef")
+		{
+			return this.parser.parser_preprocessor.readIfDef(
+				reader, OpPreprocessorIfDef::KIND_CLASS_BODY
+			);
 		}
 		
 		/* Read flags */
@@ -147,15 +160,15 @@ class ParserBayClass extends BaseObject
 	/**
 	 * Read class body
 	 */
-	BaseOpCode readBody(TokenReader reader)
+	BaseOpCode readBody(TokenReader reader, bool match_brackets = true)
 	{
 		Caret caret_start = reader.start();
 		Collection<BaseOpCode> items = [];
 		
-		reader.matchToken("{");
+		if (match_brackets) reader.matchToken("{");
 		
 		/* Read class */
-		while (not reader.eof() and reader.nextToken() != "}")
+		while (not reader.eof() and reader.nextToken() != "}" and reader.nextToken() != "#endif")
 		{
 			BaseOpCode op_code = this.readItem(reader);
 			if (op_code)
@@ -174,7 +187,7 @@ class ParserBayClass extends BaseObject
 			}
 		}
 		
-		reader.matchToken("}");
+		if (match_brackets) reader.matchToken("}");
 		
 		/* Process items */
 		items = this.processItems(items);

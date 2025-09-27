@@ -559,8 +559,7 @@ class ParserBayOperator extends BaseObject
 		}
 		else if (next_token == "#ifdef")
 		{
-			return this.parser.parser_preprocessor.readPreprocessorIfDef
-			(
+			return this.parser.parser_preprocessor.readIfDef(
 				reader, OpPreprocessorIfDef::KIND_OPERATOR
 			);
 		}
@@ -660,19 +659,19 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read operators
 	 */
-	OpItems parse(TokenReader reader)
+	OpItems parse(TokenReader reader, bool match_brackets = true)
 	{
 		Caret caret_start = reader.start();
 		Collection<BaseOpCode> items = [];
 		
 		/* Read begin tag */
-		reader.matchToken("{");
+		if (match_brackets) reader.matchToken("{");
 		
 		/* Save var */
 		Map save_vars = this.parser.saveVars();
 		
 		/* Read operators */
-		while (not reader.eof() and reader.nextToken() != "}")
+		while (not reader.eof() and reader.nextToken() != "}" and reader.nextToken() != "#endif")
 		{
 			BaseOpCode op_code = this.readOperator(reader);
 			if (op_code)
@@ -695,7 +694,7 @@ class ParserBayOperator extends BaseObject
 		this.parser.restoreVars(save_vars);
 		
 		/* Read end tag */
-		reader.matchToken("}");
+		if (match_brackets) reader.matchToken("}");
 		
 		/* Returns value */
 		return new OpItems

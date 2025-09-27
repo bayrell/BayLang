@@ -38,6 +38,16 @@ class TranslatorPHP extends CoreTranslator
 	
 	
 	/**
+	 * Constructor
+	 */
+	void constructor()
+	{
+		parent();
+		this.preprocessor_flags.set("PHP", true);
+	}
+	
+	
+	/**
 	 * Returns string
 	 */
 	string toString(string s)
