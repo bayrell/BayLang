@@ -26,9 +26,9 @@ use BayLang.OpCodes.OpTypeIdentifier;
 class OpTryCatchItem extends BaseOpCode
 {
 	string op = "op_try_catch_item";
-	string name = "";
+	BaseOpCode name = null;
 	OpTypeIdentifier pattern = null;
-	BaseOpCode value = null;
+	BaseOpCode content = null;
 	
 	
 	/**
@@ -39,6 +39,6 @@ class OpTryCatchItem extends BaseOpCode
 		parent(serializer, data);
 		serializer.process(this, "name", data);
 		serializer.process(this, "pattern", data);
-		serializer.process(this, "value", data);
+		serializer.process(this, "content", data);
 	}
 }

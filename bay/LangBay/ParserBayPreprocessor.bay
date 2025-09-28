@@ -48,7 +48,7 @@ class ParserBayPreprocessor extends BaseObject
 	/**
 	 * Read preprocessor switch
 	 */
-	OpPreprocessorSwitch readSwitch(TokenReader reader)
+	OpPreprocessorSwitch readSwitch(TokenReader reader, string current_block = "")
 	{
 		Caret caret_start = reader.start();
 		Collection items = [];
@@ -57,7 +57,15 @@ class ParserBayPreprocessor extends BaseObject
 		while (not reader.eof() and reader.nextToken() != "#endswitch")
 		{
 			reader.matchToken("#case");
-			OpPreprocessorIfCode op_code_item = this.readIfCode(reader);
+			BaseOpCode op_code_item = null;
+			if (reader.nextToken() == "ifdef")
+			{
+				op_code_item = this.readIfDef(reader, current_block);
+			}
+			else
+			{
+				op_code_item = this.readIfCode(reader);
+			}
 			items.push(op_code_item);
 		}
 		reader.matchToken("#endswitch");
@@ -101,7 +109,7 @@ class ParserBayPreprocessor extends BaseObject
 		}
 		
 		reader.init(caret);
-		if (reader.nextToken() == "#endif" and not is_switch) reader.matchToken("#endif");
+		if (not is_switch) reader.matchToken("#endif");
 		
 		return new OpPreprocessorIfCode
 		{
@@ -120,7 +128,13 @@ class ParserBayPreprocessor extends BaseObject
 	{
 		Caret caret_start = reader.start();
 		
-		reader.matchToken("#ifdef");
+		bool is_switch = false;
+		if (reader.nextToken() == "#ifdef") reader.matchToken("#ifdef");
+		else
+		{
+			is_switch = true;
+			reader.matchToken("ifdef");
+		}
 		
 		/* Read expression */
 		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
@@ -149,7 +163,7 @@ class ParserBayPreprocessor extends BaseObject
 			throw reader.error("Unknown block '" ~ current_block ~ "'");
 		}
 		
-		reader.matchToken("#endif");
+		if (not is_switch) reader.matchToken("#endif");
 		
 		return new OpPreprocessorIfDef
 		{
@@ -164,21 +178,19 @@ class ParserBayPreprocessor extends BaseObject
 	/**
 	 * Read namespace
 	 */
-	BaseOpCode readPreprocessor(TokenReader reader)
+	BaseOpCode readPreprocessor(TokenReader reader, string current_block = "")
 	{
 		if (reader.nextToken() == "#switch")
 		{
-			return this.readSwitch(reader);
+			return this.readSwitch(reader, current_block);
 		}
-		
 		else if (reader.nextToken() == "#ifcode")
 		{
 			return this.readIfCode(reader);
 		}
-		
 		else if (reader.nextToken() == "#ifdef")
 		{
-			return this.readIfDef(reader);
+			return this.readIfDef(reader, current_block);
 		}
 		
 		return null;

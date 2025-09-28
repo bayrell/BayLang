@@ -26,7 +26,7 @@ use BayLang.OpCodes.OpString;
 class OpDictPair extends BaseOpCode
 {
 	OpString key = null;
-	BaseOpCode value = null;
+	BaseOpCode expression = null;
 	BaseOpCode condition = null;
 	
 	

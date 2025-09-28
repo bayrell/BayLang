@@ -283,7 +283,7 @@ class TranslatorES6Expression extends BaseObject
 			/* Translate item */
 			result.push(this.translator.toString(op_code_item.key.value));
 			result.push(": ");
-			this.translate(op_code_item.value, result);
+			this.translate(op_code_item.expression, result);
 			if (is_multiline) result.push(",");
 			else if (i < items_count - 1) result.push(", ");
 			
@@ -419,7 +419,7 @@ class TranslatorES6Expression extends BaseObject
 	void OpNew(OpNew op_code, Collection<string> result)
 	{
 		result.push("new ");
-		this.OpTypeIdentifier(op_code.value, result);
+		this.OpTypeIdentifier(op_code.pattern, result);
 		
 		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
 		{

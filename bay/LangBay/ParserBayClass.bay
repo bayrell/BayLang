@@ -87,13 +87,9 @@ class ParserBayClass extends BaseObject
 		}
 		
 		/* Prepocessor */
-		else if (next_token == "#switch" or next_token == "#ifcode")
+		else if (next_token == "#switch" or next_token == "#ifcode" or next_token == "#ifdef")
 		{
-			return this.parser.parser_preprocessor.readPreprocessor(reader);
-		}
-		else if (next_token == "#ifdef")
-		{
-			return this.parser.parser_preprocessor.readIfDef(
+			return this.parser.parser_preprocessor.readPreprocessor(
 				reader, OpPreprocessorIfDef::KIND_CLASS_BODY
 			);
 		}
@@ -168,7 +164,11 @@ class ParserBayClass extends BaseObject
 		if (match_brackets) reader.matchToken("{");
 		
 		/* Read class */
-		while (not reader.eof() and reader.nextToken() != "}" and reader.nextToken() != "#endif")
+		while (
+			not reader.eof() and reader.nextToken() != "}" and
+			reader.nextToken() != "#endswitch" and reader.nextToken() != "#case" and
+			reader.nextToken() != "#endif"
+		)
 		{
 			BaseOpCode op_code = this.readItem(reader);
 			if (op_code)

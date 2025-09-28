@@ -370,7 +370,7 @@ class ParserBayBase extends BaseObject
 			BaseOpCode op_code_item = this.parser.parser_expression.readExpression(reader);
 			items.push(new OpDictPair{
 				"key": op_code_name,
-				"value": op_code_item,
+				"expression": op_code_item,
 			});
 			if (reader.nextToken() == "," or reader.nextToken() != "}")
 			{
@@ -485,38 +485,22 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read new instance
 	 */
-	pure list<ParserBay, BaseOpCode> readNew(ParserBay parser, bool match_new = true)
+	BaseOpCode readNew(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		Caret caret_start = parser.caret;
+		Caret caret_start = reader.start();
 		
-		Collection<BaseOpCode> args = [];
-		if (match_new)
+		reader.matchToken("new");
+		OpTypeIdentifier pattern = this.readTypeIdentifier(reader);
+		Collection<OpDeclareFunctionArg> args =
+			this.parser.parser_function.readFunctionArgs(reader);
+		
+		return new OpNew
 		{
-			list res = static::matchToken(parser, "new"); parser = res[0]; token = res[1];
-			caret_start = token.caret_start;
-		}
-		list res = static::readTypeIdentifier(parser); parser = res[0]; op_code = res[1];
-		
-		list res = static::readToken(parser); token = res[1];
-		if (token.content == "(" or token.content == "{")
-		{
-			list res = static::readCallArgs(parser); parser = res[0]; args = res[1];
-		}
-		
-		return 
-		[
-			parser,
-			new OpNew
-			{
-				"args": args,
-				"value": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+			"args": args,
+			"pattern": pattern,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -790,13 +774,18 @@ class ParserBayBase extends BaseObject
 	 */
 	BaseOpCode readItem(TokenReader reader)
 	{
-		if (Caret::isNumber(reader.nextToken()))
+		string next_token = reader.nextToken();
+		if (Caret::isNumber(next_token))
 		{
 			return this.readNumber(reader);
 		}
-		else if (reader.nextToken() == "'" or reader.nextToken() == '"') /* " */
+		else if (next_token == "'" or next_token == '"') /* " */
 		{
 			return this.readString(reader);
+		}
+		else if (next_token == "new")
+		{
+			return this.readNew(reader);
 		}
 		return this.readIdentifier(reader);
 	}

@@ -35,6 +35,7 @@ use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpPreprocessorIfCode;
 use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.OpCodes.OpUse;
 
@@ -157,6 +158,36 @@ class TranslatorES6Program extends BaseObject
 			}
 		}
 		return false;
+	}
+	
+	
+	/**
+	 * OpPreprocessorSwitch
+	 */
+	void OpPreprocessorSwitch(
+		OpPreprocessorSwitch op_code, Collection<string> result, string current_block = ""
+	)
+	{
+		bool last_result = false;
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			BaseOpCode item = op_code.items.get(i);
+			if (item instanceof OpPreprocessorIfCode)
+			{
+				if (this.OpPreprocessorIfCode(item, result))
+				{
+					last_result = true;
+				}
+			}
+			else if (item instanceof OpPreprocessorIfDef)
+			{
+				if (this.OpPreprocessorIfDef(item, result, current_block))
+				{
+					last_result = true;
+				}
+			}
+		}
+		return last_result;
 	}
 	
 	
@@ -313,6 +344,12 @@ class TranslatorES6Program extends BaseObject
 				op_code, result, OpPreprocessorIfDef::KIND_CLASS_BODY
 			);
 		}
+		else if (op_code instanceof OpPreprocessorSwitch)
+		{
+			return this.OpPreprocessorSwitch(
+				op_code, result, OpPreprocessorSwitch::KIND_CLASS_BODY
+			);
+		}
 		else
 		{
 			return false;
@@ -466,6 +503,12 @@ class TranslatorES6Program extends BaseObject
 		{
 			return this.OpPreprocessorIfDef(
 				op_code, result, OpPreprocessorIfDef::KIND_PROGRAM
+			);
+		}
+		else if (op_code instanceof OpPreprocessorSwitch)
+		{
+			return this.OpPreprocessorSwitch(
+				op_code, result, OpPreprocessorSwitch::KIND_PROGRAM
 			);
 		}
 		else

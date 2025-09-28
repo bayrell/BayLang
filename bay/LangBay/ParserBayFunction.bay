@@ -53,6 +53,27 @@ class ParserBayFunction extends BaseObject
 	
 	
 	/**
+	 * Read function arguments
+	 */
+	Collection<BaseOpCode> readFunctionArgs(TokenReader reader)
+	{
+		reader.matchToken("(");
+		Collection args = [];
+		while (not reader.eof() and reader.nextToken() != ")")
+		{
+			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+			args.push(expression);
+			if (reader.nextToken() != ")")
+			{
+				reader.matchToken(",");
+			}
+		}
+		reader.matchToken(")");
+		return args;
+	}
+	
+	
+	/**
 	 * Read call function
 	 */
 	BaseOpCode readCallFunction(TokenReader reader, BaseOpCode pattern = null)
@@ -76,18 +97,7 @@ class ParserBayFunction extends BaseObject
 		}
 		
 		/* Read arguments */
-		reader.matchToken("(");
-		Collection args = [];
-		while (not reader.eof() and reader.nextToken() != ")")
-		{
-			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
-			args.push(expression);
-			if (reader.nextToken() != ")")
-			{
-				reader.matchToken(",");
-			}
-		}
-		reader.matchToken(")");
+		Collection args = this.readFunctionArgs(reader);
 		
 		return new OpCall
 		{

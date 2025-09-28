@@ -152,97 +152,59 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read throw
 	 */
-	pure list<ParserBay, BaseOpCode> readThrow(ParserBay parser)
+	BaseOpCode readThrow(TokenReader reader)
 	{
-		CoreToken token = null;
-		BaseOpCode op_code = null;
+		Caret caret_start = reader.start();
 		
-		list res = parser.parser_base::matchToken(parser, "throw"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		reader.matchToken("throw");
+		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
 		
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-		
-		return
-		[
-			parser,
-			new OpThrow
-			{
-				"expression": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		return new OpThrow
+		{
+			"expression": expression,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
 	/**
 	 * Read try
 	 */
-	pure list<ParserBay, BaseOpCode> readTry(ParserBay parser)
+	BaseOpCode readTry(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_try = null;
-		Vector<OpTryCatchItem> items = new Vector();
+		Caret caret_start = reader.start();
 		
-		list res = parser.parser_base::matchToken(parser, "try"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		reader.matchToken("try");
+		BaseOpCode op_try = this.parse(reader);
 		
-		/* Try */
-		list res = static::readOperators(parser); parser = res[0]; op_try = res[1];
-		
-		/* Catch */
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content == "catch")
+		Collection items = [];
+		while (not reader.eof() and reader.nextToken() == "catch")
 		{
-			parser = look;
+			Caret caret_start = reader.start();
+			reader.matchToken("catch");
+			reader.matchToken("(");
+			BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
+			BaseOpCode name = this.parser.parser_base.readIdentifier(reader);
+			reader.matchToken(")");
+			BaseOpCode content = this.parse(reader);
 			
-			BaseOpCode op_catch = null;
-			BaseOpCode var_op_code = null;
-			OpTypeIdentifier pattern = null;
-			Caret item_caret_start = token.caret_start;
-			
-			/* Read ident */
-			list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-			list res = parser.parser_base::readTypeIdentifier(parser); parser = res[0]; pattern = res[1];
-			list res = parser.parser_base::readIdentifier(parser); parser = res[0]; var_op_code = res[1];
-			string var_name = var_op_code.value;
-			list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
-			
-			/* Save vars */
-			Dict<bool> save_vars = parser.vars;
-			parser <= vars <= parser.vars.setIm(var_name, true);
-			
-			/* Catch operators */
-			list res = static::readOperators(parser); parser = res[0]; op_catch = res[1];
-			
-			/* Restore vars */
-			parser <= vars <= save_vars;
-			
-			OpTryCatchItem item = new OpTryCatchItem
-			{
-				"name": var_name,
+			items.push(new OpTryCatchItem{
+				"name": name,
 				"pattern": pattern,
-				"value": op_catch,
-				"caret_start": item_caret_start,
-				"caret_end": parser.caret,
-			};
-			items.push(item);
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
+				"content": content,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			});
 		}
 		
-		return
-		[
-			parser,
-			new OpTryCatch
-			{
-				"op_try": op_try,
-				"items": items,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		return new OpTryCatch
+		{
+			"items": items,
+			"op_try": op_try,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -520,13 +482,9 @@ class ParserBayOperator extends BaseObject
 		}
 		
 		/* Prepocessor */
-		else if (next_token == "#switch" or next_token == "#ifcode")
+		else if (next_token == "#switch" or next_token == "#ifcode" or next_token == "#ifdef")
 		{
-			return this.parser.parser_preprocessor.readPreprocessor(reader);
-		}
-		else if (next_token == "#ifdef")
-		{
-			return this.parser.parser_preprocessor.readIfDef(
+			return this.parser.parser_preprocessor.readPreprocessor(
 				reader, OpPreprocessorIfDef::KIND_OPERATOR
 			);
 		}
@@ -638,7 +596,11 @@ class ParserBayOperator extends BaseObject
 		Map save_vars = this.parser.saveVars();
 		
 		/* Read operators */
-		while (not reader.eof() and reader.nextToken() != "}" and reader.nextToken() != "#endif")
+		while (
+			not reader.eof() and reader.nextToken() != "}" and
+			reader.nextToken() != "#endswitch" and reader.nextToken() != "#case" and
+			reader.nextToken() != "#endif"
+		)
 		{
 			BaseOpCode op_code = this.readOperator(reader);
 			if (op_code)

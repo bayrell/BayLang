@@ -37,6 +37,7 @@ use BayLang.OpCodes.OpInc;
 use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpPreprocessorIfCode;
 use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
 use BayLang.OpCodes.OpReturn;
 use BayLang.OpCodes.OpThrow;
 use BayLang.OpCodes.OpTryCatch;
@@ -208,6 +209,11 @@ class TranslatorES6Operator extends BaseObject
 	{
 		result.push("try");
 		this.translateItems(op_code.op_try, result);
+		result.push(this.translator.newLine());
+		result.push("catch (_ex)");
+		result.push(this.translator.newLine());
+		result.push("{");
+		this.translator.levelInc();
 		if (op_code.items and op_code.items.count() > 0)
 		{
 			int items_count = op_code.items.count();
@@ -215,14 +221,40 @@ class TranslatorES6Operator extends BaseObject
 			{
 				OpTryCatchItem op_code_item = op_code.items.get(i);
 				result.push(this.translator.newLine());
-				result.push("catch (");
+				if (i == 0) result.push("if ");
+				else result.push("else if ");
+				result.push("(_ex instanceof ");
 				this.translator.expression.OpTypeIdentifier(op_code_item.pattern, result);
-				result.push(" ");
-				result.push(op_code_item.name);
 				result.push(")");
-				this.translateItems(op_code_item.value, result);
+				result.push(this.translator.newLine());
+				result.push("{");
+				this.translator.levelInc();
+				result.push(this.translator.newLine());
+				result.push("var " ~ op_code_item.name.value ~ " = _ex;");
+				this.translateItems(op_code_item.content, result, false);
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+				result.push("}");
 			}
+			result.push(this.translator.newLine());
+			result.push("else");
+			result.push(this.translator.newLine());
+			result.push("{");
+			this.translator.levelInc();
+			result.push(this.translator.newLine());
+			result.push("throw _ex;");
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+			result.push("}");
 		}
+		else
+		{
+			result.push(this.translator.newLine());
+			result.push("throw _ex;");
+		}
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
 	}
 	
 	
@@ -332,6 +364,12 @@ class TranslatorES6Operator extends BaseObject
 				op_code, result, OpPreprocessorIfDef::KIND_OPERATOR
 			);
 		}
+		else if (op_code instanceof OpPreprocessorSwitch)
+		{
+			return this.translator.program.OpPreprocessorSwitch(
+				op_code, result, OpPreprocessorIfDef::KIND_OPERATOR
+			);
+		}
 		else
 		{
 			return false;
@@ -384,7 +422,8 @@ class TranslatorES6Operator extends BaseObject
 			bool flag = this.translateItem(op_code_item, result_items);
 			if (flag)
 			{
-				if (not(op_code_item instanceof OpPreprocessorIfDef))
+				if (not(op_code_item instanceof OpPreprocessorIfDef or
+					op_code_item instanceof OpPreprocessorSwitch))
 				{
 					result.push(this.translator.newLine());
 				}
