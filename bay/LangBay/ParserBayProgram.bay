@@ -145,7 +145,7 @@ class ParserBayProgram extends BaseObject
 		}
 		
 		/* Read class */
-		else if (next_token == "class")
+		else if (next_token == "abstract" or next_token == "class" or next_token == "interface")
 		{
 			return this.parser.parser_class.readClass(reader);
 		}

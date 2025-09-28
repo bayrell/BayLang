@@ -112,7 +112,11 @@ class ParserBayOperator extends BaseObject
 		Caret caret_start = reader.start();
 		
 		reader.matchToken("return");
-		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+		BaseOpCode expression = null;
+		if (reader.nextToken() != ";")
+		{
+			expression = this.parser.parser_expression.readExpression(reader);
+		}
 		
 		return new OpReturn
 		{
@@ -492,6 +496,7 @@ class ParserBayOperator extends BaseObject
 		/* Break */
 		else if (next_token == "break")
 		{
+			reader.matchToken("break");
 			return new OpBreak
 			{
 				"caret_start": caret_start,
@@ -502,6 +507,7 @@ class ParserBayOperator extends BaseObject
 		/* Continue */
 		else if (next_token == "continue")
 		{
+			reader.matchToken("continue");
 			return new OpContinue
 			{
 				"caret_start": caret_start,

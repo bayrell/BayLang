@@ -206,10 +206,38 @@ class ParserBayClass extends BaseObject
 	BaseOpCode readClass(TokenReader reader)
 	{
 		Caret caret_start = reader.start();
-		reader.matchToken("class");
+		
+		/* Read abstract */
+		bool is_abstract = false;
+		if (reader.nextToken() == "abstract")
+		{
+			is_abstract = true;
+			reader.matchToken("abstract");
+		}
+		
+		/* Read class or interface */
+		bool is_interface = false;
+		if (reader.nextToken() == "interface")
+		{
+			is_interface = true;
+			reader.matchToken("interface");
+		}
+		else reader.matchToken("class");
+		
 		OpTypeIdentifier class_extends = null;
 		Collection<OpTypeIdentifier> class_implements = [];
-		OpIdentifier class_name = this.parser.parser_base.readIdentifier(reader);
+		
+		/* Read class name */
+		OpTypeIdentifier class_name = this.parser.parser_base.readTypeIdentifier(reader, false);
+		this.parser.uses.set(class_name.entity_name.getName(),
+			this.parser.current_namespace ~ "." ~ class_name.entity_name.getName()
+		);
+		
+		/* Add generics */
+		Dict save_uses = this.parser.uses.copy();
+		this.parser.addGenericUse(class_name.generics);
+		
+		/* Read extends */
 		if (reader.nextToken() == "extends")
 		{
 			reader.readToken();
@@ -228,16 +256,33 @@ class ParserBayClass extends BaseObject
 				}
 			}
 		}
-		BaseOpCode content = this.readBody(reader);
-		return new OpDeclareClass
+		this.parser.current_class = new OpDeclareClass
 		{
-			"kind": OpDeclareClass::KIND_CLASS,
-			"content": content,
-			"name": class_name.value,
+			"kind": is_interface ? OpDeclareClass::KIND_INTERFACE : OpDeclareClass::KIND_CLASS,
+			"name": class_name,
+			"is_abstract": is_abstract,
 			"class_extends": class_extends,
 			"class_implements": class_implements,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
+		if (not is_abstract)
+		{
+			this.parser.current_class.content = this.readBody(reader);
+		}
+		else
+		{
+			if (reader.nextToken() == "{")
+			{
+				reader.matchToken("{");
+				reader.matchToken("}");
+			}
+			else
+			{
+				reader.matchToken(";");
+			}
+		}
+		this.parser.uses = save_uses;
+		return this.parser.current_class;
 	}
 }

@@ -449,9 +449,12 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
+		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return false;
+		if (op_code.is_abstract) return false;
+		
 		this.translator.parent_class_name = "";
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
-			op_code.name;
+			op_code.name.entity_name.getName();
 		
 		/* Class name */
 		result.push(this.translator.current_class_name ~ " = class");
@@ -474,6 +477,8 @@ class TranslatorES6Program extends BaseObject
 		result.push(this.translator.newLine());
 		result.push("window[\"" ~ this.translator.current_class_name ~ "\"] = " ~
 			this.translator.current_class_name ~ ";");
+		
+		return true;
 	}
 	
 	
@@ -484,7 +489,7 @@ class TranslatorES6Program extends BaseObject
 	{
 		if (op_code instanceof OpDeclareClass)
 		{
-			this.translateClass(op_code, result);
+			return this.translateClass(op_code, result);
 		}
 		else if (op_code instanceof OpNamespace)
 		{
@@ -534,6 +539,7 @@ class TranslatorES6Program extends BaseObject
 		for (int i=0; i<items.count(); i++)
 		{
 			BaseOpCode op_code_item = items.get(i);
+			if (op_code_item instanceof OpDeclareClass and op_code_item.is_abstract) continue;
 			if (op_code_item instanceof OpDeclareClass and prev_op_code instanceof OpDeclareClass)
 			{
 				result.push(this.translator.newLine(last_result ? 3 : 2));

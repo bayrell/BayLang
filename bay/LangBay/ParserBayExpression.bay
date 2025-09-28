@@ -90,7 +90,7 @@ class ParserBayExpression extends BaseObject
 			return new OpMath
 			{
 				"value1": op_code,
-				"math": "!",
+				"math": "neg",
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
 			}

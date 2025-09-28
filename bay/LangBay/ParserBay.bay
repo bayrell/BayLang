@@ -34,6 +34,7 @@ use BayLang.LangBay.ParserBayProgram;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 class ParserBay extends CoreParser
@@ -55,7 +56,7 @@ class ParserBay extends CoreParser
 	bool isRegisteredVariable(string name)
 	{
 		Collection variables = [
-			"print", "rs", "rtl", "parent", "this"
+			"print", "rs", "rtl", "parent", "this", "@"
 		];
 		if (variables.indexOf(name) == -1) return false;
 		return true;
@@ -68,8 +69,8 @@ class ParserBay extends CoreParser
 	bool isSystemType(string name)
 	{
 		Collection variables = [
-			"var", "void", "bool", "byte", "int", "char"
-			"string", "list", "scalar", "primitive", "html",
+			"var", "void", "bool", "byte", "int", "char", "real", "double",
+			"string", "list", "scalar", "primitive", "html", "fn",
 			"Error", "Object", "DateTime", "Collection", "Dict",
 			"Vector", "Map", "ArrayInterface",
 		];
@@ -131,6 +132,23 @@ class ParserBay extends CoreParser
 		if (this.uses.has(op_code_item.value)) return;
 		if (this.isSystemType(op_code_item.value)) return;
 		throw op_code.caret_end.error("Unknown identifier '" ~ op_code_item.value ~ "'");
+	}
+	
+	
+	/**
+	 * Add use
+	 */
+	void addGenericUse(Collection<OpTypeIdentifier> items)
+	{
+		if (items and items.count() > 0)
+		{
+			for (int i=0; i<items.count(); i++)
+			{
+				OpTypeIdentifier item = items.get(i);
+				this.uses.set(item.entity_name.getName(), item);
+				this.addGenericUse(item.generics);
+			}
+		}
 	}
 	
 	

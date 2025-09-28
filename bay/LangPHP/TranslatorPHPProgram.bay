@@ -249,7 +249,7 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Function flags */
-		Collection<string> flags = ["async", "static", "pure"];
+		Collection<string> flags = ["static"];
 		flags = flags.filter(
 			bool (string flag_name) use (op_code) =>
 				op_code.flags ? op_code.flags.isFlag(flag_name) : false
@@ -264,6 +264,15 @@ class TranslatorPHPProgram extends BaseObject
 		result.push("(");
 		this.OpDeclareFunctionArgs(op_code, result);
 		result.push(")");
+		
+		/* If interface */
+		if (this.translator.current_class and
+			this.translator.current_class.kind == OpDeclareClass::KIND_INTERFACE
+		)
+		{
+			result.push(";");
+			return;
+		}
 		
 		/* If content is empty */
 		if (op_code.content == null)
@@ -422,6 +431,8 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void translateClassInit(OpDeclareClass op_code, Collection<string> result)
 	{
+		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return;
+		
 		result.push(this.translator.newLine(op_code.content.count() > 0 ? 3 : 1));
 		result.push("/* ========= Class init functions ========= */");
 		result.push(this.translator.newLine());
@@ -439,6 +450,12 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
+		if (op_code.is_abstract) return false;
+		
+		/* Current class */
+		this.translator.current_class = op_code;
+		
+		/* Class kind */
 		if (op_code.kind == OpDeclareClass::KIND_CLASS)
 		{
 			result.push("class ");
@@ -447,16 +464,12 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			result.push("interface ");
 		}
-		else if (op_code.kind == OpDeclareClass::KIND_STRUCT)
-		{
-			result.push("struct ");
-		}
 		
 		/* Class name */
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
 			op_code.name;
 		this.translator.uses.set(op_code.name, this.translator.current_class_name);
-		result.push(op_code.name);
+		result.push(op_code.name.entity_name.items.last().value);
 		
 		/* Template */
 		if (op_code.template)
@@ -472,7 +485,7 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Implements */
-		if (op_code.class_implements)
+		if (op_code.class_implements and op_code.class_implements.count() > 0)
 		{
 			result.push(" implements ");
 			int items_count = op_code.class_implements.count();
@@ -486,6 +499,7 @@ class TranslatorPHPProgram extends BaseObject
 		
 		result.push(this.translator.newLine());
 		this.translateClassBody(op_code, result);
+		this.translator.current_class = null;
 	}
 	
 	
@@ -546,6 +560,7 @@ class TranslatorPHPProgram extends BaseObject
 			BaseOpCode op_code_item = items.get(i);
 			if (op_code_item instanceof OpDeclareClass)
 			{
+				if (op_code_item.is_abstract) continue;
 				if (op_code_use_count > 0)
 				{
 					result.push(this.translator.newLine(op_code_use_count > 1 ? 3 : 2));

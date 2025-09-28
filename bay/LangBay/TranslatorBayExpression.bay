@@ -33,6 +33,7 @@ use BayLang.OpCodes.OpNew;
 use BayLang.OpCodes.OpNumber;
 use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpString;
+use BayLang.OpCodes.OpTernary;
 use BayLang.OpCodes.OpTypeIdentifier;
 use BayLang.LangBay.TranslatorBay;
 
@@ -257,7 +258,7 @@ class TranslatorBayExpression extends BaseObject
 			/* Translate item */
 			result.push(this.translator.toString(op_code_item.key.value));
 			result.push(": ");
-			this.translate(op_code_item.value, result);
+			this.translate(op_code_item.expression, result);
 			if (is_multiline) result.push(",");
 			else if (i < items_count - 1) result.push(", ");
 			
@@ -353,24 +354,22 @@ class TranslatorBayExpression extends BaseObject
 	 */
 	void OpCall(OpCall op_code, Collection<string> result)
 	{
+		if (op_code.is_await)
+		{
+			result.push("await ");
+		}
+		
 		this.translateItem(op_code.item, result);
 		
-		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
+		result.push("(");
+		int args_count = op_code.args.count();
+		for (int i=0; i<args_count; i++)
 		{
-			this.OpDict(op_code.args.get(0), result);
+			BaseOpCode op_code_item = op_code.args.get(i);
+			this.Expression(op_code_item, result);
+			if (i < args_count - 1) result.push(", ");
 		}
-		else
-		{
-			result.push("(");
-			int args_count = op_code.args.count();
-			for (int i=0; i<args_count; i++)
-			{
-				BaseOpCode op_code_item = op_code.args.get(i);
-				this.Expression(op_code_item, result);
-				if (i < args_count - 1) result.push(", ");
-			}
-			result.push(")");
-		}
+		result.push(")");
 		
 		this.translator.opcode_level = 20;
 	}
@@ -382,7 +381,7 @@ class TranslatorBayExpression extends BaseObject
 	void OpNew(OpNew op_code, Collection<string> result)
 	{
 		result.push("new ");
-		this.OpTypeIdentifier(op_code.value, result);
+		this.OpTypeIdentifier(op_code.pattern, result);
 		
 		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
 		{
@@ -442,15 +441,19 @@ class TranslatorBayExpression extends BaseObject
 		if (op_code.math == "instanceof") { opcode_level = 10; op = "instanceof"; }
 		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
 		if (op_code.math == "bitnot") { opcode_level = 16; op = "bitnot"; }
+		if (op_code.math == "neg") { opcode_level = 16; op = "neg"; }
 		if (op_code.math == "not") { opcode_level = 16; op = "not"; }
 		if (op_code.math == "and") { opcode_level = 6; op = "and"; }
 		if (op_code.math == "&&") { opcode_level = 6; op = "and"; }
 		if (op_code.math == "or") { opcode_level = 5; op = "or"; }
 		if (op_code.math == "||") { opcode_level = 5; op = "or"; }
 		
-		if (op_code.math == "not" or op_code.math == "bitnot" or op_code.math == "!")
+		if (op_code.math == "neg" or op_code.math == "not" or
+			op_code.math == "bitnot" or op_code.math == "!"
+		)
 		{
-			if (op_code.math == "not") result.push("not ");
+			if (op_code.math == "neg") result.push("-");
+			else if (op_code.math == "not") result.push("not ");
 			else if (op_code.math == "bitnot") result.push("bitnot ");
 			else result.push(op_code.math);
 			
@@ -501,6 +504,52 @@ class TranslatorBayExpression extends BaseObject
 	
 	
 	/**
+	 * OpTernary
+	 */
+	void OpTernary(BaseOpCode op_code, Collection<string> result)
+	{
+		Collection result1 = [];
+		this.translate(op_code.condition, result1);
+		if (this.translator.opcode_level < 19)
+		{
+			result.push("(");
+			result.appendItems(result1);
+			result.push(")");
+		}
+		else
+		{
+			result.appendItems(result1);
+		}
+		result1 = [];
+		result.push(" ? ");
+		this.translate(op_code.if_true, result1);
+		if (this.translator.opcode_level < 19)
+		{
+			result.push("(");
+			result.appendItems(result1);
+			result.push(")");
+		}
+		else
+		{
+			result.appendItems(result1);
+		}
+		result1 = [];
+		result.push(" : ");
+		this.translate(op_code.if_false, result1);
+		if (this.translator.opcode_level < 19)
+		{
+			result.push("(");
+			result.appendItems(result1);
+			result.push(")");
+		}
+		else
+		{
+			result.appendItems(result1);
+		}
+	}
+	
+	
+	/**
 	 * Translate item
 	 */
 	void translateItem(BaseOpCode op_code, Collection<string> result)
@@ -544,6 +593,10 @@ class TranslatorBayExpression extends BaseObject
 		else if (op_code instanceof OpNew)
 		{
 			this.OpNew(op_code, result);
+		}
+		else if (op_code instanceof OpTernary)
+		{
+			this.OpTernary(op_code, result);
 		}
 	}
 	

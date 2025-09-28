@@ -42,7 +42,7 @@ class OpDeclareClass extends BaseOpCode
 	OpFlags flags = null;
 	OpDeclareFunction fn_create = null;
 	OpDeclareFunction fn_destroy = null;
-	OpTypeIdentifier class_name = null;
+	OpTypeIdentifier name = null;
 	OpTypeIdentifier class_extends = null;
 	Collection<OpTypeIdentifier> class_implements = null;
 	BaseOpCode content = null;

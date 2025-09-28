@@ -27,6 +27,7 @@ use BayLang.Exceptions.ParserExpected;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpCall;
+use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpEntityName;
@@ -81,8 +82,14 @@ class ParserBayFunction extends BaseObject
 		Caret caret_start = reader.start();
 		
 		/* Read identifier */
+		bool is_await = false;
 		if (pattern == null)
 		{
+			if (reader.nextToken() == "await")
+			{
+				is_await = true;
+				reader.matchToken("await");
+			}
 			pattern = this.parser.parser_base.readDynamic(reader, false);
 		}
 		
@@ -103,6 +110,7 @@ class ParserBayFunction extends BaseObject
 		{
 			"args": args,
 			"item": pattern,
+			"is_await": is_await,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
@@ -226,7 +234,21 @@ class ParserBayFunction extends BaseObject
 		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
 		
 		/* Read content */
-		if (reader.nextToken() == "{") content = this.parser.parser_operator.parse(reader);
+		if (this.parser.current_class != null and
+			this.parser.current_class.kind == OpDeclareClass::KIND_INTERFACE
+		)
+		{
+			if (reader.nextToken() == "{")
+			{
+				reader.matchToken("{");
+				reader.matchToken("}");
+			}
+			else
+			{
+				reader.matchToken(";");
+			}
+		}
+		else if (reader.nextToken() == "{") content = this.parser.parser_operator.parse(reader);
 		else
 		{
 			reader.matchToken("=>");
@@ -265,7 +287,14 @@ class ParserBayFunction extends BaseObject
 			}
 			reader.matchToken(")");
 			
-			if (reader.nextToken() != "=>" and reader.nextToken() != "use")
+			if (this.parser.current_class != null and
+				this.parser.current_class.kind == OpDeclareClass::KIND_INTERFACE and
+				reader.nextToken() == ";"
+			)
+			{
+				reader.matchToken(";");
+			}
+			else if (reader.nextToken() != "=>" and reader.nextToken() != "use")
 			{
 				reader.matchToken("{");
 			}

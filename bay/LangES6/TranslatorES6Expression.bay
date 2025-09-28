@@ -76,6 +76,10 @@ class TranslatorES6Expression extends BaseObject
 		{
 			result.push("super");
 		}
+		else if (op_code.value == "@")
+		{
+			result.push("Runtime.rtl.getContext()");
+		}
 		else result.push(op_code.value);
 		this.translator.opcode_level = 20;
 	}
@@ -374,6 +378,11 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpCall(OpCall op_code, Collection<string> result)
 	{
+		if (op_code.is_await)
+		{
+			result.push("await ");
+		}
+		
 		if (op_code.item instanceof OpIdentifier and op_code.item.value == "parent")
 		{
 			if (this.translator.class_function and
@@ -392,22 +401,15 @@ class TranslatorES6Expression extends BaseObject
 			this.translateItem(op_code.item, result);
 		}
 		
-		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
+		result.push("(");
+		int args_count = op_code.args.count();
+		for (int i=0; i<args_count; i++)
 		{
-			this.OpDict(op_code.args.get(0), result);
+			BaseOpCode op_code_item = op_code.args.get(i);
+			this.Expression(op_code_item, result);
+			if (i < args_count - 1) result.push(", ");
 		}
-		else
-		{
-			result.push("(");
-			int args_count = op_code.args.count();
-			for (int i=0; i<args_count; i++)
-			{
-				BaseOpCode op_code_item = op_code.args.get(i);
-				this.Expression(op_code_item, result);
-				if (i < args_count - 1) result.push(", ");
-			}
-			result.push(")");
-		}
+		result.push(")");
 		
 		this.translator.opcode_level = 20;
 	}
@@ -421,22 +423,15 @@ class TranslatorES6Expression extends BaseObject
 		result.push("new ");
 		this.OpTypeIdentifier(op_code.pattern, result);
 		
-		if (op_code.args.count() == 1 and op_code.args.get(0) instanceof OpDict)
+		result.push("(");
+		int args_count = op_code.args.count();
+		for (int i=0; i<args_count; i++)
 		{
-			this.OpDict(op_code.args.get(0), result);
+			BaseOpCode op_code_item = op_code.args.get(i);
+			this.Expression(op_code_item, result);
+			if (i < args_count - 1) result.push(", ");
 		}
-		else
-		{
-			result.push("(");
-			int args_count = op_code.args.count();
-			for (int i=0; i<args_count; i++)
-			{
-				BaseOpCode op_code_item = op_code.args.get(i);
-				this.Expression(op_code_item, result);
-				if (i < args_count - 1) result.push(", ");
-			}
-			result.push(")");
-		}
+		result.push(")");
 		
 		this.translator.opcode_level = 20;
 	}
@@ -479,13 +474,15 @@ class TranslatorES6Expression extends BaseObject
 		if (op_code.math == "instanceof") { opcode_level = 10; op = "instanceof"; }
 		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
 		if (op_code.math == "bitnot") { opcode_level = 16; op = "bitnot"; }
+		if (op_code.math == "neg") { opcode_level = 16; op = "neg"; }
 		if (op_code.math == "not") { opcode_level = 16; op = "!"; }
 		if (op_code.math == "and" or op_code.math == "&&") { opcode_level = 6; op = "&&"; }
 		if (op_code.math == "or" or op_code.math == "||") { opcode_level = 5; op = "||"; }
 		
-		if (op_code.math == "not" or op_code.math == "bitnot")
+		if (op_code.math == "neg" or op_code.math == "not" or op_code.math == "bitnot")
 		{
 			if (op_code.math == "bitnot") result.push("~");
+			else if (op_code.math == "neg") result.push("-");
 			else result.push(op);
 			if (opcode_level1 < opcode_level)
 			{
@@ -550,7 +547,7 @@ class TranslatorES6Expression extends BaseObject
 	void OpTernary(BaseOpCode op_code, Collection<string> result)
 	{
 		Collection result1 = [];
-		result.push(this.translate(op_code.condition, result1));
+		this.translate(op_code.condition, result1);
 		if (this.translator.opcode_level < 19)
 		{
 			result.push("(");
@@ -564,7 +561,7 @@ class TranslatorES6Expression extends BaseObject
 		
 		result1 = [];
 		result.push(" ? ");
-		result.push(this.translate(op_code.if_true, result1));
+		this.translate(op_code.if_true, result1);
 		if (this.translator.opcode_level < 19)
 		{
 			result.push("(");
@@ -578,7 +575,7 @@ class TranslatorES6Expression extends BaseObject
 		
 		result1 = [];
 		result.push(" : ");
-		result.push(this.translate(op_code.if_false, result1));
+		this.translate(op_code.if_false, result1);
 		if (this.translator.opcode_level < 19)
 		{
 			result.push("(");
