@@ -157,6 +157,7 @@ class ParserBayPreprocessor extends BaseObject
 		else if (current_block == OpPreprocessorIfDef::KIND_EXPRESSION)
 		{
 			content = this.parser.parser_expression.readExpression(reader);
+			if (reader.nextToken() == ",") reader.matchToken(",");
 		}
 		else
 		{

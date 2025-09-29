@@ -26,6 +26,7 @@ use BayLang.LangES6.TranslatorES6;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
@@ -96,8 +97,31 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void OpAssign(OpAssign op_code, Collection<string> result)
 	{
-		this.translator.operator.OpAssign(op_code, result);
-		result.push(";");
+		bool last_result = false;
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			OpAssignValue op_code_item = op_code.items.get(i);
+			if (last_result)
+			{
+				result.push(this.translator.newLine());
+			}
+			if (op_code_item.value instanceof OpIdentifier)
+			{
+				this.translator.expression.OpIdentifier(op_code_item.value, result);
+			}
+			else
+			{
+				last_result = false;
+				continue;
+			}
+			if (op_code_item.expression)
+			{
+				result.push(" = ");
+				this.translator.expression.translate(op_code_item.expression, result);
+			}
+			result.push(";");
+			last_result = true;
+		}
 	}
 	
 	
@@ -154,6 +178,10 @@ class TranslatorES6Program extends BaseObject
 				{
 					this.translator.operator.translateItems(op_code.content, result, false);
 				}
+				else if (current_block == OpPreprocessorIfDef::KIND_EXPRESSION)
+				{
+					this.translator.expression.translate(op_code.content, result);
+				}
 				return true;
 			}
 		}
@@ -174,8 +202,11 @@ class TranslatorES6Program extends BaseObject
 			BaseOpCode item = op_code.items.get(i);
 			if (item instanceof OpPreprocessorIfCode)
 			{
-				if (this.OpPreprocessorIfCode(item, result))
+				Collection result1 = [];
+				if (this.OpPreprocessorIfCode(item, result1))
 				{
+					result.push(this.translator.newLine());
+					result.appendItems(result1);
 					last_result = true;
 				}
 			}
@@ -242,13 +273,14 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Function flags */
-		Collection<string> flags = ["async", "static", "pure"];
-		flags = flags.filter(
-			bool (string flag_name) use (op_code) =>
-				op_code.flags ? op_code.flags.isFlag(flag_name) : false
-		);
-		result.push(rs::join(" ", flags));
-		if (flags.count() > 0) result.push(" ");
+		if (op_code.flags)
+		{
+			Collection flags = [];
+			if (op_code.flags.isFlag("static") or op_code.flags.isFlag("pure")) flags.push("static");
+			if (op_code.flags.isFlag("async")) flags.push("async");
+			result.push(rs::join(" ", flags));
+			if (flags.count() > 0) result.push(" ");
+		}
 		
 		/* Function name */
 		result.push(op_code.name);

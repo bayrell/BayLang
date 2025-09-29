@@ -88,7 +88,10 @@ class TranslatorES6Operator extends BaseObject
 			}
 			if (op_code_item.expression)
 			{
-				result.push(" = ");
+				string op = op_code_item.op;
+				if (op == "~=") op = "+=";
+				else if (op == "") op = "=";
+				result.push(" " ~ op ~ " ");
 				this.translator.expression.translate(op_code_item.expression, result);
 			}
 			if (i < values_count - 1) result.push(",");

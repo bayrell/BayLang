@@ -28,6 +28,7 @@ use BayLang.OpCodes.OpFlags;
 
 class OpAssignValue extends BaseOpCode
 {
+	string op = "";
 	BaseOpCode value = null;
 	BaseOpCode expression = null;
 	

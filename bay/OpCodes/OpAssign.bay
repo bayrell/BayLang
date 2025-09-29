@@ -44,15 +44,8 @@ class OpAssign extends BaseOpCode
 	void serialize(Serializer serializer, Map data)
 	{
 		parent(serializer, data);
-		serializer.process(this, "annotations", data);
-		serializer.process(this, "comments", data);
-		serializer.process(this, "condition", data);
-		serializer.process(this, "expression", data);
 		serializer.process(this, "flags", data);
-		serializer.process(this, "kind", data);
-		serializer.process(this, "names", data);
 		serializer.process(this, "pattern", data);
-		serializer.process(this, "values", data);
-		serializer.process(this, "var_name", data);
+		serializer.process(this, "items", data);
 	}
 }

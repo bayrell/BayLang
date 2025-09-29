@@ -152,7 +152,7 @@ class ParserBayFunction extends BaseObject
 				"caret_end": reader.caret(),
 			});
 			
-			if (reader.nextToken() == ",")
+			if (reader.nextToken() != ")")
 			{
 				reader.matchToken(",");
 			}
@@ -171,52 +171,20 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read function variables
 	 */
-	pure list<ParserBay, Collection> readDeclareFunctionUse
-	(
-		ParserBay parser, Dict<bool> vars = null, bool find_ident = true
-	)
+	Collection<OpIdentifier> readDeclareFunctionUse(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		Vector<BaseOpCode> items = new Vector();
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "use")
+		if (reader.nextToken() != "use") return [];
+		Collection items = [];
+		reader.matchToken("use")
+		reader.matchToken("(");
+		while (not reader.eof() and reader.nextToken() != ")")
 		{
-			parser = look;
-			list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-			while (not token.eof and token.content != ")")
-			{
-				BaseOpCode ident = null;
-				list res = parser.parser_base::readIdentifier(parser); parser = res[0]; ident = res[1];
-				string name = ident.value;
-				
-				if (vars != null and find_ident)
-				{
-					if (not vars.has(name))
-					{
-						throw new ParserError
-						(
-							"Unknown identifier '" ~ name ~ "'",
-							ident.caret_start,
-							parser.file_name
-						);
-					}
-				}
-				items.push(name);
-				
-				list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-				if (token.content == ",")
-				{
-					parser = look;
-					list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-				}
-			}
-			list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
+			BaseOpCode item = this.parser.parser_base.readIdentifier(reader);
+			items.push(item);
+			if (reader.nextToken() != ")") reader.matchToken(",");
 		}
-		
-		return [parser, items];
+		reader.matchToken(")");
+		return items;
 	}
 	
 	
@@ -232,6 +200,7 @@ class ParserBayFunction extends BaseObject
 		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
 		if (read_name) name = this.parser.parser_base.readIdentifier(reader).value;
 		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
+		Collection<OpIdentifier> vars = this.readDeclareFunctionUse(reader);
 		
 		/* Read content */
 		if (this.parser.current_class != null and
@@ -259,6 +228,7 @@ class ParserBayFunction extends BaseObject
 		{
 			"args": args,
 			"name": name,
+			"vars": vars,
 			"pattern": pattern,
 			"content": content,
 			"caret_start": caret_start,
@@ -283,9 +253,29 @@ class ParserBayFunction extends BaseObject
 			reader.matchToken("(");
 			while (not reader.eof() and reader.nextToken() != ")")
 			{
-				reader.readToken();
+				this.parser.parser_base.readTypeIdentifier(reader, false);
+				this.parser.parser_base.readIdentifier(reader);
+				if (reader.nextToken() == "=")
+				{
+					reader.matchToken("=");
+					this.parser.parser_expression.readExpression(reader);
+				}
+				if (reader.nextToken() != ")") reader.matchToken(",");
 			}
 			reader.matchToken(")");
+			
+			/* Read use */
+			if (reader.nextToken() == "use")
+			{
+				reader.matchToken("use")
+				reader.matchToken("(")
+				while (not reader.eof() and reader.nextToken() != ")")
+				{
+					this.parser.parser_base.readIdentifier(reader);
+					if (reader.nextToken() != ")") reader.matchToken(",");
+				}
+				reader.matchToken(")")
+			}
 			
 			if (this.parser.current_class != null and
 				this.parser.current_class.kind == OpDeclareClass::KIND_INTERFACE and

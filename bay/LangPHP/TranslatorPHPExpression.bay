@@ -34,7 +34,9 @@ use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpMath;
 use BayLang.OpCodes.OpNew;
 use BayLang.OpCodes.OpNumber;
+use BayLang.OpCodes.OpPreprocessorIfCode;
 use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
 use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpTernary;
 use BayLang.OpCodes.OpTypeIdentifier;
@@ -61,6 +63,7 @@ class TranslatorPHPExpression extends BaseObject
 	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
 	{
 		if (op_code.value == "print") result.push("echo");
+		else if (op_code.value == "null") result.push("null");
 		else if (op_code.value == "static") result.push("static");
 		else if (op_code.value == "this")
 		{
@@ -150,9 +153,16 @@ class TranslatorPHPExpression extends BaseObject
 	 */
 	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
 	{
-		OpIdentifier pattern = op_code.entity_name.items.last();
-		result.push(pattern.value);
-		this.OpCodeGenerics(op_code.generics, result);
+		string name = op_code.entity_name.getName();
+		if (this.translator.uses.has(name))
+		{
+			result.push("\\" ~ this.translator.getModuleName(this.translator.uses.get(name)));
+		}
+		else
+		{
+			OpIdentifier pattern = op_code.entity_name.items.last();
+			result.push(pattern.value);
+		}
 	}
 	
 	
@@ -169,39 +179,44 @@ class TranslatorPHPExpression extends BaseObject
 		}
 		int i = 0;
 		int items_count = op_code.items.count();
+		bool last_result = true;
 		while (i < items_count)
 		{
 			BaseOpCode op_code_item = op_code.items.get(i);
-			if (is_multiline)
-			{
-				result.push(this.translator.newLine());
-			}
+			Collection result1 = [];
 			
 			/* Preprocessor */
-			if (op_code_item instanceof OpPreprocessorIfDef)
+			bool is_result = false;
+			bool is_preprocessor = true;
+			if (op_code_item instanceof OpPreprocessorIfCode)
 			{
-				Collection<OpPreprocessorIfDef> items = [];
-				string condition = op_code_item.condition.value;
-				while (
-					op_code_item != null and
-					op_code_item instanceof OpPreprocessorIfDef and
-					op_code_item.condition.value == condition
-				)
-				{
-					items.push(op_code_item);
-					
-					/* Get next item */
-					i++;
-					op_code_item = op_code.items.get(i);
-				}
-				this.OpPreprocessorCollection(items, result);
-				continue;
+				is_result = this.translator.program.OpPreprocessorIfCode(op_code_item, result1);
+			}
+			else if (op_code_item instanceof OpPreprocessorIfDef)
+			{
+				is_result = this.translator.program.OpPreprocessorIfDef(
+					op_code_item, result1, OpPreprocessorIfDef::KIND_EXPRESSION
+				);
+			}
+			else if (op_code_item instanceof OpPreprocessorSwitch)
+			{
+				is_result = this.translator.program.OpPreprocessorSwitch(
+					op_code_item, result1, OpPreprocessorSwitch::KIND_EXPRESSION
+				);
 			}
 			
 			/* Translate item */
-			this.translate(op_code_item, result);
-			if (not(op_code_item instanceof OpPreprocessorIfDef))
+			else
 			{
+				is_preprocessor = false;
+				this.translate(op_code_item, result1);
+			}
+			
+			last_result = not is_preprocessor or is_result;
+			if (last_result)
+			{
+				if (is_multiline) result.push(this.translator.newLine());
+				result.appendItems(result1);
 				if (is_multiline) result.push(",");
 				else if (i < items_count - 1) result.push(", ");
 			}
@@ -214,25 +229,6 @@ class TranslatorPHPExpression extends BaseObject
 			result.push(this.translator.newLine());
 		}
 		result.push(")");
-	}
-	
-	
-	/**
-	 * Collection preprocessor
-	 */
-	void OpPreprocessorCollection(Collection<OpPreprocessorIfDef> items, Collection<string> result)
-	{
-		string condition = items.get(0).condition.value;
-		result.push("#ifdef " ~ condition ~ " then");
-		for (int i=0; i<items.count(); i++)
-		{
-			BaseOpCode op_code_item = items.get(i);
-			result.push(this.translator.newLine());
-			this.translate(op_code_item.items, result);
-			result.push(",");
-		}
-		result.push(this.translator.newLine());
-		result.push("#endif");
 	}
 	
 	
@@ -261,29 +257,22 @@ class TranslatorPHPExpression extends BaseObject
 		while (i < items_count)
 		{
 			OpDictPair op_code_item = op_code.items.get(i);
-			if (is_multiline)
-			{
-				result.push(this.translator.newLine());
-			}
 			
 			/* Preprocessor */
 			if (op_code_item.condition != null)
 			{
-				Collection<OpPreprocessorIfDef> items = [];
-				string condition = op_code_item.condition.value;
-				while (
-					op_code_item != null and
-					op_code_item.condition != null
-				)
+				string name = op_code_item.condition.value;
+				if (not this.translator.preprocessor_flags.has(name))
 				{
-					items.push(op_code_item);
-					
-					/* Get next item */
 					i++;
-					op_code_item = op_code.items.get(i);
+					continue;
 				}
-				this.OpPreprocessorDict(items, result);
-				continue;
+			}
+			
+			/* Add new line */
+			if (is_multiline)
+			{
+				result.push(this.translator.newLine());
 			}
 			
 			/* Translate item */
@@ -303,27 +292,6 @@ class TranslatorPHPExpression extends BaseObject
 			result.push(this.translator.newLine());
 		}
 		result.push("])");
-	}
-	
-	
-	/**
-	 * Dict preprocessor
-	 */
-	void OpPreprocessorDict(Collection<OpPreprocessorIfDef> items, Collection<string> result)
-	{
-		string condition = items.get(0).condition.value;
-		result.push("#ifdef " ~ condition ~ " then");
-		for (int i=0; i<items.count(); i++)
-		{
-			OpDictPair op_code_item = items.get(i);
-			result.push(this.translator.newLine());
-			result.push(this.translator.toString(op_code_item.key));
-			result.push(": ");
-			this.translate(op_code_item.value, result);
-			result.push(",");
-		}
-		result.push(this.translator.newLine());
-		result.push("#endif");
 	}
 	
 	
@@ -642,6 +610,10 @@ class TranslatorPHPExpression extends BaseObject
 		else if (op_code instanceof OpTernary)
 		{
 			this.OpTernary(op_code, result);
+		}
+		else if (op_code instanceof OpTypeIdentifier)
+		{
+			this.OpTypeIdentifier(op_code, result);
 		}
 	}
 	

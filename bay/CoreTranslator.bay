@@ -48,6 +48,17 @@ class CoreTranslator extends BaseObject
 	
 	
 	/**
+	 * Constructor
+	 */
+	void constructor()
+	{
+		parent();
+		this.uses.set("Collection", "Runtime.Collection");
+		this.uses.set("Dict", "Runtime.Dict");
+	}
+	
+	
+	/**
 	 * Get full entity name
 	 */
 	string getFullName(string class_name)

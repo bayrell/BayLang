@@ -81,8 +81,14 @@ class TranslatorPHPOperator extends BaseObject
 			{
 				this.translator.expression.OpIdentifier(op_code_item.value, result);
 			}
-			result.push(" = ");
-			this.translator.expression.translate(op_code_item.expression, result);
+			if (op_code_item.expression)
+			{
+				string op = op_code_item.op;
+				if (op == "~=") op = ".=";
+				else if (op == "") op = "=";
+				result.push(" " ~ op ~ " ");
+				this.translator.expression.translate(op_code_item.expression, result);
+			}
 			if (i != values_count - 1) result.push(";");
 		}
 		return flag;

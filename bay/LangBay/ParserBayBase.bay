@@ -339,7 +339,29 @@ class ParserBayBase extends BaseObject
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() != "]")
 		{
-			BaseOpCode op_code_item = this.parser.parser_expression.readExpression(reader);
+			if (reader.nextToken() == "/")
+			{
+				this.readComment(reader);
+				continue;
+			}
+			
+			BaseOpCode op_code_item = null;
+			
+			/* Prepocessor */
+			string next_token = reader.nextToken();
+			if (next_token == "#switch" or next_token == "#ifcode" or next_token == "#ifdef")
+			{
+				op_code_item = this.parser.parser_preprocessor.readPreprocessor(
+					reader, OpPreprocessorIfDef::KIND_EXPRESSION
+				);
+			}
+			
+			/* Expression */
+			else
+			{
+				op_code_item = this.parser.parser_expression.readExpression(reader);
+			}
+			
 			items.push(op_code_item);
 			if (reader.nextToken() == "," or reader.nextToken() != "]")
 			{
@@ -368,16 +390,41 @@ class ParserBayBase extends BaseObject
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() != "}")
 		{
+			if (reader.nextToken() == "/")
+			{
+				this.readComment(reader);
+				continue;
+			}
+			
+			bool is_preprocessor = false;
+			BaseOpCode condition = null;
+			
+			/* Prepocessor */
+			string next_token = reader.nextToken();
+			if (next_token == "#ifdef")
+			{
+				is_preprocessor = true;
+				reader.matchToken("#ifdef");
+				condition = this.parser.parser_expression.readExpression(reader);
+				reader.matchToken("then");
+			}
+			
 			OpString op_code_name = this.readString(reader);
 			reader.matchToken(":");
 			BaseOpCode op_code_item = this.parser.parser_expression.readExpression(reader);
+			
 			items.push(new OpDictPair{
 				"key": op_code_name,
 				"expression": op_code_item,
+				"condition": condition,
 			});
 			if (reader.nextToken() == "," or reader.nextToken() != "}")
 			{
 				reader.matchToken(",");
+			}
+			if (is_preprocessor)
+			{
+				reader.matchToken("#endif");
 			}
 		}
 		reader.matchToken("}");

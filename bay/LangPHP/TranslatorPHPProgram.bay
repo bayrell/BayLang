@@ -27,6 +27,7 @@ use BayLang.LangPHP.TranslatorPHP;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
@@ -65,7 +66,6 @@ class TranslatorPHPProgram extends BaseObject
 		result.push("namespace ");
 		result.push(this.translator.getModuleName(op_code.name));
 		result.push(";");
-		result.push(this.translator.newLine());
 	}
 	
 	
@@ -103,8 +103,32 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void OpAssign(OpAssign op_code, Collection<string> result)
 	{
-		this.translator.operator.OpAssign(op_code, result);
-		result.push(";");
+		bool last_result = false;
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			OpAssignValue op_code_item = op_code.items.get(i);
+			if (last_result)
+			{
+				result.push(this.translator.newLine());
+			}
+			if (op_code_item.value instanceof OpIdentifier)
+			{
+				result.push("var ");
+				this.translator.expression.OpIdentifier(op_code_item.value, result);
+			}
+			else
+			{
+				last_result = false;
+				continue;
+			}
+			if (op_code_item.expression)
+			{
+				result.push(" = ");
+				this.translator.expression.translate(op_code_item.expression, result);
+			}
+			result.push(";");
+			last_result = true;
+		}
 	}
 	
 	
@@ -161,6 +185,10 @@ class TranslatorPHPProgram extends BaseObject
 				{
 					this.translator.operator.translateItems(op_code.content, result, false);
 				}
+				else if (current_block == OpPreprocessorIfDef::KIND_EXPRESSION)
+				{
+					this.translator.expression.translate(op_code.content, result);
+				}
 				return true;
 			}
 		}
@@ -181,8 +209,11 @@ class TranslatorPHPProgram extends BaseObject
 			BaseOpCode item = op_code.items.get(i);
 			if (item instanceof OpPreprocessorIfCode)
 			{
-				if (this.OpPreprocessorIfCode(item, result))
+				Collection result1 = [];
+				if (this.OpPreprocessorIfCode(item, result1))
 				{
+					result.push(this.translator.newLine());
+					result.appendItems(result1);
 					last_result = true;
 				}
 			}
@@ -249,13 +280,10 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Function flags */
-		Collection<string> flags = ["static"];
-		flags = flags.filter(
-			bool (string flag_name) use (op_code) =>
-				op_code.flags ? op_code.flags.isFlag(flag_name) : false
-		);
-		result.push(rs::join(" ", flags));
-		if (flags.count() > 0) result.push(" ");
+		if (op_code.flags and (op_code.flags.isFlag("static") or op_code.flags.isFlag("pure")))
+		{
+			result.push("static ");
+		}
 		
 		/* Function name */
 		result.push("function " ~ op_code.name);
@@ -272,6 +300,15 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			result.push(";");
 			return;
+		}
+		
+		/* Variables */
+		if (op_code.vars and op_code.vars.count() > 0)
+		{
+			result.push(" use (");
+			Collection vars = op_code.vars.map(string (OpIdentifier item) => "&$" ~ item.value);
+			result.push(rs::join(", ", vars));
+			result.push(")");
 		}
 		
 		/* If content is empty */
@@ -335,7 +372,6 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		else if (op_code instanceof OpAssign)
 		{
-			result.push("var ");
 			this.OpAssign(op_code, result);
 		}
 		else if (op_code instanceof OpComment)
@@ -467,7 +503,7 @@ class TranslatorPHPProgram extends BaseObject
 		
 		/* Class name */
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
-			op_code.name;
+			op_code.name.entity_name.getName();
 		this.translator.uses.set(op_code.name, this.translator.current_class_name);
 		result.push(op_code.name.entity_name.items.last().value);
 		
@@ -571,7 +607,11 @@ class TranslatorPHPProgram extends BaseObject
 				}
 			}
 			else if (last_result) result.push(this.translator.newLine());
-			if (op_code_item instanceof OpUse) op_code_use_count++;
+			if (op_code_item instanceof OpUse)
+			{
+				if (op_code_use_count == 0) result.push(this.translator.newLine());
+				op_code_use_count++;
+			}
 			else op_code_use_count = 0;
 			last_result = this.translateItem(items.get(i), result);
 		}

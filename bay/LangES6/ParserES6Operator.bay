@@ -438,7 +438,9 @@ class ParserES6Operator extends BaseObject
 		}
 		
 		/* Read items */
-		if (reader.nextToken() != "=")
+		Collection operations = ["=", "+=", "-=", "~="];
+		string next_token = reader.nextToken();
+		if (operations.indexOf(next_token) == -1)
 		{
 			while (not reader.eof())
 			{
@@ -460,6 +462,7 @@ class ParserES6Operator extends BaseObject
 				
 				/* Add op_code */
 				items.push(new OpAssignValue{
+					"op": "=",
 					"value": value,
 					"expression": expression,
 					"caret_start": caret_value_start,
@@ -491,9 +494,10 @@ class ParserES6Operator extends BaseObject
 			this.parser.findVariable(value);
 			
 			/* Read expression */
-			reader.matchToken("=");
+			string op = reader.readToken();
 			BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
 			items.push(new OpAssignValue{
+				"op": op,
 				"value": value,
 				"expression": expression,
 				"caret_start": caret_start,
