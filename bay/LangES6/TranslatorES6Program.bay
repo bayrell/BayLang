@@ -78,6 +78,7 @@ class TranslatorES6Program extends BaseObject
 	void OpUse(OpUse op_code, Collection<string> result)
 	{
 		this.translator.uses.set(op_code.alias, op_code.name);
+		return false;
 	}
 	
 	
@@ -144,7 +145,7 @@ class TranslatorES6Program extends BaseObject
 		if (op_code.condition instanceof OpIdentifier)
 		{
 			string name = op_code.condition.value;
-			if (this.translator.preprocessor_flags.has(name))
+			if (this.translator.preprocessor_flags.get(name))
 			{
 				result.push(op_code.content);
 				return true;
@@ -164,11 +165,11 @@ class TranslatorES6Program extends BaseObject
 		if (op_code.condition instanceof OpIdentifier)
 		{
 			string name = op_code.condition.value;
-			if (this.translator.preprocessor_flags.has(name))
+			if (this.translator.preprocessor_flags.get(name))
 			{
 				if (current_block == OpPreprocessorIfDef::KIND_PROGRAM)
 				{
-					this.translate(op_code.content, result, false);
+					this.translate(op_code.content, result);
 				}
 				else if (current_block == OpPreprocessorIfDef::KIND_CLASS_BODY)
 				{
@@ -484,13 +485,15 @@ class TranslatorES6Program extends BaseObject
 		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return false;
 		if (op_code.is_abstract) return false;
 		
+		string class_name = op_code.name.entity_name.items.last().value;
 		this.translator.parent_class_name = "";
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
 			op_code.name.entity_name.getName();
 		
 		/* Class name */
 		result.push(this.translator.current_class_name ~ " = class");
-		this.translator.uses.set(op_code.name, this.translator.current_class_name);
+		this.translator.uses.set(class_name, this.translator.current_class_name);
+		this.translator.class_items.set(class_name, this.translator.current_class_name);
 		
 		/* Extends */
 		if (op_code.class_extends)
@@ -506,9 +509,17 @@ class TranslatorES6Program extends BaseObject
 		this.translateClassBody(op_code, result);
 		result.push(";");
 		
-		result.push(this.translator.newLine());
-		result.push("window[\"" ~ this.translator.current_class_name ~ "\"] = " ~
-			this.translator.current_class_name ~ ";");
+		if (this.translator.use_module_name)
+		{
+			result.push(this.translator.newLine());
+			result.push("use.add(" ~ this.translator.current_class_name ~ ");");
+		}
+		if (this.translator.use_window)
+		{
+			result.push(this.translator.newLine());
+			result.push("window[\"" ~ this.translator.current_class_name ~ "\"] = " ~
+				this.translator.current_class_name ~ ";");
+		}
 		
 		return true;
 	}
@@ -529,8 +540,7 @@ class TranslatorES6Program extends BaseObject
 		}
 		else if (op_code instanceof OpUse)
 		{
-			this.OpUse(op_code, result);
-			return false;
+			return this.OpUse(op_code, result);
 		}
 		else if (op_code instanceof OpPreprocessorIfCode)
 		{
@@ -587,15 +597,32 @@ class TranslatorES6Program extends BaseObject
 	
 	
 	/**
+	 * Add exports
+	 */
+	void addModuleExports(Collection<string> result)
+	{
+		result.push(this.translator.newLine());
+		result.push("module.exports = {");
+		this.translator.levelInc();
+		Collection keys = rtl::list(this.translator.class_items.keys());
+		for (int i=0; i<keys.count(); i++)
+		{
+			string class_name = keys.get(i);
+			result.push(this.translator.newLine());
+			result.push(this.translator.toString(class_name) ~ ": " ~
+				this.translator.uses.get(class_name));
+		}
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("};");
+	}
+	
+	
+	/**
 	 * Translate
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result, bool use_strict = true)
+	void translate(BaseOpCode op_code, Collection<string> result)
 	{
-		if (use_strict)
-		{
-			result.push('"use strict;"');
-			result.push(this.translator.newLine());
-		}
 		this.translateItems(op_code.items, result);
 	}
 }

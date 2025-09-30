@@ -18,60 +18,20 @@
 
 namespace BayLang.LangNode;
 
-use BayLang.LangES6.TranslatorES6;
-use BayLang.LangES6.TranslatorES6Expression;
-use BayLang.LangES6.TranslatorES6Operator;
 use BayLang.LangES6.TranslatorES6Program;
-use BayLang.OpCodes.OpDeclareClass;
-use BayLang.OpCodes.OpItems;
-use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpUse;
 
 
 static class TranslatorNodeProgram extends TranslatorES6Program
 {
-	
-	
 	/**
-	 * Translate program
+	 * OpUse
 	 */
-	pure list<TranslatorES6, string> translateProgramHeader(TranslatorES6 t, OpItems op_code)
+	void OpUse(OpUse op_code, Collection<string> result)
 	{
-		string content = "\"use strict;\"";
-		content ~= t.s("var use = require('bay-lang').use;");
-		return [t, content];
+		this.translator.uses.set(op_code.alias, op_code.name);
+		result.push("const " ~ op_code.alias ~ " = use(" ~
+			this.translator.toString(op_code.name) ~ ");");
+		return true;
 	}
-	
-	
-	
-	/**
-	 * OpDeclareClassFooter
-	 */
-	pure list<TranslatorES6, string> OpDeclareClassFooter(TranslatorES6 t, OpDeclareClass op_code)
-	{
-		string content = "";
-		string name = "";
-		
-		content ~= "use.add("~t.current_class_full_name~");";
-		
-		/*
-		content ~= t.s("if (module.exports == undefined) module.exports = {};");
-		Collection<string> arr = rs::split(".", t.current_namespace_name);
-		for (int i=0; i<arr.count(); i++)
-		{
-			name = name ~ ((i == 0) ? "" : ".") ~ arr.item(i);
-			string s = "if (module.exports." ~ name ~ " == undefined) module.exports." ~ name ~ " = {};";
-			content ~= (content == 0) ? s : t.s(s);
-		}
-		
-		content ~= t.s("module.exports." ~
-			t.current_class_full_name ~ " = " ~ t.current_class_full_name ~ ";");
-		*/
-		
-		content ~= t.s("module.exports = " ~ t.current_class_full_name ~ ";");
-		
-		return [t, content];
-	}
-	
-	
-	
 }

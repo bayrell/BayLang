@@ -22,7 +22,8 @@ use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
 use BayLang.Compiler.Module;
-use BayLang.Compiler.SettingsProvider;
+use BayLang.Compiler.Project;
+use BayLang.Compiler.ConsoleApp;
 
 
 class Modules extends BaseCommand
@@ -50,21 +51,17 @@ class Modules extends BaseCommand
 	
 	
 	/**
-	 * Returns modules
-	 */
-	static Dict<Module> getModules()
-	{
-		SettingsProvider settings = @.provider(classof SettingsProvider);
-		return settings.modules;
-	}
-	
-	
-	/**
 	 * Show modules
 	 */
 	static void showModules(bool verbose)
 	{
-		Dict<Module> modules = this.getModules();
+		Project project = await Project::readProject(@.base_path);
+		if (not project)
+		{
+			return;
+		}
+		
+		Dict<Module> modules = project.getModules();
 		Collection<string> modules_names = modules.keys().sort();
 		for (int i=0; i<modules_names.count(); i++)
 		{

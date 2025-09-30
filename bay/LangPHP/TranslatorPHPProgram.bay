@@ -151,7 +151,7 @@ class TranslatorPHPProgram extends BaseObject
 		if (op_code.condition instanceof OpIdentifier)
 		{
 			string name = op_code.condition.value;
-			if (this.translator.preprocessor_flags.has(name))
+			if (this.translator.preprocessor_flags.get(name))
 			{
 				result.push(op_code.content);
 				return true;
@@ -171,11 +171,11 @@ class TranslatorPHPProgram extends BaseObject
 		if (op_code.condition instanceof OpIdentifier)
 		{
 			string name = op_code.condition.value;
-			if (this.translator.preprocessor_flags.has(name))
+			if (this.translator.preprocessor_flags.get(name))
 			{
 				if (current_block == OpPreprocessorIfDef::KIND_PROGRAM)
 				{
-					this.translate(op_code.content, result, false);
+					this.translate(op_code.content, result);
 				}
 				else if (current_block == OpPreprocessorIfDef::KIND_CLASS_BODY)
 				{
@@ -502,10 +502,11 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Class name */
+		string class_name = op_code.name.entity_name.items.last().value;
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
 			op_code.name.entity_name.getName();
-		this.translator.uses.set(op_code.name, this.translator.current_class_name);
-		result.push(op_code.name.entity_name.items.last().value);
+		this.translator.uses.set(class_name, this.translator.current_class_name);
+		result.push(class_name);
 		
 		/* Template */
 		if (op_code.template)
@@ -621,13 +622,8 @@ class TranslatorPHPProgram extends BaseObject
 	/**
 	 * Translate
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result, bool use_php = true)
+	void translate(BaseOpCode op_code, Collection<string> result)
 	{
-		if (use_php)
-		{
-			result.push("<?php");
-			result.push(this.translator.newLine());
-		}
 		this.translateItems(op_code.items, result);
 	}
 }

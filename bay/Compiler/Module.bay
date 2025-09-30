@@ -16,51 +16,297 @@
  *  limitations under the License.
  */
 
-namespace BayLang.Compiler;
+namespace BayLang.Helper;
 
 use Runtime.fs;
 use Runtime.re;
-use Runtime.rs;
-use Runtime.BaseStruct;
+use Runtime.lib;
+use Runtime.BaseObject;
+use Runtime.Serialize.SerializeInterface;
+use Runtime.Serialize.Serializer;
+use BayLang.Helper.Cache;
+use BayLang.Helper.Project;
+use BayLang.Helper.RouteProcessor;
+use BayLang.Helper.Widget;
+use BayLang.Helper.WidgetProcessor;
+use BayLang.LangBay.ParserBay;
+use BayLang.LangES6.TranslatorES6;
+use BayLang.LangNode.TranslatorNode;
+use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.CoreTranslator;
+use BayLang.LangUtils;
 
 
-class Module extends BaseStruct
+class Module extends BaseObject implements SerializeInterface
 {
-	string name = "";
+	Project project = null;
+	bool is_exists = false;
 	string path = "";
-	Dict config = {};
+	string src_path = "";
+	Dict<string> dest_path = {};
+	string name = "";
+	Dict submodules = null;
+	Vector<string> allow = null;
+	Vector<string> assets = null;
+	Vector<Map> required_modules = null;
+	Vector<Map> routes = null;
+	Vector<string> groups = null;
+	Vector<Widget> widgets = null;
+	Vector<string> exclude = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(Project project)
+	{
+		parent();
+		this.project = project;
+	}
+	
+	
+	/**
+	 * Read module
+	 */
+	async void read(string module_path)
+	{
+		this.is_exists = false;
+		if (not(await fs::isFolder(this.path))) return;
+		
+		/* Module json file */
+		string module_json_path = this.path ~ "/" ~ "module.json";
+		if (not(await fs::isFile(module_json_path))) return;
+		
+		/* Read file */
+		string content = await fs::readFile(module_json_path);
+		Dict module_info = rtl::json_decode(content);
+		
+		if (not module_info) return;
+		if (not module_info.has("name")) return;
+		
+		this.is_exists = true;
+		this.name = module_info.get("name");
+		this.dest_path = module_info.get("dest");
+		this.src_path = module_info.get("src");
+		this.allow = module_info.get("allow");
+		this.assets = module_info.get("assets");
+		this.groups = module_info.get("groups");
+		this.required_modules = module_info.get("require");
+		this.submodules = module_info.get("modules");
+		this.exclude = module_info.get("exclude");
+	}
+	
+	
+	/**
+	 * Process project cache
+	 */
+	void serialize(Serializer serializer, Map data)
+	{
+		serializer.process(this, "is_exists", data);
+		serializer.process(this, "assets", data);
+		serializer.process(this, "groups", data);
+		serializer.process(this, "name", data);
+		serializer.process(this, "path", data);
+		serializer.process(this, "routes", data);
+		serializer.process(this, "dest_path", data);
+		serializer.process(this, "src_path", data);
+		serializer.process(this, "required_modules", data);
+		serializer.process(this, "submodules", data);
+		serializer.processItems(this, "widgets", data,
+			Widget (Dict widget) => new Widget(this)
+		);
+	}
+	
+	
+	/**
+	 * Returns true if module is exists
+	 */
+	void exists() => this.is_exists;
 	
 	
 	/**
 	 * Returns module path
 	 */
-	string getModulePath()
-	{
-		return this.path;
-	}
+	string getPath() => this.path;
 	
 	
 	/**
-	 * Returns source path
+	 * Returns module name
 	 */
-	string getSourcePath()
+	string getName() => this.name;
+	
+	
+	/**
+	 * Returns source folder path
+	 */
+	string getSourceFolderPath() =>
+		this.src_path ? fs::join([ this.getPath(), this.src_path ]) : null
+	;
+	
+	
+	/**
+	 * Returns dest folder path
+	 */
+	string getDestFolderPath(string lang)
 	{
-		string module_src = this.config["src"] |> default string "";
-		string module_src_path = fs::join([ this.path, module_src ]);
-		return rs::removeLastSlash(module_src_path);
+		if (not this.dest_path.has(lang)) return "";
+		return fs::join([ this.getPath(), this.dest_path.get(lang) ]);
 	}
 	
 	
 	/**
-	 * Has group
+	 * Returns relative source path
+	 */
+	string getRelativeSourcePath(string file_path)
+	{
+		string source_path = this.getSourceFolderPath();
+		if (not source_path) return null;
+		int source_path_sz = rs::strlen(source_path);
+		if (rs::substr(file_path, 0, source_path_sz) != source_path) return null;
+		return rs::addFirstSlash(rs::substr(file_path, source_path_sz));
+	}
+	
+	
+	/**
+	 * Returns true if module contains file
+	 */
+	bool checkFile(string file_full_path) => rs::indexOf(file_full_path, this.path) == 0;
+	
+	
+	/**
+	 * Check allow list
+	 */
+	bool checkAllow(string file_name)
+	{
+		if (not this.allow) return false;
+		
+		bool success = false;
+		for (int i=0; i<this.allow.count(); i++)
+		{
+			string file_match = this.allow.get(i);
+			if (file_match == "") continue;
+			
+			bool res = re::match(file_match, file_name);
+			
+			/* Ignore */
+			if (rs::charAt(file_match, 0) == "!")
+			{
+				if (res)
+				{
+					success = false;
+				}
+			}
+			
+			/* Allow */
+			else
+			{
+				if (res)
+				{
+					success = true;
+				}
+			}
+			
+		}
+		
+		return success;
+	}
+	
+	
+	/**
+	 * Check exclude
+	 */
+	bool checkExclude(string relative_src_file_path)
+	{
+		if (not this.exclude) return false;
+		for (int i=0; i<this.exclude.count(); i++)
+		{
+			string file_match = this.exclude.get(i);
+			if (file_match == "") continue;
+			
+			file_match = re::replace("\\/", "\\/", file_match);
+			bool res = re::match(file_match, relative_src_file_path);
+			if (res)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Returns class name file path
+	 */
+	string resolveClassName(string class_name)
+	{
+		/* Check if class name start with module name */
+		int module_name_sz = rs::strlen(this.getName());
+		if (rs::substr(class_name, 0, module_name_sz) != this.getName())
+		{
+			return "";
+		}
+		
+		/* Remove module name from class name */
+		class_name = rs::substr(class_name, module_name_sz);
+		
+		/* Return path to class name */
+		string path = this.getSourceFolderPath();
+		Vector<string> arr = rs::split(".", class_name);
+		arr.prepend(path);
+		return fs::join(arr) ~ ".bay";
+	}
+	
+	
+	/**
+	 * Resolve source path
+	 */
+	string resolveSourceFilePath(string relative_src_file_path) =>
+		fs::join([ this.getSourceFolderPath(), relative_src_file_path ])
+	;
+	
+	
+	/**
+	 * Resolve dest path
+	 */
+	string resolveDestFilePath(string relative_src_file_path, string lang)
+	{
+		string dest_folder_path = this.getDestFolderPath(lang);
+		if (dest_folder_path == "") return "";
+		
+		/* Get dest file path */
+		string dest_file_path = fs::join([ dest_folder_path, relative_src_file_path ]);
+		
+		/* Resolve extension */
+		if (lang == "php")
+		{
+			dest_file_path = re::replace("\\.bay$", ".php", dest_file_path);
+			dest_file_path = re::replace("\\.ui$", ".php", dest_file_path);
+		}
+		else if (lang == "es6")
+		{
+			dest_file_path = re::replace("\\.bay$", ".js", dest_file_path);
+			dest_file_path = re::replace("\\.ui$", ".js", dest_file_path);
+		}
+		else if (lang == "nodejs")
+		{
+			dest_file_path = re::replace("\\.bay$", ".js", dest_file_path);
+			dest_file_path = re::replace("\\.ui$", ".js", dest_file_path);
+		}
+		
+		return dest_file_path;
+	}
+	
+	
+	/**
+	 * Returns true if module has group
 	 */
 	bool hasGroup(string group_name)
 	{
 		if (rs::substr(group_name, 0, 1) != "@") return false;
 		group_name = rs::substr(group_name, 1);
-		Collection groups = this.config.get("groups");
-		if (groups == null) return false;
-		if (groups.indexOf(group_name) == -1) return false;
+		if (this.groups == null) return false;
+		if (this.groups.indexOf(group_name) == -1) return false;
 		return true;
 	}
 	
@@ -81,125 +327,116 @@ class Module extends BaseStruct
 	
 	
 	/**
-	 * Returns full source file.
-	 * Returns file_path
+	 * Compile file
 	 */
-	var resolveSourceFile(string file_name)
+	async bool compile(string relative_src_file_path)
 	{
-		string first_char = file_name[0];
-		if (first_char == "@")
-			return fs::join([ this.path, rs::substr(file_name, 1) ]);
+		/* Get src file path */
+		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
+		if (src_file_path == "") return false;
+		if (not this.checkFile(src_file_path)) return false;
 		
-		string path = this.getSourcePath();
-		return fs::join([ path, file_name ]);
+		/* Read file */
+		if (not(await fs::isFile(src_file_path))) return false;
+		string file_content = await fs::readFile(src_file_path);
+		
+		/* Parse file */
+		ParserBay parser = new ParserBay();
+		list res = parser::parse(parser, file_content);
+		BaseOpCode file_op_code = res.get(1);
+		if (not file_op_code) return false;
+		
+		/* Translate project languages */
+		this.translateLanguages(relative_src_file_path, file_op_code);
+		
+		return true;
 	}
 	
 	
 	/**
-	 * Resolve destination file
+	 * Translate file
 	 */
-	string resolveDestFile(string project_path, string relative_file_name, string lang)
+	async void translateLanguages(string relative_src_file_path, BaseOpCode op_code)
 	{
-		if (not this.config.has("dest")) return "";
-		if (not this.config.get("dest").has(lang)) return "";
-		
-		string dest = this.config["dest", lang] |> default string "";
-		string dest_path = "";
-		bool is_local = rs::substr(dest, 0, 2) == "./";
-		
-		if (is_local)
+		/* Translate project languages */
+		Collection languages = this.project.getLanguages();
+		for (int i=0; i<languages.count(); i++)
 		{
-			dest_path = fs::join([ this.path, dest, relative_file_name ]);
+			string lang = languages.get(i);
+			if (lang == "bay") continue;
+			await this.translate(relative_src_file_path, op_code, lang);
 		}
-		else
-		{
-			dest_path = fs::join([ project_path, dest, relative_file_name ]);
-		}
-		
-		if (lang == "php")
-		{
-			dest_path = re::replace("\\.bay$", ".php", dest_path);
-			dest_path = re::replace("\\.ui$", ".php", dest_path);
-		}
-		else if (lang == "es6")
-		{
-			dest_path = re::replace("\\.bay$", ".js", dest_path);
-			dest_path = re::replace("\\.ui$", ".js", dest_path);
-		}
-		else if (lang == "nodejs")
-		{
-			dest_path = re::replace("\\.bay$", ".js", dest_path);
-			dest_path = re::replace("\\.ui$", ".js", dest_path);
-		}
-		
-		return dest_path;
 	}
 	
 	
 	/**
-	 * Check exclude
+	 * Translate file
 	 */
-	bool checkExclude(string file_name)
+	async bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
 	{
-		Collection<string> module_excludelist = this.config["exclude"];
-		if (module_excludelist and module_excludelist instanceof Collection)
+		/* Get dest file path */
+		string dest_file_path = this.resolveDestFilePath(relative_src_file_path, lang);
+		if (dest_file_path == "") return false;
+		
+		/* Create translator */
+		CoreTranslator translator = LangUtils::createTranslator(lang);
+		if (not translator) return false;
+		
+		/* Translate */
+		list res = translator::translate(translator, op_code);
+		string dest_file_content = res.get(1);
+		
+		/* Create dest folder if not exists */
+		string dest_dir_name = rs::dirname(dest_file_path);
+		if (not await fs::isFolder(dest_dir_name))
 		{
-			for (int i=0; i<module_excludelist.count(); i++)
+			await fs::mkdir(dest_dir_name);
+		}
+		
+		/* Save file */
+		await fs::saveFile(dest_file_path, dest_file_content);
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Returns projects assets
+	 */
+	Collection<Dict> getProjectAssets()
+	{
+		Collection<Dict> project_assets = this.project.getAssets();
+		project_assets = project_assets.filter(
+			bool (Dict asset)
 			{
-				string file_match = module_excludelist[i] |> default string "";
-				if (file_match == "") continue;
+				if (not asset.has("modules")) return false;
 				
-				bool res = re::match(file_match, file_name);
+				/* Check module in modules names */
+				Collection modules = asset.get("modules");
+				if (not modules) return false;
+				if (not (modules instanceof Collection)) return false;
+				if (not this.inModuleList(modules)) return false;
 				
-				if (res)
-				{
-					return true;
-				}
+				return true;
 			}
-		}
-		
-		return false;
+		);
+		return project_assets;
 	}
 	
 	
 	/**
-	 * Check allow list
+	 * Update assets
 	 */
-	bool checkAllow(string file_name)
+	async void updateAssets()
 	{
-		bool success = false;
+		Collection languages = this.project.getLanguages();
+		if (languages.indexOf("es6") == -1) return;
 		
-		Collection<string> module_allowlist = this.config["allow"];
-		if (module_allowlist and module_allowlist instanceof Collection)
+		/* Builds assets with current module */
+		Collection<Dict> project_assets = this.getProjectAssets();
+		for (int i=0; i<project_assets.count(); i++)
 		{
-			for (int i=0; i<module_allowlist.count(); i++)
-			{
-				string file_match = module_allowlist[i] |> default string "";
-				if (file_match == "") continue;
-				
-				bool res = re::match(file_match, file_name);
-				
-				/* Ignore */
-				if (rs::charAt(file_match, 0) == "!")
-				{
-					if (res)
-					{
-						success = false;
-					}
-				}
-				
-				/* Allow */
-				else
-				{
-					if (res)
-					{
-						success = true;
-					}
-				}
-				
-			}
+			await this.project.buildAsset(project_assets.get(i));
 		}
-		
-		return success;
 	}
 }

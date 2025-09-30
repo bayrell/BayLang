@@ -25,10 +25,10 @@ use Runtime.Console.App;
 class ConsoleApp extends App
 {
 	/**
-	 * Init
+	 * Main entry point
 	 */
-	async void init()
+	async int main()
 	{
-		/*new SettingsProvider();*/
+		return await parent();
 	}
 }

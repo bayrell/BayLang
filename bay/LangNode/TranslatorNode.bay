@@ -22,11 +22,6 @@ use Runtime.BaseStruct;
 use BayLang.CoreTranslator;
 use BayLang.SaveOpCode;
 use BayLang.LangES6.TranslatorES6;
-use BayLang.LangES6.TranslatorES6AsyncAwait;
-use BayLang.LangES6.TranslatorES6Expression;
-use BayLang.LangES6.TranslatorES6Html;
-use BayLang.LangES6.TranslatorES6Operator;
-use BayLang.LangES6.TranslatorES6Program;
 use BayLang.LangNode.TranslatorNodeExpression;
 use BayLang.LangNode.TranslatorNodeProgram;
 use BayLang.OpCodes.BaseOpCode;
@@ -34,44 +29,44 @@ use BayLang.OpCodes.BaseOpCode;
 
 struct TranslatorNode extends TranslatorES6
 {
-	/* Translators */
-	TranslatorES6AsyncAwait async_await = null;
-	TranslatorES6Expression expression = null;
-	TranslatorES6Html html = null;
-	TranslatorES6Operator operator = null;
-	TranslatorES6Program program = null;
+	TranslatorNodeExpression expression = new TranslatorNodeExpression(this);
+	TranslatorNodeProgram program = new TranslatorNodeProgram(this);
 	
 	/* Flags */
 	bool use_module_name = true;
-	bool enable_async_await = true;
-	bool emulate_async_await = false;
-	bool enable_introspection = false;
-	bool enable_context = true;
+	bool use_window = false;
 	
 	
 	/**
-	 * Reset translator
+	 * Constructor
 	 */
-	pure TranslatorES6 reset(TranslatorES6 t)
+	void constructor()
 	{
-		t = parent::reset(t);
-		t <= expression <= new TranslatorNodeExpression();
-		t <= program <= new TranslatorNodeProgram();
-		t <= preprocessor_flags <= t.preprocessor_flags.concat({
-			"BACKEND": true,
-			"NODEJS": true,
-			"ES6": false,
-		});
-		return t;
+		parent();
+		this.preprocessor_flags.set("ES6", false);
+		this.preprocessor_flags.set("NODEJS", true);
 	}
-	
 	
 	
 	/**
 	 * Translate BaseOpCode
 	 */
-	pure list<TranslatorES6, string> translate(TranslatorES6 t, BaseOpCode op_code)
+	string translate(BaseOpCode op_code)
 	{
-		return t.program::translateProgram(t, op_code);
+		Collection<string> result = [];
+		result.push('"use strict;"');
+		result.push(this.newLine());
+		result.push("const use = require('bay-lang').use;");
+		result.push(this.newLine());
+		result.push("const {rtl, rs} = use.rtl();");
+		result.push(this.newLine());
+		
+		/* Translate program */
+		this.program.translate(op_code, result);
+		
+		/* Add export */
+		this.program.addModuleExports(result);
+		
+		return rs::join("", result);
 	}
 }

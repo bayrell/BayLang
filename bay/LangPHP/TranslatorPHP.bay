@@ -82,6 +82,8 @@ class TranslatorPHP extends CoreTranslator
 		}
 		else
 		{
+			content.push("<?php");
+			content.push(this.newLine());
 			this.program.translate(op_code, content);
 		}
 		return rs::join("", content);

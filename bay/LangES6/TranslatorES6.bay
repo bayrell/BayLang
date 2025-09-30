@@ -39,6 +39,9 @@ class TranslatorES6 extends CoreTranslator
 	TranslatorES6Program program = new TranslatorES6Program(this);
 	TranslatorES6Html html = new TranslatorES6Html(this);
 	
+	/* Flags */
+	bool use_module_name = false;
+	bool use_window = true;
 	
 	/**
 	 * Constructor
@@ -71,6 +74,8 @@ class TranslatorES6 extends CoreTranslator
 	string translate(BaseOpCode op_code)
 	{
 		Collection<string> content = [];
+		content.push('"use strict;"');
+		content.push(this.newLine());
 		this.program.translate(op_code, content);
 		return rs::join("", content);
 	}

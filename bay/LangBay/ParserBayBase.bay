@@ -238,6 +238,17 @@ class ParserBayBase extends BaseObject
 	
 	
 	/**
+	 * Skip comment
+	 */
+	bool skipComment(TokenReader reader)
+	{
+		if (reader.nextToken() != "/") return false;
+		this.readComment(reader);
+		return true;
+	}
+	
+	
+	/**
 	 * Read identifier
 	 */
 	OpIdentifier readIdentifier(TokenReader reader)
@@ -339,9 +350,8 @@ class ParserBayBase extends BaseObject
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() != "]")
 		{
-			if (reader.nextToken() == "/")
+			if (this.skipComment())
 			{
-				this.readComment(reader);
 				continue;
 			}
 			

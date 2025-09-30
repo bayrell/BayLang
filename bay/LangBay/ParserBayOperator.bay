@@ -230,8 +230,10 @@ class ParserBayOperator extends BaseObject
 		
 		/* Read content */
 		if_true = this.readContent(reader);
+		this.parser.parser_base.skipComment(reader);
 		
 		/* Read content */
+		Caret caret_last = null;
 		Collection operations = ["else", "elseif"];
 		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
 		{
@@ -260,7 +262,12 @@ class ParserBayOperator extends BaseObject
 			{
 				if_false = this.readContent(reader);
 			}
+			caret_last = reader.caret();
+			this.parser.parser_base.skipComment(reader);
 		}
+		
+		/* Restore caret */
+		if (caret_last) reader.init(caret_last);
 		
 		return new OpIf
 		{

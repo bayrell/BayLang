@@ -31,76 +31,22 @@ use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
-static class TranslatorNodeExpression extends TranslatorES6Expression
+class TranslatorNodeExpression extends TranslatorES6Expression
 {
-	
-	
-	/**
-	 * OpIdentifier
-	 */
-	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
-	{
-		if (op_code.value == "@") return [t, "ctx"];
-		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
-		if (op_code.value == "log") return [t, "console.log"];
-		
-		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
-		{
-			string module_name = op_code.value;
-			string new_module_name = static::findModuleName(t, module_name);
-			if (module_name != new_module_name)
-			{
-				list res = t::addSaveOpCode
-				(
-					t,
-					{
-						"op_code": op_code,
-						"var_content": static::useModuleName(t, module_name),
-					}
-				);
-				t = res[0];
-				string var_name = res[1];
-				return [t, var_name];
-			}
-		}
-		
-		return [t, op_code.value];
-	}
-	
-	
-	
 	/**
 	 * OpTypeIdentifier
 	 */
-	pure list<TranslatorES6, string> OpTypeIdentifier(TranslatorES6 t, OpTypeIdentifier op_code)
+	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
 	{
-		string var_name = "";
-		
-		if (op_code.entity_name.names.count() > 0)
+		string name = op_code.entity_name.getName();
+		if (this.translator.uses.has(name))
 		{
-			string module_name = op_code.entity_name.names.first();
-			string new_module_name = static::findModuleName(t, module_name);
-			if (module_name != new_module_name)
-			{
-				list res = t::addSaveOpCode
-				(
-					t,
-					{
-						"var_content": static::useModuleName(t, module_name),
-					}
-				);
-				t = res[0];
-				var_name = res[1];
-			}
+			result.push(name);
 		}
-		
-		if (var_name == "")
+		else
 		{
-			var_name = rs::join(".", op_code.entity_name.names);
+			OpIdentifier pattern = op_code.entity_name.items.last();
+			result.push(pattern.value);
 		}
-		
-		return [t, var_name];
 	}
-	
-	
 }
