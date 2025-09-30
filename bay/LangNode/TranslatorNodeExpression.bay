@@ -40,7 +40,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	 */
 	pure list<TranslatorES6, string> OpIdentifier(TranslatorES6 t, OpIdentifier op_code)
 	{
-		if (op_code.value == "@") return [t, "ctx"];
+		if (op_code.value == "@") return [t, "use(\"Runtime.rtl\").getContext()"];
 		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
 		if (op_code.value == "log") return [t, "console.log"];
 		
