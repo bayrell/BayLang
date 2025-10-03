@@ -18,7 +18,6 @@
 
 namespace BayLang.Compiler.Commands;
 
-use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
 use BayLang.Compiler.Module;
@@ -53,7 +52,7 @@ class Modules extends BaseCommand
 	/**
 	 * Show modules
 	 */
-	static void showModules(bool verbose)
+	async static void showModules(bool verbose)
 	{
 		Project project = await Project::readProject(@.base_path);
 		if (not project)
@@ -62,22 +61,22 @@ class Modules extends BaseCommand
 		}
 		
 		Dict<Module> modules = project.getModules();
-		Collection<string> modules_names = modules.keys().sort();
+		Collection<string> modules_names = rtl::list(modules.keys()).sort();
 		for (int i=0; i<modules_names.count(); i++)
 		{
 			string module_name = modules_names[i];
-			Module module = modules[module_name];
+			Module module = modules.get(module_name);
 			
 			if (verbose)
 			{
-				io::print( (i + 1) ~ ") " ~
-					io::color("yellow", module_name) ~ " - " ~
+				rtl::print( (i + 1) ~ ") " ~
+					rtl::color("yellow", module_name) ~ " - " ~
 					module.path
 				);
 			}
 			else
 			{
-				io::print( module_name );
+				rtl::print(module_name);
 			}
 		}
 	}

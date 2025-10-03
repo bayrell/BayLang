@@ -25,6 +25,7 @@ use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpPreprocessorIfCode;
 use BayLang.OpCodes.OpPreprocessorIfDef;
 use BayLang.OpCodes.OpPreprocessorSwitch;
@@ -153,6 +154,25 @@ class ParserBayPreprocessor extends BaseObject
 		else if (current_block == OpPreprocessorIfDef::KIND_OPERATOR)
 		{
 			content = this.parser.parser_operator.parse(reader, false);
+		}
+		else if (current_block == OpPreprocessorIfDef::KIND_COLLECTION)
+		{
+			Collection items = [];
+			while (not reader.eof() and reader.nextToken() != "#endif")
+			{
+				BaseOpCode op_code_item = this.parser.parser_expression.readExpression(reader);
+				items.push(op_code_item);
+				if (reader.nextToken() == "," or reader.nextToken() != "#endif")
+				{
+					reader.matchToken(",");
+				}
+			}
+			content = new OpItems
+			{
+				"items": items,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			};
 		}
 		else if (current_block == OpPreprocessorIfDef::KIND_EXPRESSION)
 		{

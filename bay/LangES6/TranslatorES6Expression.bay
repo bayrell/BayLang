@@ -184,13 +184,13 @@ class TranslatorES6Expression extends BaseObject
 			else if (op_code_item instanceof OpPreprocessorIfDef)
 			{
 				is_result = this.translator.program.OpPreprocessorIfDef(
-					op_code_item, result1, OpPreprocessorIfDef::KIND_EXPRESSION
+					op_code_item, result1, OpPreprocessorIfDef::KIND_COLLECTION
 				);
 			}
 			else if (op_code_item instanceof OpPreprocessorSwitch)
 			{
 				is_result = this.translator.program.OpPreprocessorSwitch(
-					op_code_item, result1, OpPreprocessorSwitch::KIND_EXPRESSION
+					op_code_item, result1, OpPreprocessorSwitch::KIND_COLLECTION
 				);
 			}
 			
@@ -327,8 +327,23 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpClassOf(OpClassOf op_code, Collection<string> result)
 	{
-		result.push("classof ");
-		result.push(op_code.entity_name.names.last());
+		if (op_code.entity_name.items.count() == 1)
+		{
+			OpIdentifier item = op_code.entity_name.items.last();
+			string name = item.value;
+			if (this.translator.uses.has(name))
+			{
+				result.push(this.translator.toString(this.translator.uses.get(name)));
+			}
+			else
+			{
+				result.push(this.translator.toString(name));
+			}
+		}
+		else
+		{
+			result.push(this.translator.toString(op_code.entity_name.getName()));
+		}
 	}
 	
 	

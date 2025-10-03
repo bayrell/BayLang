@@ -49,6 +49,7 @@ class TranslatorES6 extends CoreTranslator
 	void constructor()
 	{
 		parent();
+		this.preprocessor_flags.set("FRONTEND", true);
 		this.preprocessor_flags.set("ES6", true);
 		this.preprocessor_flags.set("JAVASCRIPT", true);
 	}

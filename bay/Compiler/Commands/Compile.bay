@@ -19,7 +19,6 @@
 namespace BayLang.Compiler.Commands;
 
 use Runtime.fs;
-use Runtime.io;
 use Runtime.Callback;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
@@ -56,26 +55,26 @@ class Compile extends BaseCommand
 		/* Check command */
 		if (not command)
 		{
-			io::print("Print <command> <src> <dest>");
-			io::print("Command: bay_to_php, bay_to_es6, php_to_bay, php_to_es6, es6_to_bay, es6_to_php")
+			rtl::print("Print <command> <src> <dest>");
+			rtl::print("Command: bay_to_php, bay_to_es6, php_to_bay, php_to_es6, es6_to_bay, es6_to_php")
 			return static::FAIL;
 		}
 		
 		/* Check src */
 		if (not src_file_name)
 		{
-			io::print_error("Print src file name");
+			rtl::print_error("Print src file name");
 			return static::FAIL;
 		}
 		
 		/* Check dest */
 		if (not dest_file_name)
 		{
-			io::print_error("Print dest file name");
+			rtl::print_error("Print dest file name");
 			return static::FAIL;
 		}
 		
-		io::print("Convert " ~ src_file_name ~ " to " ~ dest_file_name);
+		rtl::print("Convert " ~ src_file_name ~ " to " ~ dest_file_name);
 		
 		Dict res = LangUtils::parseCommand(command);
 		CoreParser parser = LangUtils::createParser(res.get("from"));
@@ -84,7 +83,7 @@ class Compile extends BaseCommand
 		/* Check file exists */
 		if (not await fs::isFile(src_file_name))
 		{
-			io::print_error("File not found");
+			rtl::print_error("File not found");
 			return static::FAIL;
 		}
 		
@@ -102,7 +101,7 @@ class Compile extends BaseCommand
 		}
 		catch (ParserError error)
 		{
-			io::print_error(error.toString());
+			rtl::print_error(error.toString());
 			return static::FAIL;
 		}
 		
@@ -110,7 +109,7 @@ class Compile extends BaseCommand
 		await fs::saveFile(dest_file_name, output);
 		
 		/* Return result */
-		io::print("Ok");
+		rtl::print("Ok");
 		return static::SUCCESS;
 	}
 }

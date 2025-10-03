@@ -195,6 +195,22 @@ class ParserBayFunction extends BaseObject
 	{
 		Caret caret_start = reader.start();
 		
+		/* Read async */
+		bool is_async = false;
+		if (reader.nextToken() == "async")
+		{
+			reader.matchToken("async");
+		}
+		OpFlags flags = new OpFlags
+		{
+			"items": {
+				"async": is_async
+			},
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+		
+		/* Read function name */
 		string name = "";
 		BaseOpCode content = null;
 		BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
@@ -227,6 +243,7 @@ class ParserBayFunction extends BaseObject
 		return new OpDeclareFunction
 		{
 			"args": args,
+			"flags": flags,
 			"name": name,
 			"vars": vars,
 			"pattern": pattern,
@@ -246,6 +263,7 @@ class ParserBayFunction extends BaseObject
 		bool error = false;
 		try
 		{
+			if (reader.nextToken() == "async") reader.matchToken("async");
 			BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
 			if (read_name) this.parser.parser_base.readIdentifier(reader);
 			

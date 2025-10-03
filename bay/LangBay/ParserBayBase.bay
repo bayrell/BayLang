@@ -318,15 +318,19 @@ class ParserBayBase extends BaseObject
 		if (reader.nextToken() == "<" and read_generic)
 		{
 			reader.matchToken("<");
-			while (not reader.eof() and reader.nextToken() != ">")
+			reader.main_caret.skipSpace();
+			while (not reader.eof() and reader.main_caret.nextChar() != ">")
 			{
 				generics.push(this.readTypeIdentifier(reader, false));
-				if (reader.nextToken() != ">")
+				reader.main_caret.skipSpace();
+				reader.init(reader.main_caret);
+				if (reader.main_caret.nextChar() != ">")
 				{
 					reader.matchToken(",");
 				}
 			}
-			reader.matchToken(">");
+			reader.main_caret.matchString(">");
+			reader.init(reader.main_caret);
 		}
 		
 		return new OpTypeIdentifier
@@ -350,7 +354,7 @@ class ParserBayBase extends BaseObject
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() != "]")
 		{
-			if (this.skipComment())
+			if (this.skipComment(reader))
 			{
 				continue;
 			}
@@ -362,7 +366,7 @@ class ParserBayBase extends BaseObject
 			if (next_token == "#switch" or next_token == "#ifcode" or next_token == "#ifdef")
 			{
 				op_code_item = this.parser.parser_preprocessor.readPreprocessor(
-					reader, OpPreprocessorIfDef::KIND_EXPRESSION
+					reader, OpPreprocessorIfDef::KIND_COLLECTION
 				);
 			}
 			
@@ -551,8 +555,17 @@ class ParserBayBase extends BaseObject
 		
 		reader.matchToken("new");
 		OpTypeIdentifier pattern = this.readTypeIdentifier(reader);
-		Collection<OpDeclareFunctionArg> args =
-			this.parser.parser_function.readFunctionArgs(reader);
+		Collection<OpDeclareFunctionArg> args = [];
+		
+		if (reader.nextToken() == "{")
+		{
+			BaseOpCode item = this.readDict(reader);
+			args = [item];
+		}
+		else
+		{
+			args = this.parser.parser_function.readFunctionArgs(reader);
+		}
 		
 		return new OpNew
 		{
@@ -777,26 +790,19 @@ class ParserBayBase extends BaseObject
 	/**
 	 * Read classof
 	 */
-	pure list<ParserBay, BaseOpCode> readClassOf(ParserBay parser)
+	BaseOpCode readClassOf(TokenReader reader)
 	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode op_code = null;
+		Caret caret_start = reader.start();
 		
-		list res = static::matchToken(parser, "classof"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
+		reader.matchToken("classof");
+		OpEntityName entity_name = this.readEntityName(reader);
 		
-		list res = static::readEntityName(parser); parser = res[0]; op_code = res[1];
-		return 
-		[
-			parser,
-			new OpClassOf
-			{
-				"entity_name": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
+		return new OpClassOf
+		{
+			"entity_name": entity_name,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -846,6 +852,10 @@ class ParserBayBase extends BaseObject
 		else if (next_token == "new")
 		{
 			return this.readNew(reader);
+		}
+		else if (next_token == "classof")
+		{
+			return this.readClassOf(reader);
 		}
 		return this.readIdentifier(reader);
 	}

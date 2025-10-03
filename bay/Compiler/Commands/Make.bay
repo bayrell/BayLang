@@ -18,11 +18,14 @@
 
 namespace BayLang.Compiler.Commands;
 
-use Runtime.io;
+use Runtime.fs;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
+use BayLang.Compiler.Module;
+use BayLang.Compiler.Project;
 use BayLang.Compiler.Commands.Modules;
 use BayLang.Compiler.SettingsProvider;
+use BayLang.Exceptions.ParserUnknownError;
 
 
 class Make extends BaseCommand
@@ -47,18 +50,86 @@ class Make extends BaseCommand
 		string module_name = @.cli_args[2];
 		string lang = @.cli_args[3];
 		
-		if (rtl::isEmpty(module_name))
+		if (not module_name)
 		{
 			Modules::showModules();
 			return 0;
 		}
 		
-		/* Compile module */
-		SettingsProvider settings = @.provider(classof SettingsProvider);
-		bool result = await settings.compileModule(module_name, lang);
-		if (not result)
+		/* Read project */
+		Project project = await Project::readProject(@.base_path);
+		if (not project)
 		{
-			return static::FAIL;
+			rtl::error("Project not found");
+			return;
+		}
+		
+		/* Get module */
+		Module module = project.getModule(module_name);
+		if (not module)
+		{
+			rtl::error("Module not found");
+			return;
+		}
+		
+		/* Compile module */
+		bool is_success = true;
+		string module_src_path = module.getSourceFolderPath();
+		Collection<string> files = await fs::listDirRecursive(module_src_path);
+		for (int i=0; i<files.count(); i++)
+		{
+			string file_name = files[i];
+			string file_path = fs::join([ module_src_path, file_name ]);
+			
+			/* Detect is file */
+			if (not await fs::isFile(file_path))
+			{
+				continue;
+			}
+			
+			/* Check if not exclude */
+			if (module.checkExclude(file_name))
+			{
+				continue;
+			}
+			
+			/* Compile */
+			try
+			{
+				string extension = rs::extname(file_name);
+				if (extension == "bay")
+				{
+					rtl::print(file_name);
+					await module.compile(file_name, lang);
+				}
+			}
+			catch (ParserUnknownError e)
+			{
+				rtl::error(e.toString());
+				is_success = false;
+			}
+			catch (var e)
+			{
+				rtl::error(e);
+				is_success = false;
+			}
+		}
+		
+		if (not is_success)
+		{
+			return static::ERROR;
+		}
+		
+		Collection languages = project.getLanguages();
+		if (languages.indexOf("es6") != -1)
+		{
+			Collection<Dict> project_assets = module.getProjectAssets();
+			for (int i=0; i<project_assets.count(); i++)
+			{
+				Dict asset_item = project_assets.get(i);
+				await project.buildAsset(asset_item);
+				rtl::print("Bundle to => " ~ asset_item.get("dest"));
+			}
 		}
 		
 		return static::SUCCESS;

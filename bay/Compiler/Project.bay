@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace BayLang.Helper;
+namespace BayLang.Compiler;
 
 use Runtime.fs;
 use Runtime.lib;
@@ -50,7 +50,7 @@ class Project extends BaseObject implements SerializeInterface
 	{
 		Project project = new Project();
 		await project.read(project_path);
-		if (not this.exists()) return null;
+		if (not project.exists()) return null;
 		await project.readModules();
 		return project;
 	}
@@ -69,7 +69,7 @@ class Project extends BaseObject implements SerializeInterface
 		
 		/* Read file */
 		string content = await fs::readFile(project_json_path);
-		this.info = rtl::json_decode(content);
+		this.info = rtl::jsonDecode(content);
 	}
 	
 	
@@ -398,11 +398,11 @@ class Project extends BaseObject implements SerializeInterface
 	 */
 	async void buildAsset(Dict asset)
 	{
-		string asset_path_relative = asset["dest"] |> default string "";
+		string asset_path_relative = asset.get("dest");
 		if (asset_path_relative == "") return;
 		
 		/* Get asset dest path */
-		string asset_path = fs::join([ this.path, asset_path_relative ]);
+		string asset_path = fs::join([this.path, asset_path_relative]);
 		string asset_content = "";
 		
 		/* Get modules names in asset */

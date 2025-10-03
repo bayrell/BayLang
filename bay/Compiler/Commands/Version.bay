@@ -18,7 +18,6 @@
 
 namespace BayLang.Compiler.Commands;
 
-use Runtime.io;
 use Runtime.Callback;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
@@ -46,8 +45,8 @@ class Version extends BaseCommand
 		Callback runtime_version = new Callback("Runtime.ModuleDescription", "getModuleVersion");
 		Callback lang_version = new Callback("BayLang.ModuleDescription", "getModuleVersion");
 		
-		io::print("Lang version: " ~ lang_version.apply());
-		io::print("Runtime version: " ~ runtime_version.apply());
+		rtl::print("Lang version: " ~ lang_version.apply());
+		rtl::print("Runtime version: " ~ runtime_version.apply());
 		
 		return static::SUCCESS;
 	}

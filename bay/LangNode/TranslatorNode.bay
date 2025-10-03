@@ -43,6 +43,7 @@ struct TranslatorNode extends TranslatorES6
 	void constructor()
 	{
 		parent();
+		this.preprocessor_flags.set("BACKEND", true);
 		this.preprocessor_flags.set("ES6", false);
 		this.preprocessor_flags.set("NODEJS", true);
 	}

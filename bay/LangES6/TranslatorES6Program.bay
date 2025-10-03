@@ -179,6 +179,16 @@ class TranslatorES6Program extends BaseObject
 				{
 					this.translator.operator.translateItems(op_code.content, result, false);
 				}
+				else if (current_block == OpPreprocessorIfDef::KIND_COLLECTION)
+				{
+					for (int i=0; i<op_code.content.items.count(); i++)
+					{
+						BaseOpCode op_code_item = op_code.content.items.get(i);
+						if (i > 0) result.push(this.translator.newLine());
+						this.translator.expression.translate(op_code_item, result);
+						if (i < op_code.content.items.count() - 1) result.push(",");
+					}
+				}
 				else if (current_block == OpPreprocessorIfDef::KIND_EXPRESSION)
 				{
 					this.translator.expression.translate(op_code.content, result);

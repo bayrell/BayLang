@@ -16,7 +16,7 @@
  *  limitations under the License.
  */
 
-namespace BayLang.Helper;
+namespace BayLang.Compiler;
 
 use Runtime.fs;
 use Runtime.re;
@@ -24,11 +24,7 @@ use Runtime.lib;
 use Runtime.BaseObject;
 use Runtime.Serialize.SerializeInterface;
 use Runtime.Serialize.Serializer;
-use BayLang.Helper.Cache;
-use BayLang.Helper.Project;
-use BayLang.Helper.RouteProcessor;
-use BayLang.Helper.Widget;
-use BayLang.Helper.WidgetProcessor;
+use BayLang.Compiler.Project;
 use BayLang.LangBay.ParserBay;
 use BayLang.LangES6.TranslatorES6;
 use BayLang.LangNode.TranslatorNode;
@@ -52,7 +48,6 @@ class Module extends BaseObject implements SerializeInterface
 	Vector<Map> required_modules = null;
 	Vector<Map> routes = null;
 	Vector<string> groups = null;
-	Vector<Widget> widgets = null;
 	Vector<string> exclude = null;
 	
 	
@@ -72,6 +67,7 @@ class Module extends BaseObject implements SerializeInterface
 	async void read(string module_path)
 	{
 		this.is_exists = false;
+		this.path = module_path;
 		if (not(await fs::isFolder(this.path))) return;
 		
 		/* Module json file */
@@ -80,7 +76,7 @@ class Module extends BaseObject implements SerializeInterface
 		
 		/* Read file */
 		string content = await fs::readFile(module_json_path);
-		Dict module_info = rtl::json_decode(content);
+		Dict module_info = rtl::jsonDecode(content);
 		
 		if (not module_info) return;
 		if (not module_info.has("name")) return;
@@ -113,9 +109,6 @@ class Module extends BaseObject implements SerializeInterface
 		serializer.process(this, "src_path", data);
 		serializer.process(this, "required_modules", data);
 		serializer.process(this, "submodules", data);
-		serializer.processItems(this, "widgets", data,
-			Widget (Dict widget) => new Widget(this)
-		);
 	}
 	
 	
@@ -329,7 +322,7 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Compile file
 	 */
-	async bool compile(string relative_src_file_path)
+	async bool compile(string relative_src_file_path, string lang = "")
 	{
 		/* Get src file path */
 		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
@@ -342,12 +335,12 @@ class Module extends BaseObject implements SerializeInterface
 		
 		/* Parse file */
 		ParserBay parser = new ParserBay();
-		list res = parser::parse(parser, file_content);
-		BaseOpCode file_op_code = res.get(1);
+		parser.setContent(file_content);
+		BaseOpCode file_op_code = parser.parse();
 		if (not file_op_code) return false;
 		
 		/* Translate project languages */
-		this.translateLanguages(relative_src_file_path, file_op_code);
+		this.translateLanguages(relative_src_file_path, file_op_code, lang);
 		
 		return true;
 	}
@@ -356,15 +349,26 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Translate file
 	 */
-	async void translateLanguages(string relative_src_file_path, BaseOpCode op_code)
+	async void translateLanguages(
+		string relative_src_file_path, BaseOpCode op_code, string dest_lang = ""
+	)
 	{
-		/* Translate project languages */
-		Collection languages = this.project.getLanguages();
-		for (int i=0; i<languages.count(); i++)
+		/* Translate to destination language */
+		if (dest_lang != "")
 		{
-			string lang = languages.get(i);
-			if (lang == "bay") continue;
-			await this.translate(relative_src_file_path, op_code, lang);
+			await this.translate(relative_src_file_path, op_code, dest_lang);
+		}
+		
+		/* Translate project languages */
+		else
+		{
+			Collection languages = this.project.getLanguages();
+			for (int i=0; i<languages.count(); i++)
+			{
+				string lang = languages.get(i);
+				if (lang == "bay") continue;
+				await this.translate(relative_src_file_path, op_code, lang);
+			}
 		}
 	}
 	
@@ -383,8 +387,7 @@ class Module extends BaseObject implements SerializeInterface
 		if (not translator) return false;
 		
 		/* Translate */
-		list res = translator::translate(translator, op_code);
-		string dest_file_content = res.get(1);
+		string dest_file_content = translator.translate(op_code);
 		
 		/* Create dest folder if not exists */
 		string dest_dir_name = rs::dirname(dest_file_path);
@@ -414,7 +417,7 @@ class Module extends BaseObject implements SerializeInterface
 				/* Check module in modules names */
 				Collection modules = asset.get("modules");
 				if (not modules) return false;
-				if (not (modules instanceof Collection)) return false;
+				if (not (rtl::isCollection(modules))) return false;
 				if (not this.inModuleList(modules)) return false;
 				
 				return true;
