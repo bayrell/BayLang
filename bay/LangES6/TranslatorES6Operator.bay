@@ -725,12 +725,12 @@ struct TranslatorES6Operator extends BaseStruct
 		else if (op_code instanceof OpFor)
 		{
 			list res = static::OpFor(t, op_code); t = res[0]; content = res[1];
-			t <= save_op_code_inc <= save_op_code_inc;
+			/*t <= save_op_code_inc <= save_op_code_inc;*/
 		}
 		else if (op_code instanceof OpIf)
 		{
 			list res = static::OpIf(t, op_code); t = res[0]; content = res[1];
-			t <= save_op_code_inc <= save_op_code_inc;
+			/*t <= save_op_code_inc <= save_op_code_inc;*/
 		}
 		else if (op_code instanceof OpPipe)
 		{
@@ -747,12 +747,12 @@ struct TranslatorES6Operator extends BaseStruct
 		else if (op_code instanceof OpTryCatch)
 		{
 			list res = static::OpTryCatch(t, op_code); t = res[0]; content = res[1];
-			t <= save_op_code_inc <= save_op_code_inc;
+			/*t <= save_op_code_inc <= save_op_code_inc;*/
 		}
 		else if (op_code instanceof OpWhile)
 		{
 			list res = static::OpWhile(t, op_code); t = res[0]; content = res[1];
-			t <= save_op_code_inc <= save_op_code_inc;
+			/*t <= save_op_code_inc <= save_op_code_inc;*/
 		}
 		else if (op_code instanceof OpInc)
 		{
