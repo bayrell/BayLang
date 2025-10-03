@@ -23,6 +23,7 @@ use BayLang.Caret;
 use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
@@ -126,6 +127,12 @@ class ParserBayClass extends BaseObject
 			{
 				comments.push(item);
 			}
+			else if (item instanceof OpAssign)
+			{
+				result.appendItems(comments);
+				result.push(item);
+				comments = [];
+			}
 			else if (item instanceof OpDeclareFunction)
 			{
 				item.comments = [];
@@ -143,6 +150,7 @@ class ParserBayClass extends BaseObject
 				item.comments.reverse();
 				result.appendItems(comments);
 				result.push(item);
+				comments = [];
 			}
 			else
 			{
