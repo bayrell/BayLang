@@ -49,6 +49,9 @@ class TranslatorES6 extends CoreTranslator
 	void constructor()
 	{
 		parent();
+		this.uses.set("rtl", "Runtime.rtl");
+		this.uses.set("rs", "Runtime.rs");
+		this.uses.set("Vector", "Runtime.Vector");
 		this.preprocessor_flags.set("FRONTEND", true);
 		this.preprocessor_flags.set("ES6", true);
 		this.preprocessor_flags.set("JAVASCRIPT", true);
@@ -66,6 +69,17 @@ class TranslatorES6 extends CoreTranslator
 		s = re::replace('\r', '\\r', s);
 		s = re::replace('\t', '\\t', s);
 		return "\"" ~ s ~ "\"";
+	}
+	
+	
+	/**
+	 * Use module
+	 */
+	string useModule(string module_name)
+	{
+		if (module_name == "rtl") return "Runtime.rtl";
+		if (module_name == "rs") return "Runtime.rs";
+		return module_name;
 	}
 	
 	

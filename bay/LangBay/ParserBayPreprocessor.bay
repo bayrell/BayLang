@@ -95,7 +95,10 @@ class ParserBayPreprocessor extends BaseObject
 			reader.matchToken("ifcode");
 		}
 		
+		bool save_find_variable = this.parser.find_variable;
+		this.parser.find_variable = false;
 		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+		this.parser.find_variable = save_find_variable;
 		reader.matchToken("then");
 		
 		/* Read content */
@@ -138,7 +141,10 @@ class ParserBayPreprocessor extends BaseObject
 		}
 		
 		/* Read expression */
+		bool save_find_variable = this.parser.find_variable;
+		this.parser.find_variable = false;
 		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+		this.parser.find_variable = save_find_variable;
 		reader.matchToken("then");
 		
 		/* Read content */

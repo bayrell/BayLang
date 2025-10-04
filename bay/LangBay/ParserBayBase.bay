@@ -362,9 +362,11 @@ class ParserBayBase extends BaseObject
 			BaseOpCode op_code_item = null;
 			
 			/* Prepocessor */
+			bool is_preprocessor = false;
 			string next_token = reader.nextToken();
 			if (next_token == "#switch" or next_token == "#ifcode" or next_token == "#ifdef")
 			{
+				is_preprocessor = true;
 				op_code_item = this.parser.parser_preprocessor.readPreprocessor(
 					reader, OpPreprocessorIfDef::KIND_COLLECTION
 				);
@@ -377,7 +379,7 @@ class ParserBayBase extends BaseObject
 			}
 			
 			items.push(op_code_item);
-			if (reader.nextToken() == "," or reader.nextToken() != "]")
+			if ((reader.nextToken() == "," or reader.nextToken() != "]") and not is_preprocessor)
 			{
 				reader.matchToken(",");
 			}
@@ -562,7 +564,7 @@ class ParserBayBase extends BaseObject
 			BaseOpCode item = this.readDict(reader);
 			args = [item];
 		}
-		else
+		else if (reader.nextToken() == "(")
 		{
 			args = this.parser.parser_function.readFunctionArgs(reader);
 		}
@@ -889,6 +891,20 @@ class ParserBayBase extends BaseObject
 			string next_token = reader.nextToken();
 			if (next_token == "." or next_token == "::")
 			{
+				if (next_token == "::" and item instanceof OpIdentifier)
+				{
+					item = new OpTypeIdentifier
+					{
+						"entity_name": new OpEntityName
+						{
+							"items": [item],
+							"caret_start": item.caret_start,
+							"caret_end": item.caret_end,
+						},
+						"caret_start": item.caret_start,
+						"caret_end": item.caret_end,
+					};
+				}
 				reader.matchToken(next_token);
 				BaseOpCode op_code_item = this.readIdentifier(reader);
 				item = new OpAttr

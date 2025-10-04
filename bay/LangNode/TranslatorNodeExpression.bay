@@ -33,20 +33,4 @@ use BayLang.OpCodes.OpTypeIdentifier;
 
 class TranslatorNodeExpression extends TranslatorES6Expression
 {
-	/**
-	 * OpTypeIdentifier
-	 */
-	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
-	{
-		string name = op_code.entity_name.getName();
-		if (this.translator.uses.has(name))
-		{
-			result.push(name);
-		}
-		else
-		{
-			OpIdentifier pattern = op_code.entity_name.items.last();
-			result.push(pattern.value);
-		}
-	}
 }

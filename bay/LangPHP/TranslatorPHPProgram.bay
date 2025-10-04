@@ -526,10 +526,17 @@ class TranslatorPHPProgram extends BaseObject
 	 */
 	void translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
-		if (op_code.is_abstract) return false;
-		
 		/* Current class */
 		this.translator.current_class = op_code;
+		
+		/* Class name */
+		string class_name = op_code.name.entity_name.items.last().value;
+		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
+			op_code.name.entity_name.getName();
+		this.translator.uses.set(class_name, this.translator.current_class_name);
+		
+		/* Abstract class */
+		if (op_code.is_abstract) return false;
 		
 		/* Class kind */
 		if (op_code.kind == OpDeclareClass::KIND_CLASS)
@@ -540,12 +547,6 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			result.push("interface ");
 		}
-		
-		/* Class name */
-		string class_name = op_code.name.entity_name.items.last().value;
-		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
-			op_code.name.entity_name.getName();
-		this.translator.uses.set(class_name, this.translator.current_class_name);
 		result.push(class_name);
 		
 		/* Template */
@@ -637,14 +638,16 @@ class TranslatorPHPProgram extends BaseObject
 			BaseOpCode op_code_item = items.get(i);
 			if (op_code_item instanceof OpDeclareClass)
 			{
-				if (op_code_item.is_abstract) continue;
-				if (op_code_use_count > 0)
+				if (not op_code_item.is_abstract)
 				{
-					result.push(this.translator.newLine(op_code_use_count > 1 ? 3 : 2));
-				}
-				else
-				{
-					result.push(this.translator.newLine(last_result ? 3 : 2));
+					if (op_code_use_count > 0)
+					{
+						result.push(this.translator.newLine(op_code_use_count > 1 ? 3 : 2));
+					}
+					else
+					{
+						result.push(this.translator.newLine(last_result ? 3 : 2));
+					}
 				}
 			}
 			else if (last_result) result.push(this.translator.newLine());

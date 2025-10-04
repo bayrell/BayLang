@@ -23,7 +23,7 @@ use Runtime.Console.Annotations.ConsoleCommand;
 use BayLang.ModuleDescription as BayLangModuleDescription;
 
 
-static class ModuleDescription
+class ModuleDescription
 {
 	/**
 	 * Returns module name

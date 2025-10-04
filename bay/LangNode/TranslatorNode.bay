@@ -50,6 +50,16 @@ struct TranslatorNode extends TranslatorES6
 	
 	
 	/**
+	 * Use module
+	 */
+	string useModule(string module_name)
+	{
+		module_name = parent(module_name);
+		return "use(" ~ this.toString(module_name) ~ ")";
+	}
+	
+	
+	/**
 	 * Translate BaseOpCode
 	 */
 	string translate(BaseOpCode op_code)

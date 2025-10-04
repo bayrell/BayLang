@@ -73,7 +73,12 @@ class ParserBayExpression extends BaseObject
 		}
 		
 		/* Read op_code */
-		return this.parser.parser_base.readDynamic(reader);
+		BaseOpCode op_code = this.parser.parser_base.readDynamic(reader);
+		if (op_code instanceof OpIdentifier and this.parser.find_variable)
+		{
+			this.parser.findVariable(op_code);
+		}
+		return op_code;
 	}
 	
 	

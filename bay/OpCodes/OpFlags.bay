@@ -44,7 +44,7 @@ class OpFlags extends BaseOpCode implements SerializeInterface
 	public bool isFlag(string name)
 	{
 		if (not OpFlags::hasFlag(name))	return false;
-		return this.items.has(name);
+		return this.items.get(name);
 	}
 	
 	

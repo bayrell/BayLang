@@ -41,6 +41,7 @@ class CoreParser extends BaseObject
 	string content = "";
 	int content_size = 0;
 	int tab_size = 4;
+	bool find_variable = true;
 	Dict<BaseOpCode> vars = {};
 	Dict<string> uses = {};
 	OpNamespace current_namespace = null;

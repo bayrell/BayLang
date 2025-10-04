@@ -96,7 +96,7 @@ class TranslatorES6Program extends BaseObject
 	/**
 	 * OpAssign
 	 */
-	void OpAssign(OpAssign op_code, Collection<string> result)
+	void OpAssign(OpAssign op_code, Collection<string> result, bool is_expression = true)
 	{
 		bool last_result = false;
 		for (int i=0; i<op_code.items.count(); i++)
@@ -115,7 +115,7 @@ class TranslatorES6Program extends BaseObject
 				last_result = false;
 				continue;
 			}
-			if (op_code_item.expression)
+			if (op_code_item.expression and is_expression)
 			{
 				result.push(" = ");
 				this.translator.expression.translate(op_code_item.expression, result);
@@ -349,6 +349,10 @@ class TranslatorES6Program extends BaseObject
 		/* Items */
 		else
 		{
+			if (this.translator.is_operator_block)
+			{
+				result.push(" =>");
+			}
 			this.translator.operator.translateItems(op_code.content, result);
 		}
 	}
@@ -362,10 +366,6 @@ class TranslatorES6Program extends BaseObject
 		if (op_code instanceof OpAnnotation)
 		{
 			this.OpAnnotation(op_code, result);
-		}
-		else if (op_code instanceof OpAssign)
-		{
-			this.OpAssign(op_code, result);
 		}
 		else if (op_code instanceof OpComment)
 		{
@@ -463,6 +463,35 @@ class TranslatorES6Program extends BaseObject
 		result.push(this.translator.newLine(op_code.content.count() > 0 ? 3 : 1));
 		result.push("/* ========= Class init functions ========= */");
 		result.push(this.translator.newLine());
+		result.push("_init()");
+		result.push(this.translator.newLine());
+		result.push("{");
+		this.translator.levelInc();
+		result.push(this.translator.newLine());
+		bool is_assign_first = true;
+		for (int i=0; i<op_code.content.items.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.content.items.get(i);
+			if (op_code_item instanceof OpAssign)
+			{
+				for (int j=0; j<op_code_item.items.count(); j++)
+				{
+					OpAssignValue assign_item = op_code_item.items.get(j);
+					if (assign_item.expression)
+					{
+						if (not is_assign_first) result.push(this.translator.newLine());
+						result.push("this." ~ assign_item.value.value ~ " = ");
+						this.translator.expression.translate(assign_item.expression, result);
+						result.push(";");
+						is_assign_first = false;
+					}
+				}
+			}
+		}
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
+		result.push(this.translator.newLine());
 		result.push("static getClassName(){ " ~
 			"return \"" ~ this.translator.current_class_name ~ "\"; }");
 		result.push(this.translator.newLine());
@@ -493,17 +522,25 @@ class TranslatorES6Program extends BaseObject
 	void translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
 		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return false;
-		if (op_code.is_abstract) return false;
 		
+		/* Class name */
 		string class_name = op_code.name.entity_name.items.last().value;
 		this.translator.parent_class_name = "";
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
 			op_code.name.entity_name.getName();
 		
-		/* Class name */
-		result.push(this.translator.current_class_name ~ " = class");
+		/* Add use */
 		this.translator.uses.set(class_name, this.translator.current_class_name);
 		this.translator.class_items.set(class_name, this.translator.current_class_name);
+		
+		/* Abstract class */
+		if (op_code.is_abstract)
+		{
+			return false;
+		}
+		
+		/* Define class */
+		result.push(this.translator.current_class_name ~ " = class");
 		
 		/* Extends */
 		if (op_code.class_extends)
@@ -591,12 +628,7 @@ class TranslatorES6Program extends BaseObject
 		for (int i=0; i<items.count(); i++)
 		{
 			BaseOpCode op_code_item = items.get(i);
-			if (op_code_item instanceof OpDeclareClass and op_code_item.is_abstract) continue;
-			if (op_code_item instanceof OpDeclareClass and prev_op_code instanceof OpDeclareClass)
-			{
-				result.push(this.translator.newLine(last_result ? 3 : 2));
-			}
-			else if (last_result)
+			if (last_result)
 			{
 				result.push(this.translator.newLine());
 			}

@@ -199,6 +199,7 @@ class ParserBayFunction extends BaseObject
 		bool is_async = false;
 		if (reader.nextToken() == "async")
 		{
+			is_async = true;
 			reader.matchToken("async");
 		}
 		OpFlags flags = new OpFlags

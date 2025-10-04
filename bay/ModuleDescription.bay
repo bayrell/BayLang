@@ -19,7 +19,7 @@
 namespace BayLang;
 
 
-static class ModuleDescription
+class ModuleDescription
 {
 	/**
 	 * Returns module name

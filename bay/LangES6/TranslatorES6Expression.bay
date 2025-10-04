@@ -143,14 +143,29 @@ class TranslatorES6Expression extends BaseObject
 	void OpTypeIdentifier(OpTypeIdentifier op_code, Collection<string> result)
 	{
 		string name = op_code.entity_name.getName();
-		if (this.translator.uses.has(name))
+		if (name == "static")
 		{
-			result.push(this.translator.uses.get(name));
+			if (this.translator.class_function and this.translator.class_function.isStatic())
+			{
+				result.push("this");
+			}
+			else
+			{
+				result.push("this.constructor");
+			}
+		}
+		else if (name == "parent")
+		{
+			result.push("super");
+		}
+		else if (this.translator.uses.has(name))
+		{
+			result.push(this.translator.useModule(this.translator.uses.get(name)));
 		}
 		else
 		{
 			OpIdentifier pattern = op_code.entity_name.items.last();
-			result.push(pattern.value);
+			result.push(this.translator.useModule(pattern.value));
 		}
 	}
 	
@@ -468,6 +483,13 @@ class TranslatorES6Expression extends BaseObject
 			{
 				result.appendItems(result1);
 			}
+		}
+		else if (op_code.math == "implements")
+		{
+			OpTypeIdentifier class_name = op_code.value2;
+			string interface_name = this.translator.getFullName(class_name.entity_name.getName());
+			result.push(this.translator.useModule("rtl") ~ ".isImplements(" ~ result1 ~ ", " ~
+				this.translator.toString(interface_name) ~ ")");
 		}
 		else
 		{

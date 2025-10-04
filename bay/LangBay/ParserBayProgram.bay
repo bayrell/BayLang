@@ -75,7 +75,7 @@ class ParserBayProgram extends BaseObject
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 			"name": module_name,
-		}
+		};
 		
 		/* Set current namespace */
 		this.parser.current_namespace = op_code;

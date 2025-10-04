@@ -31,7 +31,7 @@ use BayLang.OpCodes.BaseOpCode;
 use BayLang.CoreTranslator;
 
 
-static class LangUtils
+class LangUtils
 {
 	static const int ERROR_PARSER = -1000;
 	static const int ERROR_PARSER_EOF = -1001;

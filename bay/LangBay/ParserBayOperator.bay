@@ -25,6 +25,7 @@ use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
+use BayLang.Exceptions.ParserIdentifier;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
@@ -190,6 +191,7 @@ class ParserBayOperator extends BaseObject
 			reader.matchToken("(");
 			BaseOpCode pattern = this.parser.parser_base.readTypeIdentifier(reader);
 			BaseOpCode name = this.parser.parser_base.readIdentifier(reader);
+			this.parser.addVariable(name, pattern);
 			reader.matchToken(")");
 			BaseOpCode content = this.parse(reader);
 			
