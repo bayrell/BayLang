@@ -179,7 +179,7 @@ static class TranslatorPHPExpression
 		
 		if (op_code.value == "@") return [t, "$ctx"];
 		if (op_code.value == "_") return [t, "$ctx->translate"];
-		if (op_code.value == "log") return [t, "var_dump"];
+		if (op_code.value == "log" or op_code.value == "print") return [t, "var_dump"];
 		
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{

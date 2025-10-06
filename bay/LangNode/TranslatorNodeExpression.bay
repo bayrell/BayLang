@@ -42,7 +42,7 @@ static class TranslatorNodeExpression extends TranslatorES6Expression
 	{
 		if (op_code.value == "@") return [t, "use(\"Runtime.rtl\").getContext()"];
 		if (op_code.value == "_") return [t, "ctx.constructor.translate"];
-		if (op_code.value == "log") return [t, "console.log"];
+		if (op_code.value == "log" or op_code.value == "print") return [t, "console.log"];
 		
 		if (t.modules.has(op_code.value) or op_code.kind == OpIdentifier::KIND_SYS_TYPE)
 		{

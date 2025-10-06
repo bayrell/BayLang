@@ -188,7 +188,7 @@ class ParserBayBase
 		{
 			kind = OpIdentifier::KIND_SYS_TYPE;
 		}
-		else if (name == "log")
+		else if (name == "log" or name == "print")
 		{
 			kind = OpIdentifier::KIND_SYS_FUNCTION;
 		}
