@@ -79,7 +79,7 @@ class ParserBayClass extends BaseObject
 	 */
 	BaseOpCode readItem(TokenReader reader)
 	{
-		string next_token = reader.nextToken();
+		string next_token = reader.nextTokenComments();
 		
 		/* Comment */
 		if (next_token == "/")

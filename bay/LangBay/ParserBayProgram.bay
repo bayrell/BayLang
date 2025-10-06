@@ -130,7 +130,7 @@ class ParserBayProgram extends BaseObject
 	 */
 	Collection<BaseOpCode> readModuleItem(TokenReader reader)
 	{
-		string next_token = reader.nextToken();
+		string next_token = reader.nextTokenComments();
 		
 		/* Namespace */
 		if (next_token == "namespace")

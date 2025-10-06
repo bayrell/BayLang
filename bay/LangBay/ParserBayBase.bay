@@ -200,14 +200,18 @@ class ParserBayBase extends BaseObject
 	 */
 	OpComment readComment(TokenReader reader)
 	{
-		Caret caret_start = reader.start();
+		/* Init caret */
+		Caret caret = reader.caret();
+		caret.skip_comments = false;
+		
+		/* Caret start */
+		Caret caret_start = caret.copy().skipSpace();
 		
 		/* Read begin coment */
 		caret_start.matchString("/*");
-		reader.init(caret_start);
+		caret.seek(caret_start);
 		
 		/* Read comment value */
-		Caret caret = reader.caret();
 		string value_str = "";
 		string ch2 = caret.nextString(2);
 		while (not caret.eof() and ch2 != "*/")
@@ -318,11 +322,11 @@ class ParserBayBase extends BaseObject
 		if (reader.nextToken() == "<" and read_generic)
 		{
 			reader.matchToken("<");
-			reader.main_caret.skipSpace();
+			reader.main_caret.skipToken();
 			while (not reader.eof() and reader.main_caret.nextChar() != ">")
 			{
 				generics.push(this.readTypeIdentifier(reader, false));
-				reader.main_caret.skipSpace();
+				reader.main_caret.skipToken();
 				reader.init(reader.main_caret);
 				if (reader.main_caret.nextChar() != ">")
 				{

@@ -488,7 +488,7 @@ class ParserBayOperator extends BaseObject
 	 */
 	BaseOpCode readOperator(TokenReader reader)
 	{
-		string next_token = reader.nextToken();
+		string next_token = reader.nextTokenComments();
 		Caret caret_start = reader.start();
 		
 		/* Comment */

@@ -64,6 +64,12 @@ class Caret extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Skip comments
+	 */
+	bool skip_comments = true;
+	
+	
+	/**
 	 * Constructor
 	 */
 	public void constructor(Dict items = null)
@@ -363,6 +369,39 @@ class Caret extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Skip comment
+	 */
+	Caret skipComment()
+	{
+		if (this.nextString(2) == "/*")
+		{
+			this.readChar();
+			while (not this.eof() and this.nextString(2) != "*/") this.readChar();
+			this.readString(2);
+		}
+		return this;
+	}
+	
+	
+	/**
+	 * Skip token
+	 */
+	Caret skipToken()
+	{
+		this.skipSpace();
+		if (this.skip_comments)
+		{
+			while (not this.eof() and this.nextString(2) == "/*")
+			{
+				this.skipComment();
+				this.skipSpace();
+			}
+		}
+		return this;
+	}
+	
+	
+	/**
 	 * Returns true if token char
 	 */
 	bool isTokenChar(char ch)
@@ -376,8 +415,8 @@ class Caret extends BaseObject implements SerializeInterface
 	 */
 	string readToken()
 	{
-		/* Skip space */
-		this.skipSpace();
+		/* Skip token */
+		this.skipToken();
 		if (this.eof()) return "";
 		
 		/* Read special token */

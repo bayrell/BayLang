@@ -77,6 +77,17 @@ class TokenReader extends BaseObject
 	
 	
 	/**
+	 * Read next token with comments
+	 */
+	string nextTokenComments()
+	{
+		Caret caret = this.main_caret.copy();
+		caret.skip_comments = false;
+		return caret.readToken();
+	}
+	
+	
+	/**
 	 * Returns parser error
 	 */
 	void error(string message)
