@@ -43,36 +43,10 @@ class Make extends BaseCommand
 	
 	
 	/**
-	 * Run task
+	 * Compile module
 	 */
-	async int run()
+	async bool compile(Project project, Module module, string lang = "")
 	{
-		string module_name = @.cli_args[2];
-		string lang = @.cli_args[3];
-		
-		if (not module_name)
-		{
-			Modules::showModules();
-			return 0;
-		}
-		
-		/* Read project */
-		Project project = await Project::readProject(@.base_path);
-		if (not project)
-		{
-			rtl::error("Project not found");
-			return;
-		}
-		
-		/* Get module */
-		Module module = project.getModule(module_name);
-		if (not module)
-		{
-			rtl::error("Module not found");
-			return;
-		}
-		
-		/* Compile module */
 		bool is_success = true;
 		string module_src_path = module.getSourceFolderPath();
 		Collection<string> files = await fs::listDirRecursive(module_src_path);
@@ -117,7 +91,7 @@ class Make extends BaseCommand
 		
 		if (not is_success)
 		{
-			return static::ERROR;
+			return false;
 		}
 		
 		Collection languages = project.getLanguages();
@@ -130,6 +104,47 @@ class Make extends BaseCommand
 				await project.buildAsset(asset_item);
 				rtl::print("Bundle to => " ~ asset_item.get("dest"));
 			}
+		}
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Run task
+	 */
+	async int run()
+	{
+		string module_name = @.cli_args[2];
+		string lang = @.cli_args[3];
+		
+		if (not module_name)
+		{
+			Modules::showModules();
+			return 0;
+		}
+		
+		/* Read project */
+		Project project = await Project::readProject(@.base_path);
+		if (not project)
+		{
+			rtl::error("Project not found");
+			return;
+		}
+		
+		/* Get module */
+		Module module = project.getModule(module_name);
+		if (not module)
+		{
+			rtl::error("Module not found");
+			return;
+		}
+		
+		/* Compile module */
+		bool is_success = await this.compile(project, module, lang);
+		if (not is_success)
+		{
+			return static::ERROR;
 		}
 		
 		return static::SUCCESS;

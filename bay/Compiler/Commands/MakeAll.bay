@@ -22,7 +22,8 @@ use Runtime.io;
 use Runtime.Console.BaseCommand;
 use Runtime.Console.CommandsList;
 use BayLang.Compiler.Module;
-use BayLang.Compiler.SettingsProvider;
+use BayLang.Compiler.Project;
+use BayLang.Compiler.Commands.Make;
 
 
 class MakeAll extends BaseCommand
@@ -44,27 +45,25 @@ class MakeAll extends BaseCommand
 	 */
 	static async int run()
 	{
-		bool result = true;
-		string lang = @.cli_args[2];
-		
-		/* Get modules */
-		SettingsProvider settings = @.provider(classof SettingsProvider);
-		Dict<Module> modules = settings.getModules();
-		
-		/* Compile modules */
-		Collection<string> modules_names = modules.keys().sort();
-		for (int i=0; i<modules_names.count(); i++)
+		/* Read project */
+		Project project = await Project::readProject(@.base_path);
+		if (not project)
 		{
-			string module_name = modules_names[i];
-			io::print(io::color("yellow", "Compile " ~ module_name));
-			result = result & await settings.compileModule(module_name, lang);
+			rtl::error("Project not found");
+			return static::ERROR;
 		}
 		
-		/* Result */
-		if (not result)
+		Make make = new Make();
+		Dict<Module> modules = project.getModules();
+		Collection<string> keys = rtl::list(modules.keys());
+		for (int i=0; i<keys.count(); i++)
 		{
-			return static::FAIL;
+			string module_name = keys.get(i);
+			Module module = modules.get(module_name);
+			rtl::print(rtl::color("yellow", "Compile " ~ module.name));
+			await make.compile(project, module);
 		}
+		
 		return static::SUCCESS;
 	}
 }

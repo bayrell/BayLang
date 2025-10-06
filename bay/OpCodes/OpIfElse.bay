@@ -18,7 +18,6 @@
 
 namespace BayLang.OpCodes;
 
-use Runtime.BaseOpCode;
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 

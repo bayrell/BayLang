@@ -210,16 +210,18 @@ class TranslatorES6Operator extends BaseObject
 	 */
 	void OpTryCatch(OpTryCatch op_code, Collection<string> result)
 	{
+		bool is_var = op_code.items and op_code.items.count() == 1 and
+			op_code.items.get(0).pattern.entity_name.getName() == "var";
+		string name = "_ex";
+		if (is_var) name = op_code.items.get(0).name.value;
 		result.push("try");
 		this.translateItems(op_code.op_try, result);
 		result.push(this.translator.newLine());
-		result.push("catch (_ex)");
+		result.push("catch (" ~ name ~ ")");
 		result.push(this.translator.newLine());
 		result.push("{");
 		this.translator.levelInc();
-		if (op_code.items and op_code.items.count() == 1 and
-			op_code.items.get(0).pattern.entity_name.getName() == "var"
-		)
+		if (is_var)
 		{
 			this.translateItems(op_code.items.get(0).content, result, false);
 		}

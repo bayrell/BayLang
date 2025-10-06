@@ -268,6 +268,35 @@ class TranslatorES6Program extends BaseObject
 	
 	
 	/**
+	 * OpDeclareFunctionInitArgs
+	 */
+	void OpDeclareFunctionInitArgs(
+		OpDeclareFunction op_code, Collection<string> result, bool is_multiline = true
+	)
+	{
+		if (op_code.args and op_code.args.count() > 0)
+		{
+			int args_count = op_code.args.count();
+			for (int i=0; i<args_count; i++)
+			{
+				OpDeclareFunctionArg op_code_item = op_code.args.get(i);
+				if (op_code_item.expression != null)
+				{
+					if (is_multiline)
+					{
+						result.push(this.translator.newLine());
+					}
+					result.push("if (" ~ op_code_item.name ~ " == undefined) ");
+					result.push(op_code_item.name ~ " = ");
+					this.translator.expression.translate(op_code_item.expression, result);
+					result.push(";");
+				}
+			}
+		}
+	}
+	
+	
+	/**
 	 * OpDeclareFunction
 	 */
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
@@ -330,6 +359,7 @@ class TranslatorES6Program extends BaseObject
 			{
 				result.push(" ");
 			}
+			this.OpDeclareFunctionInitArgs(op_code, result, is_multiline);
 			result.push("return ");
 			bool save_operator_block = this.translator.is_operator_block;
 			this.translator.is_operator_block = true;
@@ -355,7 +385,14 @@ class TranslatorES6Program extends BaseObject
 			{
 				result.push(" =>");
 			}
-			this.translator.operator.translateItems(op_code.content, result);
+			result.push(this.translator.newLine());
+			result.push("{");
+			this.translator.levelInc();
+			this.OpDeclareFunctionInitArgs(op_code, result);
+			this.translator.operator.translateItems(op_code.content, result, false);
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+			result.push("}");
 		}
 	}
 	
@@ -478,6 +515,11 @@ class TranslatorES6Program extends BaseObject
 		result.push("{");
 		this.translator.levelInc();
 		result.push(this.translator.newLine());
+		if (op_code.class_extends)
+		{
+			result.push("super._init();");
+			result.push(this.translator.newLine());
+		}
 		bool is_assign_first = true;
 		for (int i=0; i<op_code.content.items.count(); i++)
 		{
@@ -663,7 +705,7 @@ class TranslatorES6Program extends BaseObject
 			string class_name = keys.get(i);
 			result.push(this.translator.newLine());
 			result.push(this.translator.toString(class_name) ~ ": " ~
-				this.translator.uses.get(class_name));
+				this.translator.uses.get(class_name) ~ ",");
 		}
 		this.translator.levelDec();
 		result.push(this.translator.newLine());

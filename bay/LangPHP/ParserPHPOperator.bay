@@ -21,7 +21,6 @@ namespace BayLang.LangPHP;
 use Runtime.BaseObject;
 use Runtime.Reference;
 use BayLang.Caret;
-use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
@@ -73,220 +72,34 @@ class ParserPHPOperator extends BaseObject
 	
 	
 	/**
-	 * Read annotation
-	 */
-	pure list<ParserPHP, BaseOpCode> readAnnotation(ParserPHP parser)
-	{
-		ParserPHP look = null;
-		CoreToken token = null;
-		BaseOpCode name = null;
-		BaseOpCode params = null;
-		
-		list res = parser.parser_base::matchToken(parser, "@"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_base::readTypeIdentifier(parser); parser = res[0]; name = res[1];
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "{")
-		{
-			list res = parser.parser_base::readDict(parser); parser = res[0]; params = res[1];
-		}
-		
-		return
-		[
-			parser,
-			new OpAnnotation
-			{
-				"name": name,
-				"params": params,
-			}
-		];
-	}
-	
-	
-	/**
 	 * Read return
 	 */
-	pure list<ParserPHP, BaseOpCode> readReturn(ParserPHP parser)
+	BaseOpCode readReturn(TokenReader reader)
 	{
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		ParserPHP look = null;
-		
-		list res = parser.parser_base::matchToken(parser, "return"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content != ";")
-		{
-			list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-		}
-		
-		return
-		[
-			parser,
-			new OpReturn
-			{
-				"expression": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
 	}
 	
 	
 	/**
 	 * Read delete
 	 */
-	pure list<ParserPHP, BaseOpCode> readDelete(ParserPHP parser)
+	BaseOpCode readDelete(TokenReader reader)
 	{
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		
-		list res = parser.parser_base::matchToken(parser, "delete"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_base::readDynamic(parser); parser = res[0]; op_code = res[1];
-		
-		return
-		[
-			parser,
-			new OpDelete
-			{
-				"op_code": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
 	}
 	
 	
 	/**
 	 * Read throw
 	 */
-	pure list<ParserPHP, BaseOpCode> readThrow(ParserPHP parser)
+	BaseOpCode readThrow(TokenReader reader)
 	{
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		
-		list res = parser.parser_base::matchToken(parser, "throw"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_expression::readExpression(parser); parser = res[0]; op_code = res[1];
-		
-		return
-		[
-			parser,
-			new OpThrow
-			{
-				"expression": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
 	}
 	
 	
 	/**
 	 * Read try
 	 */
-	pure list<ParserPHP, BaseOpCode> readTry(ParserPHP parser)
+	BaseOpCode readTry(TokenReader reader)
 	{
-		ParserPHP look = null;
-		CoreToken token = null;
-		BaseOpCode op_try = null;
-		Vector<OpTryCatchItem> items = new Vector();
-		
-		list res = parser.parser_base::matchToken(parser, "try"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		/* Try */
-		list res = static::readOperators(parser); parser = res[0]; op_try = res[1];
-		
-		/* Catch */
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		while (not token.eof and token.content == "catch")
-		{
-			parser = look;
-			
-			BaseOpCode op_catch = null;
-			BaseOpCode var_op_code = null;
-			OpTypeIdentifier pattern = null;
-			Caret item_caret_start = token.caret_start;
-			
-			/* Read ident */
-			list res = parser.parser_base::matchToken(parser, "("); parser = res[0];
-			list res = parser.parser_base::readTypeIdentifier(parser); parser = res[0]; pattern = res[1];
-			list res = parser.parser_base::readIdentifier(parser); parser = res[0]; var_op_code = res[1];
-			string var_name = var_op_code.value;
-			list res = parser.parser_base::matchToken(parser, ")"); parser = res[0];
-			
-			/* Save vars */
-			Dict<bool> save_vars = parser.vars;
-			parser <= vars <= parser.vars.setIm(var_name, true);
-			
-			/* Catch operators */
-			list res = static::readOperators(parser); parser = res[0]; op_catch = res[1];
-			
-			/* Restore vars */
-			parser <= vars <= save_vars;
-			
-			OpTryCatchItem item = new OpTryCatchItem
-			{
-				"name": var_name,
-				"pattern": pattern,
-				"value": op_catch,
-				"caret_start": item_caret_start,
-				"caret_end": parser.caret,
-			};
-			items.push(item);
-			
-			list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		}
-		
-		return
-		[
-			parser,
-			new OpTryCatch
-			{
-				"op_try": op_try,
-				"items": items,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
-	}
-	
-	
-	/**
-	 * Read then
-	 */
-	pure list<ParserPHP, CoreToken> readThen(ParserPHP parser)
-	{
-		ParserPHP look = null;
-		CoreToken token = null;
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "then")
-		{
-			return [look, token];
-		}
-		return [parser, token];
-	}
-	
-	
-	/**
-	 * Read do
-	 */
-	pure list<ParserPHP, CoreToken> readDo(ParserPHP parser)
-	{
-		ParserPHP look = null;
-		CoreToken token = null;
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "do")
-		{
-			return [look, token];
-		}
-		return [parser, token];
 	}
 	
 	

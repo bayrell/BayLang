@@ -27,7 +27,7 @@ use BayLang.LangNode.TranslatorNodeProgram;
 use BayLang.OpCodes.BaseOpCode;
 
 
-struct TranslatorNode extends TranslatorES6
+class TranslatorNode extends TranslatorES6
 {
 	TranslatorNodeExpression expression = new TranslatorNodeExpression(this);
 	TranslatorNodeProgram program = new TranslatorNodeProgram(this);

@@ -51,6 +51,7 @@ class TranslatorES6 extends CoreTranslator
 		parent();
 		this.uses.set("rtl", "Runtime.rtl");
 		this.uses.set("rs", "Runtime.rs");
+		this.uses.set("BaseObject", "Runtime.BaseObject");
 		this.uses.set("Vector", "Runtime.Vector");
 		this.preprocessor_flags.set("FRONTEND", true);
 		this.preprocessor_flags.set("ES6", true);

@@ -21,7 +21,6 @@ namespace BayLang.LangBay;
 use Runtime.BaseObject;
 use Runtime.Reference;
 use BayLang.Caret;
-use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
@@ -74,38 +73,6 @@ class ParserBayOperator extends BaseObject
 	
 	
 	/**
-	 * Read annotation
-	 */
-	pure list<ParserBay, BaseOpCode> readAnnotation(ParserBay parser)
-	{
-		ParserBay look = null;
-		CoreToken token = null;
-		BaseOpCode name = null;
-		BaseOpCode params = null;
-		
-		list res = parser.parser_base::matchToken(parser, "@"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_base::readTypeIdentifier(parser); parser = res[0]; name = res[1];
-		list res = parser.parser_base::readToken(parser); look = res[0]; token = res[1];
-		if (token.content == "{")
-		{
-			list res = parser.parser_base::readDict(parser); parser = res[0]; params = res[1];
-		}
-		
-		return
-		[
-			parser,
-			new OpAnnotation
-			{
-				"name": name,
-				"params": params,
-			}
-		];
-	}
-	
-	
-	/**
 	 * Read return
 	 */
 	BaseOpCode readReturn(TokenReader reader)
@@ -131,26 +98,8 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read delete
 	 */
-	pure list<ParserBay, BaseOpCode> readDelete(ParserBay parser)
+	BaseOpCode readDelete(TokenReader reader)
 	{
-		CoreToken token = null;
-		BaseOpCode op_code = null;
-		
-		list res = parser.parser_base::matchToken(parser, "delete"); parser = res[0]; token = res[1];
-		Caret caret_start = token.caret_start;
-		
-		list res = parser.parser_base::readDynamic(parser); parser = res[0]; op_code = res[1];
-		
-		return
-		[
-			parser,
-			new OpDelete
-			{
-				"op_code": op_code,
-				"caret_start": caret_start,
-				"caret_end": parser.caret,
-			}
-		];
 	}
 	
 	

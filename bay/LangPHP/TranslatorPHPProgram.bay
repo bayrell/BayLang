@@ -499,6 +499,11 @@ class TranslatorPHPProgram extends BaseObject
 		result.push("{");
 		this.translator.levelInc();
 		result.push(this.translator.newLine());
+		if (op_code.class_extends)
+		{
+			result.push("parent::_init();");
+			result.push(this.translator.newLine());
+		}
 		bool is_assign_first = true;
 		for (int i=0; i<op_code.content.items.count(); i++)
 		{

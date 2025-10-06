@@ -39,10 +39,9 @@ class Style
 	{
 		/* Create parser */
 		ParserBay parser = new ParserBay();
-		parser = parser::reset(parser);
-		parser <= current_namespace_name <= "App";
-		parser <= current_class_name <= "Test";
-		parser <= uses <= parser.uses.setIm("Button", "Runtime.Widget.Button");
+		parser.current_namespace_name = "App";
+		parser.current_class_name = "Test";
+		parser.uses.set("Button", "Runtime.Widget.Button");
 		this.parser = parser;
 	}
 	
@@ -52,7 +51,7 @@ class Style
 	 */
 	void setContent(string content)
 	{
-		this.parser = this.parser::setContent(this.parser, content);
+		this.parser.setContent(content);
 	}
 	
 	
@@ -75,8 +74,8 @@ class Style
 		/* Debug output */
 		if (debug)
 		{
-			log(items);
-			log(result);
+			print(items);
+			print(result);
 		}
 		
 		return [op_code, result];

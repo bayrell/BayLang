@@ -20,7 +20,6 @@ namespace BayLang.LangES6;
 
 use Runtime.BaseObject;
 use BayLang.Caret;
-use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.LangES6.ParserES6;

@@ -28,6 +28,7 @@ use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpItems;
@@ -264,6 +265,23 @@ class ParserBayClass extends BaseObject
 				}
 			}
 		}
+		/*
+		if (class_extends == null)
+		{
+			class_extends = new OpTypeIdentifier
+			{
+				"entity_name": new OpEntityName
+				{
+					"items":
+					[
+						new OpIdentifier
+						{
+							"value": "BaseObject",
+						}
+					]
+				}
+			};
+		}*/
 		this.parser.current_class = new OpDeclareClass
 		{
 			"kind": is_interface ? OpDeclareClass::KIND_INTERFACE : OpDeclareClass::KIND_CLASS,

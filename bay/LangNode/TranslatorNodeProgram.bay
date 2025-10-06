@@ -22,7 +22,7 @@ use BayLang.LangES6.TranslatorES6Program;
 use BayLang.OpCodes.OpUse;
 
 
-static class TranslatorNodeProgram extends TranslatorES6Program
+class TranslatorNodeProgram extends TranslatorES6Program
 {
 	/**
 	 * OpUse

@@ -21,7 +21,6 @@ namespace BayLang.LangBay;
 use Runtime.BaseObject;
 use BayLang.Caret;
 use BayLang.CoreParser;
-use BayLang.CoreToken;
 use BayLang.TokenReader;
 use BayLang.Exceptions.ParserError;
 use BayLang.LangBay.ParserBay;
@@ -92,7 +91,6 @@ class ParserBayProgram extends BaseObject
 	OpUse readUse(TokenReader reader)
 	{
 		ParserBay look = null;
-		CoreToken token = null;
 		OpEntityName name = null;
 		Caret caret_start = reader.start();
 		string alias = "";

@@ -50,7 +50,7 @@ class Html
 	 */
 	void setContent(string content)
 	{
-		this.parser = this.parser::setContent(this.parser, content);
+		this.parser.setContent(content);
 	}
 	
 	
@@ -60,7 +60,7 @@ class Html
 	void addVar(string var_name)
 	{
 		ParserBay parser = this.parser;
-		parser <= vars <= parser.vars.setIm(var_name, true);
+		parser.vars.set(var_name, true);
 		this.parser = parser;
 	}
 	
@@ -84,9 +84,9 @@ class Html
 		/* Debug output */
 		if (debug)
 		{
-			log(op_code);
-			log(result);
-			log(rs::join("", result));
+			print(op_code);
+			print(result);
+			print(rs::join("", result));
 		}
 		
 		return [op_code, rs::join("", result)];

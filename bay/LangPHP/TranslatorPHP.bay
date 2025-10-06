@@ -43,6 +43,7 @@ class TranslatorPHP extends CoreTranslator
 	void constructor()
 	{
 		parent();
+		this.uses.set("BaseObject", "Runtime.BaseObject");
 		this.preprocessor_flags.set("BACKEND", true);
 		this.preprocessor_flags.set("PHP", true);
 	}
