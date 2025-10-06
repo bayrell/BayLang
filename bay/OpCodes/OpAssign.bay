@@ -48,4 +48,10 @@ class OpAssign extends BaseOpCode
 		serializer.process(this, "pattern", data);
 		serializer.process(this, "items", data);
 	}
+	
+	
+	/**
+	 * Returns true if static
+	 */
+	bool isStatic() => this.flags and (this.flags.isFlag("static") or this.flags.isFlag("const"));
 }
