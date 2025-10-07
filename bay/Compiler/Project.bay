@@ -220,7 +220,7 @@ class Project extends BaseObject implements SerializeInterface
 	{
 		Module res = null;
 		int module_path_sz = -1;
-		Collection<string> module_names = this.modules.keys();
+		Collection<string> module_names = rtl::list(this.modules.keys());
 		for (int i=0; i<module_names.count(); i++)
 		{
 			string module_name = module_names.get(i);

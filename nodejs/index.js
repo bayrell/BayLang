@@ -46,6 +46,7 @@ add("BayLang.Compiler.Commands.Make");
 add("BayLang.Compiler.Commands.MakeAll");
 add("BayLang.Compiler.Commands.Modules");
 add("BayLang.Compiler.Commands.Version");
+add("BayLang.Compiler.Commands.Watch");
 add("BayLang.Compiler.ConsoleApp");
 add("BayLang.Compiler.Module");
 add("BayLang.Compiler.ModuleDescription");

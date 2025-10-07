@@ -43,6 +43,25 @@ class Make extends BaseCommand
 	
 	
 	/**
+	 * Build asset
+	 */
+	async void buildAsset(Project project, Module module)
+	{
+		Collection languages = project.getLanguages();
+		if (languages.indexOf("es6") != -1)
+		{
+			Collection<Dict> project_assets = module.getProjectAssets();
+			for (int i=0; i<project_assets.count(); i++)
+			{
+				Dict asset_item = project_assets.get(i);
+				await project.buildAsset(asset_item);
+				rtl::print("Bundle to => " ~ asset_item.get("dest"));
+			}
+		}
+	}
+	
+	
+	/**
 	 * Compile module
 	 */
 	async bool compile(Project project, Module module, string lang = "")
@@ -94,17 +113,7 @@ class Make extends BaseCommand
 			return false;
 		}
 		
-		Collection languages = project.getLanguages();
-		if (languages.indexOf("es6") != -1)
-		{
-			Collection<Dict> project_assets = module.getProjectAssets();
-			for (int i=0; i<project_assets.count(); i++)
-			{
-				Dict asset_item = project_assets.get(i);
-				await project.buildAsset(asset_item);
-				rtl::print("Bundle to => " ~ asset_item.get("dest"));
-			}
-		}
+		await this.buildAsset(project, module);
 		
 		return true;
 	}

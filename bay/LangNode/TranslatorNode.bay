@@ -71,6 +71,7 @@ class TranslatorNode extends TranslatorES6
 	string useModule(string module_name)
 	{
 		bool is_global = false;
+		if (module_name == this.current_class_name) return module_name;
 		if (module_name == "Runtime.rtl" or module_name == "Runtime.rs")
 		{
 			is_global = true;
