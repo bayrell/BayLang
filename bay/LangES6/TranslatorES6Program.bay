@@ -332,68 +332,79 @@ class TranslatorES6Program extends BaseObject
 		this.OpDeclareFunctionArgs(op_code, result);
 		result.push(")");
 		
+		/* Add arrow */
+		if (this.translator.is_operator_block)
+		{
+			result.push(" =>");
+		}
+		
+		/* Multiline */
+		bool is_multiline = op_code.content.isMultiLine() or
+			op_code.content instanceof OpItems
+		;
+		if (is_multiline)
+		{
+			result.push(this.translator.newLine());
+		}
+		else
+		{
+			if (this.translator.is_operator_block) result.push(" ");
+		}
+		result.push("{");
+		if (is_multiline)
+		{
+			this.translator.levelInc();
+			if (not (op_code.content instanceof OpItems))
+			{
+				result.push(this.translator.newLine());
+			}
+		}
+		else
+		{
+			result.push(" ");
+		}
+		
+		/* Save modules */
+		Dict save_use_modules = this.translator.setUseModules();
+		
 		/* Expression */
+		Collection result1 = [];
 		bool is_expression = not (op_code.content instanceof OpItems);
 		if (is_expression)
 		{
-			if (this.translator.is_operator_block)
-			{
-				result.push(" =>");
-			}
-			bool is_multiline = op_code.content.isMultiLine();
-			if (is_multiline)
-			{
-				result.push(this.translator.newLine());
-			}
-			else
-			{
-				if (this.translator.is_operator_block) result.push(" ");
-			}
-			result.push("{");
-			if (is_multiline)
-			{
-				this.translator.levelInc();
-				result.push(this.translator.newLine());
-			}
-			else
-			{
-				result.push(" ");
-			}
-			this.OpDeclareFunctionInitArgs(op_code, result, is_multiline);
-			result.push("return ");
+			this.OpDeclareFunctionInitArgs(op_code, result1, is_multiline);
+			result1.push("return ");
 			bool save_operator_block = this.translator.is_operator_block;
 			this.translator.is_operator_block = true;
-			this.translator.expression.translate(op_code.content, result);
+			this.translator.expression.translate(op_code.content, result1);
 			this.translator.is_operator_block = save_operator_block;
-			result.push(";");
-			if (is_multiline)
-			{
-				this.translator.levelDec();
-				result.push(this.translator.newLine());
-			}
-			else
-			{
-				result.push(" ");
-			}
-			result.push("}");
+			result1.push(";");
 		}
 		
 		/* Items */
 		else
 		{
-			if (this.translator.is_operator_block)
-			{
-				result.push(" =>");
-			}
-			result.push(this.translator.newLine());
-			result.push("{");
-			this.translator.levelInc();
-			this.OpDeclareFunctionInitArgs(op_code, result);
-			this.translator.operator.translateItems(op_code.content, result, false);
+			this.OpDeclareFunctionInitArgs(op_code, result1);
+			this.translator.operator.translateItems(op_code.content, result1, false);
+		}
+		
+		/* Add modules */
+		this.translator.addUseModules(result);
+		result.appendItems(result1);
+		
+		/* Restore */
+		this.translator.setUseModules(save_use_modules);
+		
+		if (is_multiline)
+		{
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
-			result.push("}");
 		}
+		else
+		{
+			result.push(" ");
+		}
+		result.push("}");
 	}
 	
 	
@@ -514,12 +525,13 @@ class TranslatorES6Program extends BaseObject
 		result.push(this.translator.newLine());
 		result.push("{");
 		this.translator.levelInc();
-		result.push(this.translator.newLine());
 		if (op_code.class_extends)
 		{
-			result.push("super._init();");
 			result.push(this.translator.newLine());
+			result.push("super._init();");
 		}
+		Dict save_use_modules = this.translator.setUseModules();
+		Collection result1 = [];
 		bool is_assign_first = true;
 		for (int i=0; i<op_code.content.items.count(); i++)
 		{
@@ -531,15 +543,18 @@ class TranslatorES6Program extends BaseObject
 					OpAssignValue assign_item = op_code_item.items.get(j);
 					if (assign_item.expression)
 					{
-						if (not is_assign_first) result.push(this.translator.newLine());
-						result.push("this." ~ assign_item.value.value ~ " = ");
-						this.translator.expression.translate(assign_item.expression, result);
-						result.push(";");
+						result1.push(this.translator.newLine());
+						result1.push("this." ~ assign_item.value.value ~ " = ");
+						this.translator.expression.translate(assign_item.expression, result1);
+						result1.push(";");
 						is_assign_first = false;
 					}
 				}
 			}
 		}
+		this.translator.addUseModules(result);
+		this.translator.setUseModules(save_use_modules);
+		result.appendItems(result1);
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
 		result.push("}");

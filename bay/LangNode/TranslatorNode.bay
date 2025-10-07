@@ -33,6 +33,7 @@ class TranslatorNode extends TranslatorES6
 	TranslatorNodeProgram program = new TranslatorNodeProgram(this);
 	
 	/* Flags */
+	Dict use_modules = {};
 	bool use_module_name = true;
 	bool use_window = false;
 	
@@ -50,12 +51,49 @@ class TranslatorNode extends TranslatorES6
 	
 	
 	/**
+	 * Set use modules
+	 */
+	Dict setUseModules(Dict use_modules = null)
+	{
+		if (use_modules == null) use_modules = {};
+		Dict save_use_modules = this.use_modules.copy();
+		this.use_modules = use_modules;
+		return save_use_modules;
+	}
+	
+	
+	/**
 	 * Use module
 	 */
 	string useModule(string module_name)
 	{
-		module_name = parent(module_name);
-		return "use(" ~ this.toString(module_name) ~ ")";
+		if (module_name == "rtl") return "Runtime.rtl";
+		if (module_name == "rs") return "Runtime.rs";
+		Collection arr = rs::split(".", module_name);
+		string alias_name = arr.last();
+		if (this.uses.has(alias_name))
+		{
+			this.use_modules.set(alias_name, module_name);
+			return alias_name;
+		}
+		return module_name;
+	}
+	
+	
+	/**
+	 * Add use modules
+	 */
+	void addUseModules(Collection<string> result)
+	{
+		Collection keys = rtl::list(this.use_modules.keys());
+		for (int i=0; i<keys.count(); i++)
+		{
+			string alias_name = keys.get(i);
+			string module_name = this.use_modules.get(alias_name);
+			result.push(this.newLine());
+			result.push("const " ~ alias_name ~ " = use(" ~
+				this.toString(module_name) ~ ");");
+		}
 	}
 	
 	
@@ -73,7 +111,12 @@ class TranslatorNode extends TranslatorES6
 		result.push(this.newLine());
 		
 		/* Translate program */
-		this.program.translate(op_code, result);
+		Collection result1 = [];
+		this.program.translate(op_code, result1);
+		
+		/* Add use */
+		this.addUseModules(result);
+		result.appendItems(result1);
 		
 		/* Add export */
 		this.program.addModuleExports(result);

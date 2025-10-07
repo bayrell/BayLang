@@ -74,6 +74,15 @@ class TranslatorES6 extends CoreTranslator
 	
 	
 	/**
+	 * Set use modules
+	 */
+	Dict setUseModules(Dict use_modules = null)
+	{
+		return null;
+	}
+	
+	
+	/**
 	 * Use module
 	 */
 	string useModule(string module_name)
@@ -81,6 +90,14 @@ class TranslatorES6 extends CoreTranslator
 		if (module_name == "rtl") return "Runtime.rtl";
 		if (module_name == "rs") return "Runtime.rs";
 		return module_name;
+	}
+	
+	
+	/**
+	 * Add use modules
+	 */
+	void addUseModules(Collection<string> result)
+	{
 	}
 	
 	

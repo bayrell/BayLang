@@ -19,6 +19,7 @@
 namespace BayLang.LangNode;
 
 use BayLang.LangES6.TranslatorES6Program;
+use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpUse;
 
 
@@ -30,8 +31,6 @@ class TranslatorNodeProgram extends TranslatorES6Program
 	void OpUse(OpUse op_code, Collection<string> result)
 	{
 		this.translator.uses.set(op_code.alias, op_code.name);
-		result.push("const " ~ op_code.alias ~ " = use(" ~
-			this.translator.toString(op_code.name) ~ ");");
-		return true;
+		return false;
 	}
 }
