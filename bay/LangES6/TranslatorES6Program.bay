@@ -389,7 +389,7 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Add modules */
-		this.translator.addUseModules(result);
+		this.translator.addUseModules(result, is_multiline);
 		result.appendItems(result1);
 		
 		/* Restore */
