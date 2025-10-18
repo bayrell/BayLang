@@ -19,7 +19,20 @@
 namespace BayLang.LangBay;
 
 use Runtime.BaseObject;
+use BayLang.Caret;
+use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpDeclareClass;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpHtmlAttribute;
+use BayLang.OpCodes.OpHtmlStyle;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
+use BayLang.OpCodes.OpNamespace;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
 class ParserBayHtml extends BaseObject
@@ -34,5 +47,202 @@ class ParserBayHtml extends BaseObject
 	{
 		parent();
 		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Read open string
+	 */
+	string readOpenString(TokenReader reader)
+	{
+		if (reader.nextToken() == "\"")
+		{
+			reader.matchToken("\"");
+			return "\"";
+		}
+		else if (reader.nextToken() == "'")
+		{
+			reader.matchToken("'");
+			return "'";
+		}
+		else
+		{
+			throw reader.expected("\"");
+		}
+	}
+	
+	
+	/**
+	 * Read attrs
+	 */
+	Collection<BaseOpCode> readAttrs(TokenReader reader, string kind)
+	{
+		Collection<BaseObject> attrs = [];
+		reader.main_caret.skipToken();
+		while (not reader.eof() and reader.main_caret.nextChar() != ">")
+		{
+			Caret caret_start = reader.start();
+			BaseOpCode key = this.parser.parser_base.readIdentifier(reader);
+			reader.main_caret.skipToken();
+			reader.init(reader.main_caret);
+			reader.matchToken("=");
+			string open_tag = this.readOpenString(reader);
+			BaseOpCode value = null;
+			if (kind == "type") value = this.parser.parser_base.readTypeIdentifier(reader, false);
+			reader.matchToken(open_tag);
+			reader.main_caret.skipToken();
+			attrs.push(new OpHtmlAttribute{
+				"key": key.value,
+				"value": value,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			});
+		}
+		return attrs;
+	}
+	
+	
+	/**
+	 * Read style
+	 */
+	BaseOpCode readStyle(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		reader.matchToken("<");
+		reader.matchToken("style");
+		reader.matchToken(">");
+		reader.matchToken("</");
+		reader.matchToken("style");
+		reader.matchToken(">");
+		
+		return new OpHtmlStyle
+		{
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
+	 * Read template
+	 */
+	BaseOpCode readTemplate(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		reader.matchToken("<");
+		reader.matchToken("template");
+		reader.matchToken(">");
+		reader.matchToken("</");
+		reader.matchToken("template");
+		reader.matchToken(">");
+		
+		return new OpDeclareFunction
+		{
+			"name": "render",
+			"is_html": true,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
+	 * Read item
+	 */
+	BaseOpCode readItem(TokenReader reader)
+	{
+		Caret caret_save = reader.caret();
+		reader.matchToken("<");
+		string next_token = reader.nextToken();
+		reader.init(caret_save);
+		
+		if (next_token == "style") return this.readStyle(reader);
+		else if (next_token == "template") return this.readTemplate(reader);
+		return null;
+	}
+	
+	
+	/**
+	 * Read class content
+	 */
+	BaseOpCode readContent(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		Collection items = [];
+		while (not reader.eof() and reader.nextToken() != "</")
+		{
+			BaseOpCode op_code_item = this.readItem(reader);
+			items.push(op_code_item);
+		}
+		
+		return new OpItems
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
+	 * Parse HTML
+	 */
+	BaseOpCode parse(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		reader.matchToken("<");
+		reader.matchToken("class");
+		
+		/* Read attrs */
+		Collection<OpHtmlAttribute> attrs = this.readAttrs(reader, "type");
+		OpTypeIdentifier class_name = attrs.find(bool (OpHtmlAttribute attr) => attr.key == "name");
+		OpTypeIdentifier extend_name = attrs.find(
+			bool (OpHtmlAttribute attr) => attr.key == "extends"
+		);
+		
+		reader.matchToken(">");
+		
+		/* Read component content */
+		BaseOpCode class_content = this.readContent(reader);
+		
+		/*string class_name_value = class_name.entity_name.items.last();*/
+		string namespace_name = rs::join(".", class_name.value.entity_name.items
+			.slice(0, class_name.value.entity_name.items.count() - 1)
+			.map(string (OpIdentifier item) => item.value)
+		);
+		
+		/* Change class name */
+		class_name.value.entity_name.items = [ class_name.value.entity_name.items.last() ];
+		
+		/* Create items */
+		Collection items = [
+			new OpNamespace
+			{
+				"name": namespace_name,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			},
+			new OpDeclareClass
+			{
+				"name": class_name.value,
+				"kind": OpDeclareClass::KIND_CLASS,
+				"class_extends": extend_name ? extend_name.value : null,
+				"is_component": true,
+				"content": class_content,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			},
+		];
+		
+		return new OpModule
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 }

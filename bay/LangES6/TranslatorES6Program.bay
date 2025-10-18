@@ -477,6 +477,7 @@ class TranslatorES6Program extends BaseObject
 		
 		/* Class body items */
 		BaseOpCode prev_op_code = null;
+		int result_count = result.count();
 		bool next_new_line = true;
 		for (int i=0; i<op_code.content.count(); i++)
 		{
@@ -500,7 +501,7 @@ class TranslatorES6Program extends BaseObject
 		/* Class init */
 		if (op_code instanceof OpDeclareClass)
 		{
-			this.translateClassInit(op_code, result);
+			this.translateClassInit(op_code, result, result_count != result.count());
 		}
 		
 		/* End bracket */
@@ -516,9 +517,9 @@ class TranslatorES6Program extends BaseObject
 	/**
 	 * Translate class init
 	 */
-	void translateClassInit(OpDeclareClass op_code, Collection<string> result)
+	void translateClassInit(OpDeclareClass op_code, Collection<string> result, bool newline = true)
 	{
-		result.push(this.translator.newLine(op_code.content.count() > 0 ? 3 : 1));
+		result.push(this.translator.newLine(newline and op_code.content.count() > 0 ? 3 : 1));
 		result.push("/* ========= Class init functions ========= */");
 		result.push(this.translator.newLine());
 		result.push("_init()");

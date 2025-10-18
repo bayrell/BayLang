@@ -158,6 +158,10 @@ class ParserBay extends CoreParser
 	BaseOpCode parse()
 	{
 		TokenReader reader = this.createReader();
+		if (reader.nextToken() == "<")
+		{
+			return this.parser_html.parse(reader);
+		}
 		return this.parser_program.parse(reader);
 	}
 }
