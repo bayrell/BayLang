@@ -551,7 +551,7 @@ class ParserBayOperator extends BaseObject
 	/**
 	 * Read operators
 	 */
-	OpItems parse(TokenReader reader, bool match_brackets = true)
+	OpItems parse(TokenReader reader, bool match_brackets = true, string end_tag = "")
 	{
 		Caret caret_start = reader.start();
 		Collection<BaseOpCode> items = [];
@@ -566,7 +566,7 @@ class ParserBayOperator extends BaseObject
 		while (
 			not reader.eof() and reader.nextToken() != "}" and
 			reader.nextToken() != "#endswitch" and reader.nextToken() != "#case" and
-			reader.nextToken() != "#endif"
+			reader.nextToken() != "#endif" and reader.nextToken() != end_tag
 		)
 		{
 			BaseOpCode op_code = this.readOperator(reader);

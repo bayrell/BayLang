@@ -475,6 +475,8 @@ class Caret extends BaseObject implements SerializeInterface
 		
 		s = this.nextString(2);
 		if (
+			s == "{{" or
+			s == "}}" or
 			s == "==" or
 			s == "!=" or
 			s == "<=" or

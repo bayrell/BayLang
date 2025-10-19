@@ -22,20 +22,10 @@ use Runtime.lib;
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpItems;
 
 
-class OpHtmlItems extends BaseOpCode
+class OpHtmlItems extends OpItems<OpHtmlTag>
 {
 	string op = "op_html";
-	Collection<BaseOpCode> items = [];
-	
-	
-	/**
-	 * Serialize object
-	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		parent(serializer, data);
-		serializer.process(this, "items", data);
-	}
 }
