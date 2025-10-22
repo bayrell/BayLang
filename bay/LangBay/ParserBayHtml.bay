@@ -78,7 +78,7 @@ class ParserBayHtml extends BaseObject
 	/**
 	 * Read attr value
 	 */
-	BaseOpCode readAttrValue(TokenReader reader, string kind)
+	BaseOpCode readAttrValue(TokenReader reader, string key, string kind)
 	{
 		BaseOpCode value = null;
 		if (kind == "type")
@@ -86,6 +86,25 @@ class ParserBayHtml extends BaseObject
 			string open_tag = this.readOpenString(reader);
 			value = this.parser.parser_base.readTypeIdentifier(reader, false);
 			reader.matchToken(open_tag);
+		}
+		else if (kind == "template")
+		{
+			if (key == "name")
+			{
+				string open_tag = this.readOpenString(reader);
+				value = this.parser.parser_base.readIdentifier(reader);
+				reader.matchToken(open_tag);
+			}
+			else if (key == "args")
+			{
+				string open_tag = this.readOpenString(reader);
+				value = this.parser.parser_function.readDeclareFunctionArgs(reader, false, open_tag);
+				reader.matchToken(open_tag);
+			}
+			else
+			{
+				value = this.parser.parser_base.readString();
+			}
 		}
 		else if (kind == "expression")
 		{
@@ -105,6 +124,12 @@ class ParserBayHtml extends BaseObject
 		{
 			string open_tag = this.readOpenString(reader);
 			value = this.parser.parser_operator.parse(reader, false, open_tag);
+			value = new OpDeclareFunction
+			{
+				"content": value,
+				"caret_start": value.caret_start,
+				"caret_end": value.caret_end,
+			};
 			reader.matchToken(open_tag);
 		}
 		return value;
@@ -128,13 +153,16 @@ class ParserBayHtml extends BaseObject
 				reader.matchToken("@");
 			}
 			BaseOpCode key = this.parser.parser_base.readIdentifier(reader);
+			string key_value = is_system_attr ? "@" ~ key.value : key.value;
 			reader.main_caret.skipToken();
 			reader.init(reader.main_caret);
 			reader.matchToken("=");
-			BaseOpCode value = this.readAttrValue(reader, is_system_attr ? "system" : kind);
+			BaseOpCode value = this.readAttrValue(
+				reader, key_value, is_system_attr ? "system" : kind
+			);
 			reader.main_caret.skipToken();
 			attrs.push(new OpHtmlAttribute{
-				"key": is_system_attr ? "@" ~ key.value : key.value,
+				"key": key_value,
 				"value": value,
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
@@ -276,6 +304,7 @@ class ParserBayHtml extends BaseObject
 		
 		reader.matchToken("<");
 		reader.matchToken("template");
+		Collection attrs = this.readAttrs(reader, "template");
 		reader.matchToken(">");
 		
 		OpHtmlItems content = this.readHtml(reader);
@@ -284,9 +313,19 @@ class ParserBayHtml extends BaseObject
 		reader.matchToken("template");
 		reader.matchToken(">");
 		
+		OpIdentifier name = null;
+		OpHtmlAttribute args = null;
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpHtmlAttribute item = attrs.get(i);
+			if (item.key == "name") name = item.value;
+			else if (item.key == "args") args = item;
+		}
+		
 		return new OpDeclareFunction
 		{
-			"name": "render",
+			"name": name ? name.value : "render",
+			"args": args ? args.value : null,
 			"is_html": true,
 			"content": content,
 			"caret_start": caret_start,

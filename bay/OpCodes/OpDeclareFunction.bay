@@ -94,7 +94,7 @@ class OpDeclareFunction extends BaseOpCode
 	{
 		Dict res = parent();
 		
-		BaseOpCode op_comment = this.comments.first();
+		BaseOpCode op_comment = this.comments ? this.comments.first() : null;
 		if (op_comment)
 		{
 			res.set("start", op_comment.caret_start.y)

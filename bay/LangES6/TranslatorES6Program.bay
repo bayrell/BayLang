@@ -301,7 +301,7 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
-		if (not (op_code.pattern instanceof OpTypeIdentifier)) return;
+		/*if (not (op_code.pattern instanceof OpTypeIdentifier)) return;*/
 		
 		/* Comments */
 		if (op_code.comments)
@@ -432,7 +432,8 @@ class TranslatorES6Program extends BaseObject
 		else if (op_code instanceof OpDeclareFunction)
 		{
 			this.translator.class_function = op_code;
-			this.OpDeclareFunction(op_code, result);
+			if (op_code.is_html) this.translator.html.OpDeclareFunction(op_code, result);
+			else this.OpDeclareFunction(op_code, result);
 			this.translator.class_function = null;
 		}
 		else if (op_code instanceof OpPreprocessorIfCode)
@@ -478,7 +479,7 @@ class TranslatorES6Program extends BaseObject
 		/* Class body items */
 		BaseOpCode prev_op_code = null;
 		int result_count = result.count();
-		bool next_new_line = true;
+		bool next_new_line = true, prev_next_new_line = true;
 		for (int i=0; i<op_code.content.count(); i++)
 		{
 			Collection item_result = [];
@@ -491,10 +492,16 @@ class TranslatorES6Program extends BaseObject
 					lines = op_code_item.getOffset().get("start") -
 						prev_op_code.getOffset().get("end");
 				}
+				if (op_code.is_component)
+				{
+					lines = result_count != result.count() ? 2 : 1;
+				}
 				for (int j=0; j<lines; j++) item_result.push(this.translator.newLine());
 			}
+			prev_next_new_line = next_new_line;
 			next_new_line = this.translateClassItem(op_code_item, item_result);
 			if (rs::trim(rs::join("", item_result)) != "") result.appendItems(item_result);
+			else next_new_line = prev_next_new_line;
 			prev_op_code = op_code_item;
 		}
 		

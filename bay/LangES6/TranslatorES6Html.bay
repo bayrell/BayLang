@@ -18,10 +18,190 @@
 
 namespace BayLang.LangES6;
 
+use Runtime.BaseObject;
 use BayLang.LangES6.TranslatorES6;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpHtmlAttribute;
+use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpTypeIdentifier;
 
 
-class TranslatorES6Html
+class TranslatorES6Html extends BaseObject
 {
 	TranslatorES6 translator = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(TranslatorES6 translator)
+	{
+		parent();
+		this.translator = translator;
+	}
+	
+	
+	/**
+	 * OpHtmlContent
+	 */
+	void OpHtmlContent(OpHtmlContent op_code, Collection<string> result, string var_name)
+	{
+		result.push(this.translator.newLine());
+		result.push(var_name ~ ".push(" ~ this.translator.toString(op_code.value) ~ ");");
+	}
+	
+	
+	/**
+	 * OpHtmlExpression
+	 */
+	void OpHtmlExpression(BaseOpCode op_code, Collection<string> result, string var_name)
+	{
+		result.push(this.translator.newLine());
+		result.push(var_name ~ ".push(");
+		this.translator.expression.translate(op_code, result);
+		result.push(");");
+	}
+	
+	
+	/**
+	 * OpHtmlAttrs
+	 */
+	Collection OpHtmlAttrs(Collection<OpHtmlAttribute> attrs)
+	{
+		Collection result = [];
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpHtmlAttribute item = attrs.get(i);
+			Collection item_result = [];
+			item_result.push(this.translator.toString(item.key));
+			item_result.push(": ");
+			bool is_function = item.value instanceof OpDeclareFunction;
+			if (is_function)
+			{
+				int hash_value = this.translator.componentHashInc();
+				item_result.push("this.hash(" ~ hash_value ~ ") ? this.hash(" ~ hash_value ~ ") : ");
+			}
+			this.translator.expression.translate(item.value, item_result);
+			result.push(rs::join("", item_result));
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * OpHtmlTag
+	 */
+	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result, string var_name)
+	{
+		string current_var_name = this.translator.varInc();
+		
+		Collection attrs = this.OpHtmlAttrs(op_code.attrs, result);
+		string attrs_str = attrs.count() > 0 ? ", {" ~ rs::join(", ", attrs) ~ "}" : "";
+		
+		result.push(this.translator.newLine());
+		result.push(this.translator.newLine());
+		result.push("/* Element " ~ op_code.tag_name ~ " */");
+		result.push(this.translator.newLine());
+		result.push("let " ~ current_var_name ~ " = " ~ var_name ~
+			".push(new Runtime.VirtualDom(this, " ~
+			this.translator.toString(op_code.tag_name) ~ ")" ~ attrs_str ~ ");");
+		
+		this.OpHtmlItems(op_code.content, result, current_var_name);
+	}
+	
+	
+	/**
+	 * Translate item
+	 */
+	void translateItem(BaseOpCode op_code, Collection<string> result, string var_name)
+	{
+		if (op_code instanceof OpHtmlContent)
+		{
+			this.OpHtmlContent(op_code, result, var_name);
+		}
+		else if (op_code instanceof OpHtmlTag)
+		{
+			this.OpHtmlTag(op_code, result, var_name);
+		}
+		else
+		{
+			this.OpHtmlExpression(op_code, result, var_name);
+		}
+	}
+	
+	
+	/**
+	 * OpHtmlItems
+	 */
+	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, string var_name)
+	{
+		for (int i=0; i<op_code.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.get(i);
+			this.translateItem(op_code_item, result, var_name);
+		}
+	}
+	
+	
+	/**
+	 * OpDeclareFunction
+	 */
+	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
+	{
+		/* Comments */
+		if (op_code.comments)
+		{
+			for (int i=0; i<op_code.comments.count(); i++)
+			{
+				OpComment op_code_item = op_code.comments.get(i);
+				this.OpComment(op_code_item, result);
+				result.push(this.translator.newLine());
+			}
+		}
+		
+		/* Function flags */
+		if (op_code.flags)
+		{
+			Collection flags = [];
+			if (op_code.flags.isFlag("static") or op_code.flags.isFlag("pure")) flags.push("static");
+			if (op_code.flags.isFlag("async")) flags.push("async");
+			result.push(rs::join(" ", flags));
+			if (flags.count() > 0) result.push(" ");
+		}
+		
+		/* Function name */
+		result.push(op_code.name);
+		
+		/* Arguments */
+		result.push("(");
+		this.translator.program.OpDeclareFunctionArgs(op_code, result);
+		result.push(")");
+		result.push(this.translator.newLine());
+		
+		result.push("{");
+		this.translator.levelInc();
+		
+		/* Create Virtual Dom */
+		result.push(this.translator.newLine());
+		result.push("let __v = new Runtime.VirtualDom(this);");
+		
+		/* Function content */
+		bool save_operator_block = this.translator.is_operator_block;
+		this.translator.is_operator_block = true;
+		this.OpHtmlItems(op_code.content, result, "__v");
+		this.translator.is_operator_block = save_operator_block;
+		
+		/* Return Virtual Dom */
+		result.push(this.translator.newLine());
+		result.push(this.translator.newLine());
+		result.push("return __v;");
+		
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
+	}
 }

@@ -55,9 +55,9 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read function arguments
 	 */
-	Collection<BaseOpCode> readFunctionArgs(TokenReader reader)
+	Collection<BaseOpCode> readFunctionArgs(TokenReader reader, bool match_brackets = true)
 	{
-		reader.matchToken("(");
+		if (match_brackets) reader.matchToken("(");
 		Collection args = [];
 		while (not reader.eof() and reader.nextToken() != ")")
 		{
@@ -68,7 +68,7 @@ class ParserBayFunction extends BaseObject
 				reader.matchToken(",");
 			}
 		}
-		reader.matchToken(")");
+		if (match_brackets) reader.matchToken(")");
 		return args;
 	}
 	
@@ -119,13 +119,15 @@ class ParserBayFunction extends BaseObject
 	/**
 	 * Read function args
 	 */
-	OpItems<OpDeclareFunctionArg> readDeclareFunctionArgs(TokenReader reader)
+	OpItems<OpDeclareFunctionArg> readDeclareFunctionArgs(
+		TokenReader reader, bool match_brackets = false, string end_tag = ""
+	)
 	{
 		Caret caret_start = reader.start();
 		Collection<OpDeclareFunctionArg> items = [];
 		
-		reader.matchToken("(");
-		while (not reader.eof() and reader.nextToken() != ")")
+		if (match_brackets) reader.matchToken("(");
+		while (not reader.eof() and reader.nextToken() != ")" and reader.nextToken() != end_tag)
 		{
 			Caret caret_start_item = reader.start();
 			
@@ -151,12 +153,12 @@ class ParserBayFunction extends BaseObject
 				"caret_end": reader.caret(),
 			});
 			
-			if (reader.nextToken() != ")")
+			if (reader.nextToken() != ")" and reader.nextToken() != end_tag)
 			{
 				reader.matchToken(",");
 			}
 		}
-		reader.matchToken(")");
+		if (match_brackets) reader.matchToken(")");
 		
 		return new OpItems
 		{

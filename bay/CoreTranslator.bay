@@ -41,6 +41,8 @@ class CoreTranslator extends BaseObject
 	Dict<OpDeclareClass> class_items = {};
 	OpDeclareClass current_class = null;
 	OpDeclareFunction class_function = null;
+	int var_inc = 0;
+	int component_hash_inc = 0;
 	string current_block = "";
 	string current_class_name = "";
 	string current_namespace_name = "";
@@ -100,6 +102,35 @@ class CoreTranslator extends BaseObject
 	void levelDec()
 	{
 		this.indent_level = this.indent_level - 1;
+	}
+	
+	
+	/**
+	 * Increment component hash
+	 */
+	int componentHashInc()
+	{
+		this.component_hash_inc += 1;
+		return this.component_hash_inc - 1;
+	}
+	
+	
+	/**
+	 * Increment variable
+	 */
+	string varInc()
+	{
+		this.var_inc += 1;
+		return "__v" ~ (this.var_inc - 1);
+	}
+	
+	
+	/**
+	 * Decrement variable
+	 */
+	void varDec()
+	{
+		this.var_inc -= 1;
 	}
 	
 	
