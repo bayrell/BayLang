@@ -21,12 +21,16 @@ namespace BayLang.LangES6;
 use Runtime.BaseObject;
 use BayLang.LangES6.TranslatorES6;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
@@ -150,7 +154,7 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * OpDeclareFunction
 	 */
-	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
+	bool OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
 		/* Comments */
 		if (op_code.comments)
@@ -158,26 +162,27 @@ class TranslatorES6Html extends BaseObject
 			for (int i=0; i<op_code.comments.count(); i++)
 			{
 				OpComment op_code_item = op_code.comments.get(i);
-				this.OpComment(op_code_item, result);
+				this.translator.program.OpComment(op_code_item, result);
 				result.push(this.translator.newLine());
 			}
-		}
-		
-		/* Function flags */
-		if (op_code.flags)
-		{
-			Collection flags = [];
-			if (op_code.flags.isFlag("static") or op_code.flags.isFlag("pure")) flags.push("static");
-			if (op_code.flags.isFlag("async")) flags.push("async");
-			result.push(rs::join(" ", flags));
-			if (flags.count() > 0) result.push(" ");
 		}
 		
 		/* Function name */
 		result.push(op_code.name);
 		
 		/* Arguments */
-		result.push("(");
+		result.push(": ");
+		
+		/* Function flags */
+		if (op_code.flags)
+		{
+			Collection flags = [];
+			if (op_code.flags.isFlag("async")) flags.push("async");
+			result.push(rs::join(" ", flags));
+			if (flags.count() > 0) result.push(" ");
+		}
+		
+		result.push("function(");
 		this.translator.program.OpDeclareFunctionArgs(op_code, result);
 		result.push(")");
 		result.push(this.translator.newLine());
@@ -203,5 +208,207 @@ class TranslatorES6Html extends BaseObject
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
 		result.push("}");
+		
+		return true;
+	}
+	
+	
+	/**
+	 * Translate component body
+	 */
+	void translateComponentBody(OpDeclareClass op_code, Collection<string> result)
+	{
+		bool next_new_line = true;
+		for (int i=0; i<op_code.content.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.content.get(i);
+			if (op_code_item instanceof OpDeclareFunction)
+			{
+				/* Check if static */
+				bool is_static = op_code_item.flags and
+					(op_code_item.flags.isFlag("static") or op_code_item.flags.isFlag("pure"));
+				if (is_static)
+				{
+					continue;
+				}
+				
+				/* Check if html function */
+				if (not op_code_item.is_html)
+				{
+					if (next_new_line) result.push(this.translator.newLine());
+					next_new_line = true;
+					this.translator.program.OpDeclareFunction(op_code_item, result);
+					result.push(",");
+					continue;
+				}
+				
+				Collection item_result = [];
+				next_new_line = this.OpDeclareFunction(op_code_item, item_result, false);
+				if (next_new_line)
+				{
+					result.push(this.translator.newLine());
+					result.appendItems(item_result);
+					result.push(",");
+				}
+			}
+		}
+	}
+	
+	
+	/**
+	 * Translate component static functions
+	 */
+	void translateComponentStatic(OpDeclareClass op_code, Collection<string> result)
+	{
+		for (int i=0; i<op_code.content.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.content.get(i);
+			if (op_code_item instanceof OpDeclareFunction)
+			{
+				/* Check if static */
+				bool is_static = op_code_item.flags and
+					(op_code_item.flags.isFlag("static") or op_code_item.flags.isFlag("pure"));
+				if (not is_static)
+				{
+					continue;
+				}
+				
+				/* Check if html function */
+				if (op_code_item.is_html) continue;
+				
+				result.push(this.translator.newLine());
+				this.translator.program.OpDeclareFunction(op_code_item, result);
+				result.push(",");
+			}
+		}
+	}
+	
+	
+	/**
+	 * Translate component data
+	 */
+	void OpDeclareComponentData(OpDeclareClass op_code, Collection<string> result, bool is_props)
+	{
+		bool has_data = false;
+		Collection item_result = [];
+		item_result.push(this.translator.newLine());
+		if (is_props) item_result.push("props: function()");
+		else item_result.push("data: function()");
+		item_result.push(this.translator.newLine());
+		item_result.push("{");
+		this.translator.levelInc();
+		item_result.push(this.translator.newLine());
+		item_result.push("return {");
+		this.translator.levelInc();
+		for (int i=0; i<op_code.content.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.content.get(i);
+			if (op_code_item instanceof OpAssign and (is_props and op_code_item.flags.isFlag("props") or not is_props and not op_code_item.flags.isFlag("props")))
+			{
+				for (int j=0; j<op_code_item.items.count(); j++)
+				{
+					has_data = true;
+					OpAssignValue op_code_assign = op_code_item.items.get(j);
+					OpIdentifier item = op_code_assign.value;
+					item_result.push(this.translator.newLine());
+					if (is_props) item_result.push(item.value ~ ": {default: ");
+					else item_result.push(item.value ~ ": ");
+					this.translator.expression.translate(op_code_assign.expression, item_result);
+					if (is_props) item_result.push("},");
+					else item_result.push(",");
+				}
+			}
+		}
+		this.translator.levelDec();
+		item_result.push(this.translator.newLine());
+		item_result.push("};");
+		this.translator.levelDec();
+		item_result.push(this.translator.newLine());
+		item_result.push("},");
+		if (has_data) result.appendItems(item_result);
+	}
+	
+	
+	/**
+	 * Translate component
+	 */
+	bool translateComponent(OpDeclareClass op_code, Collection<string> result)
+	{
+		/* Class name */
+		string class_name = op_code.name.entity_name.items.last().value;
+		this.translator.parent_class_name = "";
+		this.translator.current_class = op_code;
+		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
+			op_code.name.entity_name.getName();
+		
+		/* Add use */
+		this.translator.uses.set(class_name, this.translator.current_class_name);
+		this.translator.class_items.set(class_name, this.translator.current_class_name);
+		
+		/* Extends */
+		if (op_code.class_extends)
+		{
+			this.translator.parent_class_name = this.translator.getFullName(
+				op_code.class_extends.entity_name.getName()
+			);
+		}
+		else
+		{
+			this.translator.parent_class_name = "Runtime.Component";
+		}
+		
+		/* Define class */
+		result.push(this.translator.current_class_name ~ " = {");
+		this.translator.levelInc();
+		result.push(this.translator.newLine());
+		
+		/* Component name */
+		result.push("name: " ~ this.translator.toString(this.translator.current_class_name) ~ ",");
+		if (this.translator.parent_class_name)
+		{
+			result.push(this.translator.newLine());
+			result.push("extends: " ~ this.translator.parent_class_name ~ ",");
+		}
+		
+		/* Component data */
+		this.OpDeclareComponentData(op_code, result, true);
+		this.OpDeclareComponentData(op_code, result, false);
+		
+		/* Component methods */
+		result.push(this.translator.newLine());
+		result.push("methods:");
+		result.push(this.translator.newLine());
+		result.push("{");
+		this.translator.levelInc();
+		
+		/* Component methods */
+		this.translateComponentBody(op_code, result);
+		
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("},");
+		
+		/* Static functions */
+		this.translateComponentStatic(op_code, result);
+		this.translator.program.translateClassInit(op_code, result, false);
+		
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("};");
+		
+		/* Register class */
+		if (this.translator.use_module_name)
+		{
+			result.push(this.translator.newLine());
+			result.push("use.add(" ~ this.translator.current_class_name ~ ");");
+		}
+		if (this.translator.use_window)
+		{
+			result.push(this.translator.newLine());
+			result.push("window[\"" ~ this.translator.current_class_name ~ "\"] = " ~
+				this.translator.current_class_name ~ ";");
+		}
+		
+		return true;
 	}
 }

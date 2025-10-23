@@ -120,7 +120,7 @@ class ParserBayFunction extends BaseObject
 	 * Read function args
 	 */
 	OpItems<OpDeclareFunctionArg> readDeclareFunctionArgs(
-		TokenReader reader, bool match_brackets = false, string end_tag = ""
+		TokenReader reader, bool match_brackets = true, string end_tag = ""
 	)
 	{
 		Caret caret_start = reader.start();

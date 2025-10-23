@@ -120,7 +120,7 @@ class ParserBayHtml extends BaseObject
 				reader.matchToken("}}");
 			}
 		}
-		else if (kind == "system")
+		else if (kind == "function")
 		{
 			string open_tag = this.readOpenString(reader);
 			value = this.parser.parser_operator.parse(reader, false, open_tag);
@@ -131,6 +131,10 @@ class ParserBayHtml extends BaseObject
 				"caret_end": value.caret_end,
 			};
 			reader.matchToken(open_tag);
+		}
+		else
+		{
+			value = this.parser.parser_base.readString(reader);
 		}
 		return value;
 	}
@@ -158,7 +162,7 @@ class ParserBayHtml extends BaseObject
 			reader.init(reader.main_caret);
 			reader.matchToken("=");
 			BaseOpCode value = this.readAttrValue(
-				reader, key_value, is_system_attr ? "system" : kind
+				reader, key_value, is_system_attr ? "function" : kind
 			);
 			reader.main_caret.skipToken();
 			attrs.push(new OpHtmlAttribute{
@@ -233,6 +237,18 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read html render
+	 */
+	BaseOpCode reaHtmlRender(TokenReader reader)
+	{
+		reader.matchToken("%render");
+		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken(";");
+		return expression;
+	}
+	
+	
+	/**
 	 * Read html tag
 	 */
 	OpHtmlTag readHtmlTag(TokenReader reader)
@@ -266,8 +282,10 @@ class ParserBayHtml extends BaseObject
 	 */
 	BaseOpCode readHtmlItem(TokenReader reader)
 	{
-		if (reader.nextToken() == "<") return this.readHtmlTag(reader);
-		else if (reader.nextToken() == "{{") return this.readHtmlExpression(reader);
+		string next_token = reader.nextToken();
+		if (next_token == "<") return this.readHtmlTag(reader);
+		else if (next_token == "{{") return this.readHtmlExpression(reader);
+		else if (next_token == "%render") return this.reaHtmlRender(reader);
 		return this.readHtmlContent(reader);
 	}
 	
@@ -335,6 +353,28 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read script
+	 */
+	BaseOpCode readScript(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		reader.matchToken("<");
+		reader.matchToken("script");
+		Collection attrs = this.readAttrs(reader, "script");
+		reader.matchToken(">");
+		
+		OpItems items = this.parser.parser_class.readBody(reader, false, "</");
+		
+		reader.matchToken("</");
+		reader.matchToken("script");
+		reader.matchToken(">");
+		
+		return items;
+	}
+	
+	
+	/**
 	 * Read item
 	 */
 	BaseOpCode readItem(TokenReader reader)
@@ -346,6 +386,8 @@ class ParserBayHtml extends BaseObject
 		
 		if (next_token == "style") return this.readStyle(reader);
 		else if (next_token == "template") return this.readTemplate(reader);
+		else if (next_token == "script") return this.readScript(reader);
+		else throw reader.error("Unknown token " ~ next_token);
 		return null;
 	}
 	
@@ -361,7 +403,8 @@ class ParserBayHtml extends BaseObject
 		while (not reader.eof() and reader.nextToken() != "</")
 		{
 			BaseOpCode op_code_item = this.readItem(reader);
-			items.push(op_code_item);
+			if (op_code_item instanceof OpItems) items.appendItems(op_code_item.items);
+			else items.push(op_code_item);
 		}
 		
 		return new OpItems

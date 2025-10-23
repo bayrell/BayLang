@@ -303,6 +303,8 @@ class TranslatorES6Program extends BaseObject
 	{
 		/*if (not (op_code.pattern instanceof OpTypeIdentifier)) return;*/
 		
+		bool is_component = this.translator.current_class.is_component;
+		
 		/* Comments */
 		if (op_code.comments)
 		{
@@ -315,17 +317,35 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Function flags */
+		Collection flags = [];
 		if (op_code.flags)
 		{
-			Collection flags = [];
-			if (op_code.flags.isFlag("static") or op_code.flags.isFlag("pure")) flags.push("static");
+			if (not is_component and (
+				op_code.flags.isFlag("static") or op_code.flags.isFlag("pure")
+			))
+			{
+				flags.push("static");
+			}
 			if (op_code.flags.isFlag("async")) flags.push("async");
+		}
+		
+		/* Add flags if class is not component */
+		if (not is_component)
+		{
 			result.push(rs::join(" ", flags));
 			if (flags.count() > 0) result.push(" ");
 		}
 		
 		/* Function name */
 		result.push(op_code.name);
+		
+		/* Add flags if class is component */
+		if (is_component)
+		{
+			flags.push("function");
+			result.push(": ");
+			result.push(rs::join(" ", flags));
+		}
 		
 		/* Arguments */
 		result.push("(");
@@ -492,10 +512,6 @@ class TranslatorES6Program extends BaseObject
 					lines = op_code_item.getOffset().get("start") -
 						prev_op_code.getOffset().get("end");
 				}
-				if (op_code.is_component)
-				{
-					lines = result_count != result.count() ? 2 : 1;
-				}
 				for (int j=0; j<lines; j++) item_result.push(this.translator.newLine());
 			}
 			prev_next_new_line = next_new_line;
@@ -526,53 +542,72 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void translateClassInit(OpDeclareClass op_code, Collection<string> result, bool newline = true)
 	{
-		result.push(this.translator.newLine(newline and op_code.content.count() > 0 ? 3 : 1));
-		result.push("/* ========= Class init functions ========= */");
-		result.push(this.translator.newLine());
-		result.push("_init()");
-		result.push(this.translator.newLine());
-		result.push("{");
-		this.translator.levelInc();
-		if (op_code.class_extends)
+		if (not op_code.is_component)
 		{
+			result.push(this.translator.newLine(newline and op_code.content.count() > 0 ? 3 : 1));
+			result.push("/* ========= Class init functions ========= */");
 			result.push(this.translator.newLine());
-			result.push("super._init();");
-		}
-		Dict save_use_modules = this.translator.setUseModules();
-		Collection result1 = [];
-		bool is_assign_first = true;
-		for (int i=0; i<op_code.content.items.count(); i++)
-		{
-			BaseOpCode op_code_item = op_code.content.items.get(i);
-			if (op_code_item instanceof OpAssign and not op_code_item.isStatic())
+			result.push("_init()");
+			result.push(this.translator.newLine());
+			result.push("{");
+			this.translator.levelInc();
+			if (op_code.class_extends)
 			{
-				for (int j=0; j<op_code_item.items.count(); j++)
+				result.push(this.translator.newLine());
+				result.push("super._init();");
+			}
+			Dict save_use_modules = this.translator.setUseModules();
+			Collection result1 = [];
+			bool is_assign_first = true;
+			for (int i=0; i<op_code.content.items.count(); i++)
+			{
+				BaseOpCode op_code_item = op_code.content.items.get(i);
+				if (op_code_item instanceof OpAssign and not op_code_item.isStatic())
 				{
-					OpAssignValue assign_item = op_code_item.items.get(j);
-					if (assign_item.expression)
+					for (int j=0; j<op_code_item.items.count(); j++)
 					{
-						result1.push(this.translator.newLine());
-						result1.push("this." ~ assign_item.value.value ~ " = ");
-						this.translator.expression.translate(assign_item.expression, result1);
-						result1.push(";");
-						is_assign_first = false;
+						OpAssignValue assign_item = op_code_item.items.get(j);
+						if (assign_item.expression)
+						{
+							result1.push(this.translator.newLine());
+							result1.push("this." ~ assign_item.value.value ~ " = ");
+							this.translator.expression.translate(assign_item.expression, result1);
+							result1.push(";");
+							is_assign_first = false;
+						}
 					}
 				}
 			}
+			this.translator.addUseModules(result);
+			this.translator.setUseModules(save_use_modules);
+			result.appendItems(result1);
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+			result.push("}");
 		}
-		this.translator.addUseModules(result);
-		this.translator.setUseModules(save_use_modules);
-		result.appendItems(result1);
-		this.translator.levelDec();
 		result.push(this.translator.newLine());
-		result.push("}");
+		
+		/* Get class name */
+		if (op_code.is_component) result.push("getClassName: function(){ ");
+		else result.push("static getClassName(){ ");
+		result.push("return \"" ~ this.translator.current_class_name ~ "\"; }");
+		result.push(op_code.is_component ? "," : "");
+		
 		result.push(this.translator.newLine());
-		result.push("static getClassName(){ " ~
-			"return \"" ~ this.translator.current_class_name ~ "\"; }");
+		
+		/* Get method list */
+		if (op_code.is_component) result.push("getMethodsList: function(){ ");
+		else result.push("static getMethodsList(){ ");
+		result.push("return []; }");
+		result.push(op_code.is_component ? "," : "");
+		
 		result.push(this.translator.newLine());
-		result.push("static getMethodsList(){ return []; }");
-		result.push(this.translator.newLine());
-		result.push("static getMethodInfoByName(field_name){ return null; }");
+		
+		/* Get method info by name */
+		if (op_code.is_component) result.push("getMethodInfoByName: function(field_name){ ");
+		else result.push("static getMethodInfoByName(field_name){ ");
+		result.push("return null; }");
+		result.push(op_code.is_component ? "," : "");
 		
 		/* Implements */
 		if (op_code.class_implements)
@@ -585,8 +620,12 @@ class TranslatorES6Program extends BaseObject
 				)
 			);
 			result.push(this.translator.newLine());
-			result.push("static getInterfaces(field_name){ return [" ~
-				rs::join(",", class_implements) ~ "]; }");
+			
+			/* Get interfaces */
+			if (op_code.is_component) result.push("getInterfaces: function(){ ");
+			else result.push("static getInterfaces(){ ");
+			result.push("return [" ~ rs::join(",", class_implements) ~ "]; }");
+			result.push(op_code.is_component ? "," : "");
 		}
 	}
 	
@@ -594,13 +633,15 @@ class TranslatorES6Program extends BaseObject
 	/**
 	 * Translate class
 	 */
-	void translateClass(OpDeclareClass op_code, Collection<string> result)
+	bool translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
 		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return false;
+		if (op_code.is_component) return this.translator.html.translateComponent(op_code, result);
 		
 		/* Class name */
 		string class_name = op_code.name.entity_name.items.last().value;
 		this.translator.parent_class_name = "";
+		this.translator.current_class = op_code;
 		this.translator.current_class_name = this.translator.current_namespace_name ~ "." ~
 			op_code.name.entity_name.getName();
 		
