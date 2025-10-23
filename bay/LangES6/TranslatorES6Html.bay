@@ -26,6 +26,8 @@ use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
@@ -52,9 +54,9 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * OpHtmlContent
 	 */
-	void OpHtmlContent(OpHtmlContent op_code, Collection<string> result, string var_name)
+	void OpHtmlContent(OpHtmlContent op_code, Collection<string> result)
 	{
-		result.push(this.translator.newLine());
+		string var_name = this.translator.html_var_names.last();
 		result.push(var_name ~ ".push(" ~ this.translator.toString(op_code.value) ~ ");");
 	}
 	
@@ -62,9 +64,9 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * OpHtmlExpression
 	 */
-	void OpHtmlExpression(BaseOpCode op_code, Collection<string> result, string var_name)
+	void OpHtmlExpression(BaseOpCode op_code, Collection<string> result)
 	{
-		result.push(this.translator.newLine());
+		string var_name = this.translator.html_var_names.last();
 		result.push(var_name ~ ".push(");
 		this.translator.expression.translate(op_code, result);
 		result.push(");");
@@ -99,41 +101,57 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * OpHtmlTag
 	 */
-	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result, string var_name)
+	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result)
 	{
+		string var_name = this.translator.html_var_names.last();
 		string current_var_name = this.translator.varInc();
 		
 		Collection attrs = this.OpHtmlAttrs(op_code.attrs, result);
 		string attrs_str = attrs.count() > 0 ? ", {" ~ rs::join(", ", attrs) ~ "}" : "";
 		
-		result.push(this.translator.newLine());
-		result.push(this.translator.newLine());
 		result.push("/* Element " ~ op_code.tag_name ~ " */");
 		result.push(this.translator.newLine());
 		result.push("let " ~ current_var_name ~ " = " ~ var_name ~
-			".push(new Runtime.VirtualDom(this, " ~
-			this.translator.toString(op_code.tag_name) ~ ")" ~ attrs_str ~ ");");
+			".element(" ~ this.translator.toString(op_code.tag_name) ~ attrs_str ~ ");");
 		
-		this.OpHtmlItems(op_code.content, result, current_var_name);
+		this.translator.html_var_names.push(current_var_name);
+		this.OpHtmlItems(op_code.content, result, true);
+		this.translator.html_var_names.pop();
 	}
 	
 	
 	/**
 	 * Translate item
 	 */
-	void translateItem(BaseOpCode op_code, Collection<string> result, string var_name)
+	void translateItem(BaseOpCode op_code, Collection<string> result, bool new_line = false)
 	{
 		if (op_code instanceof OpHtmlContent)
 		{
-			this.OpHtmlContent(op_code, result, var_name);
+			this.OpHtmlContent(op_code, result);
 		}
 		else if (op_code instanceof OpHtmlTag)
 		{
-			this.OpHtmlTag(op_code, result, var_name);
+			if (new_line) result.push(this.translator.newLine());
+			this.OpHtmlTag(op_code, result);
+		}
+		else if (op_code instanceof OpAssign)
+		{
+			this.translator.operator.OpAssign(op_code, result);
+			result.push(";");
+		}
+		else if (op_code instanceof OpFor)
+		{
+			if (new_line) result.push(this.translator.newLine());
+			this.translator.operator.OpFor(op_code, result);
+		}
+		else if (op_code instanceof OpIf)
+		{
+			if (new_line) result.push(this.translator.newLine());
+			this.translator.operator.OpIf(op_code, result);
 		}
 		else
 		{
-			this.OpHtmlExpression(op_code, result, var_name);
+			this.OpHtmlExpression(op_code, result);
 		}
 	}
 	
@@ -141,12 +159,13 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * OpHtmlItems
 	 */
-	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, string var_name)
+	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, bool new_line = false)
 	{
 		for (int i=0; i<op_code.count(); i++)
 		{
 			BaseOpCode op_code_item = op_code.get(i);
-			this.translateItem(op_code_item, result, var_name);
+			result.push(this.translator.newLine());
+			this.translateItem(op_code_item, result, new_line or i > 0);
 		}
 	}
 	
@@ -156,6 +175,10 @@ class TranslatorES6Html extends BaseObject
 	 */
 	bool OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
+		/* Setup current function */
+		OpDeclareFunction old_function = this.translator.current_function;
+		this.translator.current_function = op_code;
+		
 		/* Comments */
 		if (op_code.comments)
 		{
@@ -193,11 +216,12 @@ class TranslatorES6Html extends BaseObject
 		/* Create Virtual Dom */
 		result.push(this.translator.newLine());
 		result.push("let __v = new Runtime.VirtualDom(this);");
+		this.translator.html_var_names.push("__v");
 		
 		/* Function content */
 		bool save_operator_block = this.translator.is_operator_block;
 		this.translator.is_operator_block = true;
-		this.OpHtmlItems(op_code.content, result, "__v");
+		this.OpHtmlItems(op_code.content, result, true);
 		this.translator.is_operator_block = save_operator_block;
 		
 		/* Return Virtual Dom */
@@ -208,6 +232,9 @@ class TranslatorES6Html extends BaseObject
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
 		result.push("}");
+		
+		/* Restore old function */
+		this.translator.current_function = old_function;
 		
 		return true;
 	}

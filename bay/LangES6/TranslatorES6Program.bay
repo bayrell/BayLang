@@ -305,6 +305,10 @@ class TranslatorES6Program extends BaseObject
 		
 		bool is_component = this.translator.current_class.is_component;
 		
+		/* Setup current function */
+		OpDeclareFunction old_function = this.translator.current_function;
+		this.translator.current_function = op_code;
+		
 		/* Comments */
 		if (op_code.comments)
 		{
@@ -425,6 +429,9 @@ class TranslatorES6Program extends BaseObject
 			result.push(" ");
 		}
 		result.push("}");
+		
+		/* Restore function */
+		this.translator.current_function = old_function;
 	}
 	
 	

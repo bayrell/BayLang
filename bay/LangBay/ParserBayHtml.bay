@@ -23,15 +23,19 @@ use BayLang.Caret;
 use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpIfElse;
 use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpModule;
 use BayLang.OpCodes.OpNamespace;
@@ -206,9 +210,11 @@ class ParserBayHtml extends BaseObject
 		Caret caret_start = reader.start();
 		
 		Caret caret = caret_start.copy();
-		Collection tokens = ["</", "<", "{{"];
+		Collection tokens = ["</", "{{"];
 		Collection<string> content = [];
-		while (not reader.eof() and tokens.indexOf(caret.nextString(2)) == -1)
+		while (not reader.eof() and
+			not caret.isNextChar("<") and tokens.indexOf(caret.nextString(2)) == -1
+		)
 		{
 			content.push(caret.readChar());
 		}
@@ -278,6 +284,127 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read HTML Assign
+	 */
+	BaseOpCode readHtmlAssign(TokenReader reader)
+	{
+		reader.matchToken("%set");
+		OpAssign op_code = this.parser.parser_operator.readAssign(reader);
+		reader.matchToken(";");
+		return op_code;
+	}
+	
+	
+	/**
+	 * Read HTML for
+	 */
+	BaseOpCode readHtmlFor(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		/* Read for */
+		reader.matchToken("%for");
+		reader.matchToken("(");
+		
+		/* Read assing */
+		BaseOpCode expr1 = this.parser.parser_operator.readAssign(reader);
+		reader.matchToken(";");
+		
+		/* Read expression */
+		BaseOpCode expr2 = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken(";");
+		
+		/* Read operator */
+		BaseOpCode expr3 = this.parser.parser_operator.readInc(reader);
+		reader.matchToken(")");
+		
+		/* Read content */
+		OpItems content = this.readHtml(reader, true, "}");
+		
+		/* Returns op_code */
+		return new OpFor
+		{
+			"expr1": expr1,
+			"expr2": expr2,
+			"expr3": expr3,
+			"content": content,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		}
+	}
+	
+	
+	/**
+	 * Read HTML if
+	 */
+	BaseOpCode readHtmlIf(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		BaseOpCode if_true = null;
+		BaseOpCode if_false = null;
+		Collection if_else = [];
+		
+		/* Read condition */
+		reader.matchToken("%if");
+		reader.matchToken("(");
+		BaseOpCode condition = this.parser.parser_expression.readExpression(reader);
+		reader.matchToken(")");
+		
+		/* Read content */
+		if_true = this.readHtml(reader, true, "}");
+		this.parser.parser_base.skipComment(reader);
+		
+		/* Read content */
+		Caret caret_last = null;
+		Collection operations = ["%else", "%elseif"];
+		while (not reader.eof() and (operations.indexOf(reader.nextToken()) >= 0))
+		{
+			string token = reader.readToken();
+			if (token == "%elseif" or token == "%else" and reader.nextToken() == "if")
+			{
+				/* Read condition */
+				if (reader.nextToken() == "if") reader.readToken();
+				reader.matchToken("(");
+				BaseOpCode if_else_condition = this.parser.parser_expression.readExpression(reader);
+				reader.matchToken(")");
+				
+				/* Read content */
+				BaseOpCode if_else_content = this.readHtml(reader, true, "}");
+				
+				/* Add op_code */
+				if_else.push(new OpIfElse
+				{
+					"condition": if_else_condition,
+					"content": if_else_content,
+					"caret_start": caret_start,
+					"caret_end": reader.caret(),
+				});
+			}
+			else if (token == "%else")
+			{
+				if_false = this.readHtml(reader, true, "}");
+			}
+			caret_last = reader.caret();
+			this.parser.parser_base.skipComment(reader);
+		}
+		
+		/* Restore caret */
+		if (caret_last) reader.init(caret_last);
+		
+		return new OpIf
+		{
+			"condition": condition,
+			"if_true": if_true,
+			"if_false": if_false,
+			"if_else": if_else,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read HTML item
 	 */
 	BaseOpCode readHtmlItem(TokenReader reader)
@@ -286,6 +413,9 @@ class ParserBayHtml extends BaseObject
 		if (next_token == "<") return this.readHtmlTag(reader);
 		else if (next_token == "{{") return this.readHtmlExpression(reader);
 		else if (next_token == "%render") return this.reaHtmlRender(reader);
+		else if (next_token == "%set") return this.readHtmlAssign(reader);
+		else if (next_token == "%for") return this.readHtmlFor(reader);
+		else if (next_token == "%if") return this.readHtmlIf(reader);
 		return this.readHtmlContent(reader);
 	}
 	
@@ -293,16 +423,20 @@ class ParserBayHtml extends BaseObject
 	/**
 	 * Read html
 	 */
-	OpHtmlItems readHtml(TokenReader reader)
+	OpHtmlItems readHtml(TokenReader reader, bool match_brackets = false, string end_tag = "")
 	{
 		Caret caret_start = reader.start();
 		
+		if (match_brackets) reader.matchToken("{");
+		
 		Collection items = [];
-		while (not reader.eof() and reader.nextToken() != "</")
+		while (not reader.eof() and reader.nextToken() != "</" and reader.nextToken() != end_tag)
 		{
 			BaseOpCode op_code_item = this.readHtmlItem(reader);
 			items.push(op_code_item);
 		}
+		
+		if (match_brackets) reader.matchToken("}");
 		
 		return new OpHtmlItems
 		{

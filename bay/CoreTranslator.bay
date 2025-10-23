@@ -41,6 +41,7 @@ class CoreTranslator extends BaseObject
 	Dict<OpDeclareClass> class_items = {};
 	OpDeclareClass current_class = null;
 	OpDeclareFunction class_function = null;
+	Collection html_var_names = [];
 	int var_inc = 0;
 	int component_hash_inc = 0;
 	string current_block = "";
