@@ -620,7 +620,8 @@ class TranslatorES6Expression extends BaseObject
 		}
 		else if (op_code instanceof OpDeclareFunction)
 		{
-			this.translator.program.OpDeclareFunction(op_code, result);
+			if (op_code.is_html) this.translator.html.OpDeclareFunction(op_code, result);
+			else this.translator.program.OpDeclareFunction(op_code, result);
 		}
 		else if (op_code instanceof OpCall)
 		{

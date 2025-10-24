@@ -94,6 +94,19 @@ class TranslatorES6 extends CoreTranslator
 	
 	
 	/**
+	 * Returns module name
+	 */
+	string getUseModule(string module_name)
+	{
+		if (this.uses.get(module_name))
+		{
+			return this.useModule(this.uses.get(module_name));
+		}
+		return this.useModule(module_name);
+	}
+	
+	
+	/**
 	 * Add use modules
 	 */
 	void addUseModules(Collection<string> result)

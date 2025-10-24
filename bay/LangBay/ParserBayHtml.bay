@@ -31,6 +31,7 @@ use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpIdentifier;
@@ -40,6 +41,7 @@ use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpModule;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpUse;
 
 
 class ParserBayHtml extends BaseObject
@@ -80,15 +82,15 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
-	 * Read attr value
+	 * Read attr expression
 	 */
-	BaseOpCode readAttrValue(TokenReader reader, string key, string kind)
+	BaseOpCode readAttrExpression(TokenReader reader, string key, string kind = "")
 	{
-		BaseOpCode value = null;
+		BaseOpCode expression = null;
 		if (kind == "type")
 		{
 			string open_tag = this.readOpenString(reader);
-			value = this.parser.parser_base.readTypeIdentifier(reader, false);
+			expression = this.parser.parser_base.readTypeIdentifier(reader, false);
 			reader.matchToken(open_tag);
 		}
 		else if (kind == "template")
@@ -96,18 +98,20 @@ class ParserBayHtml extends BaseObject
 			if (key == "name")
 			{
 				string open_tag = this.readOpenString(reader);
-				value = this.parser.parser_base.readIdentifier(reader);
+				expression = this.parser.parser_base.readIdentifier(reader);
 				reader.matchToken(open_tag);
 			}
 			else if (key == "args")
 			{
 				string open_tag = this.readOpenString(reader);
-				value = this.parser.parser_function.readDeclareFunctionArgs(reader, false, open_tag);
+				expression = this.parser.parser_function.readDeclareFunctionArgs(
+					reader, false, open_tag
+				);
 				reader.matchToken(open_tag);
 			}
 			else
 			{
-				value = this.parser.parser_base.readString();
+				expression = this.parser.parser_base.readString();
 			}
 		}
 		else if (kind == "expression")
@@ -115,43 +119,45 @@ class ParserBayHtml extends BaseObject
 			string next_token = reader.nextToken();
 			if (next_token == "\"" or next_token == "'")
 			{
-				value = this.parser.parser_base.readString(reader);
+				expression = this.parser.parser_base.readString(reader);
 			}
 			else if (next_token == "{{")
 			{
 				reader.matchToken("{{");
-				value = this.parser.parser_expression.readExpression(reader);
+				expression = this.parser.parser_expression.readExpression(reader);
 				reader.matchToken("}}");
 			}
 		}
 		else if (kind == "function")
 		{
 			string open_tag = this.readOpenString(reader);
-			value = this.parser.parser_operator.parse(reader, false, open_tag);
-			value = new OpDeclareFunction
+			expression = this.parser.parser_operator.parse(reader, false, open_tag);
+			expression = new OpDeclareFunction
 			{
-				"content": value,
-				"caret_start": value.caret_start,
-				"caret_end": value.caret_end,
+				"content": expression,
+				"caret_start": expression.caret_start,
+				"caret_end": expression.caret_end,
 			};
 			reader.matchToken(open_tag);
 		}
 		else
 		{
-			value = this.parser.parser_base.readString(reader);
+			expression = this.parser.parser_base.readString(reader);
 		}
-		return value;
+		return expression;
 	}
 	
 	
 	/**
 	 * Read attrs
 	 */
-	Collection<BaseOpCode> readAttrs(TokenReader reader, string kind)
+	Collection<BaseOpCode> readAttrs(TokenReader reader, string kind = "")
 	{
 		Collection<BaseObject> attrs = [];
 		reader.main_caret.skipToken();
-		while (not reader.eof() and reader.main_caret.nextChar() != ">")
+		while (not reader.eof() and
+			reader.main_caret.nextChar() != ">" and reader.main_caret.nextString(2) != "/>"
+		)
 		{
 			Caret caret_start = reader.start();
 			bool is_system_attr = false;
@@ -165,13 +171,13 @@ class ParserBayHtml extends BaseObject
 			reader.main_caret.skipToken();
 			reader.init(reader.main_caret);
 			reader.matchToken("=");
-			BaseOpCode value = this.readAttrValue(
+			BaseOpCode expression = this.readAttrExpression(
 				reader, key_value, is_system_attr ? "function" : kind
 			);
 			reader.main_caret.skipToken();
 			attrs.push(new OpHtmlAttribute{
 				"key": key_value,
-				"value": value,
+				"expression": expression,
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
 			});
@@ -255,6 +261,16 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Returns true if tag_name is component
+	 */
+	static bool isComponent(string tag_name)
+	{
+		string first = rs::substr(tag_name, 0, 1);
+		return rs::upper(first) == first;
+	}
+	
+	
+	/**
 	 * Read html tag
 	 */
 	OpHtmlTag readHtmlTag(TokenReader reader)
@@ -263,14 +279,53 @@ class ParserBayHtml extends BaseObject
 		
 		reader.matchToken("<");
 		BaseOpCode tag_name = this.parser.parser_base.readIdentifier(reader);
-		Collection<OpHtmlAttribute> attrs = this.readAttrs(reader, "expression");
-		reader.matchToken(">");
+		Collection<OpHtmlAttribute> attrs = this.readAttrs(
+			reader, tag_name.value == "slot" ? "template" : "expression"
+		);
 		
-		OpHtmlItems content = this.readHtml(reader);
+		OpHtmlItems content = null;
+		if (reader.nextToken() != "/>")
+		{
+			reader.matchToken(">");
+			content = this.readHtml(reader);
+			reader.matchToken("</");
+			reader.matchToken(tag_name.value);
+			reader.matchToken(">");
+		}
+		else
+		{
+			reader.matchToken("/>");
+		}
 		
-		reader.matchToken("</");
-		reader.matchToken(tag_name.value);
-		reader.matchToken(">");
+		if (tag_name.value == "slot")
+		{
+			string name = "";
+			Collection<OpDeclareFunctionArg> args = null;
+			for (int i=0; i<attrs.count(); i++)
+			{
+				OpHtmlAttribute item = attrs.get(i);
+				if (item.key == "name") name = item.expression.value;
+				else if (item.key == "args") args = item.expression;
+			}
+			
+			return new OpHtmlSlot
+			{
+				"args": args,
+				"name": name,
+				"content": content,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			};
+		}
+		/*else if (static::isComponent(tag_name.value))
+		{
+			content = new OpDeclareFunction
+			{
+				"content": content,
+				"caret_start": caret_start,
+				"caret_end": reader.caret(),
+			};
+		}*/
 		
 		return new OpHtmlTag
 		{
@@ -448,6 +503,53 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read use
+	 */
+	BaseOpCode readUse(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		reader.matchToken("<");
+		reader.matchToken("use");
+		Collection attrs = this.readAttrs(reader);
+		reader.matchToken("/>");
+		
+		string alias = "";
+		string name = "";
+		bool is_component = false;
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpHtmlAttribute item = attrs.get(i);
+			string value = item.expression.value;
+			if (item.key == "name") name = value;
+			else if (item.key == "as") alias = value;
+			else if (item.key == "component")
+			{
+				if (value == "true" or value == "1") is_component = true;
+			}
+		}
+		
+		/* Get alias */
+		if (alias == "")
+		{
+			Collection arr = rs::split(".", name);
+			alias = arr.last();
+		}
+		
+		/* Add use */
+		this.parser.uses.set(alias, name);
+		
+		return new OpUse
+		{
+			"alias": alias,
+			"name": name,
+			"is_component": is_component,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read template
 	 */
 	BaseOpCode readTemplate(TokenReader reader)
@@ -470,14 +572,14 @@ class ParserBayHtml extends BaseObject
 		for (int i=0; i<attrs.count(); i++)
 		{
 			OpHtmlAttribute item = attrs.get(i);
-			if (item.key == "name") name = item.value;
-			else if (item.key == "args") args = item;
+			if (item.key == "name") name = item.expression.value;
+			else if (item.key == "args") args = item.expression;
 		}
 		
 		return new OpDeclareFunction
 		{
-			"name": name ? name.value : "render",
-			"args": args ? args.value : null,
+			"name": name ? name : "render",
+			"args": args ? args : null,
 			"is_html": true,
 			"content": content,
 			"caret_start": caret_start,
@@ -521,7 +623,8 @@ class ParserBayHtml extends BaseObject
 		if (next_token == "style") return this.readStyle(reader);
 		else if (next_token == "template") return this.readTemplate(reader);
 		else if (next_token == "script") return this.readScript(reader);
-		else throw reader.error("Unknown token " ~ next_token);
+		else if (next_token == "use") return this.readUse(reader);
+		else throw reader.next_caret.error("Unknown token " ~ next_token);
 		return null;
 	}
 	
@@ -573,33 +676,42 @@ class ParserBayHtml extends BaseObject
 		BaseOpCode class_content = this.readContent(reader);
 		
 		/*string class_name_value = class_name.entity_name.items.last();*/
-		string namespace_name = rs::join(".", class_name.value.entity_name.items
-			.slice(0, class_name.value.entity_name.items.count() - 1)
+		string namespace_name = rs::join(".", class_name.expression.entity_name.items
+			.slice(0, class_name.expression.entity_name.items.count() - 1)
 			.map(string (OpIdentifier item) => item.value)
 		);
 		
 		/* Change class name */
-		class_name.value.entity_name.items = [ class_name.value.entity_name.items.last() ];
+		class_name.expression.entity_name.items = [ class_name.expression.entity_name.items.last() ];
 		
 		/* Create items */
-		Collection items = [
-			new OpNamespace
-			{
-				"name": namespace_name,
-				"caret_start": caret_start,
-				"caret_end": reader.caret(),
-			},
-			new OpDeclareClass
-			{
-				"name": class_name.value,
-				"kind": OpDeclareClass::KIND_CLASS,
-				"class_extends": extend_name ? extend_name.value : null,
-				"is_component": true,
-				"content": class_content,
-				"caret_start": caret_start,
-				"caret_end": reader.caret(),
-			},
-		];
+		Collection items = [];
+		items.push(new OpNamespace
+		{
+			"name": namespace_name,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		});
+		
+		/* Add use */
+		Collection<OpUse> uses = class_content.items.filter(
+			bool (BaseOpCode item) => item instanceof OpUse);
+		items.appendItems(uses);
+		
+		/* Filter content */
+		class_content.items = class_content.items.filter(
+			bool (BaseOpCode item) => not(item instanceof OpUse)
+		);
+		items.push(new OpDeclareClass
+		{
+			"name": class_name.expression,
+			"kind": OpDeclareClass::KIND_CLASS,
+			"class_extends": extend_name ? extend_name.expression : null,
+			"is_component": true,
+			"content": class_content,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		});
 		
 		return new OpModule
 		{

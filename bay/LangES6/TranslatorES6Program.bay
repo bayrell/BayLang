@@ -341,13 +341,16 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Function name */
-		result.push(op_code.name);
+		if (old_function == null) result.push(op_code.name);
 		
 		/* Add flags if class is component */
 		if (is_component)
 		{
-			flags.push("function");
-			result.push(": ");
+			if (old_function == null)
+			{
+				flags.push("function");
+				result.push(": ");
+			}
 			result.push(rs::join(" ", flags));
 		}
 		
@@ -413,7 +416,7 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Add modules */
-		this.translator.addUseModules(result, is_multiline);
+		this.translator.addUseModules(result);
 		result.appendItems(result1);
 		
 		/* Restore */

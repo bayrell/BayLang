@@ -20,19 +20,13 @@ namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
-use BayLang.OpCodes.OpDeclareFunctionArg;
-use BayLang.OpCodes.OpHtmlAttribute;
-use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpDeclareFunction;
 
 
-class OpHtmlSlot extends BaseOpCode
+class OpHtmlSlot extends OpDeclareFunction
 {
-    string op = "op_html_slot";
-	string name = "";
-	Collection<OpDeclareFunctionArg> args = null;
-	Collection<OpHtmlAttribute> attrs = null;
-	Collection<string> vars = null;
-	OpHtmlItems items = null;
+	string op = "op_html_slot";
+	bool is_html = true;
 	
 	
 	/**
@@ -41,8 +35,5 @@ class OpHtmlSlot extends BaseOpCode
 	void serialize(Serializer serializer, Map data)
 	{
 		parent(serializer, data);
-		serializer.process(this, "attrs", data);
-		serializer.process(this, "items", data);
-		serializer.process(this, "name", data);
 	}
 }
