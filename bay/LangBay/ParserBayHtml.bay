@@ -30,6 +30,8 @@ use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlCSS;
+use BayLang.OpCodes.OpHtmlCSSAttribute;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
@@ -187,6 +189,131 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read selector
+	 */
+	string readSelector(TokenReader reader)
+	{
+		Collection selector = [];
+		reader.main_caret.skipToken();
+		while (not reader.eof() and
+			reader.main_caret.nextChar() != "{" and reader.main_caret.nextChar() != "}"
+		)
+		{
+			selector.push(reader.main_caret.readChar());
+		}
+		reader.init(reader.main_caret);
+		return rs::join("", selector);
+	}
+	
+	
+	/**
+	 * Returns true if next is selector
+	 */
+	bool isNextSelector(TokenReader reader)
+	{
+		Caret caret = reader.main_caret.copy();
+		while (not caret.eof())
+		{
+			string ch = caret.readChar();
+			if (ch == ":" or ch == ";" or ch == "}") return false;
+			if (ch == "{" or ch == "(") return true;
+		}
+		return false;
+	}
+	
+	
+	/**
+	 * Read CSS Item
+	 */
+	string readCSSItem(TokenReader reader)
+	{
+		Caret caret = reader.main_caret;
+		Collection<string> content = [];
+		while (not caret.eof() and not (
+			caret.isNextString(":") or caret.isNextString(";") or caret.isNextString("}")
+		))
+		{
+			content.push(caret.readChar());
+		}
+		reader.init(caret);
+		return rs::trim(rs::join("", content));
+	}
+	
+	
+	/**
+	 * Read CSS
+	 */
+	OpHtmlCSS readCSS(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		string selector = this.readSelector(reader);
+		reader.matchToken("{");
+		
+		Collection items = [];
+		while (not reader.eof() and reader.nextToken() != "}")
+		{
+			reader.main_caret.skipToken();
+			if (this.isNextSelector(reader))
+			{
+				OpHtmlCSS op_code_item = this.readCSS(reader);
+				items.push(op_code_item);
+			}
+			else
+			{
+				Caret caret_start_item = reader.start();
+				string key = this.readCSSItem(reader);
+				reader.matchToken(":");
+				string value = this.readCSSItem(reader);
+				items.push(
+					new OpHtmlCSSAttribute
+					{
+						"key": key,
+						"value": value,
+						"caret_start": caret_start_item,
+						"caret_end": reader.caret(),
+					}
+				);
+				if (reader.nextToken() != "}") reader.matchToken(";");
+			}
+		}
+		
+		reader.matchToken("}");
+		
+		return new OpHtmlCSS
+		{
+			"selector": selector,
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
+	 * Read style content
+	 */
+	BaseOpCode readStyleContent(TokenReader reader, string end_tag = "}")
+	{
+		Caret caret_start = reader.start();
+		
+		Collection<BaseOpCode> items = [];
+		while (not reader.eof() and reader.nextToken() != end_tag)
+		{
+			OpHtmlCSS op_code_item = this.readCSS(reader);
+			items.push(op_code_item);
+		}
+		
+		return new OpItems
+		{
+			"items": items,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read style
 	 */
 	BaseOpCode readStyle(TokenReader reader)
@@ -196,12 +323,16 @@ class ParserBayHtml extends BaseObject
 		reader.matchToken("<");
 		reader.matchToken("style");
 		reader.matchToken(">");
+		
+		BaseOpCode content = this.readStyleContent(reader, "</");
+		
 		reader.matchToken("</");
 		reader.matchToken("style");
 		reader.matchToken(">");
 		
 		return new OpHtmlStyle
 		{
+			"content": content,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
@@ -317,15 +448,6 @@ class ParserBayHtml extends BaseObject
 				"caret_end": reader.caret(),
 			};
 		}
-		/*else if (static::isComponent(tag_name.value))
-		{
-			content = new OpDeclareFunction
-			{
-				"content": content,
-				"caret_start": caret_start,
-				"caret_end": reader.caret(),
-			};
-		}*/
 		
 		return new OpHtmlTag
 		{

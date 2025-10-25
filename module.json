@@ -76,6 +76,8 @@
 		"OpCodes/OpItems.bay",
 		"OpCodes/OpHtmlAttribute.bay",
 		"OpCodes/OpHtmlContent.bay",
+		"OpCodes/OpHtmlCSS.bay",
+		"OpCodes/OpHtmlCSSAttribute.bay",
 		"OpCodes/OpHtmlItems.bay",
 		"OpCodes/OpHtmlSlot.bay",
 		"OpCodes/OpHtmlStyle.bay",

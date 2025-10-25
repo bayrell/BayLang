@@ -15,34 +15,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 namespace BayLang.OpCodes;
 
-use Runtime.Reference;
-use Runtime.Serializer;
-use BayLang.Caret;
-use BayLang.TokenReader;
-use BayLang.Exceptions.ParserUnknownError;
-use BayLang.LangBay.ParserBay;
-use BayLang.LangBay.ParserBayHtml;
 use BayLang.OpCodes.BaseOpCode;
 
 
-class OpHtmlStyle extends BaseOpCode
+class OpHtmlCSS extends BaseOpCode
 {
-	string op = "op_html_style";
-	bool is_global = false;
-	BaseOpCode content = null;
-	
-	
-	/**
-	 * Serialize object
-	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		parent(serializer, data);
-		serializer.process(this, "content", data);
-		serializer.process(this, "is_global", data);
-		serializer.process(this, "value", data);
-	}
+    string selector = "";
+    Collection<BaseOpCode> items = [];
 }

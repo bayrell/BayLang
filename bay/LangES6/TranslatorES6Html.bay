@@ -31,8 +31,11 @@ use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlCSS;
+use BayLang.OpCodes.OpHtmlCSSAttribute;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlSlot;
+use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpTypeIdentifier;
@@ -397,6 +400,99 @@ class TranslatorES6Html extends BaseObject
 	
 	
 	/**
+	 * Combine selector
+	 */
+	Collection<string> combineSelector(Collection<string> path, string selector)
+	{
+		bool need_add_hash = true;
+		for (int i=0; i<path.count(); i++)
+		{
+			string item = path.get(i);
+			if (rs::charAt(item, 0) != "@")
+			{
+				need_add_hash = false;
+				break;
+			}
+		}
+		
+		Collection<string> items = rs::split(" ", selector);
+		if (need_add_hash)
+		{
+			string css_hash = rs::getCssHash(this.translator.current_class_name);
+			items.set(0, items.get(0) ~ ".h-" ~ css_hash);
+		}
+		return path.concat(rs::join(" ", items));
+	}
+	
+	
+	/**
+	 * Translate CSS
+	 */
+	void OpHtmlCSS(OpHtmlCSS op_code, Collection<string> result, Collection<string> path)
+	{
+		Collection item_result = [];
+		Collection item_content = [];
+		Collection<string> selector = this.combineSelector(path, op_code.selector);
+		for (int i=0; i<op_code.items.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.items.get(i);
+			if (op_code_item instanceof OpHtmlCSS)
+			{
+				this.OpHtmlCSS(op_code_item, item_result, selector);
+			}
+			else if (op_code_item instanceof OpHtmlCSSAttribute)
+			{
+				item_content.push(op_code_item.key ~ ": " ~ op_code_item.value ~ ";");
+			}
+		}
+		if (item_content.count() > 0)
+		{
+			result.push(rs::join(" ", selector));
+			result.push("{");
+			result.push(rs::substr(rs::join("", item_content), 0, -1));
+			result.push("}");
+		}
+		result.appendItems(item_result);
+	}
+	
+	
+	/**
+	 * Translate HTML Style
+	 */
+	void OpHtmlStyle(OpHtmlStyle op_code, Collection<string> result)
+	{
+		for (int i=0; i<op_code.content.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.content.get(i);
+			this.OpHtmlCSS(op_code_item, result, []);
+		}
+	}
+	
+	
+	/**
+	 * Translate component style
+	 */
+	void translateComponentStyle(OpDeclareClass op_code, Collection<string> result)
+	{
+		Collection<OpHtmlStyle> items = op_code.content.items.filter(
+			bool (BaseOpCode item) => item instanceof OpHtmlStyle
+		);
+		
+		Collection<string> css_content = [];
+		for (int i=0; i<items.count(); i++)
+		{
+			OpHtmlStyle op_code_item = items.get(i);
+			this.OpHtmlStyle(op_code_item, css_content);
+		}
+		
+		result.push(this.translator.newLine());
+		result.push("getComponentStyle: function(){ ");
+		result.push("return " ~ this.translator.toString(rs::join("", css_content)) ~ "; ");
+		result.push("},");
+	}
+	
+	
+	/**
 	 * Translate component data
 	 */
 	void OpDeclareComponentData(OpDeclareClass op_code, Collection<string> result, bool is_props)
@@ -502,6 +598,7 @@ class TranslatorES6Html extends BaseObject
 		
 		/* Static functions */
 		this.translateComponentStatic(op_code, result);
+		this.translateComponentStyle(op_code, result);
 		this.translator.program.translateClassInit(op_code, result, false);
 		
 		this.translator.levelDec();
