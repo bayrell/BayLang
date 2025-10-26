@@ -225,7 +225,7 @@ class TranslatorPHPOperator extends BaseObject
 					this.translator.expression.OpTypeIdentifier(op_code_item.pattern, result);
 				}
 				result.push(" ");
-				result.push(op_code_item.name.value);
+				result.push("$" ~ op_code_item.name.value);
 				result.push(")");
 				this.translateItems(op_code_item.content, result);
 			}

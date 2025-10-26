@@ -60,11 +60,12 @@ class TranslatorPHPExpression extends BaseObject
 	/**
 	 * OpIdentifier
 	 */
-	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
+	void OpIdentifier(OpIdentifier op_code, Collection<string> result, bool is_const)
 	{
+		Collection variables = ["null", "static", "true", "false"];
 		if (op_code.value == "print") result.push("echo");
-		else if (op_code.value == "null") result.push("null");
-		else if (op_code.value == "static") result.push("static");
+		else if (op_code.value == "var_dump") result.push("var_dump");
+		else if (variables.indexOf(op_code.value) >= 0) result.push(op_code.value);
 		else if (op_code.value == "this")
 		{
 			if (this.translator.class_function and this.translator.class_function.isStatic())
@@ -92,7 +93,7 @@ class TranslatorPHPExpression extends BaseObject
 				if (class_name == this.translator.current_class_name) result.push("static");
 				else result.push("\\" ~ this.translator.getModuleName(class_name));
 			}
-			else result.push("$" ~ op_code.value);
+			else result.push(not is_const ? "$" ~ op_code.value : op_code.value);
 		}
 		this.translator.opcode_level = 20;
 	}
@@ -172,7 +173,7 @@ class TranslatorPHPExpression extends BaseObject
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
-		result.push("new \\Runtime\\Collection(");
+		result.push("new \\Runtime\\Vector(");
 		if (is_multiline)
 		{
 			this.translator.levelInc();
@@ -383,11 +384,11 @@ class TranslatorPHPExpression extends BaseObject
 	{
 		if (op_code.item instanceof OpIdentifier and op_code.item.value == "parent")
 		{
-			if (this.translator.class_function and
-				this.translator.class_function.name != "constructor"
-			)
+			if (this.translator.class_function)
 			{
-				result.push("parent::" ~ this.translator.class_function.name);
+				string name = this.translator.class_function.name;
+				if (name == "constructor") name = "__construct";
+				result.push("parent::" ~ name);
 			}
 			else
 			{
@@ -470,7 +471,7 @@ class TranslatorPHPExpression extends BaseObject
 		if (op_code.math == "<") { opcode_level = 10; op = "<"; }
 		if (op_code.math == "is") { opcode_level = 10; op = "instanceof"; }
 		if (op_code.math == "instanceof") { opcode_level = 10; op = "instanceof"; }
-		if (op_code.math == "implements") { opcode_level = 10; op = "implements"; }
+		if (op_code.math == "implements") { opcode_level = 10; op = "instanceof"; }
 		if (op_code.math == "bitnot") { opcode_level = 16; op = "bitnot"; }
 		if (op_code.math == "neg") { opcode_level = 16; op = "neg"; }
 		if (op_code.math == "not") { opcode_level = 16; op = "!"; }

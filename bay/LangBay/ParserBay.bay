@@ -56,7 +56,7 @@ class ParserBay extends CoreParser
 	bool isRegisteredVariable(string name)
 	{
 		Collection variables = [
-			"print", "rs", "rtl", "parent", "this", "@", "null", "true", "false",
+			"print", "var_dump", "rs", "rtl", "parent", "this", "@", "null", "true", "false",
 		];
 		if (variables.indexOf(name) == -1) return false;
 		return true;

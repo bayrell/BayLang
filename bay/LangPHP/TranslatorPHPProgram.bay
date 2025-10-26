@@ -126,7 +126,9 @@ class TranslatorPHPProgram extends BaseObject
 				{
 					result.push("var ");
 				}
-				this.translator.expression.OpIdentifier(op_code_item.value, result);
+				this.translator.expression.OpIdentifier(
+					op_code_item.value, result, op_code.flags.isFlag("const")
+				);
 			}
 			else
 			{
@@ -308,7 +310,9 @@ class TranslatorPHPProgram extends BaseObject
 		}
 		
 		/* Function name */
-		result.push("function " ~ op_code.name);
+		result.push("function ");
+		if (op_code.name == "constructor") result.push("__construct");
+		else result.push(op_code.name);
 		
 		/* Arguments */
 		result.push("(");
@@ -494,40 +498,43 @@ class TranslatorPHPProgram extends BaseObject
 		
 		result.push(this.translator.newLine(newline and op_code.content.count() > 0 ? 3 : 1));
 		result.push("/* ========= Class init functions ========= */");
-		result.push(this.translator.newLine());
-		result.push("function _init()");
-		result.push(this.translator.newLine());
-		result.push("{");
-		this.translator.levelInc();
-		result.push(this.translator.newLine());
-		if (op_code.class_extends)
+		if (this.translator.current_class_name != "Runtime.BaseObject")
 		{
-			result.push("parent::_init();");
 			result.push(this.translator.newLine());
-		}
-		bool is_assign_first = true;
-		for (int i=0; i<op_code.content.items.count(); i++)
-		{
-			BaseOpCode op_code_item = op_code.content.items.get(i);
-			if (op_code_item instanceof OpAssign and not op_code_item.isStatic())
+			result.push("function _init()");
+			result.push(this.translator.newLine());
+			result.push("{");
+			this.translator.levelInc();
+			result.push(this.translator.newLine());
+			if (op_code.class_extends)
 			{
-				for (int j=0; j<op_code_item.items.count(); j++)
+				result.push("parent::_init();");
+				result.push(this.translator.newLine());
+			}
+			bool is_assign_first = true;
+			for (int i=0; i<op_code.content.items.count(); i++)
+			{
+				BaseOpCode op_code_item = op_code.content.items.get(i);
+				if (op_code_item instanceof OpAssign and not op_code_item.isStatic())
 				{
-					OpAssignValue assign_item = op_code_item.items.get(j);
-					if (assign_item.expression)
+					for (int j=0; j<op_code_item.items.count(); j++)
 					{
-						if (not is_assign_first) result.push(this.translator.newLine());
-						result.push("$this->" ~ assign_item.value.value ~ " = ");
-						this.translator.expression.translate(assign_item.expression, result);
-						result.push(";");
-						is_assign_first = false;
+						OpAssignValue assign_item = op_code_item.items.get(j);
+						if (assign_item.expression)
+						{
+							if (not is_assign_first) result.push(this.translator.newLine());
+							result.push("$this->" ~ assign_item.value.value ~ " = ");
+							this.translator.expression.translate(assign_item.expression, result);
+							result.push(";");
+							is_assign_first = false;
+						}
 					}
 				}
 			}
+			this.translator.levelDec();
+			result.push(this.translator.newLine());
+			result.push("}");
 		}
-		this.translator.levelDec();
-		result.push(this.translator.newLine());
-		result.push("}");
 		result.push(this.translator.newLine());
 		result.push("static function getClassName(){ " ~
 			"return \"" ~ this.translator.current_class_name ~ "\"; }");

@@ -62,7 +62,7 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpIdentifier(OpIdentifier op_code, Collection<string> result)
 	{
-		if (op_code.value == "print") result.push("console.log");
+		if (op_code.value == "print" or op_code.value == "var_dump") result.push("console.log");
 		else if (op_code.value == "static")
 		{
 			if (this.translator.class_function and this.translator.class_function.isStatic())
