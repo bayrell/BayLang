@@ -125,13 +125,15 @@ class TranslatorES6Html extends BaseObject
 	{
 		if (tag_name instanceof OpIdentifier)
 		{
-			return tag_name.value;
+			string rtl = this.translator.getUseModule("rtl");
+			return [tag_name.value, rtl ~ ".findClass(" ~ tag_name.value ~ ")"];
 		}
 		if (ParserBayHtml::isComponent(tag_name))
 		{
-			return this.translator.getUseModule(tag_name);
+			string module_name = this.translator.getUseModule(tag_name);
+			return [module_name, module_name];
 		}
-		return this.translator.toString(tag_name);
+		return [tag_name, this.translator.toString(tag_name)];
 	}
 	
 	
@@ -147,10 +149,10 @@ class TranslatorES6Html extends BaseObject
 		string attrs_str = attrs.count() > 0 ? ", {" ~ rs::join(", ", attrs) ~ "}" : "";
 		
 		string tag_name = this.getTagName(op_code.tag_name);
-		result.push("/* Element " ~ tag_name ~ " */");
+		result.push("/* Element " ~ tag_name.get(0) ~ " */");
 		result.push(this.translator.newLine());
 		result.push("let " ~ current_var_name ~ " = " ~ var_name ~
-			".element(" ~ tag_name ~ attrs_str ~ ");");
+			".element(" ~ tag_name.get(1) ~ attrs_str ~ ");");
 		
 		if (op_code.content and op_code.content.count() > 0)
 		{
