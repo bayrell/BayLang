@@ -24,6 +24,7 @@ use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpEntityName;
@@ -58,6 +59,33 @@ class ParserBayHtml extends BaseObject
 	{
 		parent();
 		this.parser = parser;
+	}
+	
+	
+	/**
+	 * Read comment
+	 */
+	OpComment readComment(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		reader.matchToken("<");
+		reader.matchToken("!--");
+		
+		Vector<string> value = [];
+		while (not reader.main_caret.eof() and reader.main_caret.nextString(3) != "-->")
+		{
+			value.push(reader.main_caret.readChar());
+		}
+		reader.init(reader.main_caret);
+		reader.matchToken("--");
+		reader.matchToken(">");
+		
+		return new OpComment
+		{
+			"value": rs::join("", value),
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
 	}
 	
 	
@@ -157,7 +185,7 @@ class ParserBayHtml extends BaseObject
 	{
 		Collection<BaseObject> attrs = [];
 		reader.main_caret.skipToken();
-		while (not reader.eof() and
+		while (not reader.main_caret.eof() and
 			reader.main_caret.nextChar() != ">" and reader.main_caret.nextString(2) != "/>"
 		)
 		{
@@ -195,7 +223,7 @@ class ParserBayHtml extends BaseObject
 	{
 		Collection selector = [];
 		reader.main_caret.skipToken();
-		while (not reader.eof() and
+		while (not reader.main_caret.eof() and
 			reader.main_caret.nextChar() != "{" and reader.main_caret.nextChar() != "}"
 		)
 		{
@@ -253,7 +281,6 @@ class ParserBayHtml extends BaseObject
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() != "}")
 		{
-			reader.main_caret.skipToken();
 			if (this.isNextSelector(reader))
 			{
 				OpHtmlCSS op_code_item = this.readCSS(reader);
@@ -409,9 +436,23 @@ class ParserBayHtml extends BaseObject
 		Caret caret_start = reader.start();
 		
 		reader.matchToken("<");
-		BaseOpCode tag_name = this.parser.parser_base.readIdentifier(reader);
+		
+		BaseOpCode tag_name = null;
+		bool is_variable = false;
+		if (reader.nextToken() == "{")
+		{
+			is_variable = true;
+			reader.matchToken("{");
+			tag_name = this.parser.parser_base.readIdentifier(reader);
+			reader.matchToken("}");
+		}
+		else
+		{
+			tag_name = this.parser.parser_base.readIdentifier(reader);
+		}
+		
 		Collection<OpHtmlAttribute> attrs = this.readAttrs(
-			reader, tag_name.value == "slot" ? "template" : "expression"
+			reader, not is_variable and tag_name.value == "slot" ? "template" : "expression"
 		);
 		
 		OpHtmlItems content = null;
@@ -420,7 +461,9 @@ class ParserBayHtml extends BaseObject
 			reader.matchToken(">");
 			content = this.readHtml(reader);
 			reader.matchToken("</");
+			if (is_variable) reader.matchToken("{");
 			reader.matchToken(tag_name.value);
+			if (is_variable) reader.matchToken("}");
 			reader.matchToken(">");
 		}
 		else
@@ -453,7 +496,7 @@ class ParserBayHtml extends BaseObject
 		{
 			"attrs": attrs,
 			"content": content,
-			"tag_name": tag_name.value,
+			"tag_name": is_variable ? tag_name : tag_name.value,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
@@ -465,7 +508,8 @@ class ParserBayHtml extends BaseObject
 	 */
 	BaseOpCode readHtmlAssign(TokenReader reader)
 	{
-		reader.matchToken("%set");
+		if (reader.nextToken() == "%set") reader.matchToken("%set");
+		else reader.matchToken("%var");
 		OpAssign op_code = this.parser.parser_operator.readAssign(reader);
 		reader.matchToken(";");
 		return op_code;
@@ -590,7 +634,7 @@ class ParserBayHtml extends BaseObject
 		if (next_token == "<") return this.readHtmlTag(reader);
 		else if (next_token == "{{") return this.readHtmlExpression(reader);
 		else if (next_token == "%render") return this.reaHtmlRender(reader);
-		else if (next_token == "%set") return this.readHtmlAssign(reader);
+		else if (next_token == "%set" or next_token == "%var") return this.readHtmlAssign(reader);
 		else if (next_token == "%for") return this.readHtmlFor(reader);
 		else if (next_token == "%if") return this.readHtmlIf(reader);
 		return this.readHtmlContent(reader);
@@ -746,6 +790,7 @@ class ParserBayHtml extends BaseObject
 		else if (next_token == "template") return this.readTemplate(reader);
 		else if (next_token == "script") return this.readScript(reader);
 		else if (next_token == "use") return this.readUse(reader);
+		else if (next_token == "!--") return this.readComment(reader);
 		else throw reader.next_caret.error("Unknown token " ~ next_token);
 		return null;
 	}
@@ -781,7 +826,15 @@ class ParserBayHtml extends BaseObject
 	BaseOpCode parse(TokenReader reader)
 	{
 		Caret caret_start = reader.start();
+		Collection items = [];
 		
+		/* Read comment */
+		if (caret_start.skipSpace().nextString(2) == "<!")
+		{
+			items.push(this.readComment(reader));
+		}
+		
+		/* Read class */
 		reader.matchToken("<");
 		reader.matchToken("class");
 		
@@ -806,8 +859,7 @@ class ParserBayHtml extends BaseObject
 		/* Change class name */
 		class_name.expression.entity_name.items = [ class_name.expression.entity_name.items.last() ];
 		
-		/* Create items */
-		Collection items = [];
+		/* Add namespace */
 		items.push(new OpNamespace
 		{
 			"name": namespace_name,

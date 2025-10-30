@@ -65,6 +65,7 @@ class OpFlags extends BaseOpCode implements SerializeInterface
 			"declare",
 			"protected",
 			"serializable",
+			"computed",
 			"cloneable",
 			"assignable",
 			"memorize",
@@ -92,6 +93,7 @@ class OpFlags extends BaseOpCode implements SerializeInterface
 			flag_name == "declare" or
 			flag_name == "protected" or
 			flag_name == "serializable" or
+			flag_name == "computed" or
 			flag_name == "cloneable" or
 			flag_name == "assignable" or
 			flag_name == "memorize" or

@@ -38,7 +38,7 @@ class BaseOpCode extends BaseObject implements SerializeInterface
 	public void constructor(Dict params = null)
 	{
 		parent();
-		this.assign(params);
+		this._assign_values(params);
 	}
 	
 	

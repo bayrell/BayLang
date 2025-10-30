@@ -121,8 +121,12 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * Returns tag name
 	 */
-	string getTagName(string tag_name)
+	string getTagName(var tag_name)
 	{
+		if (tag_name instanceof OpIdentifier)
+		{
+			return tag_name.value;
+		}
 		if (ParserBayHtml::isComponent(tag_name))
 		{
 			return this.translator.getUseModule(tag_name);
@@ -142,10 +146,11 @@ class TranslatorES6Html extends BaseObject
 		Collection attrs = this.OpHtmlAttrs(op_code.attrs, result);
 		string attrs_str = attrs.count() > 0 ? ", {" ~ rs::join(", ", attrs) ~ "}" : "";
 		
-		result.push("/* Element " ~ op_code.tag_name ~ " */");
+		string tag_name = this.getTagName(op_code.tag_name);
+		result.push("/* Element " ~ tag_name ~ " */");
 		result.push(this.translator.newLine());
 		result.push("let " ~ current_var_name ~ " = " ~ var_name ~
-			".element(" ~ this.getTagName(op_code.tag_name) ~ attrs_str ~ ");");
+			".element(" ~ tag_name ~ attrs_str ~ ");");
 		
 		if (op_code.content and op_code.content.count() > 0)
 		{
@@ -331,7 +336,7 @@ class TranslatorES6Html extends BaseObject
 	/**
 	 * Translate component body
 	 */
-	void translateComponentBody(OpDeclareClass op_code, Collection<string> result)
+	void translateComponentBody(OpDeclareClass op_code, Collection<string> result, string kind)
 	{
 		bool next_new_line = true;
 		for (int i=0; i<op_code.content.count(); i++)
@@ -345,6 +350,17 @@ class TranslatorES6Html extends BaseObject
 				if (is_static)
 				{
 					continue;
+				}
+				
+				if (kind == "methods" and
+					op_code_item.flags and op_code_item.flags.isFlag("computed"))
+				{
+					continue;
+				}
+				if (kind == "computed")
+				{
+					if (not op_code_item.flags) continue;
+					else if (not op_code_item.flags.isFlag("computed")) continue;
 				}
 				
 				/* Check if html function */
@@ -500,13 +516,16 @@ class TranslatorES6Html extends BaseObject
 		bool has_data = false;
 		Collection item_result = [];
 		item_result.push(this.translator.newLine());
-		if (is_props) item_result.push("props: function()");
+		if (is_props) item_result.push("props: {");
 		else item_result.push("data: function()");
-		item_result.push(this.translator.newLine());
-		item_result.push("{");
-		this.translator.levelInc();
-		item_result.push(this.translator.newLine());
-		item_result.push("return {");
+		if (not is_props)
+		{
+			item_result.push(this.translator.newLine());
+			item_result.push("{");
+			this.translator.levelInc();
+			item_result.push(this.translator.newLine());
+			item_result.push("return {");
+		}
 		this.translator.levelInc();
 		for (int i=0; i<op_code.content.count(); i++)
 		{
@@ -528,9 +547,12 @@ class TranslatorES6Html extends BaseObject
 			}
 		}
 		this.translator.levelDec();
-		item_result.push(this.translator.newLine());
-		item_result.push("};");
-		this.translator.levelDec();
+		if (not is_props)
+		{
+			item_result.push(this.translator.newLine());
+			item_result.push("};");
+			this.translator.levelDec();
+		}
 		item_result.push(this.translator.newLine());
 		item_result.push("},");
 		if (has_data) result.appendItems(item_result);
@@ -562,7 +584,10 @@ class TranslatorES6Html extends BaseObject
 		}
 		else
 		{
-			this.translator.parent_class_name = "Runtime.Component";
+			if (this.translator.current_class_name != "Runtime.Component")
+			{
+				this.translator.parent_class_name = "Runtime.Component";
+			}
 		}
 		
 		/* Define class */
@@ -590,11 +615,29 @@ class TranslatorES6Html extends BaseObject
 		this.translator.levelInc();
 		
 		/* Component methods */
-		this.translateComponentBody(op_code, result);
+		this.translateComponentBody(op_code, result, "methods");
 		
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
 		result.push("},");
+		
+		/* Component computed */
+		Collection computed_result = [];
+		computed_result.push(this.translator.newLine());
+		computed_result.push("computed:");
+		computed_result.push(this.translator.newLine());
+		computed_result.push("{");
+		this.translator.levelInc();
+		
+		/* Translate items */
+		Collection item_result = [];
+		this.translateComponentBody(op_code, item_result, "computed");
+		computed_result.appendItems(item_result);
+		
+		this.translator.levelDec();
+		computed_result.push(this.translator.newLine());
+		computed_result.push("},");
+		if (item_result.count() > 0) result.appendItems(computed_result);
 		
 		/* Static functions */
 		this.translateComponentStatic(op_code, result);
