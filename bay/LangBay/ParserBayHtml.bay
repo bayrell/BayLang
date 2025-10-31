@@ -27,6 +27,7 @@ use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;

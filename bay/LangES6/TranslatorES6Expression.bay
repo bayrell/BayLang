@@ -176,7 +176,9 @@ class TranslatorES6Expression extends BaseObject
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
 		bool is_multiline = op_code.isMultiLine();
-		result.push("[");
+		result.push("new ");
+		result.push(this.translator.getUseModule("Vector"));
+		result.push("(");
 		if (is_multiline)
 		{
 			this.translator.levelInc();
@@ -232,7 +234,7 @@ class TranslatorES6Expression extends BaseObject
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
 		}
-		result.push("]");
+		result.push(")");
 	}
 	
 	
@@ -244,12 +246,15 @@ class TranslatorES6Expression extends BaseObject
 		bool is_multiline = op_code.isMultiLine();
 		if (op_code.items.count() == 0 and not is_multiline)
 		{
-			result.push("new Map()");
+			result.push("new ");
+			result.push(this.translator.getUseModule("Map"));
+			result.push("()");
 			return;
 		}
 		
 		/* Begin bracket */
-		result.push("Map.create({");
+		result.push(this.translator.getUseModule("Map"));
+		result.push(".create({");
 		if (is_multiline)
 		{
 			this.translator.levelInc();
@@ -329,7 +334,13 @@ class TranslatorES6Expression extends BaseObject
 			}
 			else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
 			{
-				this.OpCollection(item_attr.next, result);
+				result.push("[");
+				for (int j=0; j<item_attr.next.items.count(); j++)
+				{
+					this.translate(item_attr.next.items.get(j), result);
+					if (j < item_attr.next.items.count() - 1) result.push(", ");
+				}
+				result.push("]");
 			}
 		}
 		

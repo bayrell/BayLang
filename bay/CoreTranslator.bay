@@ -111,7 +111,7 @@ class CoreTranslator extends BaseObject
 	 */
 	int componentHashInc()
 	{
-		this.component_hash_inc += 1;
+		this.component_hash_inc = this.component_hash_inc + 1;
 		return this.component_hash_inc - 1;
 	}
 	
@@ -121,7 +121,7 @@ class CoreTranslator extends BaseObject
 	 */
 	string varInc()
 	{
-		this.var_inc += 1;
+		this.var_inc = this.var_inc + 1;
 		return "__v" ~ (this.var_inc - 1);
 	}
 	
@@ -131,7 +131,7 @@ class CoreTranslator extends BaseObject
 	 */
 	void varDec()
 	{
-		this.var_inc -= 1;
+		this.var_inc = this.var_inc - 1;
 	}
 	
 	
