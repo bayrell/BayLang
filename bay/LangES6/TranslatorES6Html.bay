@@ -29,6 +29,7 @@ use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpItems;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlCSS;
@@ -38,6 +39,9 @@ use BayLang.OpCodes.OpHtmlSlot;
 use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpPreprocessorIfCode;
+use BayLang.OpCodes.OpPreprocessorIfDef;
+use BayLang.OpCodes.OpPreprocessorSwitch;
 use BayLang.OpCodes.OpTypeIdentifier;
 
 
@@ -336,83 +340,80 @@ class TranslatorES6Html extends BaseObject
 	
 	
 	/**
-	 * Translate component body
+	 * Translate component body item
 	 */
-	void translateComponentBody(OpDeclareClass op_code, Collection<string> result, string kind)
+	void translateComponentBodyItem(BaseOpCode op_code, Collection<string> result)
 	{
-		bool next_new_line = true;
-		for (int i=0; i<op_code.content.count(); i++)
+		string kind = this.translator.html_kind;
+		if (op_code instanceof OpDeclareFunction)
 		{
-			BaseOpCode op_code_item = op_code.content.get(i);
-			if (op_code_item instanceof OpDeclareFunction)
+			/* Check if static */
+			bool is_static = op_code.flags != null and
+				(op_code.flags.isFlag("static") or op_code.flags.isFlag("pure"));
+			if ((kind == "methods" or kind == "computed") and is_static or
+				kind == "static" and not is_static
+			)
 			{
-				/* Check if static */
-				bool is_static = op_code_item.flags and
-					(op_code_item.flags.isFlag("static") or op_code_item.flags.isFlag("pure"));
-				if (is_static)
-				{
-					continue;
-				}
-				
-				if (kind == "methods" and
-					op_code_item.flags and op_code_item.flags.isFlag("computed"))
-				{
-					continue;
-				}
-				if (kind == "computed")
-				{
-					if (not op_code_item.flags) continue;
-					else if (not op_code_item.flags.isFlag("computed")) continue;
-				}
-				
-				/* Check if html function */
-				if (not op_code_item.is_html)
-				{
-					if (next_new_line) result.push(this.translator.newLine());
-					next_new_line = true;
-					this.translator.program.OpDeclareFunction(op_code_item, result);
-					result.push(",");
-					continue;
-				}
-				
-				Collection item_result = [];
-				next_new_line = this.OpDeclareFunction(op_code_item, item_result, false);
-				if (next_new_line)
-				{
-					result.push(this.translator.newLine());
-					result.appendItems(item_result);
-					result.push(",");
-				}
+				return false;
 			}
+			if (kind == "methods" and
+				op_code.flags and op_code.flags.isFlag("computed"))
+			{
+				return false;
+			}
+			if (kind == "computed")
+			{
+				if (not op_code.flags) return false;
+				else if (not op_code.flags.isFlag("computed")) return false;
+			}
+			
+			/* Check if html function */
+			if (not op_code.is_html)
+			{
+				result.push(this.translator.newLine());
+				this.translator.program.OpDeclareFunction(op_code, result);
+				result.push(",");
+				return true;
+			}
+			
+			result.push(this.translator.newLine());
+			this.OpDeclareFunction(op_code, result, false);
+			result.push(",");
+			return true;
+		}
+		else if (op_code instanceof OpItems)
+		{
+			return this.translateComponentBody(op_code, result, kind);
+		}
+		else if (op_code instanceof OpPreprocessorIfCode)
+		{
+			return this.translator.program.OpPreprocessorIfCode(op_code, result);
+		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			return this.translator.program.OpPreprocessorIfDef(
+				op_code, result, OpPreprocessorIfDef::KIND_COMPONENT_BODY
+			);
+		}
+		else if (op_code instanceof OpPreprocessorSwitch)
+		{
+			return this.translator.program.OpPreprocessorSwitch(
+				op_code, result, OpPreprocessorIfDef::KIND_COMPONENT_BODY
+			);
 		}
 	}
 	
 	
 	/**
-	 * Translate component static functions
+	 * Translate component body
 	 */
-	void translateComponentStatic(OpDeclareClass op_code, Collection<string> result)
+	bool translateComponentBody(BaseOpCode op_code, Collection<string> result)
 	{
-		for (int i=0; i<op_code.content.count(); i++)
+		if (op_code instanceof OpDeclareClass) op_code = op_code.content;
+		for (int i=0; i<op_code.count(); i++)
 		{
-			BaseOpCode op_code_item = op_code.content.get(i);
-			if (op_code_item instanceof OpDeclareFunction)
-			{
-				/* Check if static */
-				bool is_static = op_code_item.flags and
-					(op_code_item.flags.isFlag("static") or op_code_item.flags.isFlag("pure"));
-				if (not is_static)
-				{
-					continue;
-				}
-				
-				/* Check if html function */
-				if (op_code_item.is_html) continue;
-				
-				result.push(this.translator.newLine());
-				this.translator.program.OpDeclareFunction(op_code_item, result);
-				result.push(",");
-			}
+			BaseOpCode op_code_item = op_code.get(i);
+			this.translateComponentBodyItem(op_code_item, result);
 		}
 	}
 	
@@ -617,7 +618,8 @@ class TranslatorES6Html extends BaseObject
 		this.translator.levelInc();
 		
 		/* Component methods */
-		this.translateComponentBody(op_code, result, "methods");
+		this.translator.html_kind = "methods";
+		this.translateComponentBody(op_code, result);
 		
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
@@ -633,7 +635,8 @@ class TranslatorES6Html extends BaseObject
 		
 		/* Translate items */
 		Collection item_result = [];
-		this.translateComponentBody(op_code, item_result, "computed");
+		this.translator.html_kind = "computed";
+		this.translateComponentBody(op_code, item_result);
 		computed_result.appendItems(item_result);
 		
 		this.translator.levelDec();
@@ -642,7 +645,8 @@ class TranslatorES6Html extends BaseObject
 		if (item_result.count() > 0) result.appendItems(computed_result);
 		
 		/* Static functions */
-		this.translateComponentStatic(op_code, result);
+		this.translator.html_kind = "static";
+		this.translateComponentBody(op_code, result);
 		this.translateComponentStyle(op_code, result);
 		this.translator.program.translateClassInit(op_code, result, false);
 		

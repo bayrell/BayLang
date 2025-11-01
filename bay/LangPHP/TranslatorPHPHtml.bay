@@ -18,10 +18,250 @@
 
 namespace BayLang.LangPHP;
 
+use Runtime.BaseObject;
+use BayLang.LangBay.ParserBayHtml;
 use BayLang.LangPHP.TranslatorPHP;
+use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpHtmlAttribute;
+use BayLang.OpCodes.OpHtmlContent;
+use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpHtmlSlot;
+use BayLang.OpCodes.OpHtmlTag;
+use BayLang.OpCodes.OpIdentifier;
+use BayLang.OpCodes.OpIf;
+use BayLang.OpCodes.OpItems;
 
 
-class TranslatorPHPHtml
+class TranslatorPHPHtml extends BaseObject
 {
 	TranslatorPHP translator = null;
+	
+	
+	/**
+	 * Constructor
+	 */
+	void constructor(TranslatorPHP translator)
+	{
+		parent();
+		this.translator = translator;
+	}
+	
+	
+	/**
+	 * OpHtmlContent
+	 */
+	void OpHtmlContent(OpHtmlContent op_code, Collection<string> result)
+	{
+		string var_name = this.translator.html_var_names.last();
+		result.push(var_name ~ "->push(" ~ this.translator.toString(op_code.value) ~ ");");
+	}
+	
+	
+	/**
+	 * OpHtmlExpression
+	 */
+	void OpHtmlExpression(BaseOpCode op_code, Collection<string> result)
+	{
+		string var_name = this.translator.html_var_names.last();
+		result.push(var_name ~ "->push(");
+		this.translator.expression.translate(op_code, result);
+		result.push(");");
+	}
+	
+	
+	/**
+	 * OpHtmlSlot
+	 */
+	void OpHtmlSlot(BaseOpCode op_code, Collection<string> result)
+	{
+		string var_name = this.translator.html_var_names.last();
+		result.push("/* Slot " ~ op_code.name ~ " */");
+		result.push(this.translator.newLine());
+		result.push(var_name ~ "->slot(");
+		result.push(this.translator.toString(op_code.name) ~ ", ");
+		this.translator.expression.translate(op_code, result);
+		result.push(");");
+	}
+	
+	
+	/**
+	 * OpHtmlAttrs
+	 */
+	Collection OpHtmlAttrs(Collection<OpHtmlAttribute> attrs)
+	{
+		Collection result = [];
+		for (int i=0; i<attrs.count(); i++)
+		{
+			OpHtmlAttribute item = attrs.get(i);
+			Collection item_result = [];
+			item_result.push(this.translator.toString(item.key));
+			item_result.push(" => ");
+			this.translator.expression.translate(item.expression, item_result);
+			result.push(rs::join("", item_result));
+		}
+		return result;
+	}
+	
+	
+	/**
+	 * Returns tag name
+	 */
+	string getTagName(var tag_name)
+	{
+		if (tag_name instanceof OpIdentifier)
+		{
+			return [tag_name.value, "$" ~ tag_name.value];
+		}
+		if (ParserBayHtml::isComponent(tag_name))
+		{
+			string module_name = this.translator.getUseModule(tag_name);
+			return [module_name, module_name];
+		}
+		return [tag_name, this.translator.toString(tag_name)];
+	}
+	
+	
+	/**
+	 * OpHtmlTag
+	 */
+	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result)
+	{
+		string var_name = this.translator.html_var_names.last();
+		string current_var_name = "$" ~ this.translator.varInc();
+		
+		Collection attrs = this.OpHtmlAttrs(op_code.attrs, result);
+		string attrs_str = attrs.count() > 0 ? ", new \\Runtime\\Map([" ~
+			rs::join(", ", attrs) ~ "])" : "";
+		
+		string tag_name = this.getTagName(op_code.tag_name);
+		result.push("/* Element " ~ tag_name.get(0) ~ " */");
+		result.push(this.translator.newLine());
+		result.push(current_var_name ~ " = " ~ var_name ~
+			"->element(" ~ tag_name.get(1) ~ attrs_str ~ ");");
+		
+		if (op_code.content and op_code.content.count() > 0)
+		{
+			this.translator.html_var_names.push(current_var_name);
+			bool is_slot = op_code.content.items
+				.filter(bool (BaseOpCode item) => item instanceof OpHtmlSlot)
+				.count() == op_code.content.count()
+			;
+			if (ParserBayHtml::isComponent(op_code.tag_name) and not is_slot)
+			{
+				OpDeclareFunction op_code_item = new OpDeclareFunction
+				{
+					"is_html": true,
+					"content": op_code.content,
+				};
+				result.push(this.translator.newLine());
+				result.push(current_var_name ~ "->content(");
+				this.OpDeclareFunction(op_code_item, result);
+				result.push(");");
+			}
+			else
+			{
+				this.OpHtmlItems(op_code.content, result, true);
+			}
+			this.translator.html_var_names.pop();
+		}
+	}
+	
+	
+	/**
+	 * Translate item
+	 */
+	void translateItem(BaseOpCode op_code, Collection<string> result, bool new_line = false)
+	{
+		if (op_code instanceof OpHtmlContent)
+		{
+			this.OpHtmlContent(op_code, result);
+		}
+		else if (op_code instanceof OpHtmlSlot)
+		{
+			if (new_line) result.push(this.translator.newLine());
+			this.OpHtmlSlot(op_code, result);
+		}
+		else if (op_code instanceof OpHtmlTag)
+		{
+			if (new_line) result.push(this.translator.newLine());
+			this.OpHtmlTag(op_code, result);
+		}
+		else if (op_code instanceof OpAssign)
+		{
+			this.translator.operator.OpAssign(op_code, result);
+			result.push(";");
+		}
+		else if (op_code instanceof OpFor)
+		{
+			if (new_line) result.push(this.translator.newLine());
+			this.translator.operator.OpFor(op_code, result);
+		}
+		else if (op_code instanceof OpIf)
+		{
+			if (new_line) result.push(this.translator.newLine());
+			this.translator.operator.OpIf(op_code, result);
+		}
+		else
+		{
+			this.OpHtmlExpression(op_code, result);
+		}
+	}
+	
+	
+	/**
+	 * OpHtmlItems
+	 */
+	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, bool new_line = false)
+	{
+		if (not op_code) return;
+		for (int i=0; i<op_code.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.get(i);
+			result.push(this.translator.newLine());
+			this.translateItem(op_code_item, result, new_line or i > 0);
+		}
+	}
+	
+	
+	/**
+	 * Translate OpItems
+	 */
+	void translateItems(OpItems op_code, Collection<string> result, bool match_brackets = true)
+	{
+		result.push(this.translator.newLine());
+		result.push("{");
+		this.translator.levelInc();
+		
+		/* Create Virtual Dom */
+		result.push(this.translator.newLine());
+		result.push("$__v = new \\Runtime\\VirtualDom($this);");
+		result.push(this.translator.newLine());
+		
+		/* Save old var names */
+		int old_var_inc = this.translator.var_inc;
+		this.translator.var_inc = 0;
+		Collection old_var_names = this.translator.html_var_names.slice();
+		this.translator.html_var_names = [];
+		this.translator.html_var_names.push("$__v");
+		
+		/* Translate HTML items */
+		this.translator.html.OpHtmlItems(op_code, result);
+		
+		/* Restore */
+		this.translator.var_inc = old_var_inc;
+		this.translator.html_var_names = old_var_names;
+		
+		/* Return Virtual Dom */
+		result.push(this.translator.newLine());
+		result.push(this.translator.newLine());
+		result.push("return $__v;");
+		
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push("}");
+	}
 }

@@ -47,6 +47,7 @@ class CoreTranslator extends BaseObject
 	string current_block = "";
 	string current_class_name = "";
 	string current_namespace_name = "";
+	string html_kind = "";
 	string parent_class_name = "";
 	bool is_operator_block = false;
 	
@@ -59,6 +60,19 @@ class CoreTranslator extends BaseObject
 		parent();
 		this.uses.set("Collection", "Runtime.Collection");
 		this.uses.set("Dict", "Runtime.Dict");
+	}
+	
+	
+	/**
+	 * Returns module name
+	 */
+	string getUseModule(string module_name)
+	{
+		if (this.uses.get(module_name))
+		{
+			return this.useModule(this.uses.get(module_name));
+		}
+		return this.useModule(module_name);
 	}
 	
 	
