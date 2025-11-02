@@ -472,7 +472,7 @@ class TranslatorPHPProgram extends BaseObject
 			if (next_new_line)
 			{
 				int lines = 1;
-				if (prev_op_code)
+				if (prev_op_code and not this.translator.current_class.is_component)
 				{
 					lines = op_code_item.getOffset().get("start") -
 						prev_op_code.getOffset().get("end");
@@ -512,7 +512,9 @@ class TranslatorPHPProgram extends BaseObject
 	{
 		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return;
 		
-		result.push(this.translator.newLine(newline and op_code.content.count() > 0 ? 3 : 1));
+		int lines = newline and op_code.content.count() > 0 ? 3 : 1;
+		if (this.translator.current_class.is_component) lines = 2;
+		result.push(this.translator.newLine(lines));
 		result.push("/* ========= Class init functions ========= */");
 		if (this.translator.current_class_name != "Runtime.BaseObject")
 		{
