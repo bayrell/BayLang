@@ -98,6 +98,7 @@ class TranslatorPHPHtml extends BaseObject
 		{
 			OpHtmlAttribute item = attrs.get(i);
 			Collection item_result = [];
+			if (rs::charAt(item.key, 0) == "@") continue;
 			item_result.push(this.translator.toString(item.key));
 			item_result.push(" => ");
 			this.translator.expression.translate(item.expression, item_result);
@@ -119,7 +120,7 @@ class TranslatorPHPHtml extends BaseObject
 		if (ParserBayHtml::isComponent(tag_name))
 		{
 			string module_name = this.translator.getUseModule(tag_name);
-			return [module_name, module_name];
+			return [module_name, this.translator.toString(module_name)];
 		}
 		return [tag_name, this.translator.toString(tag_name)];
 	}
@@ -158,8 +159,11 @@ class TranslatorPHPHtml extends BaseObject
 					"content": op_code.content,
 				};
 				result.push(this.translator.newLine());
+				result.push(this.translator.newLine());
+				result.push("/* Content */");
+				result.push(this.translator.newLine());
 				result.push(current_var_name ~ "->content(");
-				this.OpDeclareFunction(op_code_item, result);
+				this.translator.program.OpDeclareFunction(op_code_item, result);
 				result.push(");");
 			}
 			else
@@ -192,6 +196,7 @@ class TranslatorPHPHtml extends BaseObject
 		}
 		else if (op_code instanceof OpAssign)
 		{
+			if (new_line) result.push(this.translator.newLine());
 			this.translator.operator.OpAssign(op_code, result);
 			result.push(";");
 		}
@@ -218,11 +223,22 @@ class TranslatorPHPHtml extends BaseObject
 	void OpHtmlItems(OpHtmlItems op_code, Collection<string> result, bool new_line = false)
 	{
 		if (not op_code) return;
+		BaseOpCode prev_op_code = null;
 		for (int i=0; i<op_code.count(); i++)
 		{
 			BaseOpCode op_code_item = op_code.get(i);
 			result.push(this.translator.newLine());
-			this.translateItem(op_code_item, result, new_line or i > 0);
+			bool next_line = true;
+			if (prev_op_code == null) next_line = new_line;
+			else if (prev_op_code instanceof OpAssign and (
+				op_code_item instanceof OpAssign or
+				op_code_item instanceof OpIf or op_code_item instanceof OpFor
+			))
+			{
+				next_line = false;
+			}
+			this.translateItem(op_code_item, result, next_line);
+			prev_op_code = op_code_item;
 		}
 	}
 	
@@ -241,6 +257,13 @@ class TranslatorPHPHtml extends BaseObject
 		result.push("$__v = new \\Runtime\\VirtualDom($this);");
 		result.push(this.translator.newLine());
 		
+		/* Add is render */
+		if (this.translator.current_function.name == "render")
+		{
+			result.push("$__v->is_render = true;");
+			result.push(this.translator.newLine());
+		}
+		
 		/* Save old var names */
 		int old_var_inc = this.translator.var_inc;
 		this.translator.var_inc = 0;
@@ -249,14 +272,21 @@ class TranslatorPHPHtml extends BaseObject
 		this.translator.html_var_names.push("$__v");
 		
 		/* Translate HTML items */
-		this.translator.html.OpHtmlItems(op_code, result);
+		if (op_code.items.count() == 1 and op_code.get(0) instanceof OpHtmlContent)
+		{
+			this.OpHtmlContent(op_code.get(0), result);
+		}
+		else
+		{
+			this.OpHtmlItems(op_code, result);
+			result.push(this.translator.newLine());
+		}
 		
 		/* Restore */
 		this.translator.var_inc = old_var_inc;
 		this.translator.html_var_names = old_var_names;
 		
 		/* Return Virtual Dom */
-		result.push(this.translator.newLine());
 		result.push(this.translator.newLine());
 		result.push("return $__v;");
 		

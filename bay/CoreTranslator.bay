@@ -64,6 +64,15 @@ class CoreTranslator extends BaseObject
 	
 	
 	/**
+	 * Use module
+	 */
+	string useModule(string module_name)
+	{
+		return module_name;
+	}
+	
+	
+	/**
 	 * Returns module name
 	 */
 	string getUseModule(string module_name)
