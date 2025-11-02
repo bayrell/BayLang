@@ -25,6 +25,7 @@ use BayLang.LangBay.TranslatorBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpModule;
 
 
 class CoreTranslator extends BaseObject
@@ -41,7 +42,9 @@ class CoreTranslator extends BaseObject
 	Dict<OpDeclareClass> class_items = {};
 	OpDeclareClass current_class = null;
 	OpDeclareFunction class_function = null;
-	Collection html_var_names = [];
+	OpModule current_module = null;
+	Vector html_var_names = [];
+	Vector save_var = [];
 	int var_inc = 0;
 	int component_hash_inc = 0;
 	string current_block = "";
@@ -49,6 +52,7 @@ class CoreTranslator extends BaseObject
 	string current_namespace_name = "";
 	string html_kind = "";
 	string parent_class_name = "";
+	bool allow_multiline = true;
 	bool is_operator_block = false;
 	
 	
@@ -159,10 +163,22 @@ class CoreTranslator extends BaseObject
 	
 	
 	/**
+	 * Save var
+	 */
+	string saveVar(string content)
+	{
+		string var_name = this.varInc();
+		this.save_var.push({"name": var_name, "content": content});
+		return var_name;
+	}
+	
+	
+	/**
 	 * Returns new line with indent
 	 */
 	string newLine(int count = 1)
 	{
+		if (not this.allow_multiline) return "";
 		if (count == 1) return this.crlf ~ rs::str_repeat(this.indent, this.indent_level);
 		Collection arr = [];
 		for (int i=0; i<count; i++)

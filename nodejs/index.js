@@ -94,6 +94,7 @@ add("BayLang.LangPHP.TranslatorPHPExpression");
 add("BayLang.LangPHP.TranslatorPHPHtml");
 add("BayLang.LangPHP.TranslatorPHPOperator");
 add("BayLang.LangPHP.TranslatorPHPProgram");
+add("BayLang.LangStyle.TranslatorStyle");
 add("BayLang.OpCodes.OpAnnotation");
 add("BayLang.OpCodes.OpAssign");
 add("BayLang.OpCodes.OpAssignStruct");

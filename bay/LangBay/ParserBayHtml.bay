@@ -148,7 +148,8 @@ class ParserBayHtml extends BaseObject
 		else if (kind == "expression")
 		{
 			string next_token = reader.nextToken();
-			if (next_token == "\"" or next_token == "'")
+			bool is_function = rs::substr(key, 0, 7) == "@event:";
+			if ((next_token == "\"" or next_token == "'") and not is_function)
 			{
 				expression = this.parser.parser_base.readString(reader);
 			}
@@ -158,24 +159,64 @@ class ParserBayHtml extends BaseObject
 				expression = this.parser.parser_expression.readExpression(reader);
 				reader.matchToken("}}");
 			}
-		}
-		else if (kind == "function")
-		{
-			string open_tag = this.readOpenString(reader);
-			expression = this.parser.parser_operator.parse(reader, false, open_tag);
-			expression = new OpDeclareFunction
+			else if (is_function)
 			{
-				"content": expression,
-				"caret_start": expression.caret_start,
-				"caret_end": expression.caret_end,
-			};
-			reader.matchToken(open_tag);
+				string open_tag = this.readOpenString(reader);
+				Map save_vars = this.parser.vars.copy();
+				this.parser.vars.set("event", true);
+				expression = this.parser.parser_operator.parse(reader, false, open_tag);
+				expression = new OpDeclareFunction
+				{
+					"args": new OpItems
+					{
+						"items":
+						[
+							new OpDeclareFunctionArg
+							{
+								"pattern": OpTypeIdentifier::create("var"),
+								"name": "event",
+							},
+						],
+					},
+					"content": expression,
+					"caret_start": expression.caret_start,
+					"caret_end": expression.caret_end,
+				};
+				this.parser.vars = save_vars;
+				reader.matchToken(open_tag);
+			}
 		}
 		else
 		{
 			expression = this.parser.parser_base.readString(reader);
 		}
 		return expression;
+	}
+	
+	
+	/**
+	 * Read attr key
+	 */
+	string readAttrKey(TokenReader reader)
+	{
+		string arr = "qazwsxedcrfvtgbyhnujmikolp01234567890_";
+		string key = "";
+		Caret caret = reader.caret();
+		while (not caret.eof() and (rs::indexOf(arr, caret.nextChar()) >= 0 or
+			caret.nextChar() == "-"))
+		{
+			key ~= caret.readChar();
+		}
+		if (caret.nextChar() == ":")
+		{
+			key ~= caret.readChar();
+			while (not caret.eof() and rs::indexOf(arr, caret.nextChar()) >= 0)
+			{
+				key ~= caret.readChar();
+			}
+		}
+		reader.init(caret);
+		return key;
 	}
 	
 	
@@ -197,13 +238,13 @@ class ParserBayHtml extends BaseObject
 				is_system_attr = true;
 				reader.matchToken("@");
 			}
-			BaseOpCode key = this.parser.parser_base.readIdentifier(reader);
-			string key_value = is_system_attr ? "@" ~ key.value : key.value;
+			string key = this.readAttrKey(reader);
+			string key_value = is_system_attr ? "@" ~ key : key;
 			reader.main_caret.skipToken();
 			reader.init(reader.main_caret);
 			reader.matchToken("=");
 			BaseOpCode expression = this.readAttrExpression(
-				reader, key_value, is_system_attr ? "function" : kind
+				reader, key_value, kind
 			);
 			reader.main_caret.skipToken();
 			attrs.push(new OpHtmlAttribute{
@@ -493,10 +534,14 @@ class ParserBayHtml extends BaseObject
 			};
 		}
 		
+		bool is_component = true;
+		if (not is_variable) is_component = static::isComponent(tag_name.value);
+		
 		return new OpHtmlTag
 		{
 			"attrs": attrs,
 			"content": content,
+			"is_component": is_component,
 			"tag_name": is_variable ? tag_name : tag_name.value,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),

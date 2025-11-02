@@ -21,6 +21,7 @@ namespace BayLang.OpCodes;
 use Runtime.Serializer;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpEntityName;
+use BayLang.OpCodes.OpIdentifier;
 
 
 class OpTypeIdentifier extends BaseOpCode
@@ -38,5 +39,26 @@ class OpTypeIdentifier extends BaseOpCode
 		parent(serializer, data);
 		serializer.process(this, "entity_name", data);
 		serializer.process(this, "generics", data);
+	}
+	
+	
+	/**
+	 * Create Type Identifier
+	 */
+	static OpTypeIdentifier create(string name)
+	{
+		return new OpTypeIdentifier
+		{
+			"entity_name": new OpEntityName
+			{
+				"items":
+				[
+					new OpIdentifier
+					{
+						"value": name,
+					}
+				]
+			}
+		};
 	}
 }

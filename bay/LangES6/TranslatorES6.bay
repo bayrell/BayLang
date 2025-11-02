@@ -28,12 +28,14 @@ use BayLang.LangES6.TranslatorES6Expression;
 use BayLang.LangES6.TranslatorES6Html;
 use BayLang.LangES6.TranslatorES6Operator;
 use BayLang.LangES6.TranslatorES6Program;
+use BayLang.LangStyle.TranslatorStyle;
 use BayLang.OpCodes.BaseOpCode;
 
 
 class TranslatorES6 extends CoreTranslator
 {
 	/* Translators */
+	TranslatorStyle style = new TranslatorStyle(this);
 	TranslatorES6Expression expression = new TranslatorES6Expression(this);
 	TranslatorES6Operator operator = new TranslatorES6Operator(this);
 	TranslatorES6Program program = new TranslatorES6Program(this);

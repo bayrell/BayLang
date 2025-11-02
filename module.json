@@ -49,6 +49,7 @@
 		"LangPHP/TranslatorPHPHtml.bay",
 		"LangPHP/TranslatorPHPOperator.bay",
 		"LangPHP/TranslatorPHPProgram.bay",
+		"LangStyle/TranslatorStyle.bay",
 		"OpCodes/BaseOpCode.bay",
 		"OpCodes/OpAnnotation.bay",
 		"OpCodes/OpAssign.bay",

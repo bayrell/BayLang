@@ -34,6 +34,7 @@ use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpPreprocessorIfCode;
 use BayLang.OpCodes.OpPreprocessorIfDef;
@@ -434,7 +435,7 @@ class TranslatorPHPProgram extends BaseObject
 		else if (op_code instanceof OpPreprocessorSwitch)
 		{
 			return this.OpPreprocessorSwitch(
-				op_code, result, OpPreprocessorSwitch::KIND_CLASS_BODY
+				op_code, result, OpPreprocessorIfDef::KIND_CLASS_BODY
 			);
 		}
 		else
@@ -553,6 +554,11 @@ class TranslatorPHPProgram extends BaseObject
 			result.push(this.translator.newLine());
 			result.push("}");
 		}
+		if (op_code.is_component)
+		{
+			this.translator.html.translateModuleComponents(op_code, result);
+			this.translator.html.translateComponentStyle(op_code, result);
+		}
 		result.push(this.translator.newLine());
 		result.push("static function getClassName(){ " ~
 			"return \"" ~ this.translator.current_class_name ~ "\"; }");
@@ -664,7 +670,7 @@ class TranslatorPHPProgram extends BaseObject
 		else if (op_code instanceof OpPreprocessorSwitch)
 		{
 			return this.OpPreprocessorSwitch(
-				op_code, result, OpPreprocessorSwitch::KIND_PROGRAM
+				op_code, result, OpPreprocessorIfDef::KIND_PROGRAM
 			);
 		}
 		else
@@ -718,8 +724,9 @@ class TranslatorPHPProgram extends BaseObject
 	/**
 	 * Translate
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result)
+	void translate(OpModule op_code, Collection<string> result)
 	{
+		this.translator.current_module = op_code;
 		this.translateItems(op_code.items, result);
 	}
 }

@@ -175,7 +175,7 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
-		bool is_multiline = op_code.isMultiLine();
+		bool is_multiline = this.translator.allow_multiline and op_code.isMultiLine();
 		result.push("new ");
 		result.push(this.translator.getUseModule("Vector"));
 		result.push("(");
@@ -243,7 +243,7 @@ class TranslatorES6Expression extends BaseObject
 	 */
 	void OpDict(OpDict op_code, Collection<string> result)
 	{
-		bool is_multiline = op_code.isMultiLine();
+		bool is_multiline = this.translator.allow_multiline and op_code.isMultiLine();
 		if (op_code.items.count() == 0 and not is_multiline)
 		{
 			result.push("new ");

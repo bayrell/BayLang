@@ -28,6 +28,7 @@ class OpHtmlTag extends BaseOpCode
 {
 	string op = "op_html_tag";
 	string tag_name = "";
+	bool is_component = false;
 	BaseOpCode op_code_name = null;
 	Collection<OpHtmlAttribute> attrs = null;
 	Collection<primitive> spreads = null;

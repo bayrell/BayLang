@@ -33,6 +33,7 @@ use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpPreprocessorIfCode;
 use BayLang.OpCodes.OpPreprocessorIfDef;
@@ -377,9 +378,9 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Multiline */
-		bool is_multiline = op_code.content.isMultiLine() or
-			op_code.content instanceof OpItems
-		;
+		bool is_multiline = this.translator.allow_multiline and (
+			op_code.content.isMultiLine() or op_code.content instanceof OpItems
+		);
 		if (is_multiline)
 		{
 			result.push(this.translator.newLine());
@@ -490,7 +491,7 @@ class TranslatorES6Program extends BaseObject
 		else if (op_code instanceof OpPreprocessorSwitch)
 		{
 			return this.OpPreprocessorSwitch(
-				op_code, result, OpPreprocessorSwitch::KIND_CLASS_BODY
+				op_code, result, OpPreprocessorIfDef::KIND_CLASS_BODY
 			);
 		}
 		else
@@ -611,45 +612,39 @@ class TranslatorES6Program extends BaseObject
 		}
 		result.push(this.translator.newLine());
 		
-		/* Get class name */
-		if (op_code.is_component) result.push("getClassName: function(){ ");
-		else result.push("static getClassName(){ ");
-		result.push("return \"" ~ this.translator.current_class_name ~ "\"; }");
-		result.push(op_code.is_component ? "," : "");
-		
-		result.push(this.translator.newLine());
-		
-		/* Get method list */
-		if (op_code.is_component) result.push("getMethodsList: function(){ ");
-		else result.push("static getMethodsList(){ ");
-		result.push("return []; }");
-		result.push(op_code.is_component ? "," : "");
-		
-		result.push(this.translator.newLine());
-		
-		/* Get method info by name */
-		if (op_code.is_component) result.push("getMethodInfoByName: function(field_name){ ");
-		else result.push("static getMethodInfoByName(field_name){ ");
-		result.push("return null; }");
-		result.push(op_code.is_component ? "," : "");
-		
-		/* Implements */
-		if (op_code.class_implements)
+		if (not op_code.is_component)
 		{
-			Collection<string> class_implements = op_code.class_implements.map(
-				string (OpTypeIdentifier class_name) => this.translator.toString(
-					this.translator.getFullName(
-						class_name.entity_name.getName()
-					)
-				)
-			);
+			/* Get class name */
+			result.push("static getClassName(){ ");
+			result.push("return \"" ~ this.translator.current_class_name ~ "\"; }");
 			result.push(this.translator.newLine());
 			
-			/* Get interfaces */
-			if (op_code.is_component) result.push("getInterfaces: function(){ ");
-			else result.push("static getInterfaces(){ ");
-			result.push("return [" ~ rs::join(",", class_implements) ~ "]; }");
-			result.push(op_code.is_component ? "," : "");
+			/* Get method list */
+			result.push("static getMethodsList(){ ");
+			result.push("return []; }");
+			
+			result.push(this.translator.newLine());
+			
+			/* Get method info by name */
+			result.push("static getMethodInfoByName(field_name){ ");
+			result.push("return null; }");
+			
+			/* Implements */
+			if (op_code.class_implements)
+			{
+				Collection<string> class_implements = op_code.class_implements.map(
+					string (OpTypeIdentifier class_name) => this.translator.toString(
+						this.translator.getFullName(
+							class_name.entity_name.getName()
+						)
+					)
+				);
+				result.push(this.translator.newLine());
+				
+				/* Get interfaces */
+				result.push("static getInterfaces(){ ");
+				result.push("return [" ~ rs::join(",", class_implements) ~ "]; }");
+			}
 		}
 	}
 	
@@ -743,7 +738,7 @@ class TranslatorES6Program extends BaseObject
 		else if (op_code instanceof OpPreprocessorSwitch)
 		{
 			return this.OpPreprocessorSwitch(
-				op_code, result, OpPreprocessorSwitch::KIND_PROGRAM
+				op_code, result, OpPreprocessorIfDef::KIND_PROGRAM
 			);
 		}
 		else
@@ -804,8 +799,9 @@ class TranslatorES6Program extends BaseObject
 	/**
 	 * Translate
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result)
+	void translate(OpModule op_code, Collection<string> result)
 	{
+		this.translator.current_module = op_code;
 		this.translateItems(op_code.items, result);
 	}
 }

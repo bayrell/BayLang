@@ -24,16 +24,19 @@ use BayLang.LangPHP.TranslatorPHP;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpComment;
+use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpFor;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlContent;
 use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpHtmlSlot;
+use BayLang.OpCodes.OpHtmlStyle;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpUse;
 
 
 class TranslatorPHPHtml extends BaseObject
@@ -91,20 +94,50 @@ class TranslatorPHPHtml extends BaseObject
 	/**
 	 * OpHtmlAttrs
 	 */
-	Collection OpHtmlAttrs(Collection<OpHtmlAttribute> attrs)
+	Collection OpHtmlAttrs(OpHtmlTag op_code)
 	{
-		Collection result = [];
+		Collection<OpHtmlAttribute> attrs = op_code.attrs;
+		
+		Map result = {};
 		for (int i=0; i<attrs.count(); i++)
 		{
 			OpHtmlAttribute item = attrs.get(i);
-			Collection item_result = [];
-			if (rs::charAt(item.key, 0) == "@") continue;
-			item_result.push(this.translator.toString(item.key));
-			item_result.push(" => ");
-			this.translator.expression.translate(item.expression, item_result);
-			result.push(rs::join("", item_result));
+			string key = item.key;
+			if (rs::charAt(key, 0) == "@") continue;
+			Collection item_value = [];
+			this.translator.expression.translate(item.expression, item_value);
+			string value = rs::join("", item_value);
+			if (result.has(key))
+			{
+				var arr = result.get(key);
+				if (key == "class") arr.push(value);
+				result.set(key, arr);
+			}
+			else
+			{
+				if (key == "class") value = [value];
+				result.set(key, [value]);
+			}
 		}
-		return result;
+		
+		if (not op_code.is_component)
+		{
+			Vector<string> class_name = result.get("class");
+			if (class_name)
+			{
+				class_name.push("$componentHash");
+			}
+		}
+		
+		return result.transition(string (string value, string key){
+			if (key == "class")
+			{
+				return this.translator.toString(key) ~
+					" => \\Runtime\\rs::join(\" \", new \\Runtime\\Vector(" ~
+					rs::join(", ", value) ~ "))";
+			}
+			return this.translator.toString(key) ~ " => " ~ value;
+		});
 	}
 	
 	
@@ -134,9 +167,12 @@ class TranslatorPHPHtml extends BaseObject
 		string var_name = this.translator.html_var_names.last();
 		string current_var_name = "$" ~ this.translator.varInc();
 		
-		Collection attrs = this.OpHtmlAttrs(op_code.attrs, result);
-		string attrs_str = attrs.count() > 0 ? ", new \\Runtime\\Map([" ~
-			rs::join(", ", attrs) ~ "])" : "";
+		Collection attrs = this.OpHtmlAttrs(op_code);
+		string attrs_str = "";
+		if (attrs.count() > 0)
+		{
+			attrs_str = ", new \\Runtime\\Map([" ~ rs::join(", ", attrs) ~ "])";
+		}
 		
 		string tag_name = this.getTagName(op_code.tag_name);
 		result.push("/* Element " ~ tag_name.get(0) ~ " */");
@@ -252,6 +288,10 @@ class TranslatorPHPHtml extends BaseObject
 		result.push("{");
 		this.translator.levelInc();
 		
+		/* Add component hash */
+		result.push(this.translator.newLine());
+		result.push("$componentHash = \\Runtime\\rs::getComponentHash(static::getClassName());");
+		
 		/* Create Virtual Dom */
 		result.push(this.translator.newLine());
 		result.push("$__v = new \\Runtime\\VirtualDom($this);");
@@ -292,6 +332,51 @@ class TranslatorPHPHtml extends BaseObject
 		
 		this.translator.levelDec();
 		result.push(this.translator.newLine());
+		result.push("}");
+	}
+	
+	
+	/**
+	 * Translate component style
+	 */
+	void translateComponentStyle(OpDeclareClass op_code, Collection<string> result)
+	{
+		Collection<OpHtmlStyle> items = op_code.content.items.filter(
+			bool (BaseOpCode item) => item instanceof OpHtmlStyle
+		);
+		
+		Collection<string> css_content = [];
+		for (int i=0; i<items.count(); i++)
+		{
+			OpHtmlStyle op_code_item = items.get(i);
+			this.translator.style.OpHtmlStyle(op_code_item, css_content);
+		}
+		
+		result.push(this.translator.newLine());
+		result.push("static function getComponentStyle(){ ");
+		result.push("return " ~ this.translator.toString(rs::join("", css_content)) ~ "; ");
+		result.push("}");
+	}
+	
+	
+	/**
+	 * Translate module components
+	 */
+	void translateModuleComponents(OpDeclareClass op_code, Collection<string> result)
+	{
+		Vector components = [];
+		for (int i=0; i<this.translator.current_module.items.count(); i++)
+		{
+			BaseOpCode op_code_item = this.translator.current_module.items.get(i);
+			if (op_code_item instanceof OpUse)
+			{
+				components.push(op_code_item.name);
+			}
+		}
+		components = components.map(string (string name) => this.translator.toString(name));
+		result.push(this.translator.newLine());
+		result.push("static function getRequiredComponents(){ ");
+		result.push("return new \\Runtime\\Vector(" ~ rs::join(", ", components) ~ "); ");
 		result.push("}");
 	}
 }

@@ -25,12 +25,14 @@ use BayLang.LangPHP.TranslatorPHPExpression;
 use BayLang.LangPHP.TranslatorPHPHtml;
 use BayLang.LangPHP.TranslatorPHPOperator;
 use BayLang.LangPHP.TranslatorPHPProgram;
+use BayLang.LangStyle.TranslatorStyle;
 use BayLang.OpCodes.BaseOpCode;
 
 
 class TranslatorPHP extends CoreTranslator
 {
 	/* Translators */
+	TranslatorStyle style = new TranslatorStyle(this);
 	TranslatorPHPExpression expression = new TranslatorPHPExpression(this);
 	TranslatorPHPOperator operator = new TranslatorPHPOperator(this);
 	TranslatorPHPProgram program = new TranslatorPHPProgram(this);
@@ -82,16 +84,9 @@ class TranslatorPHP extends CoreTranslator
 	string translate(BaseOpCode op_code)
 	{
 		Collection<string> content = [];
-		if (op_code.is_component)
-		{
-			this.html.translate(op_code, content);
-		}
-		else
-		{
-			content.push("<?php");
-			content.push(this.newLine());
-			this.program.translate(op_code, content);
-		}
+		content.push("<?php");
+		content.push(this.newLine());
+		this.program.translate(op_code, content);
 		return rs::join("", content);
 	}
 }
