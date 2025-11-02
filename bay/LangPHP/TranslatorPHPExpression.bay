@@ -537,7 +537,7 @@ class TranslatorPHPExpression extends BaseObject
 	{
 		Collection result1 = [];
 		this.translate(op_code.condition, result1);
-		if (this.translator.opcode_level < 19)
+		if (this.translator.opcode_level < 9)
 		{
 			result.push("(");
 			result.appendItems(result1);
@@ -551,7 +551,7 @@ class TranslatorPHPExpression extends BaseObject
 		result1 = [];
 		result.push(" ? ");
 		this.translate(op_code.if_true, result1);
-		if (this.translator.opcode_level < 19)
+		if (this.translator.opcode_level < 9)
 		{
 			result.push("(");
 			result.appendItems(result1);
@@ -565,7 +565,7 @@ class TranslatorPHPExpression extends BaseObject
 		result1 = [];
 		result.push(" : ");
 		this.translate(op_code.if_false, result1);
-		if (this.translator.opcode_level < 19)
+		if (this.translator.opcode_level < 9)
 		{
 			result.push("(");
 			result.appendItems(result1);
@@ -575,6 +575,8 @@ class TranslatorPHPExpression extends BaseObject
 		{
 			result.appendItems(result1);
 		}
+		
+		this.translator.opcode_level = 0;
 	}
 	
 	

@@ -432,12 +432,12 @@ class ParserBayExpression extends BaseObject
 		
 		/* Read expression */
 		reader.matchToken("?");
-		BaseOpCode if_true = this.readElement(reader);
+		BaseOpCode if_true = this.readTernary(reader);
 		BaseOpCode if_false = null;
 		if (reader.nextToken() == ":")
 		{
 			reader.matchToken(":");
-			if_false = this.readElement(reader);
+			if_false = this.readTernary(reader);
 		}
 		
 		return new OpTernary
