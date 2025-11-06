@@ -26,6 +26,7 @@ class OpPreprocessorIfDef extends BaseOpCode
 {
 	static const string KIND_PROGRAM = "program";
 	static const string KIND_CLASS_BODY = "class_body";
+	static const string KIND_CLASS_INIT = "class_init";
 	static const string KIND_COMPONENT_BODY = "component_body";
 	static const string KIND_OPERATOR = "operator";
 	static const string KIND_COLLECTION = "collection";

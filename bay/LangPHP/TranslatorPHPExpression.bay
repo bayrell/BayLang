@@ -161,8 +161,14 @@ class TranslatorPHPExpression extends BaseObject
 		}
 		else
 		{
-			OpIdentifier pattern = op_code.entity_name.items.last();
-			result.push(pattern.value);
+			if (rs::indexOf(name, ".") >= 0)
+			{
+				result.push("\\" ~ this.translator.getModuleName(name));
+			}
+			else
+			{
+				result.push(name);
+			}
 		}
 	}
 	
@@ -313,7 +319,14 @@ class TranslatorPHPExpression extends BaseObject
 		attrs.reverse();
 		
 		/* First op_code */
+		bool is_bracket = op_code_first instanceof OpNew;
+		if (is_bracket) result.push("(");
 		this.translateItem(op_code_first, result);
+		if (is_bracket) result.push(")");
+		
+		/* Is static function */
+		bool is_static = this.translator.class_function and
+			this.translator.class_function.isStatic();
 		
 		/* Attrs */
 		for (int i=0; i<attrs.count(); i++)
@@ -321,8 +334,7 @@ class TranslatorPHPExpression extends BaseObject
 			OpAttr item_attr = attrs.get(i);
 			if (item_attr.kind == OpAttr::KIND_ATTR)
 			{
-				if (this.translator.class_function.isStatic() and
-					item_attr.prev instanceof OpIdentifier and
+				if (is_static and item_attr.prev instanceof OpIdentifier and
 					item_attr.prev.value == "this"
 				)
 				{

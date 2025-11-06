@@ -105,10 +105,19 @@ class TranslatorES6Html extends BaseObject
 	{
 		Collection<OpHtmlAttribute> attrs = op_code.attrs;
 		
+		Vector spread = [];
 		Map result = {};
 		for (int i=0; i<attrs.count(); i++)
 		{
 			OpHtmlAttribute item = attrs.get(i);
+			if (item.is_spread)
+			{
+				Vector item_result = [];
+				this.translator.expression.translate(item.expression, item_result);
+				spread.push(rs::join("", item_result));
+				continue;
+			}
+			
 			string key = item.key;
 			if (key == "@key") key = "key";
 			else if (rs::substr(key, 0, 7) == "@event:")
@@ -149,7 +158,7 @@ class TranslatorES6Html extends BaseObject
 			}
 		}
 		
-		return result.transition(string (string value, string key){
+		Vector attrs = result.transition(string (string value, string key){
 			if (key == "class")
 			{
 				return this.translator.toString(key) ~
@@ -157,6 +166,7 @@ class TranslatorES6Html extends BaseObject
 			}
 			return this.translator.toString(key) ~ ": " ~ value;
 		});
+		return [attrs, spread];
 	}
 	
 	
@@ -165,10 +175,13 @@ class TranslatorES6Html extends BaseObject
 	 */
 	string getTagName(var tag_name)
 	{
-		if (tag_name instanceof OpIdentifier)
+		if (tag_name instanceof BaseOpCode)
 		{
 			string rtl = this.translator.getUseModule("rtl");
-			return [tag_name.value, rtl ~ ".findClass(" ~ tag_name.value ~ ")"];
+			Vector item_result = [];
+			this.translator.expression.translate(tag_name, item_result);
+			string value = rs::join("", item_result);
+			return [value, rtl ~ ".findClass(" ~ value ~ ")"];
 		}
 		if (ParserBayHtml::isComponent(tag_name))
 		{
@@ -188,10 +201,16 @@ class TranslatorES6Html extends BaseObject
 		string var_name = this.translator.html_var_names.last();
 		string current_var_name = this.translator.varInc();
 		
-		Collection attrs = this.OpHtmlAttrs(op_code);
-		if (attrs.count() > 0)
+		Collection res = this.OpHtmlAttrs(op_code);
+		Collection attrs = res.get(0);
+		Collection spread = res.get(1);
+		if (attrs.count() > 0 or spread.count() > 0)
 		{
 			attrs_str = ", new Runtime.Map({" ~ rs::join(", ", attrs) ~ "})";
+			for (int i=0; i<spread.count(); i++)
+			{
+				attrs_str = attrs_str ~ ".concat(" ~ spread.get(i) ~ ")";
+			}
 		}
 		
 		string tag_name = this.getTagName(op_code.tag_name);
@@ -218,7 +237,7 @@ class TranslatorES6Html extends BaseObject
 				result.push(this.translator.newLine());
 				result.push("/* Content */");
 				result.push(this.translator.newLine());
-				result.push(current_var_name ~ ".content(");
+				result.push(current_var_name ~ ".slot(\"default\", ");
 				this.OpDeclareFunction(op_code_item, result);
 				result.push(");");
 			}
@@ -266,6 +285,10 @@ class TranslatorES6Html extends BaseObject
 			if (new_line) result.push(this.translator.newLine());
 			this.translator.operator.OpIf(op_code, result);
 		}
+		else if (op_code instanceof OpComment)
+		{
+			this.translator.operator.OpComment(op_code, result);
+		}
 		else
 		{
 			this.OpHtmlExpression(op_code, result);
@@ -289,7 +312,7 @@ class TranslatorES6Html extends BaseObject
 			else if (prev_op_code instanceof OpAssign and (
 				op_code_item instanceof OpAssign or
 				op_code_item instanceof OpIf or op_code_item instanceof OpFor
-			))
+			) or prev_op_code instanceof OpComment)
 			{
 				next_line = false;
 			}
@@ -445,13 +468,17 @@ class TranslatorES6Html extends BaseObject
 			if (not op_code.is_html)
 			{
 				result.push(this.translator.newLine());
+				this.translator.class_function = op_code;
 				this.translator.program.OpDeclareFunction(op_code, result);
+				this.translator.class_function = null;
 				result.push(",");
 				return true;
 			}
 			
 			result.push(this.translator.newLine());
+			this.translator.class_function = op_code;
 			this.OpDeclareFunction(op_code, result, false);
+			this.translator.class_function = null;
 			result.push(",");
 			return true;
 		}
@@ -524,7 +551,7 @@ class TranslatorES6Html extends BaseObject
 		for (int i=0; i<this.translator.current_module.items.count(); i++)
 		{
 			BaseOpCode op_code_item = this.translator.current_module.items.get(i);
-			if (op_code_item instanceof OpUse)
+			if (op_code_item instanceof OpUse and op_code_item.is_component)
 			{
 				components.push(op_code_item.name);
 			}
@@ -538,11 +565,55 @@ class TranslatorES6Html extends BaseObject
 	
 	
 	/**
+	 * Translate component data items
+	 */
+	void OpDeclareComponentDataItems(OpItems op_code, Collection<string> result)
+	{
+		for (int i=0; i<op_code.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.get(i);
+			if (op_code_item instanceof OpAssign and (
+				this.translator.is_html_props and op_code_item.flags.isFlag("props") or
+				not this.translator.is_html_props and not op_code_item.flags.isFlag("props"))
+			)
+			{
+				for (int j=0; j<op_code_item.items.count(); j++)
+				{
+					OpAssignValue op_code_assign = op_code_item.items.get(j);
+					OpIdentifier item = op_code_assign.value;
+					result.push(this.translator.newLine());
+					if (this.translator.is_html_props) result.push(item.value ~ ": {default: ");
+					else result.push(item.value ~ ": ");
+					this.translator.expression.translate(op_code_assign.expression, result);
+					if (this.translator.is_html_props) result.push("},");
+					else result.push(",");
+				}
+			}
+			else if (op_code_item instanceof OpPreprocessorIfCode)
+			{
+				return this.translator.program.OpPreprocessorIfCode(op_code_item, result);
+			}
+			else if (op_code_item instanceof OpPreprocessorIfDef)
+			{
+				return this.translator.program.OpPreprocessorIfDef(
+					op_code_item, result, OpPreprocessorIfDef::KIND_CLASS_INIT
+				);
+			}
+			else if (op_code_item instanceof OpPreprocessorSwitch)
+			{
+				return this.translator.program.OpPreprocessorSwitch(
+					op_code_item, result, OpPreprocessorIfDef::KIND_CLASS_INIT
+				);
+			}
+		}
+	}
+	
+	
+	/**
 	 * Translate component data
 	 */
 	void OpDeclareComponentData(OpDeclareClass op_code, Collection<string> result, bool is_props)
 	{
-		bool has_data = false;
 		Collection item_result = [];
 		item_result.push(this.translator.newLine());
 		if (is_props) item_result.push("props: {");
@@ -556,25 +627,10 @@ class TranslatorES6Html extends BaseObject
 			item_result.push("return {");
 		}
 		this.translator.levelInc();
-		for (int i=0; i<op_code.content.count(); i++)
-		{
-			BaseOpCode op_code_item = op_code.content.get(i);
-			if (op_code_item instanceof OpAssign and (is_props and op_code_item.flags.isFlag("props") or not is_props and not op_code_item.flags.isFlag("props")))
-			{
-				for (int j=0; j<op_code_item.items.count(); j++)
-				{
-					has_data = true;
-					OpAssignValue op_code_assign = op_code_item.items.get(j);
-					OpIdentifier item = op_code_assign.value;
-					item_result.push(this.translator.newLine());
-					if (is_props) item_result.push(item.value ~ ": {default: ");
-					else item_result.push(item.value ~ ": ");
-					this.translator.expression.translate(op_code_assign.expression, item_result);
-					if (is_props) item_result.push("},");
-					else item_result.push(",");
-				}
-			}
-		}
+		this.translator.is_html_props = is_props;
+		Vector item_content = [];
+		this.OpDeclareComponentDataItems(op_code.content, item_content);
+		item_result.appendItems(item_content);
 		this.translator.levelDec();
 		if (not is_props)
 		{
@@ -584,7 +640,10 @@ class TranslatorES6Html extends BaseObject
 		}
 		item_result.push(this.translator.newLine());
 		item_result.push("},");
-		if (has_data) result.appendItems(item_result);
+		if (item_content.count() > 0)
+		{
+			result.appendItems(item_result);
+		}
 	}
 	
 	
@@ -679,8 +738,8 @@ class TranslatorES6Html extends BaseObject
 		/* Static functions */
 		this.translator.html_kind = "static";
 		this.translateComponentBody(op_code, result);
-		this.translateModuleComponents(op_code, result);
 		this.translateComponentStyle(op_code, result);
+		this.translateModuleComponents(op_code, result);
 		this.translator.program.translateClassInit(op_code, result, false);
 		
 		this.translator.levelDec();

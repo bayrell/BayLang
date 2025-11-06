@@ -124,7 +124,7 @@ class ParserBayHtml extends BaseObject
 			expression = this.parser.parser_base.readTypeIdentifier(reader, false);
 			reader.matchToken(open_tag);
 		}
-		else if (kind == "template")
+		else if (kind == "template" or kind == "style")
 		{
 			if (key == "name")
 			{
@@ -142,7 +142,7 @@ class ParserBayHtml extends BaseObject
 			}
 			else
 			{
-				expression = this.parser.parser_base.readString();
+				expression = this.parser.parser_base.readString(reader);
 			}
 		}
 		else if (kind == "expression")
@@ -153,11 +153,17 @@ class ParserBayHtml extends BaseObject
 			{
 				expression = this.parser.parser_base.readString(reader);
 			}
-			else if (next_token == "{{")
+			else if (next_token == "{{" or next_token == "{")
 			{
-				reader.matchToken("{{");
+				if (next_token == "{{") reader.matchToken("{{");
+				else reader.matchToken("{");
 				expression = this.parser.parser_expression.readExpression(reader);
-				reader.matchToken("}}");
+				if (next_token == "{{") reader.matchToken("}}");
+				else reader.matchToken("}");
+			}
+			else if (next_token == "[")
+			{
+				expression = this.parser.parser_base.readCollection(reader);
 			}
 			else if (is_function)
 			{
@@ -202,7 +208,7 @@ class ParserBayHtml extends BaseObject
 		string arr = "qazwsxedcrfvtgbyhnujmikolp01234567890_";
 		string key = "";
 		Caret caret = reader.caret();
-		while (not caret.eof() and (rs::indexOf(arr, caret.nextChar()) >= 0 or
+		while (not caret.eof() and (rs::indexOf(arr, rs::lower(caret.nextChar())) >= 0 or
 			caret.nextChar() == "-"))
 		{
 			key ~= caret.readChar();
@@ -210,7 +216,7 @@ class ParserBayHtml extends BaseObject
 		if (caret.nextChar() == ":")
 		{
 			key ~= caret.readChar();
-			while (not caret.eof() and rs::indexOf(arr, caret.nextChar()) >= 0)
+			while (not caret.eof() and rs::indexOf(arr, rs::lower(caret.nextChar())) >= 0)
 			{
 				key ~= caret.readChar();
 			}
@@ -238,17 +244,31 @@ class ParserBayHtml extends BaseObject
 				is_system_attr = true;
 				reader.matchToken("@");
 			}
-			string key = this.readAttrKey(reader);
-			string key_value = is_system_attr ? "@" ~ key : key;
-			reader.main_caret.skipToken();
-			reader.init(reader.main_caret);
-			reader.matchToken("=");
-			BaseOpCode expression = this.readAttrExpression(
-				reader, key_value, kind
-			);
+			bool is_spread = false;
+			string key = "";
+			string key_value = "";
+			BaseOpCode expression = null;
+			if (reader.nextToken() == "...")
+			{
+				is_spread = true;
+				reader.matchToken("...");
+				expression = this.parser.parser_base.readDynamic(reader);
+			}
+			else
+			{
+				key = this.readAttrKey(reader);
+				key_value = is_system_attr ? "@" ~ key : key;
+				reader.main_caret.skipToken();
+				reader.init(reader.main_caret);
+				reader.matchToken("=");
+				expression = this.readAttrExpression(
+					reader, key_value, kind
+				);
+			}
 			reader.main_caret.skipToken();
 			attrs.push(new OpHtmlAttribute{
 				"key": key_value,
+				"is_spread": is_spread,
 				"expression": expression,
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
@@ -286,7 +306,7 @@ class ParserBayHtml extends BaseObject
 		{
 			string ch = caret.readChar();
 			if (ch == ":" or ch == ";" or ch == "}") return false;
-			if (ch == "{" or ch == "(") return true;
+			if (ch == "{" or ch == "(" or ch == "&") return true;
 		}
 		return false;
 	}
@@ -323,6 +343,8 @@ class ParserBayHtml extends BaseObject
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() != "}")
 		{
+			reader.main_caret.skipToken();
+			if (reader.main_caret.nextChar() == "}") break;
 			if (this.isNextSelector(reader))
 			{
 				OpHtmlCSS op_code_item = this.readCSS(reader);
@@ -343,11 +365,15 @@ class ParserBayHtml extends BaseObject
 						"caret_end": reader.caret(),
 					}
 				);
-				if (reader.nextToken() != "}") reader.matchToken(";");
+				reader.main_caret.skipToken();
+				reader.init(reader.main_caret);
+				if (reader.main_caret.nextChar() != "}") reader.matchToken(";");
 			}
 		}
 		
-		reader.matchToken("}");
+		reader.main_caret.skipToken();
+		reader.main_caret.matchChar("}");
+		reader.init(reader.main_caret);
 		
 		return new OpHtmlCSS
 		{
@@ -391,6 +417,7 @@ class ParserBayHtml extends BaseObject
 		
 		reader.matchToken("<");
 		reader.matchToken("style");
+		Vector<OpHtmlAttribute> attrs = this.readAttrs(reader, "style");
 		reader.matchToken(">");
 		
 		BaseOpCode content = this.readStyleContent(reader, "</");
@@ -399,9 +426,13 @@ class ParserBayHtml extends BaseObject
 		reader.matchToken("style");
 		reader.matchToken(">");
 		
+		OpHtmlAttribute global = attrs.find(bool (OpHtmlAttribute attr) => attr.key == "global");
+		bool is_global = global ? global.expression.value == "true" : false;
+		
 		return new OpHtmlStyle
 		{
 			"content": content,
+			"is_global": is_global,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
@@ -478,6 +509,11 @@ class ParserBayHtml extends BaseObject
 		Caret caret_start = reader.start();
 		
 		reader.matchToken("<");
+		if (reader.nextToken() == "!--")
+		{
+			reader.init(caret_start);
+			return this.readComment(reader);
+		}
 		
 		BaseOpCode tag_name = null;
 		bool is_variable = false;
@@ -485,7 +521,7 @@ class ParserBayHtml extends BaseObject
 		{
 			is_variable = true;
 			reader.matchToken("{");
-			tag_name = this.parser.parser_base.readIdentifier(reader);
+			tag_name = this.parser.parser_base.readDynamic(reader);
 			reader.matchToken("}");
 		}
 		else
@@ -504,7 +540,7 @@ class ParserBayHtml extends BaseObject
 			content = this.readHtml(reader);
 			reader.matchToken("</");
 			if (is_variable) reader.matchToken("{");
-			reader.matchToken(tag_name.value);
+			if (tag_name instanceof OpIdentifier) reader.matchToken(tag_name.value);
 			if (is_variable) reader.matchToken("}");
 			reader.matchToken(">");
 		}

@@ -57,6 +57,7 @@ class ParserBay extends CoreParser
 	{
 		Collection variables = [
 			"print", "var_dump", "rs", "rtl", "parent", "this", "@", "null", "true", "false",
+			"document", "window"
 		];
 		if (variables.indexOf(name) == -1) return false;
 		return true;

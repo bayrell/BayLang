@@ -522,8 +522,8 @@ class ParserBayOperator extends BaseObject
 		Caret save_caret = reader.caret();
 		
 		/* Try to read call function */
-		OpCall op_code = this.parser.parser_function.readCallFunction(reader);
-		if (op_code) return op_code;
+		BaseOpCode op_code = this.parser.parser_base.readDynamic(reader);
+		if (op_code instanceof OpCall) return op_code;
 		
 		/* Restore reader */
 		reader.init(save_caret);

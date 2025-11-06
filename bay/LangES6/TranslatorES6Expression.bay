@@ -383,9 +383,16 @@ class TranslatorES6Expression extends BaseObject
 			result.push("await ");
 		}
 		
+		bool is_html = false;
 		if (op_code.item instanceof OpIdentifier and op_code.item.value == "parent")
 		{
-			if (this.translator.class_function and
+			if (this.translator.class_function and this.translator.class_function.is_html)
+			{
+				is_html = true;
+				result.push(this.translator.parent_class_name ~ ".methods." ~
+					this.translator.class_function.name ~ ".call");
+			}
+			else if (this.translator.class_function and
 				this.translator.class_function.name != "constructor"
 			)
 			{
@@ -402,6 +409,11 @@ class TranslatorES6Expression extends BaseObject
 		}
 		
 		result.push("(");
+		if (is_html)
+		{
+			result.push("this");
+			if (op_code.args.count() > 0) result.push(", ");
+		}
 		int args_count = op_code.args.count();
 		for (int i=0; i<args_count; i++)
 		{

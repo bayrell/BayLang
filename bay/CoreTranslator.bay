@@ -53,6 +53,7 @@ class CoreTranslator extends BaseObject
 	string html_kind = "";
 	string parent_class_name = "";
 	bool allow_multiline = true;
+	bool is_html_props = false;
 	bool is_operator_block = false;
 	
 	
@@ -100,6 +101,7 @@ class CoreTranslator extends BaseObject
 		}
 		else
 		{
+			if (rs::indexOf(class_name, ".") >= 0) return class_name;
 			return this.current_namespace_name ~ "." ~ class_name;
 		}
 	}

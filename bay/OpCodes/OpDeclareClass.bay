@@ -101,7 +101,7 @@ class OpDeclareClass extends BaseOpCode
 	 * Find function
 	 */
 	OpDeclareFunction findFunction(string name) =>
-		this.items.findItem(
+		this.content.items.find(
 			bool (BaseOpCode op_code) use (name) =>
 				op_code instanceof OpDeclareFunction and op_code.name == name
 		)

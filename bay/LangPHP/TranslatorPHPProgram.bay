@@ -196,6 +196,10 @@ class TranslatorPHPProgram extends BaseObject
 				{
 					this.translateClassBody(op_code, result, false);
 				}
+				else if (current_block == OpPreprocessorIfDef::KIND_CLASS_INIT)
+				{
+					this.translateClassInitItems(op_code.content, result);
+				}
 				else if (current_block == OpPreprocessorIfDef::KIND_OPERATOR)
 				{
 					this.translator.operator.translateItems(op_code.content, result, false);
@@ -470,7 +474,8 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			Collection item_result = [];
 			BaseOpCode op_code_item = op_code.content.get(i);
-			if (next_new_line)
+			if (next_new_line and not(op_code_item instanceof OpPreprocessorIfDef or
+				op_code_item instanceof OpPreprocessorSwitch))
 			{
 				int lines = 1;
 				if (prev_op_code and not this.translator.current_class.is_component)
@@ -507,6 +512,63 @@ class TranslatorPHPProgram extends BaseObject
 	
 	
 	/**
+	 * Returns class count items
+	 */
+	static int getClassCountItems(OpDeclareClass op_code)
+	{
+		int count = 0;
+		for (int i=0; i<op_code.content.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.content.get(i);
+			if (op_code_item instanceof OpDeclareFunction) count++;
+		}
+		return count;
+	}
+	
+	
+	/**
+	 * Translate class init items
+	 */
+	void translateClassInitItems(OpItems op_code, Vector result)
+	{
+		for (int i=0; i<op_code.count(); i++)
+		{
+			BaseOpCode op_code_item = op_code.get(i);
+			if (op_code_item instanceof OpAssign and not op_code_item.isStatic())
+			{
+				for (int j=0; j<op_code_item.items.count(); j++)
+				{
+					OpAssignValue assign_item = op_code_item.items.get(j);
+					if (assign_item.expression)
+					{
+						result.push(this.translator.newLine());
+						result.push("$this->" ~ assign_item.value.value ~ " = ");
+						this.translator.expression.translate(assign_item.expression, result);
+						result.push(";");
+					}
+				}
+			}
+			else if (op_code_item instanceof OpPreprocessorIfCode)
+			{
+				return this.OpPreprocessorIfCode(op_code_item, result);
+			}
+			else if (op_code_item instanceof OpPreprocessorIfDef)
+			{
+				return this.OpPreprocessorIfDef(
+					op_code_item, result, OpPreprocessorIfDef::KIND_CLASS_INIT
+				);
+			}
+			else if (op_code_item instanceof OpPreprocessorSwitch)
+			{
+				return this.OpPreprocessorSwitch(
+					op_code_item, result, OpPreprocessorIfDef::KIND_CLASS_INIT
+				);
+			}
+		}
+	}
+	
+	
+	/**
 	 * Translate class init
 	 */
 	void translateClassInit(OpDeclareClass op_code, Collection<string> result, bool newline = true)
@@ -514,7 +576,7 @@ class TranslatorPHPProgram extends BaseObject
 		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return;
 		
 		int lines = newline and op_code.content.count() > 0 ? 3 : 1;
-		if (this.translator.current_class.is_component) lines = 2;
+		if (this.translator.current_class.is_component and lines == 3) lines = 2;
 		result.push(this.translator.newLine(lines));
 		result.push("/* ========= Class init functions ========= */");
 		if (this.translator.current_class_name != "Runtime.BaseObject")
@@ -524,40 +586,20 @@ class TranslatorPHPProgram extends BaseObject
 			result.push(this.translator.newLine());
 			result.push("{");
 			this.translator.levelInc();
-			result.push(this.translator.newLine());
-			if (op_code.class_extends)
+			if (this.translator.parent_class_name != "")
 			{
-				result.push("parent::_init();");
 				result.push(this.translator.newLine());
+				result.push("parent::_init();");
 			}
-			bool is_assign_first = true;
-			for (int i=0; i<op_code.content.items.count(); i++)
-			{
-				BaseOpCode op_code_item = op_code.content.items.get(i);
-				if (op_code_item instanceof OpAssign and not op_code_item.isStatic())
-				{
-					for (int j=0; j<op_code_item.items.count(); j++)
-					{
-						OpAssignValue assign_item = op_code_item.items.get(j);
-						if (assign_item.expression)
-						{
-							if (not is_assign_first) result.push(this.translator.newLine());
-							result.push("$this->" ~ assign_item.value.value ~ " = ");
-							this.translator.expression.translate(assign_item.expression, result);
-							result.push(";");
-							is_assign_first = false;
-						}
-					}
-				}
-			}
+			this.translateClassInitItems(op_code.content, result);
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
 			result.push("}");
 		}
 		if (op_code.is_component)
 		{
-			this.translator.html.translateModuleComponents(op_code, result);
 			this.translator.html.translateComponentStyle(op_code, result);
+			this.translator.html.translateModuleComponents(op_code, result);
 		}
 		result.push(this.translator.newLine());
 		result.push("static function getClassName(){ " ~
@@ -608,15 +650,20 @@ class TranslatorPHPProgram extends BaseObject
 		{
 			result.push(" extends ");
 			this.translator.expression.OpTypeIdentifier(op_code.class_extends, result);
+			this.translator.parent_class_name = this.translator.getFullName(
+				op_code.class_extends.entity_name.getName()
+			);
 		}
 		else if (op_code.is_component)
 		{
 			if (this.translator.current_class_name == "Runtime.Component")
 			{
+				this.translator.parent_class_name = "Runtime.BaseObject";
 				result.push(" extends \\Runtime\\BaseObject");
 			}
 			else
 			{
+				this.translator.parent_class_name = "Runtime.Component";
 				result.push(" extends \\Runtime\\Component");
 			}
 		}

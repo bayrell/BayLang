@@ -45,7 +45,7 @@ class TranslatorStyle extends BaseObject
 	/**
 	 * Combine selector
 	 */
-	string combineSelector(Vector<string> path, string selector)
+	string combineSelector(Vector<string> path, bool is_global)
 	{
 		Vector media = [];
 		Vector items = [];
@@ -56,12 +56,20 @@ class TranslatorStyle extends BaseObject
 			Collection<string> last_items = rs::split(", ", last_item);
 			string css_hash = rs::getCssHash(this.translator.current_class_name);
 			last_items = last_items.map(
-				string (string s) use (item, css_hash) => rs::trim(s) ~ ".h-" ~ css_hash
+				string (string s) use (item, css_hash)
+				{
+					s = rs::trim(s);
+					Vector arr = rs::split(":", s);
+					string prefix = arr.get(0);
+					string postfix = rs::join(":", arr.slice(1));
+					if (postfix != "") postfix = ":" ~ postfix;
+					return prefix ~ ".h-" ~ css_hash ~ postfix;
+				}
 			);
 			items.push(rs::join(", ", last_items));
 		};
 		
-		bool need_add_hash = true;
+		bool need_add_hash = not is_global;
 		for (int i=0; i<path.count(); i++)
 		{
 			string item = path.get(i);
@@ -103,23 +111,27 @@ class TranslatorStyle extends BaseObject
 	 * Add selector content
 	 */
 	void addSelectorContent(
-		Map<Vector<string>> result, string media, string content
+		Map<Vector<string>> result, string media, var content
 	)
 	{
 		if (not result.has(media)) result.set(media, []);
 		Vector<string> items = result.get(media);
-		items.push(content);
+		if (rtl::isString(content)) items.push(content);
+		else if (content instanceof Vector) items.appendItems(content);
 	}
 	
 	
 	/**
 	 * Translate CSS
 	 */
-	void OpHtmlCSS(OpHtmlCSS op_code, Map<Vector<string>> result, Vector<string> path)
+	void OpHtmlCSS(
+		OpHtmlCSS op_code, Map<Vector<string>> result, Vector<string> path, bool is_global
+	)
 	{
 		Vector item_content = [];
 		Vector new_path = path.concat([op_code.selector]);
-		Vector r = this.combineSelector(new_path);
+		Vector r = this.combineSelector(new_path, is_global);
+		Map<Vector<string>> item_result = {};
 		string media = r.get(0);
 		string selector = r.get(1);
 		for (int i=0; i<op_code.items.count(); i++)
@@ -127,7 +139,7 @@ class TranslatorStyle extends BaseObject
 			BaseOpCode op_code_item = op_code.items.get(i);
 			if (op_code_item instanceof OpHtmlCSS)
 			{
-				this.OpHtmlCSS(op_code_item, result, new_path);
+				this.OpHtmlCSS(op_code_item, item_result, new_path, is_global);
 			}
 			else if (op_code_item instanceof OpHtmlCSSAttribute)
 			{
@@ -138,6 +150,12 @@ class TranslatorStyle extends BaseObject
 		{
 			string content = selector ~ "{" ~ rs::substr(rs::join("", item_content), 0, -1) ~ "}";
 			this.addSelectorContent(result, media, content);
+		}
+		Vector keys = rtl::list(item_result.keys());
+		for (int i=0; i<keys.count(); i++)
+		{
+			string key = keys.get(i);
+			this.addSelectorContent(result, key, item_result.get(key));
 		}
 	}
 	
@@ -151,7 +169,7 @@ class TranslatorStyle extends BaseObject
 		{
 			BaseOpCode op_code_item = op_code.content.get(i);
 			Map item_result = {};
-			this.OpHtmlCSS(op_code_item, item_result, []);
+			this.OpHtmlCSS(op_code_item, item_result, [], op_code.is_global);
 			Vector media_keys = rtl::list(item_result.keys());
 			for (int j=0; j<media_keys.count(); j++)
 			{

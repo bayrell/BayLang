@@ -98,10 +98,19 @@ class TranslatorPHPHtml extends BaseObject
 	{
 		Collection<OpHtmlAttribute> attrs = op_code.attrs;
 		
+		Vector spread = [];
 		Map result = {};
 		for (int i=0; i<attrs.count(); i++)
 		{
 			OpHtmlAttribute item = attrs.get(i);
+			if (item.is_spread)
+			{
+				Vector item_result = [];
+				this.translator.expression.translate(item.expression, item_result);
+				spread.push(rs::join("", item_result));
+				continue;
+			}
+			
 			string key = item.key;
 			if (rs::charAt(key, 0) == "@") continue;
 			Collection item_value = [];
@@ -129,7 +138,7 @@ class TranslatorPHPHtml extends BaseObject
 			}
 		}
 		
-		return result.transition(string (string value, string key){
+		Vector attrs = result.transition(string (string value, string key){
 			if (key == "class")
 			{
 				return this.translator.toString(key) ~
@@ -138,6 +147,7 @@ class TranslatorPHPHtml extends BaseObject
 			}
 			return this.translator.toString(key) ~ " => " ~ value;
 		});
+		return [attrs, spread];
 	}
 	
 	
@@ -146,9 +156,12 @@ class TranslatorPHPHtml extends BaseObject
 	 */
 	string getTagName(var tag_name)
 	{
-		if (tag_name instanceof OpIdentifier)
+		if (tag_name instanceof BaseOpCode)
 		{
-			return [tag_name.value, "$" ~ tag_name.value];
+			Vector item_result = [];
+			this.translator.expression.translate(tag_name, item_result);
+			string value = rs::join("", item_result);
+			return [value, value];
 		}
 		if (ParserBayHtml::isComponent(tag_name))
 		{
@@ -167,11 +180,17 @@ class TranslatorPHPHtml extends BaseObject
 		string var_name = this.translator.html_var_names.last();
 		string current_var_name = "$" ~ this.translator.varInc();
 		
-		Collection attrs = this.OpHtmlAttrs(op_code);
+		Vector res = this.OpHtmlAttrs(op_code);
+		Vector attrs = res.get(0);
+		Vector spread = res.get(1);
 		string attrs_str = "";
-		if (attrs.count() > 0)
+		if (attrs.count() > 0 or spread.count() > 0)
 		{
-			attrs_str = ", new \\Runtime\\Map([" ~ rs::join(", ", attrs) ~ "])";
+			attrs_str = ", (new \\Runtime\\Map([" ~ rs::join(", ", attrs) ~ "]))";
+			for (int i=0; i<spread.count(); i++)
+			{
+				attrs_str = attrs_str ~ "->concat(" ~ spread.get(i) ~ ")";
+			}
 		}
 		
 		string tag_name = this.getTagName(op_code.tag_name);
@@ -198,7 +217,7 @@ class TranslatorPHPHtml extends BaseObject
 				result.push(this.translator.newLine());
 				result.push("/* Content */");
 				result.push(this.translator.newLine());
-				result.push(current_var_name ~ "->content(");
+				result.push(current_var_name ~ "->slot(\"default\", ");
 				this.translator.program.OpDeclareFunction(op_code_item, result);
 				result.push(");");
 			}
@@ -246,6 +265,10 @@ class TranslatorPHPHtml extends BaseObject
 			if (new_line) result.push(this.translator.newLine());
 			this.translator.operator.OpIf(op_code, result);
 		}
+		else if (op_code instanceof OpComment)
+		{
+			this.translator.operator.OpComment(op_code, result);
+		}
 		else
 		{
 			this.OpHtmlExpression(op_code, result);
@@ -269,7 +292,7 @@ class TranslatorPHPHtml extends BaseObject
 			else if (prev_op_code instanceof OpAssign and (
 				op_code_item instanceof OpAssign or
 				op_code_item instanceof OpIf or op_code_item instanceof OpFor
-			))
+			) or prev_op_code instanceof OpComment)
 			{
 				next_line = false;
 			}
@@ -368,7 +391,7 @@ class TranslatorPHPHtml extends BaseObject
 		for (int i=0; i<this.translator.current_module.items.count(); i++)
 		{
 			BaseOpCode op_code_item = this.translator.current_module.items.get(i);
-			if (op_code_item instanceof OpUse)
+			if (op_code_item instanceof OpUse and op_code_item.is_component)
 			{
 				components.push(op_code_item.name);
 			}
