@@ -162,7 +162,7 @@ class TranslatorES6Html extends BaseObject
 			if (key == "class")
 			{
 				return this.translator.toString(key) ~
-					": rs.join(\" \", [" ~ rs::join(", ", value) ~ "])";
+					": rs.className([" ~ rs::join(", ", value) ~ "])";
 			}
 			return this.translator.toString(key) ~ ": " ~ value;
 		});
@@ -404,7 +404,7 @@ class TranslatorES6Html extends BaseObject
 		{
 			this.OpHtmlContent(op_code.content.get(0), result);
 		}
-		else
+		else if (op_code.content.items.count() > 0)
 		{
 			this.OpHtmlItems(op_code.content, item_result);
 			item_result.push(this.translator.newLine());
@@ -422,7 +422,10 @@ class TranslatorES6Html extends BaseObject
 		this.translator.setUseModules(save_use_modules);
 		
 		/* Return Virtual Dom */
-		result.push(this.translator.newLine());
+		if (op_code.content.items.count() > 0)
+		{
+			result.push(this.translator.newLine());
+		}
 		result.push("return __v;");
 		
 		this.translator.levelDec();

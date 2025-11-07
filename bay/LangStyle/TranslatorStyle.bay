@@ -56,7 +56,7 @@ class TranslatorStyle extends BaseObject
 			Collection<string> last_items = rs::split(", ", last_item);
 			string css_hash = rs::getCssHash(this.translator.current_class_name);
 			last_items = last_items.map(
-				string (string s) use (item, css_hash)
+				string (string s) use (css_hash)
 				{
 					s = rs::trim(s);
 					Vector arr = rs::split(":", s);

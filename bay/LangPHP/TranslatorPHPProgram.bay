@@ -548,10 +548,6 @@ class TranslatorPHPProgram extends BaseObject
 					}
 				}
 			}
-			else if (op_code_item instanceof OpPreprocessorIfCode)
-			{
-				return this.OpPreprocessorIfCode(op_code_item, result);
-			}
 			else if (op_code_item instanceof OpPreprocessorIfDef)
 			{
 				return this.OpPreprocessorIfDef(
