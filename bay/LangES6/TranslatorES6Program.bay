@@ -154,9 +154,40 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void OpComment(OpComment op_code, Collection<string> result)
 	{
-		result.push("/*");
-		result.push(op_code.value);
-		result.push("*/");
+		Vector<string> lines = rs::split("\n", op_code.value);
+		if (lines.count() == 1)
+		{
+			result.push("/*");
+			result.push(op_code.value);
+			result.push("*/");
+			return;
+		}
+		
+		string first_line = rs::trim(lines.get(0));
+		bool is_comment_function = first_line == "*";
+		if (first_line == "" or first_line == "*") lines = lines.slice(1);
+		if (rs::trim(lines.get(lines.count() - 1)) == "" and lines.count() > 1)
+		{
+			lines = lines.slice(0, lines.count() - 1);
+		}
+		
+		if (is_comment_function) result.push("/**");
+		else result.push("/*");
+		for (int i=0; i<lines.count(); i++)
+		{
+			string line = lines.get(i);
+			int start = 0;
+			int len = rs::strlen(line);
+			while (start < len and (rs::charAt(line, start) == " " or
+				rs::charAt(line, start) == "\t")) start++;
+			if (start < len and rs::charAt(line, start) == "*") start++;
+			result.push(this.translator.newLine());
+			if (is_comment_function) result.push(" *");
+			result.push(rs::substr(line, start));
+		}
+		result.push(this.translator.newLine());
+		if (is_comment_function) result.push(" */");
+		else result.push("*/");
 	}
 	
 	

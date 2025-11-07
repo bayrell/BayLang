@@ -41,6 +41,8 @@ bay-lang-nodejs version
 
 ## BayLang compiler versions
 
+[15 May 2025] Start 1.0 version
+
 [05 Feb 2024] 0.12.4 - Add HTML tag multiline support, declare functions in expressions, css media fix.
 
 [27 Dec 2024] 0.12.3 - BayLang Constructor for WordPress.
