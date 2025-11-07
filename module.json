@@ -8,6 +8,7 @@
 		"CoreTranslator.bay",
 		"LangUtils.bay",
 		"TokenReader.bay",
+		"TranslatorHelper.bay",
 		"Exceptions/ParserUnknownError.bay",
 		"Exceptions/ParserError.bay",
 		"Exceptions/ParserEOF.bay",

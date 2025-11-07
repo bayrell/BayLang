@@ -86,11 +86,31 @@ class TranslatorES6Program extends BaseObject
 	/**
 	 * OpAnnotation
 	 */
-	void OpAnnotation(OpAnnotation op_code, Collection<string> result)
+	void OpAnnotation(Vector<OpAnnotation> annotations, Collection<string> result)
 	{
-		result.push("@");
-		this.translator.expression.OpTypeIdentifier(op_code.name, result);
-		this.translator.expression.OpDict(op_code.params, result);
+		result.push("return new Vector(");
+		this.translator.levelInc();
+		for (int j=0; j<annotations.count(); j++)
+		{
+			OpAnnotation annotation = annotations.get(j);
+			result.push(this.translator.newLine());
+			result.push("new ");
+			this.translator.expression.OpTypeIdentifier(annotation.name, result);
+			result.push("(");
+			if (annotation.params != null)
+			{
+				this.translator.expression.OpDict(annotation.params, result);
+			}
+			result.push(")");
+			if (j < annotations.count() - 1)
+			{
+				result.push(",");
+				result.push(this.translator.newLine());
+			}
+		}
+		this.translator.levelDec();
+		result.push(this.translator.newLine());
+		result.push(");");
 	}
 	
 	
@@ -459,11 +479,7 @@ class TranslatorES6Program extends BaseObject
 	 */
 	bool translateClassItem(BaseOpCode op_code, Collection<string> result)
 	{
-		if (op_code instanceof OpAnnotation)
-		{
-			this.OpAnnotation(op_code, result);
-		}
-		else if (op_code instanceof OpAssign)
+		if (op_code instanceof OpAssign)
 		{
 			if (op_code.isStatic())
 			{
@@ -531,7 +547,7 @@ class TranslatorES6Program extends BaseObject
 			Collection item_result = [];
 			BaseOpCode op_code_item = op_code.content.get(i);
 			if (op_code_item instanceof OpAssign and not op_code_item.isStatic() or
-				op_code_item instanceof OpComment)
+				op_code_item instanceof OpAnnotation or op_code_item instanceof OpComment)
 			{
 				prev_op_code = null;
 				continue;
@@ -638,15 +654,75 @@ class TranslatorES6Program extends BaseObject
 			result.push("return \"" ~ this.translator.current_class_name ~ "\"; }");
 			result.push(this.translator.newLine());
 			
-			/* Get method list */
-			result.push("static getMethodsList(){ ");
-			result.push("return []; }");
+			/* Get class annotations */
+			if (op_code.annotations.count() > 0)
+			{
+				result.push("static getClassInfo()");
+				result.push(this.translator.newLine());
+				result.push("{");
+				this.translator.levelInc();
+				result.push(this.translator.newLine());
+				result.push("return ");
+				this.OpAnnotation(op_code.annotations, result);
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+				result.push("}");
+			}
+			
+			/* Get methods with annotations */
+			Vector<OpDeclareFunction> methods = [];
+			this.translator.helper.getMethodsWithAnnotations(op_code.content, methods);
+			
+			/* Get methods list */
+			result.push("static getMethodsList()");
+			if (methods.count() > 0)
+			{
+				result.push(this.translator.newLine());
+				result.push("{");
+				this.translator.levelInc();
+				result.push(this.translator.newLine());
+				result.push("const Vector = use(\"Runtime.Vector\");");
+				result.push(this.translator.newLine());
+				result.push("return new Vector(");
+				for (int i=0; i<methods.count(); i++)
+				{
+					OpDeclareFunction op_code_item = methods.get(i);
+					result.push(this.translator.toString(op_code_item.name));
+					if (i < methods.count() - 1) result.push(", ");
+				}
+				result.push(");");
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+				result.push("}");
+			}
+			else result.push("{ return null; }");
 			
 			result.push(this.translator.newLine());
 			
 			/* Get method info by name */
-			result.push("static getMethodInfoByName(field_name){ ");
-			result.push("return null; }");
+			result.push("static getMethodInfoByName(field_name)");
+			if (methods.count() > 0)
+			{
+				result.push(this.translator.newLine());
+				result.push("{");
+				this.translator.levelInc();
+				result.push(this.translator.newLine());
+				result.push("const Vector = use(\"Runtime.Vector\");");
+				result.push(this.translator.newLine());
+				for (int i=0; i<methods.count(); i++)
+				{
+					OpDeclareFunction op_code_item = methods.get(i);
+					string method_name = this.translator.toString(op_code_item.name);
+					result.push("if (field_nane == " ~ method_name ~ ") ");
+					this.OpAnnotation(op_code_item.annotations, result);
+				}
+				result.push(this.translator.newLine());
+				result.push("return null;");
+				this.translator.levelDec();
+				result.push(this.translator.newLine());
+				result.push("}");
+			}
+			else result.push("{ return null; }");
 			
 			/* Implements */
 			if (op_code.class_implements)

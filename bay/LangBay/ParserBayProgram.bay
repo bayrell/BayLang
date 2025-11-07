@@ -31,6 +31,7 @@ use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
+use BayLang.OpCodes.OpDict;
 use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpItems;
@@ -124,6 +125,32 @@ class ParserBayProgram extends BaseObject
 	
 	
 	/**
+	 * Annotation
+	 */
+	OpAnnotation readAnnotation(TokenReader reader)
+	{
+		Caret caret_start = reader.start();
+		
+		reader.matchToken("@");
+		BaseOpCode name = this.parser.parser_base.readTypeIdentifier(reader);
+		
+		OpDict params = null;
+		if (reader.nextToken() == "{")
+		{
+			params = this.parser.parser_base.readDict(reader);
+		}
+		
+		return new OpAnnotation
+		{
+			"name": name,
+			"params": params,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read module
 	 */
 	Collection<BaseOpCode> readModuleItem(TokenReader reader)
@@ -140,6 +167,12 @@ class ParserBayProgram extends BaseObject
 		else if (next_token == "use")
 		{
 			return this.readUse(reader);
+		}
+		
+		/* Annotation */
+		else if (next_token == "@")
+		{
+			return this.readAnnotation(reader);
 		}
 		
 		/* Read class */
@@ -173,6 +206,7 @@ class ParserBayProgram extends BaseObject
 	{
 		this.parser.current_block = CoreParser::BLOCK_PROGRAM;
 		
+		Collection<OpAnnotation> annotations = [];
 		Collection<BaseOpCode> items = [];
 		Caret caret_start = reader.start();
 		
@@ -187,8 +221,17 @@ class ParserBayProgram extends BaseObject
 			
 			/* Read module item */
 			BaseOpCode op_code = this.readModuleItem(reader);
-			if (op_code)
+			if (op_code instanceof OpAnnotation)
 			{
+				annotations.push(op_code);
+			}
+			else if (op_code)
+			{
+				if (op_code instanceof OpDeclareClass)
+				{
+					op_code.annotations = annotations;
+					annotations = [];
+				}
 				items.push(op_code);
 			}
 			else

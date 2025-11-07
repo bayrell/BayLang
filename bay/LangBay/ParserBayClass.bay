@@ -23,6 +23,7 @@ use BayLang.Caret;
 use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
@@ -88,6 +89,12 @@ class ParserBayClass extends BaseObject
 			return this.parser.parser_base.readComment(reader);
 		}
 		
+		/* Annotation */
+		else if (next_token == "@")
+		{
+			return this.parser.parser_program.readAnnotation(reader);
+		}
+		
 		/* Prepocessor */
 		else if (next_token == "#switch" or next_token == "#ifcode" or next_token == "#ifdef")
 		{
@@ -119,24 +126,32 @@ class ParserBayClass extends BaseObject
 	 */
 	Collection processItems(Collection<BaseOpCode> items)
 	{
+		Collection<BaseOpCode> annotations = [];
 		Collection<BaseOpCode> result = [];
 		Collection<BaseOpCode> comments = [];
 		for (int i=0; i<items.count(); i++)
 		{
 			BaseOpCode item = items.get(i);
-			if (item instanceof OpComment)
+			if (item instanceof OpAnnotation)
 			{
-				comments.push(item);
+				annotations.push(item);
 			}
 			else if (item instanceof OpAssign)
 			{
 				result.appendItems(comments);
 				result.push(item);
+				annotations = [];
 				comments = [];
+			}
+			else if (item instanceof OpComment)
+			{
+				comments.push(item);
 			}
 			else if (item instanceof OpDeclareFunction)
 			{
-				item.comments = [];
+				item.annotations = annotations;
+				item.comments = comments;
+				/*
 				int line = item.caret_start.y - 1;
 				for (int j=comments.count() - 1; j>=0; j--)
 				{
@@ -148,9 +163,9 @@ class ParserBayClass extends BaseObject
 						line = op_code.caret_start.y - 1;
 					}
 				}
-				item.comments.reverse();
-				result.appendItems(comments);
+				item.comments.reverse();*/
 				result.push(item);
+				annotations = [];
 				comments = [];
 			}
 			else

@@ -41,6 +41,7 @@ add("BayLang.CoreTranslator");
 add("BayLang.LangUtils");
 add("BayLang.ModuleDescription");
 add("BayLang.TokenReader");
+add("BayLang.TranslatorHelper");
 add("BayLang.Compiler.Commands.Compile");
 add("BayLang.Compiler.Commands.Make");
 add("BayLang.Compiler.Commands.MakeAll");

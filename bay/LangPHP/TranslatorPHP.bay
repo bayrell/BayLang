@@ -21,6 +21,7 @@ namespace BayLang.LangPHP;
 use Runtime.re;
 use BayLang.CoreTranslator;
 use BayLang.SaveOpCode;
+use BayLang.TranslatorHelper;
 use BayLang.LangPHP.TranslatorPHPExpression;
 use BayLang.LangPHP.TranslatorPHPHtml;
 use BayLang.LangPHP.TranslatorPHPOperator;
@@ -32,6 +33,7 @@ use BayLang.OpCodes.BaseOpCode;
 class TranslatorPHP extends CoreTranslator
 {
 	/* Translators */
+	TranslatorHelper helper = new TranslatorHelper(this);
 	TranslatorStyle style = new TranslatorStyle(this);
 	TranslatorPHPExpression expression = new TranslatorPHPExpression(this);
 	TranslatorPHPOperator operator = new TranslatorPHPOperator(this);

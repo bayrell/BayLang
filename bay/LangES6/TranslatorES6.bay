@@ -22,6 +22,7 @@ use Runtime.re;
 use Runtime.BaseStruct;
 use BayLang.CoreTranslator;
 use BayLang.SaveOpCode;
+use BayLang.TranslatorHelper;
 use BayLang.LangES6.AsyncAwait;
 use BayLang.LangES6.TranslatorES6AsyncAwait;
 use BayLang.LangES6.TranslatorES6Expression;
@@ -40,6 +41,7 @@ class TranslatorES6 extends CoreTranslator
 	TranslatorES6Operator operator = new TranslatorES6Operator(this);
 	TranslatorES6Program program = new TranslatorES6Program(this);
 	TranslatorES6Html html = new TranslatorES6Html(this);
+	TranslatorHelper helper = new TranslatorHelper(this);
 	
 	/* Flags */
 	bool use_module_name = false;
