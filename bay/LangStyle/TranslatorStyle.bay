@@ -59,11 +59,14 @@ class TranslatorStyle extends BaseObject
 				string (string s) use (css_hash)
 				{
 					s = rs::trim(s);
-					Vector arr = rs::split(":", s);
+					Vector items = rs::split(" ", s);
+					Vector arr = rs::split(":", items.get(0));
 					string prefix = arr.get(0);
 					string postfix = rs::join(":", arr.slice(1));
 					if (postfix != "") postfix = ":" ~ postfix;
-					return prefix ~ ".h-" ~ css_hash ~ postfix;
+					string selector = prefix ~ ".h-" ~ css_hash ~ postfix;
+					if (items.count() > 1) return selector ~ " " ~ rs::join(" ", items.slice(1));
+					return selector;
 				}
 			);
 			items.push(rs::join(", ", last_items));

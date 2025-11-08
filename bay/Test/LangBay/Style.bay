@@ -387,7 +387,7 @@ class Style
 				"\tpadding: 20px;",
 				"\tcolor: green;",
 				"\t@media (max-width: 950px){",
-				"\t\tdisplay: none;"
+				"\t\tdisplay: none;",
 				"\t}",
 				"}",
 			]

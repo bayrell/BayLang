@@ -220,7 +220,7 @@ class TranslatorPHPExpression extends BaseObject
 			}
 			
 			last_result = not is_preprocessor or is_result;
-			if (last_result)
+			if (last_result and result1.count() > 0)
 			{
 				if (is_multiline) result.push(this.translator.newLine());
 				result.appendItems(result1);

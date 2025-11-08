@@ -196,8 +196,11 @@ class TranslatorPHPHtml extends BaseObject
 		string tag_name = this.getTagName(op_code.tag_name);
 		result.push("/* Element " ~ tag_name.get(0) ~ " */");
 		result.push(this.translator.newLine());
-		result.push(current_var_name ~ " = " ~ var_name ~
-			"->element(" ~ tag_name.get(1) ~ attrs_str ~ ");");
+		if (op_code.content and op_code.content.count() > 0)
+		{
+			result.push(current_var_name ~ " = ");
+		}
+		result.push(var_name ~ "->element(" ~ tag_name.get(1) ~ attrs_str ~ ");");
 		
 		if (op_code.content and op_code.content.count() > 0)
 		{

@@ -306,7 +306,7 @@ class Base
 			"\n",
 			[
 				"{",
-					"\t\"name\": \"test\","
+					"\t\"name\": \"test\",",
 				"}"
 			]
 		);
@@ -325,7 +325,7 @@ class Base
 			[
 				"{",
 					"\t\"name\": \"test\",",
-					"\t\"value\": 10,"
+					"\t\"value\": 10,",
 				"}"
 			]
 		);
@@ -401,7 +401,7 @@ class Base
 				"{",
 					"\t\"obj\": {",
 						"\t\t\"name\": \"test\",",
-						"\t\t\"value\": 10,"
+						"\t\t\"value\": 10,",
 					"\t},",
 				"}"
 			]
@@ -463,8 +463,8 @@ class Base
 				"{",
 					"\t\"name\": \"test\",",
 					"\t#ifdef BACKEND then",
-					"\t\"value1\": 1,"
-					"\t\"value2\": 2,"
+					"\t\"value1\": 1,",
+					"\t\"value2\": 2,",
 					"\t#endif",
 				"}"
 			]
@@ -580,7 +580,7 @@ class Base
 			[
 				"a{",
 					"\t\"name\": \"test\",",
-					"\t\"value\": 10,"
+					"\t\"value\": 10,",
 				"}"
 			]
 		);
@@ -624,7 +624,7 @@ class Base
 			[
 				"new Test{",
 					"\t\"name\": \"test\",",
-					"\t\"value\": 10,"
+					"\t\"value\": 10,",
 				"}"
 			]
 		);

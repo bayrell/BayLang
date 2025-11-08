@@ -424,7 +424,10 @@ class ParserBayBase extends BaseObject
 			{
 				is_preprocessor = true;
 				reader.matchToken("#ifdef");
+				bool save_find_variable = this.parser.find_variable;
+				this.parser.find_variable = false;
 				condition = this.parser.parser_expression.readExpression(reader);
+				this.parser.find_variable = save_find_variable;
 				reader.matchToken("then");
 			}
 			

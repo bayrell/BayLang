@@ -306,7 +306,7 @@ class ParserBayHtml extends BaseObject
 		{
 			string ch = caret.readChar();
 			if (ch == ":" or ch == ";" or ch == "}") return false;
-			if (ch == "{" or ch == "(" or ch == "&") return true;
+			if (ch == "{" or ch == "(" or ch == "&" or ch == ".") return true;
 		}
 		return false;
 	}
@@ -730,16 +730,22 @@ class ParserBayHtml extends BaseObject
 	{
 		Caret caret_start = reader.start();
 		
-		if (match_brackets) reader.matchToken("{");
-		
-		Collection items = [];
-		while (not reader.eof() and reader.nextToken() != "</" and reader.nextToken() != end_tag)
+		Vector items = [];
+		if (match_brackets and reader.nextToken() == "<")
 		{
 			BaseOpCode op_code_item = this.readHtmlItem(reader);
 			items.push(op_code_item);
 		}
-		
-		if (match_brackets) reader.matchToken("}");
+		else
+		{
+			if (match_brackets) reader.matchToken("{");
+			while (not reader.eof() and reader.nextToken() != "</" and reader.nextToken() != end_tag)
+			{
+				BaseOpCode op_code_item = this.readHtmlItem(reader);
+				items.push(op_code_item);
+			}
+			if (match_brackets) reader.matchToken("}");
+		}
 		
 		return new OpHtmlItems
 		{

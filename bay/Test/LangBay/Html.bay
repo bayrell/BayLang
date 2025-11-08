@@ -473,7 +473,7 @@ class Html
 				"",
 				"<script>",
 				"",
-				"void test(){}"
+				"void test(){}",
 				"",
 				"</script>",
 				"",
