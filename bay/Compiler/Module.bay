@@ -212,6 +212,7 @@ class Module extends BaseObject implements SerializeInterface
 	bool checkExclude(string relative_src_file_path)
 	{
 		if (not this.exclude) return false;
+		if (not relative_src_file_path) return false;
 		for (int i=0; i<this.exclude.count(); i++)
 		{
 			string file_match = this.exclude.get(i);

@@ -61,6 +61,8 @@ class Watch extends BaseCommand
 			try
 			{
 				string file_path = module.getRelativeSourcePath(changed_file_path);
+				if (not file_path) return;
+				if (module.checkExclude(file_path)) return;
 				bool result = await module.compile(file_path);
 				if (result)
 				{

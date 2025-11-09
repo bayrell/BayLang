@@ -129,15 +129,14 @@ class TranslatorPHPHtml extends BaseObject
 			}
 		}
 		
-		if (not op_code.is_component)
+		/* Add class name */
+		Vector<string> class_name = result.get("class");
+		if (class_name)
 		{
-			Vector<string> class_name = result.get("class");
-			if (class_name)
-			{
-				class_name.push("$componentHash");
-			}
+			class_name.push("$componentHash");
 		}
 		
+		/* Get attrs */
 		Vector attrs = result.transition(string (string value, string key){
 			if (key == "class")
 			{
