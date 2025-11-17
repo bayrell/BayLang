@@ -577,16 +577,16 @@ class TranslatorES6Program extends BaseObject
 			if (op_code_item instanceof OpAssign and not op_code_item.isStatic() or
 				op_code_item instanceof OpAnnotation or op_code_item instanceof OpComment)
 			{
-				prev_op_code = null;
+				/*prev_op_code = null;*/
 				continue;
 			}
 			if (next_new_line)
 			{
 				int lines = not is_first ? 3 : 1;
-				if (prev_op_code)
+				if (prev_op_code instanceof OpAssign and op_code_item instanceof OpAssign)
 				{
-					lines = op_code_item.getOffset().get("start") -
-						prev_op_code.getOffset().get("end");
+					lines = 1;
+					prev_op_code = null;
 				}
 				for (int j=0; j<lines; j++) item_result.push(this.translator.newLine());
 			}
@@ -699,6 +699,7 @@ class TranslatorES6Program extends BaseObject
 				this.translator.levelDec();
 				result.push(this.translator.newLine());
 				result.push("}");
+				result.push(this.translator.newLine());
 			}
 			
 			/* Get methods with annotations */
