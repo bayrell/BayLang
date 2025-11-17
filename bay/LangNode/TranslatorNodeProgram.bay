@@ -33,4 +33,10 @@ class TranslatorNodeProgram extends TranslatorES6Program
 		this.translator.uses.set(op_code.alias, op_code.name);
 		return false;
 	}
+	
+	
+	/**
+	 * Translate class name
+	 */
+	string translateClassName(string class_name) => "use(\"" ~ class_name ~ "\")";
 }

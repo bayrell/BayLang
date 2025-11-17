@@ -69,9 +69,10 @@ class TranslatorStyle extends BaseObject
 		string css_hash = rs::getCssHash(this.translator.current_class_name);
 		
 		/* Add selector */
-		if (not is_global and selector.path.count() == 0)
+		if (not is_global and rs::charAt(op_code.selector, 0) != "@")
 		{
 			selector.add(Selector::addHash(op_code.selector, css_hash));
+			is_global = true;
 		}
 		else
 		{

@@ -71,7 +71,7 @@ class Operator
 		{
 			parser.setContent(src);
 			BaseOpCode op_code = parser.parser_program.parse(parser.createReader());
-			if (this.debug) log(op_code);
+			if (this.debug) var_dump(op_code);
 			translator.program.translate(op_code, output);
 		}
 		catch (ParserError error)

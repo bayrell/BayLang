@@ -463,7 +463,7 @@ class TranslatorES6Program extends BaseObject
 		if (is_expression)
 		{
 			this.OpDeclareFunctionInitArgs(op_code, result1, is_multiline);
-			result1.push(this.translator.newLine());
+			if (is_multiline) result1.push(this.translator.newLine());
 			result1.push("return ");
 			bool save_operator_block = this.translator.is_operator_block;
 			this.translator.is_operator_block = true;
@@ -480,7 +480,7 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Add modules */
-		this.translator.addUseModules(result);
+		this.translator.addUseModules(result, is_multiline);
 		result.appendItems(result1);
 		
 		/* Restore */
@@ -689,8 +689,13 @@ class TranslatorES6Program extends BaseObject
 				result.push(this.translator.newLine());
 				result.push("{");
 				this.translator.levelInc();
-				result.push(this.translator.newLine());
-				this.OpAnnotation(op_code.annotations, result);
+				Vector result1 = [];
+				Map save_use_modules = this.translator.setUseModules();
+				result1.push(this.translator.newLine());
+				this.OpAnnotation(op_code.annotations, result1);
+				this.translator.addUseModules(result);
+				result.appendItems(result1);
+				this.translator.setUseModules(save_use_modules);
 				this.translator.levelDec();
 				result.push(this.translator.newLine());
 				result.push("}");
@@ -772,6 +777,12 @@ class TranslatorES6Program extends BaseObject
 	
 	
 	/**
+	 * Translate class name
+	 */
+	string translateClassName(string class_name) => class_name;
+	
+	
+	/**
 	 * Translate class
 	 */
 	bool translateClass(OpDeclareClass op_code, Collection<string> result)
@@ -803,10 +814,10 @@ class TranslatorES6Program extends BaseObject
 		if (op_code.class_extends)
 		{
 			result.push(" extends ");
-			this.translator.expression.OpTypeIdentifier(op_code.class_extends, result);
 			this.translator.parent_class_name = this.translator.getFullName(
 				op_code.class_extends.entity_name.getName()
 			);
+			result.push(this.translateClassName(this.translator.parent_class_name));
 		}
 		
 		result.push(this.translator.newLine());

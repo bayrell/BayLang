@@ -22,7 +22,7 @@ use Runtime.Unit.UnitTest;
 use BayLang.ModuleDescription as BayLangDescription;
 
 
-static class ModuleDescription
+class ModuleDescription
 {
 	/**
 	 * Returns module name
