@@ -50,6 +50,7 @@
 		"LangPHP/TranslatorPHPHtml.bay",
 		"LangPHP/TranslatorPHPOperator.bay",
 		"LangPHP/TranslatorPHPProgram.bay",
+		"LangStyle/Selector.bay",
 		"LangStyle/TranslatorStyle.bay",
 		"OpCodes/BaseOpCode.bay",
 		"OpCodes/OpAnnotation.bay",

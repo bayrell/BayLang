@@ -444,12 +444,12 @@ class ParserBayHtml extends BaseObject
 	 */
 	OpHtmlContent readHtmlContent(TokenReader reader)
 	{
-		Caret caret_start = reader.start();
+		Caret caret_start = reader.main_caret.copy();
 		
 		Caret caret = caret_start.copy();
 		Collection tokens = ["</", "{{"];
 		Collection<string> content = [];
-		while (not reader.eof() and
+		while (not caret.eof() and
 			not caret.isNextChar("<") and tokens.indexOf(caret.nextString(2)) == -1
 		)
 		{
@@ -458,9 +458,12 @@ class ParserBayHtml extends BaseObject
 		
 		reader.init(caret);
 		
+		string value = rs::trim(rs::join("", content), "\n\t");
+		value = rs::decodeHtml(value);
+		
 		return new OpHtmlContent
 		{
-			"value": rs::trim(rs::join("", content), "\n\t"),
+			"value": value,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

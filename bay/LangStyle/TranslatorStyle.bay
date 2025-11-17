@@ -20,6 +20,7 @@ namespace BayLang.LangStyle;
 
 use Runtime.BaseObject;
 
+use BayLang.LangStyle.Selector;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlCSS;
 use BayLang.OpCodes.OpHtmlCSSAttribute;
@@ -43,74 +44,6 @@ class TranslatorStyle extends BaseObject
 	
 	
 	/**
-	 * Combine selector
-	 */
-	string combineSelector(Vector<string> path, bool is_global)
-	{
-		Vector media = [];
-		Vector items = [];
-		
-		fn addHash = void (Vector items)
-		{
-			string last_item = items.pop();
-			Collection<string> last_items = rs::split(", ", last_item);
-			string css_hash = rs::getCssHash(this.translator.current_class_name);
-			last_items = last_items.map(
-				string (string s) use (css_hash)
-				{
-					s = rs::trim(s);
-					Vector items = rs::split(" ", s);
-					Vector arr = rs::split(":", items.get(0));
-					string prefix = arr.get(0);
-					string postfix = rs::join(":", arr.slice(1));
-					if (postfix != "") postfix = ":" ~ postfix;
-					string selector = prefix ~ ".h-" ~ css_hash ~ postfix;
-					if (items.count() > 1) return selector ~ " " ~ rs::join(" ", items.slice(1));
-					return selector;
-				}
-			);
-			items.push(rs::join(", ", last_items));
-		};
-		
-		bool need_add_hash = not is_global;
-		for (int i=0; i<path.count(); i++)
-		{
-			string item = path.get(i);
-			if (rs::charAt(item, 0) == "@")
-			{
-				media.insert(0, item);
-			}
-			else if (rs::charAt(item, 0) == "&")
-			{
-				string last_item = items.pop();
-				Collection<string> last_items = rs::split(", ", last_item);
-				last_items = last_items.map(
-					string (string s) use (item) => rs::trim(s) ~ rs::substr(item, 1)
-				);
-				items.push(rs::join(", ", last_items));
-			}
-			else
-			{
-				string last_item = items.last();
-				if (need_add_hash and rs::charAt(last_item, 0) == ".")
-				{
-					addHash(items);
-					need_add_hash = false;
-				}
-				items.push(item);
-			}
-		}
-		
-		if (need_add_hash)
-		{
-			addHash(items);
-		}
-		
-		return [rs::join(" ", media), rs::join(" ", items)];
-	}
-	
-	
-	/**
 	 * Add selector content
 	 */
 	void addSelectorContent(
@@ -127,22 +60,32 @@ class TranslatorStyle extends BaseObject
 	/**
 	 * Translate CSS
 	 */
-	void OpHtmlCSS(
-		OpHtmlCSS op_code, Map<Vector<string>> result, Vector<string> path, bool is_global
-	)
+	void OpHtmlCSS(OpHtmlCSS op_code, Map<Vector<string>> result, Selector selector, bool is_global)
 	{
 		Vector item_content = [];
-		Vector new_path = path.concat([op_code.selector]);
-		Vector r = this.combineSelector(new_path, is_global);
 		Map<Vector<string>> item_result = {};
-		string media = r.get(0);
-		string selector = r.get(1);
+		
+		/* Get hash */
+		string css_hash = rs::getCssHash(this.translator.current_class_name);
+		
+		/* Add selector */
+		if (not is_global and selector.path.count() == 0)
+		{
+			selector.add(Selector::addHash(op_code.selector, css_hash));
+		}
+		else
+		{
+			selector.add(op_code.selector);
+		}
+		string media = selector.getMedia();
+		string selector_path = selector.getSelector();
+		
 		for (int i=0; i<op_code.items.count(); i++)
 		{
 			BaseOpCode op_code_item = op_code.items.get(i);
 			if (op_code_item instanceof OpHtmlCSS)
 			{
-				this.OpHtmlCSS(op_code_item, item_result, new_path, is_global);
+				this.OpHtmlCSS(op_code_item, item_result, selector.copy(), is_global);
 			}
 			else if (op_code_item instanceof OpHtmlCSSAttribute)
 			{
@@ -151,7 +94,9 @@ class TranslatorStyle extends BaseObject
 		}
 		if (item_content.count() > 0)
 		{
-			string content = selector ~ "{" ~ rs::substr(rs::join("", item_content), 0, -1) ~ "}";
+			string content = selector_path ~
+				"{" ~ rs::substr(rs::join("", item_content), 0, -1) ~ "}"
+			;
 			this.addSelectorContent(result, media, content);
 		}
 		Vector keys = rtl::list(item_result.keys());
@@ -168,11 +113,13 @@ class TranslatorStyle extends BaseObject
 	 */
 	void OpHtmlStyle(OpHtmlStyle op_code, Vector<string> result)
 	{
+		Selector selector = new Selector();
+		selector.css_hash = rs::getCssHash(this.translator.current_class_name);
 		for (int i=0; i<op_code.content.count(); i++)
 		{
 			BaseOpCode op_code_item = op_code.content.get(i);
 			Map item_result = {};
-			this.OpHtmlCSS(op_code_item, item_result, [], op_code.is_global);
+			this.OpHtmlCSS(op_code_item, item_result, selector.copy(), op_code.is_global);
 			Vector media_keys = rtl::list(item_result.keys());
 			for (int j=0; j<media_keys.count(); j++)
 			{

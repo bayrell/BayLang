@@ -1,0 +1,142 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.LangStyle;
+
+use Runtime.BaseObject;
+
+
+class Selector extends BaseObject
+{
+	Vector<string> path = [];
+	Vector<string> media = [];
+	string css_hash = "";
+	
+	
+	/**
+	 * Copy selector
+	 */
+	Selector copy()
+	{
+		Selector item = new Selector();
+		item.path = this.path.slice();
+		item.media = this.media.slice();
+		item.css_hash = this.css_hash;
+		return item;
+	}
+	
+	
+	/**
+	 * Returns media
+	 */
+	string getMedia() => rs::join(" ", this.media);
+	
+	
+	/**
+	 * Returns selector
+	 */
+	string getSelector() => rs::join(" ", this.path);
+	
+	
+	/**
+	 * Add hash
+	 */
+	static string addHash(string selector, string css_hash)
+	{
+		Vector selectors = rs::split(",", selector);
+		for (int i=0; i<selectors.count(); i++)
+		{
+			string selector_item = selectors.get(i);
+			Vector items = rs::split(" ", rs::trim(selector_item));
+			string item = items.get(0);
+			Vector arr = rs::split(":", item);
+			string prefix = arr.get(0);
+			string postfix = rs::join(":", arr.slice(1));
+			if (postfix != "") postfix = ":" ~ postfix;
+			items.set(0, prefix ~ ".h-" ~ css_hash ~ postfix);
+			selectors.set(i, rs::join(" ", items));
+		}
+		return rs::join(", ", selectors);
+	}
+	
+	
+	/**
+	 * Concat selector
+	 */
+	string concat(string last_item, string selector)
+	{
+		Vector result = [];
+		Vector<string> last_items = rs::split(",", last_item);
+		for (int i=0; i<last_items.count(); i++)
+		{
+			string last_item = rs::trim(last_items.get(i));
+			Vector<string> arr = rs::split(",", selector);
+			for (int j=0; j<arr.count(); j++)
+			{
+				string selector_item = rs::trim(arr.get(j));
+				int index = rs::indexOf(selector_item, "&");
+				if (index == -1)
+				{
+					if (last_item)
+					{
+						result.push(last_item ~ " " ~ selector_item);
+					}
+					else
+					{
+						result.push(selector_item);
+					}
+				}
+				else
+				{
+					string prefix = rs::substr(selector_item, 0, index);
+					string postfix = rs::substr(selector_item, index + 1);
+					string css_hash = ".h-" ~ this.css_hash;
+					if (rs::indexOf(last_item, css_hash) >= 0)
+					{
+						last_item = rs::replace(css_hash, "", last_item);
+						last_item = static::addHash(last_item ~ postfix, this.css_hash);
+					}
+					else
+					{
+						last_item = last_item ~ postfix;
+					}
+					result.push(prefix ~ last_item);
+				}
+			}
+		}
+		return rs::join(", ", result);
+	}
+	
+	
+	/**
+	 * Combine selector
+	 */
+	string add(string selector)
+	{
+		if (rs::charAt(selector, 0) == "@")
+		{
+			this.media.push(selector);
+		}
+		else
+		{
+			string last_item = rs::join(" ", this.path);
+			last_item = this.concat(last_item, selector);
+			this.path = [last_item];
+		}
+	}
+}

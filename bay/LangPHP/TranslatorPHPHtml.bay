@@ -137,7 +137,7 @@ class TranslatorPHPHtml extends BaseObject
 		}
 		
 		/* Get attrs */
-		Vector attrs = result.transition(string (string value, string key){
+		Vector new_attrs = result.transition(string (string value, string key){
 			if (key == "class")
 			{
 				return this.translator.toString(key) ~
@@ -146,7 +146,7 @@ class TranslatorPHPHtml extends BaseObject
 			}
 			return this.translator.toString(key) ~ " => " ~ value;
 		});
-		return [attrs, spread];
+		return [new_attrs, spread];
 	}
 	
 	
@@ -177,7 +177,7 @@ class TranslatorPHPHtml extends BaseObject
 	void OpHtmlTag(OpHtmlTag op_code, Collection<string> result)
 	{
 		string var_name = this.translator.html_var_names.last();
-		string current_var_name = "$" ~ this.translator.varInc();
+		string current_var_name = "";
 		
 		Vector res = this.OpHtmlAttrs(op_code);
 		Vector attrs = res.get(0);
@@ -197,6 +197,7 @@ class TranslatorPHPHtml extends BaseObject
 		result.push(this.translator.newLine());
 		if (op_code.content and op_code.content.count() > 0)
 		{
+			current_var_name = "$" ~ this.translator.varInc();
 			result.push(current_var_name ~ " = ");
 		}
 		result.push(var_name ~ "->element(" ~ tag_name.get(1) ~ attrs_str ~ ");");

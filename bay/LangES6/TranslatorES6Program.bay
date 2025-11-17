@@ -448,10 +448,6 @@ class TranslatorES6Program extends BaseObject
 		if (is_multiline)
 		{
 			this.translator.levelInc();
-			if (not (op_code.content instanceof OpItems))
-			{
-				result.push(this.translator.newLine());
-			}
 		}
 		else
 		{
@@ -467,6 +463,7 @@ class TranslatorES6Program extends BaseObject
 		if (is_expression)
 		{
 			this.OpDeclareFunctionInitArgs(op_code, result1, is_multiline);
+			result1.push(this.translator.newLine());
 			result1.push("return ");
 			bool save_operator_block = this.translator.is_operator_block;
 			this.translator.is_operator_block = true;

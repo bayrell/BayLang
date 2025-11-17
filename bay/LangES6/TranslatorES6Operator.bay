@@ -67,7 +67,7 @@ class TranslatorES6Operator extends BaseObject
 	{
 		if (op_code.pattern)
 		{
-			result.push("var");
+			result.push("let");
 		}
 		
 		int values_count = op_code.items.count();

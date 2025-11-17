@@ -229,8 +229,8 @@ class Caret extends BaseObject implements SerializeInterface
 	string readString(int count)
 	{
 		string s = this.nextString(count);
-		int count = rs::strlen(s);
-		for (int i=0; i<count; i++)
+		int count_chars = rs::strlen(s);
+		for (int i=0; i<count_chars; i++)
 		{
 			char ch = rs::charAt(s, i);
 			this.shift(ch);
