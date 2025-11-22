@@ -471,6 +471,32 @@ class ParserBayHtml extends BaseObject
 	
 	
 	/**
+	 * Read HTML string
+	 */
+	BaseOpCode readHtmlString(TokenReader reader, string end_tag)
+	{
+		Caret caret_start = reader.main_caret.copy();
+		Caret caret = caret_start.copy();
+		
+		Vector content = [];
+		while (not caret.eof() and not caret.isNextString(end_tag))
+		{
+			content.push(caret.readChar());
+		}
+		
+		reader.init(caret);
+		
+		string value = rs::trim(rs::join("", content));
+		return new OpHtmlContent
+		{
+			"value": value,
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+		};
+	}
+	
+	
+	/**
 	 * Read html expression
 	 */
 	BaseOpCode readHtmlExpression(TokenReader reader)
@@ -540,7 +566,17 @@ class ParserBayHtml extends BaseObject
 		if (reader.nextToken() != "/>")
 		{
 			reader.matchToken(">");
-			content = this.readHtml(reader);
+			if (tag_name.value == "script" or tag_name.value == "style")
+			{
+				content = this.readHtmlString(reader, "</" ~ tag_name.value ~ ">");
+				content = new OpHtmlItems
+				{
+					"items": [content],
+					"caret_start": content.caret_start,
+					"caret_end": content.caret_end,
+				};
+			}
+			else content = this.readHtml(reader);
 			reader.matchToken("</");
 			if (is_variable) reader.matchToken("{");
 			if (tag_name instanceof OpIdentifier) reader.matchToken(tag_name.value);
