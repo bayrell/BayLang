@@ -176,16 +176,15 @@ class TranslatorES6Html extends BaseObject
 	{
 		if (tag_name instanceof BaseOpCode)
 		{
-			string rtl = this.translator.getUseModule("rtl");
 			Vector item_result = [];
 			this.translator.expression.translate(tag_name, item_result);
 			string value = rs::join("", item_result);
-			return [value, rtl ~ ".findClass(" ~ value ~ ")"];
+			return [value, value];
 		}
 		if (ParserBayHtml::isComponent(tag_name))
 		{
 			string module_name = this.translator.getUseModule(tag_name);
-			return [module_name, module_name];
+			return [module_name, this.translator.toString(module_name)];
 		}
 		return [tag_name, this.translator.toString(tag_name)];
 	}

@@ -21,6 +21,7 @@ Documentation: https://bayrell.org/
 
 Source code: https://github.com/bayrell
 
+
 ## Install BayLang compiler
 
 Install as root:
@@ -38,6 +39,7 @@ Check version:
 ```
 bay-lang-nodejs version
 ```
+
 
 ## BayLang compiler versions
 

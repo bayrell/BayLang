@@ -329,19 +329,35 @@ class Module extends BaseObject implements SerializeInterface
 		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
 		if (src_file_path == "") return false;
 		if (not this.checkFile(src_file_path)) return false;
+		if (this.checkExclude(relative_src_file_path)) return false;
+		
+		/* Check extension */
+		Vector arr = ["bay", "es6", "php", "py", "ui"];
+		string extension = rs::extname(src_file_path);
+		if (arr.indexOf(extension) == -1) return false;
 		
 		/* Read file */
 		if (not(await fs::isFile(src_file_path))) return false;
 		string file_content = await fs::readFile(src_file_path);
 		
 		/* Parse file */
-		ParserBay parser = new ParserBay();
-		parser.setContent(file_content);
-		BaseOpCode file_op_code = parser.parse();
-		if (not file_op_code) return false;
+		BaseOpCode file_op_code = null;
+		if (extension == "bay")
+		{
+			ParserBay parser = new ParserBay();
+			parser.setContent(file_content);
+			file_op_code = parser.parse();
+			if (not file_op_code) return false;
+		}
+		else
+		{
+			lang = extension;
+		}
 		
 		/* Translate project languages */
-		this.translateLanguages(relative_src_file_path, file_op_code, lang);
+		this.translateLanguages(
+			relative_src_file_path,	file_op_code ? file_op_code : file_content, lang
+		);
 		
 		return true;
 	}
@@ -351,7 +367,7 @@ class Module extends BaseObject implements SerializeInterface
 	 * Translate file
 	 */
 	async void translateLanguages(
-		string relative_src_file_path, BaseOpCode op_code, string dest_lang = ""
+		string relative_src_file_path, var op_code, string dest_lang = ""
 	)
 	{
 		/* Translate to destination language */
@@ -377,7 +393,7 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Translate file
 	 */
-	async bool translate(string relative_src_file_path, BaseOpCode op_code, string lang)
+	async bool translate(string relative_src_file_path, var op_code, string lang)
 	{
 		/* Get dest file path */
 		string dest_file_path = this.resolveDestFilePath(relative_src_file_path, lang);
@@ -388,7 +404,15 @@ class Module extends BaseObject implements SerializeInterface
 		if (not translator) return false;
 		
 		/* Translate */
-		string dest_file_content = translator.translate(op_code);
+		string dest_file_content = "";
+		if (op_code instanceof BaseOpCode)
+		{
+			dest_file_content = translator.translate(op_code);
+		}
+		else if (rtl::isString(op_code))
+		{
+			dest_file_content = op_code;
+		}
 		
 		/* Create dest folder if not exists */
 		string dest_dir_name = rs::dirname(dest_file_path);

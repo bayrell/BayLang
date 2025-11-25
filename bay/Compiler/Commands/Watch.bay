@@ -63,6 +63,7 @@ class Watch extends BaseCommand
 				string file_path = module.getRelativeSourcePath(changed_file_path);
 				if (not file_path) return;
 				if (module.checkExclude(file_path)) return;
+				string extension = rs::extname(file_path);
 				bool result = await module.compile(file_path);
 				if (result)
 				{
@@ -73,6 +74,7 @@ class Watch extends BaseCommand
 					{
 						string lang = languages.get(i);
 						string dest_file_path = module.resolveDestFilePath(file_path, lang);
+						if (extension != "bay" and extension != lang) continue;
 						rtl::print("=> " ~ dest_file_path);
 					}
 					await make.buildAsset(project, module);

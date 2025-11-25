@@ -476,20 +476,49 @@ class ParserBayHtml extends BaseObject
 	BaseOpCode readHtmlString(TokenReader reader, string end_tag)
 	{
 		Caret caret_start = reader.main_caret.copy();
+		Caret caret_item = caret_start.copy();
 		Caret caret = caret_start.copy();
 		
+		Vector items = [];
 		Vector content = [];
+		
+		fn addItem = void () use (items, content, caret)
+		{
+			if (content.count() == 0) return;
+			string value = rs::trim(rs::join("", content));
+			content = [];
+			items.push(
+				new OpHtmlContent
+				{
+					"value": value,
+					"caret_start": caret_item.copy(),
+					"caret_end": caret.copy(),
+				}
+			);
+		};
+		
 		while (not caret.eof() and not caret.isNextString(end_tag))
 		{
-			content.push(caret.readChar());
+			if (caret.isNextString("{{"))
+			{
+				addItem();
+				reader.init(caret);
+				BaseOpCode op_code = this.readHtmlExpression(reader);
+				items.push(op_code)
+				caret = reader.main_caret.copy();
+			}
+			else
+			{
+				content.push(caret.readChar());
+			}
 		}
 		
+		addItem();
 		reader.init(caret);
 		
-		string value = rs::trim(rs::join("", content));
-		return new OpHtmlContent
+		return new OpHtmlItems
 		{
-			"value": value,
+			"items": items,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
@@ -569,12 +598,6 @@ class ParserBayHtml extends BaseObject
 			if (tag_name.value == "script" or tag_name.value == "style")
 			{
 				content = this.readHtmlString(reader, "</" ~ tag_name.value ~ ">");
-				content = new OpHtmlItems
-				{
-					"items": [content],
-					"caret_start": content.caret_start,
-					"caret_end": content.caret_end,
-				};
 			}
 			else content = this.readHtml(reader);
 			reader.matchToken("</");
