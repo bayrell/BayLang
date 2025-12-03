@@ -32,7 +32,7 @@ class OpEntityName extends BaseOpCode
 	/**
 	 * Returns name
 	 */
-	string getName() => this.items.map(string (OpIdentifier item) => item.value).join(".");
+	string getName() => rs::join(".", this.items.map(string (OpIdentifier item) => item.value));
 	
 	
 	/**

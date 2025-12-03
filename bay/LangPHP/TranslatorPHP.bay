@@ -62,11 +62,12 @@ class TranslatorPHP extends CoreTranslator
 	 */
 	string toString(string s)
 	{
-		s = re::replace('\\\\', '\\\\', s);
-		s = re::replace('"', '\\\"', s);
-		s = re::replace('\n', '\\n', s);
-		s = re::replace('\r', '\\r', s);
-		s = re::replace('\t', '\\t', s);
+		s = rs::replace('\\', '\\\\', s);
+		s = rs::replace('"', '\\\"', s);
+		s = rs::replace('\n', '\\n', s);
+		s = rs::replace('\r', '\\r', s);
+		s = rs::replace('\t', '\\t', s);
+		s = rs::replace('$', '\\$', s);
 		return "\"" ~ s ~ "\"";
 	}
 	

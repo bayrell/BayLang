@@ -23,4 +23,6 @@ use BayLang.OpCodes.BaseOpCode;
 
 class OpHtmlCSSAttribute extends BaseOpCode
 {
+    string key = "";
+    string value = "";
 }

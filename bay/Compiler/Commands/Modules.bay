@@ -52,7 +52,7 @@ class Modules extends BaseCommand
 	/**
 	 * Show modules
 	 */
-	async static void showModules(bool verbose)
+	async static void showModules(bool verbose=false)
 	{
 		Project project = await Project::readProject(@.base_path);
 		if (not project)

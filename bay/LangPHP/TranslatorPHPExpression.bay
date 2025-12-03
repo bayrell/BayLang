@@ -60,7 +60,7 @@ class TranslatorPHPExpression extends BaseObject
 	/**
 	 * OpIdentifier
 	 */
-	void OpIdentifier(OpIdentifier op_code, Collection<string> result, bool is_const)
+	void OpIdentifier(OpIdentifier op_code, Collection<string> result, bool is_const=false)
 	{
 		Collection variables = ["null", "static", "true", "false"];
 		if (op_code.value == "print") result.push("echo");

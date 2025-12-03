@@ -27,7 +27,7 @@ class OpNew extends BaseOpCode
 {
 	string op = "op_new";
 	Collection<BaseOpCode> args = null;
-	OpTypeIdentifier value = null;
+	OpTypeIdentifier pattern = null;
 	
 	
 	/**
@@ -37,6 +37,6 @@ class OpNew extends BaseOpCode
 	{
 		parent(serializer, data);
 		serializer.process(this, "args", data);
-		serializer.process(this, "value", data);
+		serializer.process(this, "pattern", data);
 	}
 }

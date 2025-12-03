@@ -125,7 +125,7 @@ class TranslatorPHPHtml extends BaseObject
 			else
 			{
 				if (key == "class") value = [value];
-				result.set(key, [value]);
+				result.set(key, value);
 			}
 		}
 		

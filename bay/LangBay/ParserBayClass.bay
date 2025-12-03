@@ -254,7 +254,7 @@ class ParserBayClass extends BaseObject
 		/* Read class name */
 		OpTypeIdentifier class_name = this.parser.parser_base.readTypeIdentifier(reader, false);
 		this.parser.uses.set(class_name.entity_name.getName(),
-			this.parser.current_namespace ~ "." ~ class_name.entity_name.getName()
+			this.parser.current_namespace_name ~ "." ~ class_name.entity_name.getName()
 		);
 		
 		/* Add generics */

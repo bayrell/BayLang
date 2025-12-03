@@ -41,6 +41,7 @@ class CoreTranslator extends BaseObject
 	Dict<string> uses = {};
 	Dict<OpDeclareClass> class_items = {};
 	OpDeclareClass current_class = null;
+	OpDeclareFunction current_function = null;
 	OpDeclareFunction class_function = null;
 	OpModule current_module = null;
 	Vector html_var_names = [];

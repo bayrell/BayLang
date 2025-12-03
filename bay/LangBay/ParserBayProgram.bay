@@ -204,8 +204,6 @@ class ParserBayProgram extends BaseObject
 	 */
 	void parse(TokenReader reader)
 	{
-		this.parser.current_block = CoreParser::BLOCK_PROGRAM;
-		
 		Collection<OpAnnotation> annotations = [];
 		Collection<BaseOpCode> items = [];
 		Caret caret_start = reader.start();

@@ -482,7 +482,7 @@ class ParserBayHtml extends BaseObject
 		Vector items = [];
 		Vector content = [];
 		
-		fn addItem = void () use (items, content, caret)
+		fn addItem = void () use (items, content, caret, caret_item)
 		{
 			if (content.count() == 0) return;
 			string value = rs::trim(rs::join("", content));
