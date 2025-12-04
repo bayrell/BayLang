@@ -74,6 +74,7 @@ class Watch extends BaseCommand
 					{
 						string lang = languages.get(i);
 						string dest_file_path = module.resolveDestFilePath(file_path, lang);
+						if (dest_file_path == "") continue;
 						if (extension != "bay" and extension != lang) continue;
 						rtl::print("=> " ~ dest_file_path);
 					}
@@ -94,7 +95,52 @@ class Watch extends BaseCommand
 	 */
 	async int run()
 	{
-		#ifcode NODEJS then
+		string base_path = @.base_path;
+		
+		#switch
+		
+		#case ifcode PHP then
+		
+		$command = "inotifywait -r -m -e modify,create,delete,move '$base_path' 2>&1";
+		
+		$handle = popen($command, 'r');
+		if (!$handle)
+		{
+			throw new \Exception("Failed to start inotifywait");
+		}
+		
+		echo "Start watch\n";
+		
+		$files = [];
+		
+		/* Read inotify */
+		while (!feof($handle))
+		{
+			$line = fgets($handle);
+			if (!$line) continue;
+			
+			$parts = explode(" ", trim($line), 3);
+			if (count($parts) < 3) continue;
+			
+			$directory = rtrim($parts[0], "/");
+			$event = $parts[1];
+			$filename = $parts[2];
+			if (strpos($filename, '.') === 0) continue;
+			if ($filename === "") continue;
+			
+			$full_path = $directory . "/" . $filename;
+			if (!file_exists($full_path)) continue;
+			if (is_dir($full_path)) continue;
+			
+			if (isset($files[$full_path]) && $files[$full_path] >= time()) continue;
+			$files[$full_path] = time() + 2;
+			
+			$this->onChangeFile($full_path);
+		}
+		
+		pclose($handle);
+		
+		#case ifcode NODEJS then
 		
 		let watch_dir = () =>
 		{
@@ -102,7 +148,7 @@ class Watch extends BaseCommand
 			return new Promise(() => {
 				console.log("Start watch");
 				chokidar
-					.watch(rtl.getContext().base_path)
+					.watch(base_path)
 					.on('change', (path, stat) => {
 						this.onChangeFile(path);
 					})
@@ -113,7 +159,7 @@ class Watch extends BaseCommand
 		
 		await watch_dir();
 		
-		#endif
+		#endswitch
 		
 		return static::SUCCESS;
 	}
