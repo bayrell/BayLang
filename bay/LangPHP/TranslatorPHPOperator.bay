@@ -265,12 +265,13 @@ class TranslatorPHPOperator extends BaseObject
 		}
 		
 		string first_line = rs::trim(lines.get(0));
-		if (first_line == "") lines = lines.slice(1);
+		bool is_comment_function = first_line == "*" or first_line == "!";
+		if (is_comment_function or first_line == "") lines = lines.slice(1);
 		if (rs::trim(lines.get(lines.count() - 1)) == "" and lines.count() > 1)
 		{
 			lines = lines.slice(0, lines.count() - 1);
 		}
-		result.push("/*");
+		result.push("/*" ~ (is_comment_function ? first_line : ""));
 		for (int i=0; i<lines.count(); i++)
 		{
 			string line = lines.get(i);
@@ -282,7 +283,8 @@ class TranslatorPHPOperator extends BaseObject
 			result.push(rs::substr(line, start));
 		}
 		result.push(this.translator.newLine());
-		result.push("*/");
+		if (is_comment_function) result.push(" */");
+		else result.push("*/");
 	}
 	
 	
