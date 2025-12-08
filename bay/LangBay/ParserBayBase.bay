@@ -566,17 +566,20 @@ class ParserBayBase extends BaseObject
 			{
 				if (next_token == "::" and item instanceof OpIdentifier)
 				{
-					item = new OpTypeIdentifier
+					if (not this.parser.vars.has(item.value))
 					{
-						"entity_name": new OpEntityName
+						item = new OpTypeIdentifier
 						{
-							"items": [item],
+							"entity_name": new OpEntityName
+							{
+								"items": [item],
+								"caret_start": item.caret_start,
+								"caret_end": item.caret_end,
+							},
 							"caret_start": item.caret_start,
 							"caret_end": item.caret_end,
-						},
-						"caret_start": item.caret_start,
-						"caret_end": item.caret_end,
-					};
+						};
+					}
 				}
 				reader.matchToken(next_token);
 				BaseOpCode op_code_item = this.readIdentifier(reader);

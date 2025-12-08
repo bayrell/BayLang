@@ -176,9 +176,8 @@ class TranslatorES6Expression extends BaseObject
 	void OpCollection(OpCollection op_code, Collection<string> result)
 	{
 		bool is_multiline = this.translator.allow_multiline and op_code.isMultiLine();
-		result.push("new ");
-		result.push(this.translator.getUseModule("Vector"));
-		result.push("(");
+		result.push(this.translator.getUseModule("Vector") ~ ".create");
+		result.push("([");
 		if (is_multiline)
 		{
 			this.translator.levelInc();
@@ -234,7 +233,7 @@ class TranslatorES6Expression extends BaseObject
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
 		}
-		result.push(")");
+		result.push("])");
 	}
 	
 	
@@ -329,7 +328,15 @@ class TranslatorES6Expression extends BaseObject
 			OpAttr item_attr = attrs.get(i);
 			if (item_attr.kind == OpAttr::KIND_ATTR or item_attr.kind == OpAttr::KIND_STATIC)
 			{
-				result.push(".");
+				OpAttr prev_attr = i > 0 ? attrs.get(i - 1) : op_code_first;
+				if (prev_attr instanceof OpIdentifier and item_attr.kind == OpAttr::KIND_STATIC)
+				{
+					result.push(".constructor.");
+				}
+				else
+				{
+					result.push(".");
+				}
 				result.push(item_attr.next.value);
 			}
 			else if (item_attr.kind == OpAttr::KIND_DYNAMIC)
