@@ -230,7 +230,7 @@ class TranslatorES6Html extends BaseObject
 			;
 			if (ParserBayHtml::isComponent(op_code.tag_name) and not is_slot)
 			{
-				OpDeclareFunction op_code_item = new OpDeclareFunction
+				OpHtmlSlot op_code_item = new OpHtmlSlot
 				{
 					"is_html": true,
 					"content": op_code.content,

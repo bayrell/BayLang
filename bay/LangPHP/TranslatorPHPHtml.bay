@@ -86,7 +86,7 @@ class TranslatorPHPHtml extends BaseObject
 		result.push(this.translator.newLine());
 		result.push(var_name ~ "->slot(");
 		result.push(this.translator.toString(op_code.name) ~ ", ");
-		this.translator.expression.translate(op_code, result);
+		this.translator.program.OpDeclareFunction(op_code, result, false);
 		result.push(");");
 	}
 	

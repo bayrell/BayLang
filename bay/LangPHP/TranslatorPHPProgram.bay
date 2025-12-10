@@ -344,7 +344,9 @@ class TranslatorPHPProgram extends BaseObject
 	/**
 	 * OpDeclareFunction
 	 */
-	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
+	void OpDeclareFunction(
+		OpDeclareFunction op_code, Collection<string> result, bool use_name = true
+	)
 	{
 		/*if (not (op_code.pattern instanceof OpTypeIdentifier)) return;*/
 		
@@ -372,7 +374,7 @@ class TranslatorPHPProgram extends BaseObject
 		/* Function name */
 		result.push("function ");
 		if (op_code.name == "constructor") result.push("__construct");
-		else result.push(op_code.name);
+		else if (use_name) result.push(op_code.name);
 		
 		/* Arguments */
 		result.push("(");
