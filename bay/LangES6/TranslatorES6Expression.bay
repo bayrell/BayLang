@@ -518,7 +518,8 @@ class TranslatorES6Expression extends BaseObject
 		{
 			OpTypeIdentifier class_name = op_code.value2;
 			string interface_name = this.translator.getFullName(class_name.entity_name.getName());
-			result.push(this.translator.useModule("rtl") ~ ".isImplements(" ~ result1 ~ ", " ~
+			result.push(this.translator.useModule("rtl") ~
+				".isImplements(" ~ rs::join("", result1) ~ ", " ~
 				this.translator.toString(interface_name) ~ ")");
 		}
 		else

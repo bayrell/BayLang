@@ -39,7 +39,7 @@ use BayLang.CoreTranslator;
 use BayLang.LangUtils;
 
 
-class Module extends SerializeObject implements SerializeInterface
+class Module extends BaseObject implements SerializeInterface
 {
 	Project project = null;
 	bool is_exists = false;

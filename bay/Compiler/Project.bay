@@ -21,13 +21,12 @@ namespace BayLang.Compiler;
 use Runtime.fs;
 use Runtime.lib;
 use Runtime.BaseObject;
-use Runtime.SerializeObject;
 use Runtime.SerializeInterface;
 use Runtime.Serializer.ObjectType;
 use BayLang.Compiler.Module;
 
 
-class Project extends SerializeObject
+class Project extends BaseObject implements SerializeInterface
 {
 	string path = "";
 	Dict info = {};
