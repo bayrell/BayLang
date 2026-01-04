@@ -18,11 +18,25 @@
 
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
 use BayLang.OpCodes.BaseOpCode;
 
 
 class OpHtmlCSSAttribute extends BaseOpCode
 {
-    string key = "";
-    string value = "";
+	string op = "op_html_css_attr";
+	string key = "";
+	string value = "";
+	
+	
+	/**
+	 * Serialize object
+	 */
+	static void serialize(ObjectType rules)
+	{
+		parent(rules);
+		rules.addType("key", new StringType());
+		rules.addType("value", new StringType());
+	}
 }

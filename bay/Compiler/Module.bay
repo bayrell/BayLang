@@ -22,8 +22,13 @@ use Runtime.fs;
 use Runtime.re;
 use Runtime.lib;
 use Runtime.BaseObject;
+use Runtime.SerializeObject;
 use Runtime.SerializeInterface;
-use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.MapType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
+use Runtime.Serializer.VectorType;
 use BayLang.Compiler.Project;
 use BayLang.LangBay.ParserBay;
 use BayLang.LangES6.TranslatorES6;
@@ -34,7 +39,7 @@ use BayLang.CoreTranslator;
 use BayLang.LangUtils;
 
 
-class Module extends BaseObject implements SerializeInterface
+class Module extends SerializeObject implements SerializeInterface
 {
 	Project project = null;
 	bool is_exists = false;
@@ -49,6 +54,25 @@ class Module extends BaseObject implements SerializeInterface
 	Vector<Map> routes = null;
 	Vector<string> groups = null;
 	Vector<string> exclude = null;
+	
+	
+	/**
+	 * Process project cache
+	 */
+	static void serialize(ObjectType rules)
+	{
+		parent(rules);
+		rules.addType("is_exists", new BooleanType());
+		rules.addType("assets", new VectorType(new StringType()));
+		rules.addType("groups", new VectorType(new StringType()));
+		rules.addType("name", new StringType());
+		rules.addType("path", new StringType());
+		rules.addType("routes", new VectorType(new MapType()));
+		rules.addType("dest_path", new MapType(new StringType()));
+		rules.addType("src_path", new StringType());
+		rules.addType("required_modules", new VectorType());
+		rules.addType("submodules", new MapType());
+	}
 	
 	
 	/**
@@ -91,24 +115,6 @@ class Module extends BaseObject implements SerializeInterface
 		this.required_modules = module_info.get("require");
 		this.submodules = module_info.get("modules");
 		this.exclude = module_info.get("exclude");
-	}
-	
-	
-	/**
-	 * Process project cache
-	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		serializer.process(this, "is_exists", data);
-		serializer.process(this, "assets", data);
-		serializer.process(this, "groups", data);
-		serializer.process(this, "name", data);
-		serializer.process(this, "path", data);
-		serializer.process(this, "routes", data);
-		serializer.process(this, "dest_path", data);
-		serializer.process(this, "src_path", data);
-		serializer.process(this, "required_modules", data);
-		serializer.process(this, "submodules", data);
 	}
 	
 	
@@ -157,7 +163,7 @@ class Module extends BaseObject implements SerializeInterface
 		if (not source_path) return null;
 		int source_path_sz = rs::strlen(source_path);
 		if (rs::substr(file_path, 0, source_path_sz) != source_path) return null;
-		return rs::addFirstSlash(rs::substr(file_path, source_path_sz));
+		return rs::addFirstSlash(rs::removeFirstSlash(rs::substr(file_path, source_path_sz)));
 	}
 	
 	
@@ -172,7 +178,7 @@ class Module extends BaseObject implements SerializeInterface
 	 */
 	bool checkAllow(string file_name)
 	{
-		if (not this.allow) return false;
+		if (not this.allow) return true;
 		
 		bool success = false;
 		for (int i=0; i<this.allow.count(); i++)
@@ -199,7 +205,6 @@ class Module extends BaseObject implements SerializeInterface
 					success = true;
 				}
 			}
-			
 		}
 		
 		return success;

@@ -18,8 +18,10 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpHtmlAttribute;
 
 
@@ -37,10 +39,10 @@ class OpHtmlValue extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "kind", data);
-		serializer.process(this, "value", data);
+		parent(rules);
+		rules.addType("kind", new StringType());
+		rules.process("value", new OpCodeType());
 	}
 }

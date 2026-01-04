@@ -18,7 +18,8 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpIdentifier;
@@ -34,11 +35,13 @@ class OpTypeIdentifier extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "entity_name", data);
-		serializer.process(this, "generics", data);
+		parent(rules);
+		rules.addType("entity_name", new ObjectType{ "class_name": classof OpEntityName });
+		rules.addType("generics", new VectorType(new ObjectType{
+			"class_name": classof OpTypeIdentifier,
+		}));
 	}
 	
 	

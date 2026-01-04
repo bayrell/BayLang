@@ -18,9 +18,13 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareFunctionArg;
 use BayLang.OpCodes.OpFlags;
@@ -48,21 +52,31 @@ class OpDeclareFunction extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "annotations", data);
-		serializer.process(this, "args", data);
-		serializer.process(this, "comments", data);
-		serializer.process(this, "expression", data);
-		serializer.process(this, "flags", data);
-		serializer.process(this, "is_context", data);
-		serializer.process(this, "is_html", data);
-		serializer.process(this, "is_html_default_args", data);
-		serializer.process(this, "items", data);
-		serializer.process(this, "name", data);
-		serializer.process(this, "result_type", data);
-		serializer.process(this, "vars", data);
+		parent(rules);
+		rules.addType("annotations", new VectorType(new ObjectType{
+			"class_name": classof OpAnnotation,
+		}));
+		rules.addType("args", new ObjectType{
+			"class_name": classof OpItems,
+			"item": classof OpDeclareFunctionArg,
+		});
+		rules.addType("comments", new VectorType(new ObjectType{
+			"class_name": classof OpComment,
+		}));
+		rules.addType("flags", new ObjectType{
+			"class_name": classof OpFlags,
+		});
+		rules.addType("is_context", new BooleanType());
+		rules.addType("is_html", new BooleanType());
+		rules.addType("is_html_default_args", new BooleanType());
+		rules.addType("name", new StringType());
+		rules.addType("content", new OpCodeType());
+		rules.addType("pattern", new ObjectType{
+			"class_name": classof OpTypeIdentifier,
+		});
+		rules.addType("vars", new VectorType(new StringType()));
 	}
 	
 	

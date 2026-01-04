@@ -18,7 +18,7 @@
 
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpDeclareFunction;
 
@@ -32,8 +32,8 @@ class OpHtmlSlot extends OpDeclareFunction
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
+		parent(rules);
 	}
 }

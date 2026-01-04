@@ -18,8 +18,10 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpCurry extends BaseOpCode
@@ -32,10 +34,10 @@ class OpCurry extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "args", data);
-		serializer.process(this, "obj", data);
+		parent(rules);
+		rules.addType("args", new OpCodeType());
+		rules.addType("obj", new VectorType(new OpCodeType()));
 	}
 }

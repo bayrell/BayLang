@@ -18,22 +18,23 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.IntergerType;
 use BayLang.OpCodes.BaseOpCode;
 
 
 class OpCurryArg extends BaseOpCode
 {
-	string op = "op_curry";
+	string op = "op_curry_arg";
 	int pos = 0;
 	
 	
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "pos", data);
+		parent(rules);
+		rules.addType("pos", new IntergerType());
 	}
 }

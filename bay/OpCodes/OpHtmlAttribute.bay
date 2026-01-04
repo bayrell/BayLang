@@ -19,25 +19,29 @@
 namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpHtmlAttribute extends BaseOpCode
 {
 	string op = "op_html_attr";
 	string key = "";
-	BaseOpCode expression = null;
 	bool is_spread = false;
+	BaseOpCode expression = null;
 	
 	
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "is_spread", data);
-		serializer.process(this, "key", data);
-		serializer.process(this, "value", data);
+		parent(rules);
+		rules.addType("is_spread", new BooleanType());
+		rules.addType("key", new StringType());
+		rules.addType("expression", new OpCodeType());
 	}
 }

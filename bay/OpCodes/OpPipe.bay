@@ -18,8 +18,11 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpPipe extends BaseOpCode
@@ -39,13 +42,13 @@ class OpPipe extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "is_async", data);
-		serializer.process(this, "is_monad", data);
-		serializer.process(this, "kind", data);
-		serializer.process(this, "obj", data);
-		serializer.process(this, "value", data);
+		parent(rules);
+		rules.addType("is_async", new BooleanType());
+		rules.addType("is_monad", new BooleanType());
+		rules.addType("kind", new StringType());
+		rules.addType("obj", new OpCodeType());
+		rules.addType("value", new OpCodeType());
 	}
 }

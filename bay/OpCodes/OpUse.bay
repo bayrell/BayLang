@@ -18,7 +18,8 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
 use BayLang.OpCodes.BaseOpCode;
 
 
@@ -33,11 +34,11 @@ class OpUse extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "alias", data);
-		serializer.process(this, "name", data);
-		serializer.process(this, "is_component", data);
+		parent(rules);
+		rules.addType("alias", new StringType());
+		rules.addType("name", new StringType());
+		rules.addType("is_component", new StringType());
 	}
 }

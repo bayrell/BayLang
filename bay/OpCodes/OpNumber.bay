@@ -18,7 +18,8 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.IntegerType;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
 
 
@@ -31,9 +32,9 @@ class OpNumber extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "value", data);
+		parent(rules);
+		rules.addType("value", new IntegerType());
 	}
 }

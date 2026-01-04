@@ -18,8 +18,7 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.lib;
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpHtmlTag;
 use BayLang.OpCodes.OpItems;
@@ -28,4 +27,14 @@ use BayLang.OpCodes.OpItems;
 class OpHtmlItems extends OpItems<OpHtmlTag>
 {
 	string op = "op_html";
+	
+	
+	/**
+	 * Serialize object
+	 */
+	static void serialize(ObjectType rules)
+	{
+		rules.params.set("item", classof OpHtmlTag);
+		parent(rules);
+	}
 }

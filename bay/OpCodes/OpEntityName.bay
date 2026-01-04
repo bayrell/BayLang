@@ -19,6 +19,8 @@
 namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpIdentifier;
 
@@ -30,17 +32,19 @@ class OpEntityName extends BaseOpCode
 	
 	
 	/**
-	 * Returns name
+	 * Serialize object
 	 */
-	string getName() => rs::join(".", this.items.map(string (OpIdentifier item) => item.value));
+	static void serialize(Serializer serializer)
+	{
+		parent(serializer);
+		serializer.addType("items", new VectorType(new ObjectType{
+			"class_name": classof OpIdentifier,
+		}));
+	}
 	
 	
 	/**
-	 * Serialize object
+	 * Returns name
 	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		parent(serializer, data);
-		serializer.process(this, "items", data);
-	}
+	string getName() => rs::join(".", this.items.map(string (OpIdentifier item) => item.value));
 }

@@ -18,8 +18,9 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpDelete extends BaseOpCode
@@ -31,9 +32,9 @@ class OpDelete extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "op_code", data);
+		parent(rules);
+		rules.addType("op_code", new OpCodeType());
 	}
 }

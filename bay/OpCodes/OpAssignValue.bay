@@ -19,8 +19,10 @@
 namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpEntityName;
 use BayLang.OpCodes.OpFlags;
@@ -28,7 +30,7 @@ use BayLang.OpCodes.OpFlags;
 
 class OpAssignValue extends BaseOpCode
 {
-	string op = "";
+	string op = "op_assign_value";
 	BaseOpCode value = null;
 	BaseOpCode expression = null;
 	
@@ -36,10 +38,10 @@ class OpAssignValue extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(Serializer serializer)
 	{
-		parent(serializer, data);
-		serializer.process(this, "value", data);
-		serializer.process(this, "expression", data);
+		parent(serializer);
+		serializer.addType("value", new OpCodeType());
+		serializer.addType("expression", new OpCodeType());
 	}
 }

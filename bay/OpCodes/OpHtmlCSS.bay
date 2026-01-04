@@ -18,11 +18,27 @@
 
 namespace BayLang.OpCodes;
 
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpHtmlCSS extends BaseOpCode
 {
-    string selector = "";
-    Collection<BaseOpCode> items = [];
+	string op = "op_html_css";
+	string selector = "";
+	Collection<BaseOpCode> items = [];
+	
+	
+	/**
+	 * Serialize object
+	 */
+	static void serialize(ObjectType rules)
+	{
+		parent(rules);
+		rules.addType("selector", new StringType());
+		rules.addType("items", new VectorType(new OpCodeType()));
+	}
 }

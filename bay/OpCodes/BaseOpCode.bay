@@ -22,6 +22,7 @@ use Runtime.BaseObject;
 use Runtime.BaseStruct;
 use Runtime.SerializeInterface;
 use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.Caret;
 
 
@@ -33,22 +34,31 @@ class BaseOpCode extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Serialize object
+	 */
+	static void serialize(ObjectType rules)
+	{
+		parent(rules);
+		rules.addType("caret_start", new ObjectType{"class_name": classof Caret});
+		rules.addType("caret_end", new ObjectType{"class_name": classof Caret});
+	}
+	
+	
+	/**
+	 * Assign rules
+	 */
+	void assignRules(ObjectType rules)
+	{
+	}
+	
+	
+	/**
 	 * Constructor
 	 */
 	public void constructor(Dict params = null)
 	{
 		parent();
 		this._assign_values(params);
-	}
-	
-	
-	/**
-	 * Serialize object
-	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		serializer.process(this, "caret_start", data);
-		serializer.process(this, "caret_end", data);
 	}
 	
 	

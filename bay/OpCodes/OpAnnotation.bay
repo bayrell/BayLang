@@ -18,8 +18,9 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpDict;
 
 
@@ -33,10 +34,12 @@ class OpAnnotation extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "name", data);
-		serializer.process(this, "params", data);
+		parent(rules);
+		rules.addType("name", new OpCodeType());
+		rules.addType("params", new ObjectType{
+			"class_name": classof OpDict,
+		});
 	}
 }

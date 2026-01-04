@@ -18,13 +18,15 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpString;
 
 
 class OpDictPair extends BaseOpCode
 {
+	string op = "op_dict_pair";
 	OpString key = null;
 	BaseOpCode expression = null;
 	BaseOpCode condition = null;
@@ -33,11 +35,11 @@ class OpDictPair extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "condition", data);
-		serializer.process(this, "key", data);
-		serializer.process(this, "value", data);
+		parent(rules);
+		rules.addType("key", new ObjectType{ "class_name": classof OpString });
+		rules.addType("expression", new OpCodeType());
+		rules.addType("condition", new OpCodeType());
 	}
 }

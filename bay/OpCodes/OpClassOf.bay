@@ -18,7 +18,7 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpEntityName;
 
@@ -32,9 +32,9 @@ class OpClassOf extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "entity_name", data);
+		parent(rules);
+		rules.addType("entity_name", new ObjectType{ "class_name": classof OpEntityName });
 	}
 }

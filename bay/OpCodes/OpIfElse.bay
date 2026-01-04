@@ -18,12 +18,14 @@
 
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
+use Runtime.OpCodes.OpCodeType;
 
 
 class OpIfElse extends BaseOpCode
 {
+	string op = "op_if_else";
 	BaseOpCode condition = null;
 	BaseOpCode content = null;
 	
@@ -31,10 +33,10 @@ class OpIfElse extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "condition", data);
-		serializer.process(this, "content", data);
+		parent(rules);
+		rules.addType("condition", new OpCodeType());
+		rules.addType("content", new OpCodeType());
 	}
 }

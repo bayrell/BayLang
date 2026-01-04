@@ -18,15 +18,18 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpCall extends BaseOpCode
 {	
 	string op = "op_call";
 	BaseOpCode item = null;
-	Collection<BaseOpCode> args = null;
+	Vector<BaseOpCode> args = null;
 	bool is_await = false;
 	bool is_html = false;
 	
@@ -34,13 +37,12 @@ class OpCall extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "args", data);
-		serializer.process(this, "is_await", data);
-		serializer.process(this, "is_context", data);
-		serializer.process(this, "is_html", data);
-		serializer.process(this, "item", data);
+		parent(rules);
+		rules.addType("args", new VectorType(new OpCodeType()));
+		rules.addType("is_await", new BooleanType());
+		rules.addType("is_html", new BooleanType());
+		rules.addType("item", new OpCodeType());
 	}
 }

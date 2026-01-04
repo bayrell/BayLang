@@ -19,7 +19,10 @@
 namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpAttr extends BaseOpCode
@@ -38,12 +41,11 @@ class OpAttr extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "attrs", data);
-		serializer.process(this, "kind", data);
-		serializer.process(this, "prev", data);
-		serializer.process(this, "next", data);
+		parent(rules);
+		rules.addType("kind", new StringType());
+		rules.addType("prev", new OpCodeType());
+		rules.addType("next", new OpCodeType());
 	}
 }

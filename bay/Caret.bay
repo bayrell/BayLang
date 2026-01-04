@@ -22,6 +22,8 @@ use Runtime.BaseObject;
 use Runtime.Reference;
 use Runtime.SerializeInterface;
 use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.IntegerType;
 use BayLang.BaseOpCode;
 use BayLang.Exceptions.ParserError;
 use BayLang.Exceptions.ParserExpected;
@@ -70,6 +72,26 @@ class Caret extends BaseObject implements SerializeInterface
 	
 	
 	/**
+	 * Serialize object
+	 */
+	static void serialize(Serializer serializer)
+	{
+		parent(serializer);
+		serializer.addType("pos", new IntegerType());
+		serializer.addType("x", new IntegerType());
+		serializer.addType("y", new IntegerType());
+	}
+	
+	
+	/**
+	 * Assign rules
+	 */
+	void assignRules(ObjectType rules)
+	{
+	}
+	
+	
+	/**
 	 * Constructor
 	 */
 	public void constructor(Dict items = null)
@@ -111,17 +133,6 @@ class Caret extends BaseObject implements SerializeInterface
 	 * Copy caret
 	 */
 	Caret copy(Dict items = null) => this.clone(items);
-	
-	
-	/**
-	 * Serialize object
-	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		serializer.process(this, "pos", data);
-		serializer.process(this, "x", data);
-		serializer.process(this, "y", data);
-	}
 	
 	
 	/**

@@ -29,7 +29,6 @@ use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
-use BayLang.OpCodes.OpAssignStruct;
 use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpAttr;
 use BayLang.OpCodes.OpBreak;

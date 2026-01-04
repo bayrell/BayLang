@@ -18,8 +18,10 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpTryCatchItem;
 
 
@@ -33,10 +35,12 @@ class OpTryCatch extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "items", data);
-		serializer.process(this, "op_try", data);
+		parent(rules);
+		rules.addType("items", new VectorType(new ObjectType{
+			"class_name": classof OpTryCatchItem,
+		}));
+		rules.addType("op_try", new OpCodeType());
 	}
 }

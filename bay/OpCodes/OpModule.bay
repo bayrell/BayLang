@@ -18,10 +18,14 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.lib;
-use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.MapType;
+use Runtime.Serializer.StringType;
+use Runtime.Serializer.VectorType;
 use Runtime.Exceptions.RuntimeException;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpUse;
@@ -29,6 +33,7 @@ use BayLang.OpCodes.OpUse;
 
 class OpModule extends BaseOpCode
 {
+	string op = "op_module";
 	Dict<string> uses = null;
 	Collection<BaseOpCode> items = null;
 	bool is_component = false;
@@ -37,12 +42,12 @@ class OpModule extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "is_component", data);
-		serializer.process(this, "items", data);
-		serializer.process(this, "uses", data);
+		parent(rules);
+		rules.addType("is_component", new BooleanType());
+		rules.addType("items", new VectorType(new OpCodeType()));
+		rules.addType("uses", new MapType(new StringType()));
 	}
 	
 	

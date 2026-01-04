@@ -21,16 +21,26 @@ namespace BayLang.Compiler;
 use Runtime.fs;
 use Runtime.lib;
 use Runtime.BaseObject;
+use Runtime.SerializeObject;
 use Runtime.SerializeInterface;
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.Compiler.Module;
 
 
-class Project extends BaseObject implements SerializeInterface
+class Project extends SerializeObject
 {
 	string path = "";
 	Dict info = {};
 	Dict<Module> modules = null;
+	
+	
+	/**
+	 * Process project cache
+	 */
+	static void serialize(ObjectType rules)
+	{
+		parent(rules);
+	}
 	
 	
 	/**
@@ -78,21 +88,8 @@ class Project extends BaseObject implements SerializeInterface
 	async void save()
 	{
 		string project_json_path = fs::join([this.path, "project.json"]);
-		string content = rtl::json_encode(this.info, rtl::JSON_PRETTY);
+		string content = rtl::jsonEncode(this.info, rtl::JSON_PRETTY);
 		await fs::saveFile(project_json_path, content);
-	}
-	
-	
-	/**
-	 * Process project cache
-	 */
-	void serialize(Serializer serializer, Map data)
-	{
-		serializer.processItems(
-			this, "modules", data,
-			Module (Serializer serializer, Dict module) =>
-				new Module(this, module.get("path"))
-		);
 	}
 	
 	
@@ -161,6 +158,21 @@ class Project extends BaseObject implements SerializeInterface
 	void setType(string project_type)
 	{
 		this.info.set("type", project_type);
+	}
+	
+	
+	/**
+	 * Returns version
+	 */
+	void getVersion() => this.exists() ? this.info.get("version") : "";
+	
+	
+	/**
+	 * Set version
+	 */
+	void setVersion(string version)
+	{
+		this.info.set("version", version);
 	}
 	
 	

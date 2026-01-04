@@ -20,21 +20,23 @@ namespace BayLang.OpCodes;
 
 use Runtime.BaseObject;
 use Runtime.Serializer;
-use Runtime.SerializeInterface;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.MapType;
 use BayLang.OpCodes.BaseOpCode;
 
 
-class OpFlags extends BaseOpCode implements SerializeInterface
+class OpFlags extends BaseOpCode
 {
-	Map items = [];
+	string op = "op_flags";
+	Map<bool> items = [];
 	
 	
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(Serializer serializer)
 	{
-		serializer.process(this, "items", data);
+		serializer.addType("items", new MapType(new BooleanType()));
 	}
 	
 	

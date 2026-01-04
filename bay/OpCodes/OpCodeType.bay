@@ -1,0 +1,98 @@
+/*!
+ *  BayLang Technology
+ *
+ *  (c) Copyright 2016-2025 "Ildar Bikmamatov" <support@bayrell.org>
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+namespace BayLang.OpCodes;
+
+use Runtime.Serializer.BaseType;
+use Runtime.Serializer.ObjectType;
+
+
+class OpCodeType extends ObjectType
+{
+	/**
+	 * Init rules
+	 */
+	void initRules(Map value)
+	{
+		this.class_name = static::getOpCodeClassName(value.get("op"));
+		return this;
+	}
+	
+	
+	/**
+	 * Returns class name by op code name
+	 */
+	static string getOpCodeClassName(string name)
+	{
+		if (name == "op_annotation") return "BayLang.OpCodes.OpAnnotation";
+		if (name == "op_assign") return "BayLang.OpCodes.OpAssign";
+		if (name == "op_assign_value") return "BayLang.OpCodes.OpAssignValue";
+		if (name == "op_attr") return "BayLang.OpCodes.OpAttr";
+		if (name == "op_break") return "BayLang.OpCodes.OpBreak";
+		if (name == "op_call") return "BayLang.OpCodes.OpCall";
+		if (name == "op_classof") return "BayLang.OpCodes.OpClassOf";
+		if (name == "op_classref") return "BayLang.OpCodes.OpClassRef";
+		if (name == "op_collection") return "BayLang.OpCodes.OpCollection";
+		if (name == "op_comment") return "BayLang.OpCodes.OpComment";
+		if (name == "op_continue") return "BayLang.OpCodes.OpContinue";
+		if (name == "op_curry") return "BayLang.OpCodes.OpCurry";
+		if (name == "op_curry_arg") return "BayLang.OpCodes.OpCurryArg";
+		if (name == "op_class") return "BayLang.OpCodes.OpDeclareClass";
+		if (name == "op_function") return "BayLang.OpCodes.OpDeclareFunction";
+		if (name == "op_function_arg") return "BayLang.OpCodes.OpDeclareFunctionArg";
+		if (name == "op_delete") return "BayLang.OpCodes.OpDelete";
+		if (name == "op_dict") return "BayLang.OpCodes.OpDict";
+		if (name == "op_dict_pair") return "BayLang.OpCodes.OpDictPair";
+		if (name == "op_entity_name") return "BayLang.OpCodes.OpEntityName";
+		if (name == "op_flags") return "BayLang.OpCodes.OpFlags";
+		if (name == "op_for") return "BayLang.OpCodes.OpFor";
+		if (name == "op_html_attr") return "BayLang.OpCodes.OpHtmlAttribute";
+		if (name == "op_html_content") return "BayLang.OpCodes.OpHtmlContent";
+		if (name == "op_html_css") return "BayLang.OpCodes.OpHtmlCSS";
+		if (name == "op_html_css_attr") return "BayLang.OpCodes.OpHtmlCSSAttribute";
+		if (name == "op_html") return "BayLang.OpCodes.OpHtmlItems";
+		if (name == "op_html_slot") return "BayLang.OpCodes.OpHtmlSlot";
+		if (name == "op_html_style") return "BayLang.OpCodes.OpHtmlStyle";
+		if (name == "op_html_tag") return "BayLang.OpCodes.OpHtmlTag";
+		if (name == "op_html_value") return "BayLang.OpCodes.OpHtmlValue";
+		if (name == "op_identifier") return "BayLang.OpCodes.OpIdentifier";
+		if (name == "op_if") return "BayLang.OpCodes.OpIf";
+		if (name == "op_if_else") return "BayLang.OpCodes.OpIfElse";
+		if (name == "op_inc") return "BayLang.OpCodes.OpInc";
+		if (name == "op_math") return "BayLang.OpCodes.OpMath";
+		if (name == "op_method") return "BayLang.OpCodes.OpMethod";
+		if (name == "op_module") return "BayLang.OpCodes.OpModule";
+		if (name == "op_namespace") return "BayLang.OpCodes.OpNamespace";
+		if (name == "op_negative") return "BayLang.OpCodes.OpNegative";
+		if (name == "op_new") return "BayLang.OpCodes.OpNew";
+		if (name == "op_number") return "BayLang.OpCodes.OpNumber";
+		if (name == "op_preprocessor_ifcode") return "BayLang.OpCodes.OpPreprocessorIfCode";
+		if (name == "op_preprocessor_ifdef") return "BayLang.OpCodes.OpPreprocessorIfDef";
+		if (name == "op_preprocessor_switch") return "BayLang.OpCodes.OpPreprocessorSwitch";
+		if (name == "op_return") return "BayLang.OpCodes.OpReturn";
+		if (name == "op_string") return "BayLang.OpCodes.OpString";
+		if (name == "op_ternary") return "BayLang.OpCodes.OpTernary";
+		if (name == "op_throw") return "BayLang.OpCodes.OpThrow";
+		if (name == "op_try_catch") return "BayLang.OpCodes.OpTryCatch";
+		if (name == "op_try_catch_item") return "BayLang.OpCodes.OpTryCatchItem";
+		if (name == "op_type_identifier") return "BayLang.OpCodes.OpTypeIdentifier";
+		if (name == "op_use") return "BayLang.OpCodes.OpUse";
+		if (name == "op_while") return "BayLang.OpCodes.OpWhile";
+		return "";
+	}
+}

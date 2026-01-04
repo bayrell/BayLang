@@ -19,7 +19,9 @@
 namespace BayLang.OpCodes;
 
 use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpFor extends BaseOpCode
@@ -34,12 +36,12 @@ class OpFor extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "expr1", data);
-		serializer.process(this, "expr2", data);
-		serializer.process(this, "expr3", data);
-		serializer.process(this, "content", data);
+		parent(rules);
+		rules.addType("expr1", new OpCodeType());
+		rules.addType("expr2", new OpCodeType());
+		rules.addType("expr3", new OpCodeType());
+		rules.addType("content", new OpCodeType());
 	}
 }

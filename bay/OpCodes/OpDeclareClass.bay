@@ -18,10 +18,14 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.BooleanType;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.StringType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpFlags;
@@ -56,27 +60,40 @@ class OpDeclareClass extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "annotations", data);
-		serializer.process(this, "class_extends", data);
-		serializer.process(this, "class_implements", data);
-		serializer.process(this, "comments", data);
-		serializer.process(this, "extend_name", data);
-		serializer.process(this, "flags", data);
-		serializer.process(this, "fn_create", data);
-		serializer.process(this, "fn_destroy", data);
-		serializer.process(this, "functions", data);
-		serializer.process(this, "is_abstract", data);
-		serializer.process(this, "is_component", data);
-		serializer.process(this, "is_declare", data);
-		serializer.process(this, "is_model", data);
-		serializer.process(this, "items", data);
-		serializer.process(this, "kind", data);
-		serializer.process(this, "name", data);
-		serializer.process(this, "template", data);
-		serializer.process(this, "vars", data);
+		parent(rules);
+		rules.addType("annotations", new VectorType(new ObjectType{
+			"class_name": classof OpAnnotation
+		}));
+		rules.addType("class_extends", new ObjectType{
+			"class_name": classof OpTypeIdentifier
+		});
+		rules.addType("class_implements", new VectorType(new ObjectType{
+			"class_name": classof OpTypeIdentifier
+		}));
+		rules.addType("comments", new ObjectType{
+			"class_name": classof OpComment,
+		});
+		rules.addType("flags", new ObjectType{
+			"class_name": classof OpFlags,
+		});
+		rules.addType("fn_create", new ObjectType{
+			"class_name": classof OpDeclareFunction,
+		});
+		rules.addType("fn_destroy", new ObjectType{
+			"class_name": classof OpDeclareFunction,
+		});
+		rules.addType("is_abstract", new BooleanType());
+		rules.addType("is_component", new BooleanType());
+		rules.addType("is_declare", new BooleanType());
+		rules.addType("is_model", new BooleanType());
+		rules.addType("content", new OpCodeType());
+		rules.addType("kind", new StringType());
+		rules.addType("name", new ObjectType{
+			"class_name": classof OpTypeIdentifier,
+		});
+		rules.addType("template", new VectorType());
 	}
 	
 	

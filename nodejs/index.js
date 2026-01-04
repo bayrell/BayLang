@@ -99,7 +99,6 @@ add("BayLang.LangStyle.Selector");
 add("BayLang.LangStyle.TranslatorStyle");
 add("BayLang.OpCodes.OpAnnotation");
 add("BayLang.OpCodes.OpAssign");
-add("BayLang.OpCodes.OpAssignStruct");
 add("BayLang.OpCodes.OpAssignValue");
 add("BayLang.OpCodes.OpAttr");
 add("BayLang.OpCodes.OpBreak");
@@ -155,8 +154,6 @@ add("BayLang.OpCodes.OpTypeConvert");
 add("BayLang.OpCodes.OpTypeIdentifier");
 add("BayLang.OpCodes.OpUse");
 add("BayLang.OpCodes.OpWhile");
-add("BayLang.OpCodes.OpWidget");
-add("BayLang.OpCodes.OpWidgetData");
 
 /* Test */
 add("BayLang.Test.LangBay.Base");

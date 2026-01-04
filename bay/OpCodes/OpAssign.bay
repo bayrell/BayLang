@@ -18,7 +18,8 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
+use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssignValue;
@@ -33,6 +34,7 @@ class OpAssign extends BaseOpCode
 	static const string KIND_DECLARE = "declare";
 	static const string KIND_STRUCT = "struct";
 	
+	string op = "op_assign";
 	OpFlags flags = null;
 	OpTypeIdentifier pattern = null;
 	Collection<OpAssignValue> items = null;
@@ -41,12 +43,14 @@ class OpAssign extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "flags", data);
-		serializer.process(this, "pattern", data);
-		serializer.process(this, "items", data);
+		parent(rules);
+		rules.addType("flags", new ObjectType{ "class_name": classof OpFlags });
+		rules.addType("pattern", new ObjectType{ "class_name": classof OpTypeIdentifier });
+		rules.addType("items", new VectorType(new ObjectType{
+			"class_name": classof OpAssignValue
+		}));
 	}
 	
 	

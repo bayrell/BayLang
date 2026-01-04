@@ -18,8 +18,9 @@
  
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer;
+use Runtime.Serializer.ObjectType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpNegative extends BaseOpCode
@@ -31,9 +32,9 @@ class OpNegative extends BaseOpCode
 	/**
 	 * Serialize object
 	 */
-	void serialize(Serializer serializer, Map data)
+	static void serialize(ObjectType rules)
 	{
-		parent(serializer, data);
-		serializer.process(this, "value", data);
+		parent(rules);
+		rules.addType("value", new OpCodeType());
 	}
 }
