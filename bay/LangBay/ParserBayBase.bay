@@ -555,6 +555,7 @@ class ParserBayBase extends BaseObject
 		
 		if (reader.nextToken() == "." and item instanceof OpIdentifier)
 		{
+			this.parser.useVariable(item);
 			this.parser.findVariable(item);
 		}
 		

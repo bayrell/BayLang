@@ -26,6 +26,7 @@ use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpHtmlAttribute;
 use BayLang.OpCodes.OpHtmlItems;
+use BayLang.OpCodes.OpIdentifier;
 
 
 class OpHtmlTag extends BaseOpCode
@@ -34,7 +35,8 @@ class OpHtmlTag extends BaseOpCode
 	string tag_name = "";
 	bool is_component = false;
 	BaseOpCode op_code_name = null;
-	Collection<OpHtmlAttribute> attrs = null;
+	Vector<OpHtmlAttribute> attrs = null;
+	Vector<OpIdentifier> vars = null;
 	OpHtmlItems content = null;
 	
 	
@@ -46,6 +48,9 @@ class OpHtmlTag extends BaseOpCode
 		parent(rules);
 		rules.addType("attrs", new VectorType(new ObjectType{
 			"class_name": classof OpHtmlAttribute,
+		}));
+		rules.addType("vars", new VectorType(new ObjectType{
+			"class_name": classof OpIdentifier,
 		}));
 		rules.addType("content", new ObjectType{
 			"class_name": classof OpHtmlItems,

@@ -32,7 +32,7 @@ class ModuleDescription
 	 * Returns module name
 	 * @return string
 	 */
-	pure string getModuleVersion() => "1.1";
+	pure string getModuleVersion() => "1.2";
 	
 	
 	/**

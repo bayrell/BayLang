@@ -39,9 +39,11 @@ class CoreParser extends BaseObject
 	string content = "";
 	int content_size = 0;
 	int tab_size = 4;
+	int function_level = 0;
 	bool find_variable = true;
-	Dict<BaseOpCode> vars = {};
-	Dict<string> uses = {};
+	Map<Map> vars = {};
+	Map<BaseOpCode> vars_uses = {};
+	Map<string> uses = {};
 	OpNamespace current_namespace = null;
 	OpDeclareClass current_class = null;
 	string current_namespace_name = "";
@@ -56,7 +58,7 @@ class CoreParser extends BaseObject
 	/**
 	 * Restore vars
 	 */
-	void restoreVars(Dict vars)
+	void restoreVars(Map vars)
 	{
 		this.vars = vars;
 	}
@@ -68,7 +70,28 @@ class CoreParser extends BaseObject
 	void addVariable(OpIdentifier op_code, OpTypeIdentifier pattern)
 	{
 		string name = op_code.value;
-		this.vars.set(name, pattern);
+		this.vars.set(name, {
+			"pattern": pattern,
+			"function_level": this.function_level,
+		});
+	}
+	
+	
+	/**
+	 * Use variable
+	 */
+	void useVariable(OpIdentifier op_code)
+	{
+		Map variable = this.vars.get(op_code.value);
+		if (not (variable instanceof Map) or
+			variable.get("function_level") >= this.function_level)
+		{
+			return;
+		}
+		if (not this.vars_uses.has(op_code.value))
+		{
+			this.vars_uses.set(op_code.value, op_code);
+		}
 	}
 	
 	

@@ -190,6 +190,35 @@ class ParserBayFunction extends BaseObject
 	
 	
 	/**
+	 * Extend variables
+	 */
+	void extendVariables(Vector<OpIdentifier> vars)
+	{
+		Map<OpIdentifier> vars_hash = vars.transition(list (OpIdentifier item) => [
+			item.value, item
+		]);
+		Vector<string> keys = rtl::list(this.parser.vars_uses.keys());
+		for (int i=0; i<keys.count(); i++)
+		{
+			string var_name = keys.get(i);
+			Map variable = this.parser.vars.get(var_name);
+			if (not (variable instanceof Map) or
+				variable.get("function_level") >= this.parser.function_level
+			)
+			{
+				continue;
+			}
+			OpIdentifier item = this.parser.vars_uses.get(var_name);
+			if (not vars_hash.has(var_name))
+			{
+				vars_hash.set(var_name, item);
+				vars.push(item);
+			}
+		}
+	}
+	
+	
+	/**
 	 * Read function
 	 */
 	BaseOpCode readDeclareFunction(TokenReader reader, bool read_name = true)
@@ -212,6 +241,9 @@ class ParserBayFunction extends BaseObject
 			"caret_end": reader.caret(),
 		};
 		
+		/* Add new level */
+		this.parser.function_level += 1;
+		
 		/* Read function name */
 		string name = "";
 		BaseOpCode content = null;
@@ -219,6 +251,10 @@ class ParserBayFunction extends BaseObject
 		if (read_name) name = this.parser.parser_base.readIdentifier(reader).value;
 		Collection<OpDeclareFunctionArg> args = this.readDeclareFunctionArgs(reader);
 		Collection<OpIdentifier> vars = this.readDeclareFunctionUse(reader);
+		
+		/* Save vars */
+		Map<OpIdentifier> vars_uses = this.parser.vars_uses.copy();
+		this.parser.vars_uses = {};
 		
 		/* Read content */
 		if (this.parser.current_class != null and
@@ -241,6 +277,13 @@ class ParserBayFunction extends BaseObject
 			reader.matchToken("=>");
 			content = this.parser.parser_expression.readExpression(reader);
 		}
+		
+		/* Restore vars */
+		this.extendVariables(vars);
+		this.parser.vars_uses = this.parser.vars_uses.concat(vars_uses);
+		
+		/* Dec level */
+		this.parser.function_level -= 1;
 		
 		return new OpDeclareFunction
 		{

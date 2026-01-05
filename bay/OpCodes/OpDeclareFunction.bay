@@ -40,7 +40,7 @@ class OpDeclareFunction extends BaseOpCode
 	OpItems<OpDeclareFunctionArg> args = null;
 	Collection<OpAnnotation> annotations = null;
 	Collection<OpComment> comments = null;
-	Collection<string> vars = null;
+	Collection<OpIdentifier> vars = null;
 	OpTypeIdentifier pattern = null;
 	BaseOpCode content = null;
 	OpFlags flags = null;
@@ -76,7 +76,9 @@ class OpDeclareFunction extends BaseOpCode
 		rules.addType("pattern", new ObjectType{
 			"class_name": classof OpTypeIdentifier,
 		});
-		rules.addType("vars", new VectorType(new StringType()));
+		rules.addType("vars", new VectorType(new ObjectType{
+			"class_name": classof OpIdentifier
+		}));
 	}
 	
 	

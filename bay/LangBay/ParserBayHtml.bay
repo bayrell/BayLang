@@ -591,6 +591,19 @@ class ParserBayHtml extends BaseObject
 			reader, not is_variable and tag_name.value == "slot" ? "template" : "expression"
 		);
 		
+		/* Detect component */
+		bool is_component = true;
+		if (not is_variable) is_component = static::isComponent(tag_name.value);
+		
+		/* Save vars */
+		Vector<OpIdentifier> vars = [];
+		Map<OpIdentifier> vars_uses = this.parser.vars_uses.copy();
+		if (tag_name.value == "slot" or is_component)
+		{
+			this.parser.function_level += 1;
+			this.parser.vars_uses = {};
+		}
+		
 		OpHtmlItems content = null;
 		if (reader.nextToken() != "/>")
 		{
@@ -611,6 +624,16 @@ class ParserBayHtml extends BaseObject
 			reader.matchToken("/>");
 		}
 		
+		/* Restore vars */
+		if (tag_name.value == "slot" or is_component)
+		{
+			this.parser.parser_function.extendVariables(vars);
+			this.parser.vars_uses = this.parser.vars_uses.concat(vars_uses);
+			
+			/* Dec level */
+			this.parser.function_level -= 1;
+		}
+		
 		if (tag_name.value == "slot")
 		{
 			string name = "";
@@ -626,18 +649,17 @@ class ParserBayHtml extends BaseObject
 			{
 				"args": args,
 				"name": name,
+				"vars": vars,
 				"content": content,
 				"caret_start": caret_start,
 				"caret_end": reader.caret(),
 			};
 		}
 		
-		bool is_component = true;
-		if (not is_variable) is_component = static::isComponent(tag_name.value);
-		
 		return new OpHtmlTag
 		{
 			"attrs": attrs,
+			"vars": vars,
 			"content": content,
 			"is_component": is_component,
 			"tag_name": is_variable ? tag_name : tag_name.value,
