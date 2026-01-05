@@ -57,6 +57,7 @@
 		"OpCodes/OpAssign.bay",
 		"OpCodes/OpAssignValue.bay",
 		"OpCodes/OpAttr.bay",
+		"OpCodes/OpAwait.bay",
 		"OpCodes/OpBreak.bay",
 		"OpCodes/OpCall.bay",
 		"OpCodes/OpClassOf.bay",

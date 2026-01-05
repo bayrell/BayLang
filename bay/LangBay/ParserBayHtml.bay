@@ -695,14 +695,20 @@ class ParserBayHtml extends BaseObject
 		
 		/* Read assing */
 		BaseOpCode expr1 = this.parser.parser_operator.readAssign(reader);
-		reader.matchToken(";");
+		bool is_foreach = reader.nextToken() == "in";
+		if (is_foreach)
+		{
+			reader.matchToken("in");
+		}
+		else reader.matchToken(";");
 		
 		/* Read expression */
 		BaseOpCode expr2 = this.parser.parser_expression.readExpression(reader);
-		reader.matchToken(";");
+		if (not is_foreach) reader.matchToken(";");
 		
 		/* Read operator */
-		BaseOpCode expr3 = this.parser.parser_operator.readInc(reader);
+		BaseOpCode expr3 = null;
+		if (not is_foreach) expr3 = this.parser.parser_operator.readInc(reader);
 		reader.matchToken(")");
 		
 		/* Read content */

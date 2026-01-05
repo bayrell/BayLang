@@ -26,6 +26,7 @@ use BayLang.Exceptions.ParserExpected;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpAwait;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpDeclareFunction;
 use BayLang.OpCodes.OpIdentifier;
@@ -395,20 +396,80 @@ class ParserBayExpression extends BaseObject
 	
 	
 	/**
+	 * Read await
+	 */
+	BaseOpCode readAwait(TokenReader reader)
+	{
+		Caret caret_start = reader.caret();
+		reader.matchToken("await");
+		BaseOpCode op_code = this.parser.parser_base.readDynamic(reader);
+		return new OpAwait
+		{
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+			"item": op_code,
+		};
+	}
+	
+	
+	/**
+	 * Read method
+	 */
+	BaseOpCode readMethod(TokenReader reader)
+	{
+		Caret caret_start = reader.caret();
+		reader.matchToken("method");
+		
+		BaseOpCode op_code = this.parser.parser_base.readDynamic(reader);
+		if (not (op_code instanceof OpAttr))
+		{
+			throw reader.expected("Attribute");
+		}
+		if (not (op_code.next instanceof OpIdentifier))
+		{
+			throw reader.expected("Identifier");
+		}
+		
+		BaseOpCode value1 = op_code.prev;
+		string value2 = op_code.next.value;
+		
+		return new OpMethod
+		{
+			"caret_start": caret_start,
+			"caret_end": reader.caret(),
+			"value1": value1,
+			"value2": value2,
+		};
+	}
+	
+	
+	/**
 	 * Read element
 	 */
 	BaseOpCode readElement(TokenReader reader)
 	{
-		/* Read collection */
+		/* Read vector */
 		if (reader.nextToken() == "[")
 		{
 			return this.parser.parser_base.readCollection(reader);
 		}
 		
-		/* Read collection */
-		if (reader.nextToken() == "{")
+		/* Read map */
+		else if (reader.nextToken() == "{")
 		{
 			return this.parser.parser_base.readDict(reader);
+		}
+		
+		/* Read await */
+		else if (reader.nextToken() == "await")
+		{
+			return this.readAwait(reader);
+		}
+		
+		/* Read method */
+		else if (reader.nextToken() == "method")
+		{
+			return this.readMethod(reader);
 		}
 		
 		/* Try to read function */

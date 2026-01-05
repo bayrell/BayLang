@@ -15,22 +15,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
- 
+
 namespace BayLang.OpCodes;
 
-use Runtime.Serializer.BooleanType;
 use Runtime.Serializer.ObjectType;
-use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpCodeType;
 
 
-class OpCall extends BaseOpCode
-{	
-	string op = "op_call";
+class OpAwait extends BaseOpCode
+{
 	BaseOpCode item = null;
-	Vector<BaseOpCode> args = null;
-	bool is_html = false;
 	
 	
 	/**
@@ -39,8 +34,6 @@ class OpCall extends BaseOpCode
 	static void serialize(ObjectType rules)
 	{
 		parent(rules);
-		rules.addType("args", new VectorType(new OpCodeType()));
-		rules.addType("is_html", new BooleanType());
 		rules.addType("item", new OpCodeType());
 	}
 }

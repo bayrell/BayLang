@@ -25,6 +25,7 @@ use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpAwait;
 use BayLang.OpCodes.OpBreak;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
@@ -150,13 +151,35 @@ class TranslatorPHPOperator extends BaseObject
 	 */
 	void OpFor(OpFor op_code, Collection<string> result)
 	{
-		result.push("for (");
-		this.translateItem(op_code.expr1, result);
-		result.push("; ");
-		this.translator.expression.translate(op_code.expr2, result);
-		result.push("; ");
-		this.translateItem(op_code.expr3, result);
-		result.push(")");
+		if (op_code.expr3 != null)
+		{
+			result.push("for (");
+			this.translateItem(op_code.expr1, result);
+			result.push("; ");
+			this.translator.expression.translate(op_code.expr2, result);
+			result.push("; ");
+			this.translateItem(op_code.expr3, result);
+			result.push(")");
+		}
+		else
+		{
+			result.push("foreach (");
+			this.translator.expression.translate(op_code.expr2, result);
+			result.push(" as ");
+			if (op_code.expr1 instanceof OpAssign and op_code.expr1.items.count() > 0)
+			{
+				BaseOpCode op_code_item = op_code.expr1.items.get(0);
+				if (op_code_item.value instanceof OpAttr)
+				{
+					this.translator.expression.OpAttr(op_code_item.value, result);
+				}
+				else if (op_code_item.value instanceof OpIdentifier)
+				{
+					this.translator.expression.OpIdentifier(op_code_item.value, result);
+				}
+			}
+			result.push(")");
+		}
 		this.translateItems(op_code.content, result);
 	}
 	
@@ -316,6 +339,12 @@ class TranslatorPHPOperator extends BaseObject
 		if (op_code instanceof OpAssign)
 		{
 			return this.OpAssign(op_code, result);
+		}
+		else if (op_code instanceof OpAwait)
+		{
+			this.translator.expression.OpAwait(op_code, result);
+			if (op_code.item instanceof OpCall) result.push(";");
+			else return false;
 		}
 		else if (op_code instanceof OpBreak)
 		{

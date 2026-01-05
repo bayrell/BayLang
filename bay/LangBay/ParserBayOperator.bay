@@ -244,14 +244,25 @@ class ParserBayOperator extends BaseObject
 		
 		/* Read assing */
 		BaseOpCode expr1 = this.readAssign(reader);
-		reader.matchToken(";");
+		
+		/* Read in */
+		bool is_foreach = reader.nextToken() == "in";
+		if (is_foreach)
+		{
+			reader.matchToken("in");
+		}
+		else reader.matchToken(";");
 		
 		/* Read expression */
 		BaseOpCode expr2 = this.parser.parser_expression.readExpression(reader);
-		reader.matchToken(";");
+		if (not is_foreach) reader.matchToken(";");
 		
 		/* Read operator */
-		BaseOpCode expr3 = this.readInc(reader);
+		BaseOpCode expr3 = null;
+		if (not is_foreach)
+		{
+			expr3 = this.readInc(reader);
+		}
 		reader.matchToken(")");
 		
 		/* Read content */
@@ -392,6 +403,14 @@ class ParserBayOperator extends BaseObject
 			});
 		}
 		
+		BaseOpCode expression = null;
+		for (int i=items.count() - 1; i >=0; i--)
+		{
+			OpAssignValue item = items.get(i);
+			if (item.expression) expression = item.expression;
+			else item.expression = expression;
+		}
+		
 		/* Returns op_code */
 		return new OpAssign
 		{
@@ -451,6 +470,12 @@ class ParserBayOperator extends BaseObject
 			return this.parser.parser_preprocessor.readPreprocessor(
 				reader, OpPreprocessorIfDef::KIND_OPERATOR
 			);
+		}
+		
+		/* Await */
+		else if (next_token == "await")
+		{
+			return this.parser.parser_expression.readAwait(reader);
 		}
 		
 		/* Break */

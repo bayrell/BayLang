@@ -81,14 +81,8 @@ class ParserBayFunction extends BaseObject
 		Caret caret_start = reader.start();
 		
 		/* Read identifier */
-		bool is_await = false;
 		if (pattern == null)
 		{
-			if (reader.nextToken() == "await")
-			{
-				is_await = true;
-				reader.matchToken("await");
-			}
 			pattern = this.parser.parser_base.readDynamic(reader, false);
 		}
 		
@@ -109,7 +103,6 @@ class ParserBayFunction extends BaseObject
 		{
 			"args": args,
 			"item": pattern,
-			"is_await": is_await,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

@@ -25,6 +25,7 @@ use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
 use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpAttr;
+use BayLang.OpCodes.OpAwait;
 use BayLang.OpCodes.OpBreak;
 use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
@@ -155,11 +156,20 @@ class TranslatorES6Operator extends BaseObject
 	void OpFor(OpFor op_code, Collection<string> result)
 	{
 		result.push("for (");
-		this.translateItem(op_code.expr1, result);
-		result.push("; ");
-		this.translator.expression.translate(op_code.expr2, result);
-		result.push("; ");
-		this.translateItem(op_code.expr3, result);
+		if (op_code.expr3 != null)
+		{
+			this.translateItem(op_code.expr1, result);
+			result.push("; ");
+			this.translator.expression.translate(op_code.expr2, result);
+			result.push("; ");
+			this.translateItem(op_code.expr3, result);
+		}
+		else
+		{
+			this.translateItem(op_code.expr1, result);
+			result.push(" of ");
+			this.translator.expression.translate(op_code.expr2, result);
+		}
 		result.push(")");
 		this.translateItems(op_code.content, result);
 	}
@@ -355,6 +365,11 @@ class TranslatorES6Operator extends BaseObject
 		if (op_code instanceof OpAssign)
 		{
 			this.OpAssign(op_code, result);
+		}
+		else if (op_code instanceof OpAwait)
+		{
+			this.translator.expression.OpAwait(op_code, result);
+			result.push(";");
 		}
 		else if (op_code instanceof OpBreak)
 		{
