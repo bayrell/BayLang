@@ -71,6 +71,10 @@ class ParserBayExpression extends BaseObject
 			reader.matchToken(")");
 			return op_code;
 		}
+		else if (reader.nextToken() == "await")
+		{
+			return this.readAwait(reader);
+		}
 		
 		/* Read op_code */
 		BaseOpCode op_code = this.parser.parser_base.readDynamic(reader);
@@ -458,12 +462,6 @@ class ParserBayExpression extends BaseObject
 		else if (reader.nextToken() == "{")
 		{
 			return this.parser.parser_base.readDict(reader);
-		}
-		
-		/* Read await */
-		else if (reader.nextToken() == "await")
-		{
-			return this.readAwait(reader);
 		}
 		
 		/* Read method */

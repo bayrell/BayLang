@@ -101,6 +101,7 @@ add("BayLang.OpCodes.OpAnnotation");
 add("BayLang.OpCodes.OpAssign");
 add("BayLang.OpCodes.OpAssignValue");
 add("BayLang.OpCodes.OpAttr");
+add("BayLang.OpCodes.OpAwait");
 add("BayLang.OpCodes.OpBreak");
 add("BayLang.OpCodes.OpCall");
 add("BayLang.OpCodes.OpClassOf");
