@@ -188,7 +188,7 @@ class ParserBayFunction extends BaseObject
 	void extendVariables(Vector<OpIdentifier> vars)
 	{
 		Map<OpIdentifier> vars_hash = vars.transition(list (OpIdentifier item) => [
-			item.value, item
+			item, item.value
 		]);
 		Vector<string> keys = rtl::list(this.parser.vars_uses.keys());
 		for (int i=0; i<keys.count(); i++)
@@ -233,6 +233,12 @@ class ParserBayFunction extends BaseObject
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
+		
+		/* Clear vars */
+		if (this.parser.current_class != null and this.parser.function_level == 0)
+		{
+			this.parser.vars = {};
+		}
 		
 		/* Add new level */
 		this.parser.function_level += 1;

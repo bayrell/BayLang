@@ -253,6 +253,11 @@ class ParserBayHtml extends BaseObject
 				is_spread = true;
 				reader.matchToken("...");
 				expression = this.parser.parser_base.readDynamic(reader);
+				if (expression instanceof OpIdentifier)
+				{
+					this.parser.useVariable(expression);
+					this.parser.findVariable(expression);
+				}
 			}
 			else
 			{
@@ -581,15 +586,12 @@ class ParserBayHtml extends BaseObject
 			reader.matchToken("{");
 			tag_name = this.parser.parser_base.readDynamic(reader);
 			reader.matchToken("}");
+			this.parser.useVariable(tag_name);
 		}
 		else
 		{
 			tag_name = this.parser.parser_base.readIdentifier(reader);
 		}
-		
-		Collection<OpHtmlAttribute> attrs = this.readAttrs(
-			reader, not is_variable and tag_name.value == "slot" ? "template" : "expression"
-		);
 		
 		/* Detect component */
 		bool is_component = true;
@@ -603,6 +605,10 @@ class ParserBayHtml extends BaseObject
 			this.parser.function_level += 1;
 			this.parser.vars_uses = {};
 		}
+		
+		Collection<OpHtmlAttribute> attrs = this.readAttrs(
+			reader, not is_variable and tag_name.value == "slot" ? "template" : "expression"
+		);
 		
 		OpHtmlItems content = null;
 		if (reader.nextToken() != "/>")

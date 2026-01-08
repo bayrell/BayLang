@@ -464,6 +464,12 @@ class ParserBayExpression extends BaseObject
 			return this.parser.parser_base.readDict(reader);
 		}
 		
+		/* Render html */
+		else if (reader.nextToken() == "<")
+		{
+			return this.parser.parser_html.readTemplate(reader);
+		}
+		
 		/* Read method */
 		else if (reader.nextToken() == "method")
 		{
