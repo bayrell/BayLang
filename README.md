@@ -43,6 +43,10 @@ bay-lang-nodejs version
 
 ## BayLang compiler versions
 
+[09 Jan 2026] 1.2 - Add function level, use variables, method, await, for
+
+[04 Jan 2026] 1.1 - Update runtime core
+
 [25 Nov 2025] Release 1.0 version
 
 [15 May 2025] Start 1.0 version
