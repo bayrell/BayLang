@@ -310,8 +310,8 @@ class ParserBayHtml extends BaseObject
 		while (not caret.eof())
 		{
 			string ch = caret.readChar();
-			if (ch == ":" or ch == ";" or ch == "}") return false;
-			if (ch == "{" or ch == "(" or ch == "&" or ch == ".") return true;
+			if (ch == ";" or ch == "}") return false;
+			if (ch == "&" or ch == "{") return true;
 		}
 		return false;
 	}
