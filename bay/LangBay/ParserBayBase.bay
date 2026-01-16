@@ -542,15 +542,6 @@ class ParserBayBase extends BaseObject
 	BaseOpCode readDynamic(TokenReader reader, bool read_function = true)
 	{
 		Caret caret_start = reader.start();
-		
-		/* Read await */
-		bool is_await = false;
-		if (reader.nextToken() == "await")
-		{
-			is_await = true;
-			reader.matchToken("await");
-		}
-		
 		BaseOpCode item = this.readItem(reader);
 		if (reader.nextToken() == "." and item instanceof OpIdentifier)
 		{
@@ -597,7 +588,6 @@ class ParserBayBase extends BaseObject
 				if (read_function)
 				{
 					item = this.parser.parser_function.readCallFunction(reader, item);
-					item.is_await = is_await;
 					item.caret_start = caret_start;
 				}
 				else
