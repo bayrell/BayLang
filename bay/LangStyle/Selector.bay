@@ -84,7 +84,7 @@ class Selector extends BaseObject
 		Vector<string> last_items = rs::split(",", last_item);
 		for (int i=0; i<last_items.count(); i++)
 		{
-			string last_item = rs::trim(last_items.get(i));
+			string last_item = "";
 			Vector<string> arr = rs::split(",", selector);
 			for (int j=0; j<arr.count(); j++)
 			{
@@ -106,6 +106,7 @@ class Selector extends BaseObject
 					string prefix = rs::substr(selector_item, 0, index);
 					string postfix = rs::substr(selector_item, index + 1);
 					string css_hash = ".h-" ~ this.css_hash;
+					last_item = rs::trim(last_items.get(i));
 					if (rs::indexOf(last_item, css_hash) >= 0)
 					{
 						last_item = rs::replace(css_hash, "", last_item);

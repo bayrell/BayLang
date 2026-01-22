@@ -149,7 +149,7 @@ class TranslatorBayProgram extends BaseObject
 	 */
 	void OpDeclareFunction(OpDeclareFunction op_code, Collection<string> result)
 	{
-		if (not (op_code.pattern instanceof OpTypeIdentifier)) return;
+		/*if (not (op_code.pattern instanceof OpTypeIdentifier)) return;*/
 		
 		/* Comments */
 		if (op_code.comments)
@@ -172,7 +172,8 @@ class TranslatorBayProgram extends BaseObject
 		if (flags.count() > 0) result.push(" ");
 		
 		/* Function result type */
-		this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
+		if (op_code.pattern) this.translator.expression.OpTypeIdentifier(op_code.pattern, result);
+		else result.push("void");
 		
 		/* Function name */
 		result.push(" ");

@@ -24,6 +24,7 @@ use BayLang.TokenReader;
 use BayLang.LangBay.ParserBay;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareClass;
 use BayLang.OpCodes.OpDeclareFunction;
@@ -545,11 +546,12 @@ class ParserBayHtml extends BaseObject
 	/**
 	 * Read html render
 	 */
-	BaseOpCode reaHtmlRender(TokenReader reader)
+	BaseOpCode readHtmlRender(TokenReader reader)
 	{
 		reader.matchToken("%render");
 		BaseOpCode expression = this.parser.parser_expression.readExpression(reader);
 		reader.matchToken(";");
+		if (expression instanceof OpCall) expression.is_html = true;
 		return expression;
 	}
 	
@@ -811,7 +813,7 @@ class ParserBayHtml extends BaseObject
 		string next_token = reader.nextToken();
 		if (next_token == "<") return this.readHtmlTag(reader);
 		else if (next_token == "{{") return this.readHtmlExpression(reader);
-		else if (next_token == "%render") return this.reaHtmlRender(reader);
+		else if (next_token == "%render") return this.readHtmlRender(reader);
 		else if (next_token == "%set" or next_token == "%var") return this.readHtmlAssign(reader);
 		else if (next_token == "%for") return this.readHtmlFor(reader);
 		else if (next_token == "%if") return this.readHtmlIf(reader);
@@ -1074,6 +1076,7 @@ class ParserBayHtml extends BaseObject
 		return new OpModule
 		{
 			"items": items,
+			"is_component": true,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

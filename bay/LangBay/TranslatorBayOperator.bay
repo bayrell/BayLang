@@ -27,6 +27,7 @@ use BayLang.OpCodes.OpCall;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpContinue;
 use BayLang.OpCodes.OpFor;
+use BayLang.OpCodes.OpHtmlItems;
 use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpIfElse;
 use BayLang.OpCodes.OpInc;
