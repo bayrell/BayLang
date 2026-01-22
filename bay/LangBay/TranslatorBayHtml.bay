@@ -561,6 +561,9 @@ class TranslatorBayHtml extends BaseObject
 	{
 		if (op_code.content.count() == 0) return;
 		
+		/* Set current class */
+		this.translator.current_class = op_code;
+		
 		/* Get styles */
 		Collection<BaseOpCode> styles = op_code.content.items.filter(
 			bool (BaseOpCode op_code) =>
@@ -595,8 +598,7 @@ class TranslatorBayHtml extends BaseObject
 				op_code instanceof OpAnnotation or
 				op_code instanceof OpAssign or
 				op_code instanceof OpDeclareFunction and
-				not op_code.is_html and
-				not op_code.name == "components"
+				not op_code.is_html
 		);
 		
 		/* Translate scripts */
@@ -604,15 +606,24 @@ class TranslatorBayHtml extends BaseObject
 		{
 			result.push(this.translator.newLine());
 			result.push("<script>");
-			result.push(this.translator.newLine());
-			result.push(this.translator.newLine());
+			BaseOpCode prev_op_code = null;
 			for (int i=0; i<scripts.count(); i++)
 			{
 				BaseOpCode op_code_item = scripts.get(i);
-				this.translator.program.translateClassItem(op_code_item, result);
+				
+				if (prev_op_code == null or not(
+					prev_op_code instanceof OpAssign and op_code_item instanceof OpAssign
+				))
+				{
+					result.push(this.translator.newLine());
+					result.push(this.translator.newLine());
+				}
+				
 				result.push(this.translator.newLine());
+				this.translator.program.translateClassItem(op_code_item, result);
+				prev_op_code = op_code_item;
 			}
-			result.push(this.translator.newLine());
+			result.push(this.translator.newLine(2));
 			result.push("</script>");
 			result.push(this.translator.newLine());
 		}

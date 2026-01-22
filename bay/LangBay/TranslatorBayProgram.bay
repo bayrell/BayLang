@@ -163,7 +163,7 @@ class TranslatorBayProgram extends BaseObject
 		}
 		
 		/* Function flags */
-		Collection<string> flags = ["async", "static", "pure"];
+		Collection<string> flags = ["async", "static", "pure", "computed"];
 		flags = flags.filter(
 			bool (string flag_name) use (op_code) =>
 				op_code.flags ? op_code.flags.isFlag(flag_name) : false

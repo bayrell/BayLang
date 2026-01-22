@@ -30,7 +30,7 @@ use BayLang.OpCodes.OpFlags;
 
 class OpAssignValue extends BaseOpCode
 {
-	string op = "";
+	string op = "=";
 	BaseOpCode value = null;
 	BaseOpCode expression = null;
 	
