@@ -26,6 +26,7 @@ use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpFlags;
 use BayLang.OpCodes.OpTypeIdentifier;
+use BayLang.OpCodes.OpIdentifier;
 
 
 class OpAssign extends BaseOpCode
@@ -58,4 +59,14 @@ class OpAssign extends BaseOpCode
 	 * Returns true if static
 	 */
 	bool isStatic() => this.flags and (this.flags.isFlag("static") or this.flags.isFlag("const"));
+	
+	
+	/**
+	 * Find variable
+	 */
+	OpAssignValue findVariable(string name) =>
+		this.items.find(bool (OpAssignValue item) =>
+			item.value instanceof OpIdentifier and item.value.value == name
+		)
+	;
 }

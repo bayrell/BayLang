@@ -36,6 +36,7 @@ class OpFlags extends BaseOpCode
 	 */
 	static void serialize(Serializer serializer)
 	{
+		parent(serializer);
 		serializer.addType("items", new MapType(new BooleanType()));
 	}
 	
@@ -46,7 +47,7 @@ class OpFlags extends BaseOpCode
 	public bool isFlag(string name)
 	{
 		if (not OpFlags::hasFlag(name))	return false;
-		return this.items.get(name);
+		return this.items ? this.items.get(name) : false;
 	}
 	
 	

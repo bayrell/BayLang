@@ -114,7 +114,9 @@ class OpModule extends BaseOpCode
 	 * Find class
 	 */
 	OpDeclareClass findClass() =>
-		this.items ? this.items.findItem(lib::isInstance(classof OpDeclareClass)) : null
+		this.items ? this.items.find(
+			bool (BaseOpCode item) => item instanceof OpDeclareClass
+		) : null
 	;
 	
 	
@@ -122,7 +124,7 @@ class OpModule extends BaseOpCode
 	 * Find class by name
 	 */
 	OpDeclareClass findClassByName(string name) =>
-		this.items.findItem(
+		this.items.find(
 			bool (BaseOpCode item) use (name)
 			{
 				if (not(item instanceof OpDeclareClass)) return false;

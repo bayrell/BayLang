@@ -22,6 +22,7 @@ use Runtime.Serializer;
 use Runtime.Serializer.ObjectType;
 use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
+use BayLang.OpCodes.OpCodeType;
 
 
 class OpItems<T> extends BaseOpCode
@@ -36,7 +37,7 @@ class OpItems<T> extends BaseOpCode
 	static void serialize(ObjectType rules)
 	{
 		parent(rules);
-		rules.addType("items", new VectorType(rules.params.get("item")));
+		rules.addType("items", new VectorType(new OpCodeType()));
 	}
 	
 	

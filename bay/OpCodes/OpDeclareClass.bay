@@ -25,6 +25,7 @@ use Runtime.Serializer.VectorType;
 use BayLang.OpCodes.BaseOpCode;
 use BayLang.OpCodes.OpAnnotation;
 use BayLang.OpCodes.OpAssign;
+use BayLang.OpCodes.OpAssignValue;
 use BayLang.OpCodes.OpCodeType;
 use BayLang.OpCodes.OpComment;
 use BayLang.OpCodes.OpDeclareFunction;
@@ -93,7 +94,9 @@ class OpDeclareClass extends BaseOpCode
 		rules.addType("name", new ObjectType{
 			"class_name": classof OpTypeIdentifier,
 		});
-		rules.addType("template", new VectorType());
+		rules.addType("template", new VectorType(new ObjectType{
+			"class_name": classof OpTypeIdentifier,
+		}));
 	}
 	
 	
@@ -118,9 +121,25 @@ class OpDeclareClass extends BaseOpCode
 	 * Find function
 	 */
 	OpDeclareFunction findFunction(string name) =>
-		this.content.items.find(
+		this.content ? this.content.items.find(
 			bool (BaseOpCode op_code) use (name) =>
 				op_code instanceof OpDeclareFunction and op_code.name == name
-		)
+		) : null
 	;
+	
+	
+	/**
+	 * Find variable
+	 */
+	OpAssignValue findVariable(string name)
+	{
+		for (int i=0; i<this.content.count(); i++)
+		{
+			BaseOpCode item = this.content.get(i);
+			if (not (item instanceof OpAssign)) continue;
+			OpAssignValue value = item.findVariable(name);
+			if (value) return value;
+		}
+		return null;
+	}
 }
