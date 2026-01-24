@@ -84,7 +84,7 @@ class Selector extends BaseObject
 		Vector<string> last_items = rs::split(",", last_item);
 		for (int i=0; i<last_items.count(); i++)
 		{
-			string last_item = "";
+			string last_item = rs::trim(last_items.get(i));
 			Vector<string> arr = rs::split(",", selector);
 			for (int j=0; j<arr.count(); j++)
 			{
