@@ -913,7 +913,25 @@ class ParserBayHtml extends BaseObject
 		Collection attrs = this.readAttrs(reader, "template");
 		reader.matchToken(">");
 		
+		/* Add new level */
+		this.parser.function_level += 1;
+		
+		/* Save vars */
+		Map<OpIdentifier> vars_uses = this.parser.vars_uses.copy();
+		Collection<OpIdentifier> vars = [];
+		
+		/* Read html */
 		OpHtmlItems content = this.readHtml(reader);
+		
+		/* Restore vars */
+		if (this.parser.function_level > 1)
+		{
+			this.parser.parser_function.extendVariables(vars);
+			this.parser.vars_uses = this.parser.vars_uses.concat(vars_uses);
+		}
+		
+		/* Dec level */
+		this.parser.function_level -= 1;
 		
 		reader.matchToken("</");
 		reader.matchToken("template");
@@ -932,6 +950,7 @@ class ParserBayHtml extends BaseObject
 		{
 			"name": name ? name : "render",
 			"args": args ? args : null,
+			"vars": vars,
 			"is_html": true,
 			"content": content,
 			"caret_start": caret_start,
