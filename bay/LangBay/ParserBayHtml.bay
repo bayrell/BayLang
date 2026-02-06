@@ -1052,6 +1052,17 @@ class ParserBayHtml extends BaseObject
 		
 		reader.matchToken(">");
 		
+		/* Generated */
+		bool is_generated = false;
+		OpTypeIdentifier is_generated_attr = attrs.find(
+			bool (OpHtmlAttribute attr) => attr.key == "generated"
+		);
+		if (is_generated_attr)
+		{
+			string value = is_generated_attr.expression.entity_name.getName();
+			is_generated = value == "true";
+		}
+		
 		/* Read component content */
 		BaseOpCode class_content = this.readContent(reader);
 		
@@ -1062,7 +1073,9 @@ class ParserBayHtml extends BaseObject
 		);
 		
 		/* Change class name */
-		class_name.expression.entity_name.items = [ class_name.expression.entity_name.items.last() ];
+		class_name.expression.entity_name.items = [
+			class_name.expression.entity_name.items.last()
+		];
 		
 		/* Add namespace */
 		items.push(new OpNamespace
@@ -1096,6 +1109,7 @@ class ParserBayHtml extends BaseObject
 		{
 			"items": items,
 			"is_component": true,
+			"is_generated": is_generated,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};

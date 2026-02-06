@@ -41,6 +41,7 @@ use BayLang.OpCodes.OpIdentifier;
 use BayLang.OpCodes.OpIf;
 use BayLang.OpCodes.OpIfElse;
 use BayLang.OpCodes.OpItems;
+use BayLang.OpCodes.OpModule;
 use BayLang.OpCodes.OpNamespace;
 use BayLang.OpCodes.OpString;
 use BayLang.OpCodes.OpUse;
@@ -633,7 +634,7 @@ class TranslatorBayHtml extends BaseObject
 	/**
 	 * Translate
 	 */
-	void translate(BaseOpCode op_code, Collection<string> result)
+	void translate(OpModule op_code, Collection<string> result)
 	{
 		OpNamespace space = op_code.items.find(
 			bool (BaseOpCode item) => item instanceof OpNamespace
@@ -653,7 +654,10 @@ class TranslatorBayHtml extends BaseObject
 		component_names.push(component.name.entity_name.getName());
 		string component_name = rs::join(".", component_names);
 		
-		result.push("<class name=\"" ~ component_name ~ "\">");
+		Vector attrs = [];
+		attrs.push("name=\"" ~ component_name ~ "\"");
+		if (op_code.is_generated) attrs.push("generated=\"true\"");
+		result.push("<class " ~ rs::join(" ", attrs) ~ ">");
 		result.push(this.translator.newLine());
 		
 		/* Add uses */

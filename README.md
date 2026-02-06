@@ -43,6 +43,8 @@ bay-lang-nodejs version
 
 ## BayLang compiler versions
 
+[01 Feb 2026] 1.2.1 - Translate html, use template in functions
+
 [09 Jan 2026] 1.2 - Add function level, use variables, method, await, for
 
 [04 Jan 2026] 1.1 - Update runtime core
