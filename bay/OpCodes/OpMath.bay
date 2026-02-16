@@ -28,7 +28,7 @@ class OpMath extends BaseOpCode
 {
 	string op = "op_math";
 	BaseOpCode value1 = null;
-	BaseOpCode value2 = null;	
+	BaseOpCode value2 = null;
 	string math = "";
 	
 	

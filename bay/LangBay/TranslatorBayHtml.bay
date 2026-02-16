@@ -213,7 +213,7 @@ class TranslatorBayHtml extends BaseObject
 					return true;
 				}
 			}
-			if (op_code_attr.value instanceof OpDeclareFunction) return true;
+			if (op_code_attr.expression instanceof OpDeclareFunction) return true;
 		}
 		if (attrs_count > 3) return true;
 		return false;
