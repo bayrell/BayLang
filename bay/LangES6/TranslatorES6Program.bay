@@ -231,7 +231,15 @@ class TranslatorES6Program extends BaseObject
 				}
 				else if (current_block == OpPreprocessorIfDef::KIND_CLASS_INIT)
 				{
-					this.translator.html.OpDeclareComponentDataItems(op_code.content, result);
+					if (not this.translator.current_class.is_component or
+						not this.translator.enable_vue)
+					{
+						this.translateClassInitItems(op_code.content, result);
+					}
+					else
+					{
+						this.translator.html.OpDeclareComponentDataItems(op_code.content, result);
+					}
 				}
 				else if (current_block == OpPreprocessorIfDef::KIND_COMPONENT_BODY)
 				{
@@ -366,7 +374,7 @@ class TranslatorES6Program extends BaseObject
 		/*if (not (op_code.pattern instanceof OpTypeIdentifier)) return;*/
 		if (op_code.is_html)
 		{
-			this.html.OpDeclareFunction(op_code, result);
+			this.translator.html.OpDeclareFunction(op_code, result);
 			return;
 		}
 		
@@ -411,7 +419,7 @@ class TranslatorES6Program extends BaseObject
 		if (old_function == null) result.push(op_code.name);
 		
 		/* Add flags if class is component */
-		if (is_component)
+		if (is_component and this.translator.enable_vue)
 		{
 			if (old_function == null)
 			{
@@ -522,8 +530,7 @@ class TranslatorES6Program extends BaseObject
 		else if (op_code instanceof OpDeclareFunction)
 		{
 			this.translator.class_function = op_code;
-			if (op_code.is_html) this.translator.html.OpDeclareFunction(op_code, result);
-			else this.OpDeclareFunction(op_code, result);
+			this.OpDeclareFunction(op_code, result);
 			this.translator.class_function = null;
 		}
 		else if (op_code instanceof OpPreprocessorIfCode)
@@ -636,6 +643,31 @@ class TranslatorES6Program extends BaseObject
 				}
 			}
 		}
+		else if (op_code instanceof OpPreprocessorIfDef)
+		{
+			return this.OpPreprocessorIfDef(
+				op_code, result, OpPreprocessorIfDef::KIND_CLASS_INIT
+			);
+		}
+		else if (op_code instanceof OpPreprocessorSwitch)
+		{
+			return this.OpPreprocessorSwitch(
+				op_code, result, OpPreprocessorIfDef::KIND_CLASS_INIT
+			);
+		}
+	}
+	
+	
+	/**
+	 * Translate class init items
+	 */
+	void translateClassInitItems(Vector<BaseOpCode> items, Vector result)
+	{
+		for (int i=0; i<items.count(); i++)
+		{
+			BaseOpCode op_code_item = items.get(i);
+			this.translateClassInitItem(op_code_item, result);
+		}
 	}
 	
 	
@@ -644,7 +676,7 @@ class TranslatorES6Program extends BaseObject
 	 */
 	void translateClassInit(OpDeclareClass op_code, Collection<string> result, bool newline = true)
 	{
-		if (not op_code.is_component)
+		if (not op_code.is_component or not this.translator.enable_vue)
 		{
 			result.push(this.translator.newLine(newline and op_code.content.count() > 0 ? 3 : 1));
 			result.push("/* ========= Class init functions ========= */");
@@ -671,19 +703,15 @@ class TranslatorES6Program extends BaseObject
 			this.translator.levelDec();
 			result.push(this.translator.newLine());
 			result.push("}");
-		}
-		
-		if (not op_code.is_component)
-		{
-			result.push(this.translator.newLine());
 			
 			/* Get class name */
+			result.push(this.translator.newLine());
 			result.push("static getClassName(){ ");
 			result.push("return \"" ~ this.translator.current_class_name ~ "\"; }");
 			result.push(this.translator.newLine());
 			
 			/* Get class annotations */
-			if (op_code.annotations.count() > 0)
+			if (op_code.annotations and op_code.annotations.count() > 0)
 			{
 				result.push("static getClassInfo()");
 				result.push(this.translator.newLine());
@@ -757,6 +785,22 @@ class TranslatorES6Program extends BaseObject
 			}
 			else result.push("{ return null; }");
 			
+			/* Is component */
+			if (op_code.is_component)
+			{
+				Vector<BaseOpCode> computed = op_code.content.items
+					.filter(
+						bool (BaseOpCode op_code) =>
+							op_code instanceof OpDeclareFunction and op_code.flags and op_code.flags.isFlag("computed")
+					)
+					.map(string (BaseOpCode op_code) => this.translator.toString(op_code.name))
+				;
+				result.push(this.translator.newLine());
+				result.push("static getComputed(){ return [" ~ rs::join(", ", computed) ~ "]; }");
+				this.translator.html.translateComponentStyle(op_code, result);
+				this.translator.html.translateModuleComponents(op_code, result);
+			}
+			
 			/* Implements */
 			if (op_code.class_implements)
 			{
@@ -789,7 +833,10 @@ class TranslatorES6Program extends BaseObject
 	bool translateClass(OpDeclareClass op_code, Collection<string> result)
 	{
 		if (op_code.kind == OpDeclareClass::KIND_INTERFACE) return false;
-		if (op_code.is_component) return this.translator.html.translateComponent(op_code, result);
+		if (op_code.is_component and this.translator.enable_vue)
+		{
+			return this.translator.html.translateComponent(op_code, result);
+		}
 		
 		/* Class name */
 		string class_name = op_code.name.entity_name.items.last().value;
@@ -819,6 +866,14 @@ class TranslatorES6Program extends BaseObject
 				op_code.class_extends.entity_name.getName()
 			);
 			result.push(this.translateClassName(this.translator.parent_class_name));
+		}
+		else if (op_code.is_component)
+		{
+			this.translator.parent_class_name = this.translator.getFullName(
+				this.translator.current_class_name != "Runtime.Component" ?
+					"Runtime.Component" : "Runtime.BaseObject"
+			);
+			result.push(" extends " ~ this.translateClassName(this.translator.parent_class_name));
 		}
 		
 		result.push(this.translator.newLine());

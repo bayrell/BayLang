@@ -328,7 +328,7 @@ class Module extends BaseObject implements SerializeInterface
 	/**
 	 * Compile file
 	 */
-	async bool compile(string relative_src_file_path, string lang = "")
+	async bool compile(string relative_src_file_path, var lang = "")
 	{
 		/* Get src file path */
 		string src_file_path = this.resolveSourceFilePath(relative_src_file_path);
@@ -337,7 +337,7 @@ class Module extends BaseObject implements SerializeInterface
 		if (this.checkExclude(relative_src_file_path)) return false;
 		
 		/* Check extension */
-		Vector arr = ["bay", "es6", "php", "py", "ui"];
+		Vector arr = ["bay", "es6", "php", "py", "ui", "js"];
 		string extension = rs::extname(src_file_path);
 		if (arr.indexOf(extension) == -1) return false;
 		
@@ -354,6 +354,7 @@ class Module extends BaseObject implements SerializeInterface
 			file_op_code = parser.parse();
 			if (not file_op_code) return false;
 		}
+		else if (extension == "js") lang = ["es6", "nodejs"];
 		else
 		{
 			lang = extension;
@@ -372,11 +373,11 @@ class Module extends BaseObject implements SerializeInterface
 	 * Translate file
 	 */
 	async void translateLanguages(
-		string relative_src_file_path, var op_code, string dest_lang = ""
+		string relative_src_file_path, var op_code, var dest_lang = ""
 	)
 	{
 		/* Translate to destination language */
-		if (dest_lang != "")
+		if (dest_lang != "" and not(dest_lang instanceof Vector))
 		{
 			await this.translate(relative_src_file_path, op_code, dest_lang);
 		}
@@ -384,7 +385,7 @@ class Module extends BaseObject implements SerializeInterface
 		/* Translate project languages */
 		else
 		{
-			Collection languages = this.project.getLanguages();
+			Collection languages = dest_lang != "" ? dest_lang : this.project.getLanguages();
 			for (int i=0; i<languages.count(); i++)
 			{
 				string lang = languages.get(i);

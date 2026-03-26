@@ -331,7 +331,8 @@ class TranslatorES6Expression extends BaseObject
 			if (item_attr.kind == OpAttr::KIND_ATTR or item_attr.kind == OpAttr::KIND_STATIC)
 			{
 				OpAttr prev_attr = i > 0 ? attrs.get(i - 1) : op_code_first;
-				if (prev_attr instanceof OpIdentifier and item_attr.kind == OpAttr::KIND_STATIC)
+				if ((prev_attr instanceof OpIdentifier or prev_attr instanceof OpAttr) and
+					item_attr.kind == OpAttr::KIND_STATIC)
 				{
 					result.push(".constructor.");
 				}
@@ -520,7 +521,7 @@ class TranslatorES6Expression extends BaseObject
 		{
 			OpTypeIdentifier class_name = op_code.value2;
 			string interface_name = this.translator.getFullName(class_name.entity_name.getName());
-			result.push(this.translator.useModule("rtl") ~
+			result.push(this.translator.getUseModule("rtl") ~
 				".isImplements(" ~ rs::join("", result1) ~ ", " ~
 				this.translator.toString(interface_name) ~ ")");
 		}

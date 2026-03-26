@@ -183,7 +183,8 @@ class TranslatorES6Html extends BaseObject
 		}
 		if (ParserBayHtml::isComponent(tag_name))
 		{
-			string module_name = this.translator.getUseModule(tag_name);
+			string module_name = this.translator.uses.has(tag_name) ?
+				this.translator.uses.get(tag_name) : tag_name;
 			return [module_name, this.translator.toString(module_name)];
 		}
 		return [tag_name, this.translator.toString(tag_name)];
@@ -348,7 +349,7 @@ class TranslatorES6Html extends BaseObject
 		if (old_function == null)
 		{
 			result.push(op_code.name);
-			result.push(": ");
+			if (this.translator.enable_vue) result.push(": ");
 		}
 		
 		/* Function flags */
@@ -360,7 +361,7 @@ class TranslatorES6Html extends BaseObject
 			if (flags.count() > 0) result.push(" ");
 		}
 		
-		if (old_function == null) result.push("function");
+		if (old_function == null and this.translator.enable_vue) result.push("function");
 		result.push("(");
 		this.translator.program.OpDeclareFunctionArgs(op_code, result);
 		result.push(")");
@@ -379,7 +380,14 @@ class TranslatorES6Html extends BaseObject
 		result.push(this.translator.newLine());
 		result.push("const rs = use(\"Runtime.rs\");");
 		result.push(this.translator.newLine());
-		result.push("const componentHash = rs.getComponentHash(this.getClassName());");
+		if (this.translator.enable_vue)
+		{
+			result.push("const componentHash = rs.getComponentHash(this.getClassName());");
+		}
+		else
+		{
+			result.push("const componentHash = rs.getComponentHash(this.constructor.getClassName());");
+		}
 		
 		/* Create Virtual Dom */
 		result.push(this.translator.newLine());
@@ -478,7 +486,7 @@ class TranslatorES6Html extends BaseObject
 			}
 			
 			/* Check if html function */
-			if (not op_code.is_html)
+			if (not op_code.is_html and this.translator.enable_vue)
 			{
 				result.push(this.translator.newLine());
 				this.translator.class_function = op_code;
@@ -549,9 +557,10 @@ class TranslatorES6Html extends BaseObject
 		}
 		
 		result.push(this.translator.newLine());
-		result.push("getComponentStyle: function(){ ");
+		if (this.translator.enable_vue) result.push("getComponentStyle: function(){ ");
+		else result.push("static getComponentStyle(){ ");
 		result.push("return " ~ this.translator.toString(rs::join("", css_content)) ~ "; ");
-		result.push("},");
+		result.push(this.translator.enable_vue ? "}," : "}");
 	}
 	
 	
@@ -571,9 +580,10 @@ class TranslatorES6Html extends BaseObject
 		}
 		components = components.map(string (string name) => this.translator.toString(name));
 		result.push(this.translator.newLine());
-		result.push("getRequiredComponents: function(){ ");
+		if (this.translator.enable_vue) result.push("getRequiredComponents: function(){ ");
+		else result.push("static getRequiredComponents(){ ");
 		result.push("return new Runtime.Vector(" ~ rs::join(", ", components) ~ "); ");
-		result.push("},");
+		result.push(this.translator.enable_vue ? "}," : "}");
 	}
 	
 	

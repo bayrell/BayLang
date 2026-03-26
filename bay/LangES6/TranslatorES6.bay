@@ -46,6 +46,7 @@ class TranslatorES6 extends CoreTranslator
 	/* Flags */
 	bool use_module_name = false;
 	bool use_window = true;
+	bool enable_vue = true;
 	
 	/**
 	 * Constructor

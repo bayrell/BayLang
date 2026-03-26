@@ -39,6 +39,7 @@ class TranslatorNode extends TranslatorES6
 	};
 	bool use_module_name = true;
 	bool use_window = false;
+	bool enable_vue = false;
 	
 	
 	/**
