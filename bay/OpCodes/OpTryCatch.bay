@@ -29,6 +29,7 @@ class OpTryCatch extends BaseOpCode
 {
 	string op = "op_try_catch";
 	BaseOpCode op_try = null;
+	BaseOpCode op_finally = null;
 	Collection<OpTryCatchItem> items = null;
 	
 	
@@ -42,5 +43,6 @@ class OpTryCatch extends BaseOpCode
 			"class_name": classof OpTryCatchItem,
 		}));
 		rules.addType("op_try", new OpCodeType());
+		rules.addType("op_finally", new OpCodeType());
 	}
 }

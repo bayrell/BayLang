@@ -130,6 +130,7 @@ class ParserBayOperator extends BaseObject
 		
 		reader.matchToken("try");
 		BaseOpCode op_try = this.parse(reader);
+		BaseOpCode op_finally = null;
 		
 		Collection items = [];
 		while (not reader.eof() and reader.nextToken() == "catch")
@@ -152,10 +153,17 @@ class ParserBayOperator extends BaseObject
 			});
 		}
 		
+		if (reader.nextToken() == "finally")
+		{
+			reader.matchToken("finally");
+			op_finally = this.parse(reader);
+		}
+		
 		return new OpTryCatch
 		{
 			"items": items,
 			"op_try": op_try,
+			"op_finally": op_finally,
 			"caret_start": caret_start,
 			"caret_end": reader.caret(),
 		};
