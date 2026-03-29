@@ -123,6 +123,7 @@ class TranslatorES6Html extends BaseObject
 			else if (rs::substr(key, 0, 7) == "@event:")
 			{
 				key = "on" ~ rs::upper(rs::charAt(key, 7)) ~ rs::substr(key, 8);
+				if (not this.translator.enable_vue) continue;
 			}
 			
 			Vector item_value = [];

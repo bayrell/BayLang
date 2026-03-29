@@ -409,7 +409,7 @@ class TranslatorES6Program extends BaseObject
 		}
 		
 		/* Add flags if class is not component */
-		if (not is_component)
+		if (not is_component or not this.translator.enable_vue)
 		{
 			result.push(rs::join(" ", flags));
 			if (flags.count() > 0) result.push(" ");
